@@ -61,7 +61,9 @@ function ViewModel(url) {
         return Boolean(self.selectedHost());
     });
     self.tokenUrl = ko.pureComputed(function() {
-       return self.host() ? 'https://' + self.host() + '/account/apitoken' : null;
+        var tokenPath = self.host() === 'dataverse.lib.virginia.edu'
+                ? '/account/apitoken' : '/dataverseuser.xhtml?selectTab=apiTokenTab';
+        return self.host() ? 'https://' + self.host() + tokenPath : null;
     });
     self.savedHostUrl = ko.pureComputed(function() {
         return 'https://' + self.savedHost();
@@ -221,9 +223,11 @@ function ViewModel(url) {
     }).fail(function(xhr, textStatus, error) {
         self.changeMessage(self.messages.userSettingsError, 'text-danger');
         Raven.captureMessage('Could not GET dataverse settings', {
-            url: url,
-            textStatus: textStatus,
-            error: error
+            extra: {
+                url: url,
+                textStatus: textStatus,
+                error: error
+            }
         });
     });
 
@@ -296,9 +300,11 @@ ViewModel.prototype.setInfo = function() {
             (xhr.status = 406) ? self.messages.forbiddenCharacters : self.messages.setDatasetError;
         self.changeMessage(errorMessage, 'text-danger');
         Raven.captureMessage('Could not authenticate with Dataverse', {
-            url: self.urls().set,
-            textStatus: textStatus,
-            error: error
+            extra: {
+                url: self.urls().set,
+                textStatus: textStatus,
+                error: error
+            }
         });
     });
 };
@@ -337,9 +343,11 @@ ViewModel.prototype.getDatasets = function() {
     }).fail(function(xhr, status, error) {
         self.changeMessage(self.messages.getDatasetsError, 'text-danger');
         Raven.captureMessage('Could not GET datasets', {
-            url: self.urls().getDatasets,
-            textStatus: status,
-            error: error
+            extra: {
+                url: self.urls().getDatasets,
+                textStatus: status,
+                error: error
+            }
         });
     });
 };
@@ -369,9 +377,11 @@ ViewModel.prototype.sendAuth = function() {
         var errorMessage = (xhr.status === 401) ? self.messages.authInvalid : self.messages.authError;
         self.changeMessage(errorMessage, 'text-danger');
         Raven.captureMessage('Could not authenticate with Dataverse', {
-            url: url,
-            textStatus: textStatus,
-            error: error
+            extra: {
+                url: url,
+                textStatus: textStatus,
+                error: error
+            }
         });
     });
 };
@@ -386,9 +396,11 @@ ViewModel.prototype.fetchAccounts = function() {
     request.fail(function(xhr, textStatus, error) {
         self.changeMessage(self.messages.updateAccountsError(), 'text-danger');
         Raven.captureMessage('Could not GET ' + self.addonName + ' accounts for user', {
-            url: self.url,
-            textStatus: textStatus,
-            error: error
+            extra: {
+                url: self.url,
+                textStatus: textStatus,
+                error: error
+            }
         });
         ret.reject(xhr, textStatus, error);
     });
@@ -422,9 +434,11 @@ ViewModel.prototype.onImportError = function(xhr, status, error) {
     var self = this;
     self.changeMessage(self.messages.tokenImportError(), 'text-danger');
     Raven.captureMessage('Failed to import ' + self.addonName + ' access token.', {
-        xhr: xhr,
-        status: status,
-        error: error
+        extra: {
+            xhr: xhr,
+            status: status,
+            error: error
+        }
     });
 };
 
@@ -521,9 +535,11 @@ ViewModel.prototype._deauthorizeConfirm = function() {
     request.fail(function(xhr, textStatus, error) {
         self.changeMessage(self.messages.deauthorizeFail(), 'text-danger');
         Raven.captureMessage('Could not deauthorize ' + self.addonName + ' account from node', {
-            url: self.urls().deauthorize,
-            textStatus: textStatus,
-            error: error
+            extra: {
+                url: self.urls().deauthorize,
+                textStatus: textStatus,
+                error: error
+            }
         });
     });
     return request;

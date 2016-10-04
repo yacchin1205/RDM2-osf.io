@@ -33,6 +33,7 @@
               <li><a href="${domain}explore/activity/">New Projects</a></li>
               <li><a href="${domain}search/?q=*&amp;filter=registration">Registry</a></li>
               <li><a href="${web_url_for('conference_view', _absolute=True)}">Meetings</a></li>
+              <li><a href="${domain}preprints/">Preprints</a></li>
           </ul>
         </li>
         % if not user_name:
@@ -70,7 +71,7 @@
         </li>
         % elif allow_login:
             %if institution:
-                 <li class="dropdown sign-in" data-bind="with: $root.signIn">
+                 <li class="dropdown sign-in">
                   <div class="btn-group">
                       <a href="${domain}login/?campaign=institution&redirect_url=${redirect_url}">
                         <button type="button" class="btn btn-info btn-top-login">
@@ -80,7 +81,7 @@
                 </div>
                 </li>
             %else :
-            <li class="dropdown sign-in" data-bind="with: $root.signIn">
+            <li class="dropdown sign-in">
                 <div class="col-sm-12">
                     <a href="${web_url_for('auth_register')}" class="btn btn-success btn-top-signup m-r-xs">Sign Up</a>
                     <a href="${login_url}" class="btn btn-info btn-top-login p-sm">Sign In</a>
