@@ -10,7 +10,6 @@ from website.addons.base import StorageAddonBase
 
 from website.addons.swift.provider import SwiftProvider
 from website.addons.swift.serializer import SwiftSerializer
-from website.addons.swift.settings import ENCRYPT_UPLOADS_DEFAULT, BUCKET_LOCATIONS
 from website.addons.swift.utils import container_exists, get_bucket_names
 
 
@@ -27,7 +26,6 @@ class SwiftNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
 
     folder_id = fields.StringField()
     folder_name = fields.StringField()
-    encrypt_uploads = fields.BooleanField(default=ENCRYPT_UPLOADS_DEFAULT)
 
     @property
     def folder_path(self):
@@ -110,8 +108,7 @@ class SwiftNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
         if not self.folder_id:
             raise exceptions.AddonError('Cannot serialize settings for Swift addon')
         return {
-            'bucket': self.folder_id,
-            'encrypt_uploads': self.encrypt_uploads
+            'bucket': self.folder_id
         }
 
     def create_waterbutler_log(self, auth, action, metadata):

@@ -1,6 +1,6 @@
 import httplib
 
-from boto import exception
+#from swiftclient import exceptions as swift_exceptions
 from flask import request
 from modularodm import Q
 from modularodm.storage.base import KeyExistsException

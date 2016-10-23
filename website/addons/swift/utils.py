@@ -1,12 +1,8 @@
 import re
 import httplib
 
-from boto import exception
-from boto.s3.connection import S3Connection
-from boto.s3.connection import OrdinaryCallingFormat
-
 from swiftclient import Connection
-# from swiftclient import exceptions
+#from swiftclient import exceptions as swift_exceptions
 
 from framework.exceptions import HTTPError
 from website.addons.base.exceptions import InvalidAuthError, InvalidFolderError
