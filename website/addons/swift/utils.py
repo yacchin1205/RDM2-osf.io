@@ -16,7 +16,7 @@ def connect_swift(access_key=None, secret_key=None, tenant_name=None, node_setti
     if node_settings is not None:
         if node_settings.external_account is not None:
             provider = SwiftProvider(node_settings.external_account)
-            access_key, secret_key, tenant_name = provider.username, provider.password, provider.tenant_name
+            access_key, secret_key, tenant_name = provider.username, provider.password, provider.host
     connection = Connection(auth_version='2',
                             authurl='http://inter-auth.ecloud.nii.ac.jp:5000/v2.0/',
                             user=access_key,
@@ -29,7 +29,7 @@ def get_bucket_names(node_settings):
     try:
         headers, containers = connect_swift(node_settings=node_settings).get_account()
         return list(map(lambda c: c['name'], containers))
-    except exceptions.ClientException:
+    except swift_exceptions.ClientException as e:
         raise HTTPError(e.http_status)
 
     return [bucket.name for bucket in buckets]
