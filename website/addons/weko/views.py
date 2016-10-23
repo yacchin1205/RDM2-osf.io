@@ -13,7 +13,7 @@ from framework.exceptions import HTTPError
 
 from website.addons.base import generic_views
 from website.addons.weko import client
-from website.addons.weko.model import DataverseProvider
+from website.addons.weko.model import WEKOProvider
 from website.addons.weko.settings import DEFAULT_HOSTS
 from website.addons.weko.serializer import DataverseSerializer
 from dataverse.exceptions import VersionJsonNotFoundError
@@ -79,7 +79,7 @@ def weko_user_config_get(auth, **kwargs):
 def weko_add_user_account(auth, **kwargs):
     """Verifies new external account credentials and adds to user's list"""
     user = auth.user
-    provider = DataverseProvider()
+    provider = WEKOProvider()
 
     host = request.json.get('host').rstrip('/')
     api_token = request.json.get('api_token')
