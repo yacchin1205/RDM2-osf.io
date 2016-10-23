@@ -122,9 +122,8 @@ def swift_add_user_account(auth, **kwargs):
 @must_be_addon_authorizer(SHORT_NAME)
 @must_have_addon('swift', 'node')
 @must_have_permission('write')
-def swift_create_bucket(auth, node_addon, **kwargs):
+def swift_create_container(auth, node_addon, **kwargs):
     bucket_name = request.json.get('bucket_name', '')
-    bucket_location = request.json.get('bucket_location', '')
 
     if not utils.validate_bucket_name(bucket_name):
         return {
@@ -132,15 +131,8 @@ def swift_create_bucket(auth, node_addon, **kwargs):
             'title': 'Invalid bucket name',
         }, httplib.BAD_REQUEST
 
-    # Get location and verify it is valid
-    if not utils.validate_bucket_location(bucket_location):
-        return {
-            'message': 'That bucket location is not valid.',
-            'title': 'Invalid bucket location',
-        }, httplib.BAD_REQUEST
-
     try:
-        utils.create_bucket(node_addon, bucket_name, bucket_location)
+        utils.create_container(node_addon, bucket_name)
     except exception.S3ResponseError as e:
         return {
             'message': e.message,

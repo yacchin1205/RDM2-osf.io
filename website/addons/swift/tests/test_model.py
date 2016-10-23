@@ -72,8 +72,7 @@ class TestNodeSettings(models.OAuthAddonNodeSettingsTestSuiteMixin, OsfTestCase)
         assert_equal(credentials, expected)
 
 
-    @mock.patch('website.addons.swift.model.bucket_exists')
-    @mock.patch('website.addons.swift.model.get_bucket_location_or_error')
+    @mock.patch('website.addons.swift.model.container_exists')
     def test_set_folder(self, mock_location, mock_exists):
         mock_exists.return_value = True
         mock_location.return_value = ''

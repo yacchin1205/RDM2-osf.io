@@ -13,7 +13,6 @@ var swiftSettings = require('json!./settings.json');
 var OauthAddonFolderPicker = require('js/oauthAddonNodeConfig')._OauthAddonNodeConfigViewModel;
 
 var swiftFolderPickerViewModel = oop.extend(OauthAddonFolderPicker, {
-    bucketLocations: swiftSettings.bucketLocations,
 
     constructor: function(addonName, url, selector, folderPicker, opts, tbOpts) {
         var self = this;
@@ -130,13 +129,11 @@ var swiftFolderPickerViewModel = oop.extend(OauthAddonFolderPicker, {
         self.accessKey(null);
     },
 
-    createBucket: function(self, bucketName, bucketLocation) {
+    createContainer: function(self, bucketName) {
         $osf.block();
-        bucketName = bucketName.toLowerCase();
         return $osf.postJSON(
-            self.urls().createBucket, {
-                bucket_name: bucketName,
-                bucket_location: bucketLocation
+            self.urls().createContainer, {
+                bucket_name: bucketName
             }
         ).done(function(response) {
             $osf.unblock();
@@ -158,7 +155,7 @@ var swiftFolderPickerViewModel = oop.extend(OauthAddonFolderPicker, {
                 message: $osf.htmlEscape(message),
                 callback: function(result) {
                     if (result) {
-                        self.openCreateBucket();
+                        self.openCreateContainer();
                     }
                 },
                 buttons:{
@@ -170,19 +167,8 @@ var swiftFolderPickerViewModel = oop.extend(OauthAddonFolderPicker, {
         });
     },
 
-    openCreateBucket: function() {
+    openCreateContainer: function() {
         var self = this;
-
-        // Generates html options for key-value pairs in BUCKET_LOCATION_MAP
-        function generateBucketOptions(locations) {
-            var options = '';
-            for (var location in locations) {
-                if (self.bucketLocations.hasOwnProperty(location)) {
-                    options = options + ['<option value="', location, '">', $osf.htmlEscape(locations[location]), '</option>', '\n'].join('');
-                }
-            }
-            return options;
-        }
 
         bootbox.dialog({
             title: 'Create a new bucket',
@@ -191,20 +177,12 @@ var swiftFolderPickerViewModel = oop.extend(OauthAddonFolderPicker, {
                         '<div class="col-md-12"> ' +
                             '<form class="form-horizontal" onsubmit="return false"> ' +
                                 '<div class="form-group"> ' +
-                                    '<label class="col-md-4 control-label" for="bucketName">Bucket Name</label> ' +
+                                    '<label class="col-md-4 control-label" for="bucketName">Container Name</label> ' +
                                     '<div class="col-md-8"> ' +
                                         '<input id="bucketName" name="bucketName" type="text" placeholder="Enter bucket name" class="form-control" autofocus> ' +
                                         '<div>' +
                                             '<span id="bucketModalErrorMessage" ></span>' +
                                         '</div>'+
-                                    '</div>' +
-                                '</div>' +
-                                '<div class="form-group"> ' +
-                                    '<label class="col-md-4 control-label" for="bucketLocation">Bucket Location</label> ' +
-                                    '<div class="col-md-8"> ' +
-                                        '<select id="bucketLocation" name="bucketLocation" class="form-control"> ' +
-                                            generateBucketOptions(self.bucketLocations) +
-                                        '</select>' +
                                     '</div>' +
                                 '</div>' +
                             '</form>' +
@@ -223,21 +201,20 @@ var swiftFolderPickerViewModel = oop.extend(OauthAddonFolderPicker, {
                     className: 'btn-success',
                     callback: function () {
                         var bucketName = $('#bucketName').val();
-                        var bucketLocation = $('#bucketLocation').val();
 
                         if (!bucketName) {
                             var errorMessage = $('#bucketModalErrorMessage');
-                            errorMessage.text('Bucket name cannot be empty');
+                            errorMessage.text('Container name cannot be empty');
                             errorMessage[0].classList.add('text-danger');
                             return false;
                         } else if (!self.isValidBucketName(bucketName, false)) {
                             bootbox.confirm({
-                                title: 'Invalid bucket name',
-                                message: 'NII Swift buckets can contain lowercase letters, numbers, and hyphens separated by' +
+                                title: 'Invalid container name',
+                                message: 'NII Swift containers can contain lowercase letters, numbers, and hyphens separated by' +
                                 ' periods.  Please try another name.',
                                 callback: function (result) {
                                     if (result) {
-                                        self.openCreateBucket();
+                                        self.openCreateContainer();
                                     }
                                 },
                                 buttons: {
@@ -247,7 +224,7 @@ var swiftFolderPickerViewModel = oop.extend(OauthAddonFolderPicker, {
                                 }
                             });
                         } else {
-                            self.createBucket(self, bucketName, bucketLocation);
+                            self.createContainer(self, bucketName);
                         }
                     }
                 }

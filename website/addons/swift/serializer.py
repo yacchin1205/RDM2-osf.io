@@ -14,7 +14,7 @@ class SwiftSerializer(StorageAddonSerializer):
 
         result = {
             'accounts': node.api_url_for('swift_account_list'),
-            'createBucket': node.api_url_for('swift_create_bucket'),
+            'createContainer': node.api_url_for('swift_create_container'),
             'importAuth': node.api_url_for('swift_import_auth'),
             'create': node.api_url_for('swift_add_user_account'),
             'deauthorize': node.api_url_for('swift_deauthorize_node'),

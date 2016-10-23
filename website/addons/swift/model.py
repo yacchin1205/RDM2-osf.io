@@ -11,7 +11,7 @@ from website.addons.base import StorageAddonBase
 from website.addons.swift.provider import SwiftProvider
 from website.addons.swift.serializer import SwiftSerializer
 from website.addons.swift.settings import ENCRYPT_UPLOADS_DEFAULT, BUCKET_LOCATIONS
-from website.addons.swift.utils import bucket_exists, get_bucket_names, get_bucket_location_or_error
+from website.addons.swift.utils import container_exists, get_bucket_names
 
 
 class SwiftUserSettings(AddonOAuthUserSettingsBase):
@@ -41,26 +41,13 @@ class SwiftNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
         return u'{0}: {1}'.format(self.config.full_name, self.folder_id)
 
     def set_folder(self, folder_id, auth):
-        if not bucket_exists(self.external_account.oauth_key, self.external_account.oauth_secret, folder_id):
+        if not container_exists(self.external_account.oauth_key, self.external_account.oauth_secret, folder_id):
             error_message = ('We are having trouble connecting to that bucket. '
                              'Try a different one.')
             raise exceptions.InvalidFolderError(error_message)
 
         self.folder_id = str(folder_id)
-
-        bucket_location = get_bucket_location_or_error(
-            self.external_account.oauth_key,
-            self.external_account.oauth_secret,
-            folder_id
-        )
-        try:
-            bucket_location = BUCKET_LOCATIONS[bucket_location]
-        except KeyError:
-            # Unlisted location, Swift may have added it recently.
-            # Default to the key. When hit, add mapping to settings
-            pass
-
-        self.folder_name = '{} ({})'.format(folder_id, bucket_location)
+        self.folder_name = str(folder_id)
         self.save()
 
         self.nodelogger.log(action='bucket_linked', extra={'bucket': str(folder_id)}, save=True)

@@ -68,11 +68,11 @@ api_routes = {
         ),
         Rule(
             [
-                '/project/<pid>/swift/newbucket/',
-                '/project/<pid>/node/<nid>/swift/newbucket/',
+                '/project/<pid>/swift/newcontainer/',
+                '/project/<pid>/node/<nid>/swift/newcontainer/',
             ],
             'post',
-            views.swift_create_bucket,
+            views.swift_create_container,
             json_renderer
         ),
     ],

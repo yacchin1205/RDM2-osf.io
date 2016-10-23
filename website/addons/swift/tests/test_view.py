@@ -23,7 +23,7 @@ class TestS3Views(S3AddonTestCase, testing.views.OAuthAddonConfigViewsTestCaseMi
         self.mock_uid = mock.patch('website.addons.swift.views.utils.get_user_info')
         self.mock_uid.return_value = {'id': '1234567890', 'display_name': 'swift.user'}
         self.mock_uid.start()
-        self.mock_exists = mock.patch('website.addons.swift.views.utils.bucket_exists')
+        self.mock_exists = mock.patch('website.addons.swift.views.utils.container_exists')
         self.mock_exists.return_value = True
         self.mock_exists.start()
         super(TestS3Views, self).setUp()
@@ -144,8 +144,7 @@ class TestS3Views(S3AddonTestCase, testing.views.OAuthAddonConfigViewsTestCaseMi
         mock_names.return_value = ['bucket1', 'bucket2']
         super(TestS3Views, self).test_folder_list()
 
-    @mock.patch('website.addons.swift.model.bucket_exists')
-    @mock.patch('website.addons.swift.model.get_bucket_location_or_error')
+    @mock.patch('website.addons.swift.model.container_exists')
     def test_set_config(self, mock_location, mock_exists):
         mock_exists.return_value = True
         mock_location.return_value = ''
@@ -241,7 +240,7 @@ class TestCreateBucket(S3AddonTestCase):
         assert_true(validate_bucket_location('eu-west-1'))
 
 
-    @mock.patch('website.addons.swift.views.utils.create_bucket')
+    @mock.patch('website.addons.swift.views.utils.create_container')
     @mock.patch('website.addons.swift.views.utils.get_bucket_names')
     def test_create_bucket_pass(self, mock_names, mock_make):
         mock_make.return_value = True
@@ -250,7 +249,7 @@ class TestCreateBucket(S3AddonTestCase):
             'it',
             'doesntevenmatter'
         ]
-        url = self.project.api_url_for('create_bucket')
+        url = self.project.api_url_for('swift_create_bucket')
         ret = self.app.post_json(
             url,
             {
@@ -263,20 +262,20 @@ class TestCreateBucket(S3AddonTestCase):
         assert_equal(ret.status_int, http.OK)
         assert_equal(ret.json, {})
 
-    @mock.patch('website.addons.swift.views.utils.create_bucket')
+    @mock.patch('website.addons.swift.views.utils.create_container')
     def test_create_bucket_fail(self, mock_make):
         error = S3ResponseError(418, 'because Im a test')
         error.message = 'This should work'
         mock_make.side_effect = error
 
-        url = "/api/v1/project/{0}/swift/newbucket/".format(self.project._id)
+        url = "/api/v1/project/{0}/swift/newcontainer/".format(self.project._id)
         ret = self.app.post_json(url, {'bucket_name': 'doesntevenmatter'}, auth=self.user.auth, expect_errors=True)
 
         assert_equals(ret.body, '{"message": "This should work", "title": "Problem connecting to S3"}')
 
-    @mock.patch('website.addons.swift.views.utils.create_bucket')
+    @mock.patch('website.addons.swift.views.utils.create_container')
     def test_bad_location_fails(self, mock_make):
-        url = "/api/v1/project/{0}/swift/newbucket/".format(self.project._id)
+        url = "/api/v1/project/{0}/swift/newcontainer/".format(self.project._id)
         ret = self.app.post_json(
             url,
             {

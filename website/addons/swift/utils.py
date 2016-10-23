@@ -37,10 +37,6 @@ def get_bucket_names(node_settings):
     return [bucket.name for bucket in buckets]
 
 
-def validate_bucket_location(location):
-    return location in BUCKET_LOCATIONS
-
-
 def validate_bucket_name(name):
     """Make sure the bucket name conforms to Amazon's expectations as described at:
     http://docs.aws.amazon.com/AmazonS3/latest/dev/BucketRestrictions.html#bucketnamingrules
@@ -54,27 +50,22 @@ def validate_bucket_name(name):
     )
 
 
-def create_bucket(node_settings, bucket_name, location=''):
-    return connect_swift(node_settings=node_settings).create_bucket(bucket_name, location=location)
+def create_container(node_settings, container_name):
+    return connect_swift(node_settings=node_settings).put_container(container_name)
 
 
-def bucket_exists(access_key, secret_key, bucket_name):
+def container_exists(access_key, secret_key, container_name):
     """Tests for the existance of a bucket and if the user
     can access it with the given keys
     """
-    if not bucket_name:
+    if not container_name:
         return False
 
     connection = connect_swift(access_key, secret_key)
 
-    if bucket_name != bucket_name.lower():
-        # Must use ordinary calling format for mIxEdCaSe bucket names
-        # otherwise use the default as it handles bucket outside of the US
-        connection.calling_format = OrdinaryCallingFormat()
-
     try:
-        # Will raise an exception if bucket_name doesn't exist
-        connect_swift(access_key, secret_key).head_bucket(bucket_name)
+        # Will raise an exception if container_name doesn't exist
+        connect_swift(access_key, secret_key).head_container(container_name)
     except exception.S3ResponseError as e:
         if e.status not in (301, 302):
             return False
@@ -103,22 +94,3 @@ def get_user_info(access_key, secret_key):
         return None
 
     return {'display_name': access_key, 'id': access_key}
-
-def get_bucket_location_or_error(access_key, secret_key, bucket_name):
-    """Returns the location of a bucket or raises AddonError
-    """
-    try:
-        connection = connect_swift(access_key, secret_key)
-    except:
-        raise InvalidAuthError()
-
-    if bucket_name != bucket_name.lower() or '.' in bucket_name:
-        # Must use ordinary calling format for mIxEdCaSe bucket names
-        # otherwise use the default as it handles bucket outside of the US
-        connection.calling_format = OrdinaryCallingFormat()
-
-    try:
-        # Will raise an exception if bucket_name doesn't exist
-        return connect_swift(access_key, secret_key).get_bucket(bucket_name, validate=False).get_location()
-    except exception.S3ResponseError:
-        raise InvalidFolderError()
