@@ -20,6 +20,7 @@ var swiftFolderPickerViewModel = oop.extend(OauthAddonFolderPicker, {
         // Non-OAuth fields
         self.accessKey = ko.observable('');
         self.secretKey = ko.observable('');
+        self.tenantName = ko.observable('');
         // Treebeard config
         self.treebeardOptions = $.extend(
             {},
@@ -49,7 +50,7 @@ var swiftFolderPickerViewModel = oop.extend(OauthAddonFolderPicker, {
 
     connectAccount: function() {
         var self = this;
-        if( !self.accessKey() && !self.secretKey() ){
+        if( !self.accessKey() && !self.secretKey() && !self.tenantName()){
             self.changeMessage('Please enter both an API access key and secret key.', 'text-danger');
             return;
         }
@@ -63,12 +64,19 @@ var swiftFolderPickerViewModel = oop.extend(OauthAddonFolderPicker, {
             self.changeMessage('Please enter an API secret key.', 'text-danger');
             return;
         }
+
+        if (!self.tenantName() ){
+            self.changeMessage('Please enter your tenant name.', 'text-danger');
+            return;
+        }
+
         $osf.block();
 
         return $osf.postJSON(
             self.urls().create, {
                 secret_key: self.secretKey(),
-                access_key: self.accessKey()
+                access_key: self.accessKey(),
+                tenant_name: self.tenantName()
             }
         ).done(function(response) {
             $osf.unblock();
@@ -127,6 +135,7 @@ var swiftFolderPickerViewModel = oop.extend(OauthAddonFolderPicker, {
         self.messageClass('text-info');
         self.secretKey(null);
         self.accessKey(null);
+        self.tenantName(null);
     },
 
     createContainer: function(self, bucketName) {
