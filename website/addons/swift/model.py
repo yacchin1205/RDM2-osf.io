@@ -127,9 +127,9 @@ class SwiftNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
             raise exceptions.AddonError('Cannot serialize credentials for Swift addon')
         provider = SwiftProvider(self.external_account)
         return {
-            'tenant_name': provider.host
+            'tenant_name': provider.host,
             'username': provider.username,
-            'password': provider.password,
+            'password': provider.password
         }
 
     def serialize_waterbutler_settings(self):
