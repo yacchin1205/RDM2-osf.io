@@ -12,24 +12,7 @@ from website.oauth.models import BasicAuthProviderMixin
 from website.addons.swift.serializer import SwiftSerializer
 from website.addons.swift.utils import container_exists, get_bucket_names
 
-
-class SwiftProvider(BasicAuthProviderMixin):
-    """An alternative to `ExternalProvider` not tied to OAuth"""
-
-    name = 'NII Swift'
-    short_name = 'swift'
-
-    def __init__(self, account=None, tenant_name=None, username=None, password=None):
-        if username:
-            username = username.lower()
-        return super(SwiftProvider, self).__init__(account=account, host=tenant_name, username=username, password=password)
-
-    def __repr__(self):
-        return '<{name}: {status}>'.format(
-            name=self.__class__.__name__,
-            status=self.account.display_name if self.account else 'anonymous'
-        )
-
+from website.addons.swift.provider import SwiftProvider
 
 class SwiftUserSettings(AddonOAuthUserSettingsBase):
 
@@ -65,7 +48,8 @@ class SwiftNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
         return u'{0}: {1}'.format(self.config.full_name, self.folder_id)
 
     def set_folder(self, folder_id, auth):
-        if not container_exists(self.external_account.oauth_key, self.external_account.oauth_secret, folder_id):
+        provider = SwiftProvider(self.external_account)
+        if not container_exists(provider.username, provider.password, provider.host, folder_id):
             error_message = ('We are having trouble connecting to that bucket. '
                              'Try a different one.')
             raise exceptions.InvalidFolderError(error_message)

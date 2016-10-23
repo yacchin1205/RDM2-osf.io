@@ -10,7 +10,7 @@ from framework.auth.decorators import must_be_logged_in
 
 from website.addons.base import generic_views
 from website.addons.swift import utils
-from website.addons.swift.model import SwiftProvider
+from website.addons.swift.provider import SwiftProvider
 from website.addons.swift.serializer import SwiftSerializer
 from website.oauth.models import ExternalAccount
 from website.project.decorators import (
@@ -86,13 +86,13 @@ def swift_add_user_account(auth, **kwargs):
                 'and that they have permission to list buckets.')
         }, httplib.BAD_REQUEST
 
-    if not utils.can_list(access_key, secret_key):
+    if not utils.can_list(access_key, secret_key, tenant_name):
         return {
             'message': ('Unable to list buckets.\n'
                 'Listing buckets is required permission that can be changed via IAM')
         }, httplib.BAD_REQUEST
 
-    provider = SwiftProvider(account=None, host=tenant_name,
+    provider = SwiftProvider(account=None, tenant_name=tenant_name,
                              username=access_key, password=secret_key)
     try:
         provider.account.save()
@@ -100,7 +100,7 @@ def swift_add_user_account(auth, **kwargs):
         # ... or get the old one
         provider.account = ExternalAccount.find_one(
             Q('provider', 'eq', SHORT_NAME) &
-            Q('provider_id', 'eq', user_info['id'])
+            Q('provider_id', 'eq', '{}:{}'.format(tenant_name, access_key).lower())
         )
     assert provider.account is not None
 
