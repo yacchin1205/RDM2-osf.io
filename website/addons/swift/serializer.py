@@ -2,6 +2,8 @@ from website.util import web_url_for
 from website.addons.base.serializer import StorageAddonSerializer
 from website.addons.swift import utils
 
+from website.addons.swift.provider import SwiftProvider
+
 class SwiftSerializer(StorageAddonSerializer):
     addon_short_name = 'swift'
 
@@ -36,6 +38,8 @@ class SwiftSerializer(StorageAddonSerializer):
     def credentials_are_valid(self, user_settings, client=None):
         if user_settings:
             for account in user_settings.external_accounts:
-                if utils.can_list(account.oauth_key, account.oauth_secret):
+                provider = SwiftProvider(account)
+                if utils.can_list(provider.username, provider.password,
+                                  provider.host):
                     return True
         return False
