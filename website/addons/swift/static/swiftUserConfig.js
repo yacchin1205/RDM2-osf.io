@@ -26,6 +26,7 @@ function ViewModel(url) {
     self.properName = 'NII Swift';
     self.accessKey = ko.observable();
     self.secretKey = ko.observable();
+    self.tenantName = ko.observable();
     self.account_url = '/api/v1/settings/swift/accounts/';
     self.accounts = ko.observableArray();
 
@@ -37,11 +38,12 @@ function ViewModel(url) {
         self.messageClass('text-info');
         self.accessKey(null);
         self.secretKey(null);
+        self.tenantName(null);
     };
     /** Send POST request to authorize NII Swift */
     self.connectAccount = function() {
         // Selection should not be empty
-        if( !self.accessKey() && !self.secretKey() ){
+        if( !self.accessKey() && !self.secretKey() && !self.tenantName()){
             self.changeMessage('Please enter both an API access key and secret key.', 'text-danger');
             return;
         }
@@ -55,11 +57,17 @@ function ViewModel(url) {
             self.changeMessage('Please enter an API secret key.', 'text-danger');
             return;
         }
+
+        if (!self.tenantName() ){
+            self.changeMessage('Please enter your tenant name.', 'text-danger');
+            return;
+        }
         return osfHelpers.postJSON(
             self.account_url,
             ko.toJS({
                 access_key: self.accessKey,
                 secret_key: self.secretKey,
+                tenant_name: self.tenantName
             })
         ).done(function() {
             self.clearModal();
@@ -89,6 +97,7 @@ function ViewModel(url) {
                 var externalAccount =  new ExternalAccount(account);
                 externalAccount.accessKey = account.oauth_key;
                 externalAccount.secretKey = account.oauth_secret;
+                externalAccount.tenantName = account.tenant_name;
                 return externalAccount;
             }));
             $('#swift-header').osfToggleHeight({height: 160});

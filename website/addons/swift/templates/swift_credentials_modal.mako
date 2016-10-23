@@ -14,11 +14,15 @@
                         
                         <div class="col-sm-6">
                             <div class="form-group">
-                                <label for="swiftAddon">Access Key</label>
+                                <label for="swiftAddon">Tenant name</label>
+                                <input class="form-control" data-bind="value: tenantName" id="tenant_name" name="tenant_name" ${'disabled' if disabled else ''} />
+                            </div>
+                            <div class="form-group">
+                                <label for="swiftAddon">Username</label>
                                 <input class="form-control" data-bind="value: accessKey" id="access_key" name="access_key" ${'disabled' if disabled else ''} />
                             </div>
                             <div class="form-group">
-                                <label for="swiftAddon">Secret Key</label>
+                                <label for="swiftAddon">Password</label>
                                 <input type="password" class="form-control" data-bind="value: secretKey" id="secret_key" name="secret_key" ${'disabled' if disabled else ''} />
                             </div>
                         </div>

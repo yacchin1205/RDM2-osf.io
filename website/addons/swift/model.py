@@ -7,10 +7,28 @@ from framework.auth.core import Auth
 from website.addons.base import exceptions
 from website.addons.base import AddonOAuthUserSettingsBase, AddonOAuthNodeSettingsBase
 from website.addons.base import StorageAddonBase
+from website.oauth.models import BasicAuthProviderMixin
 
-from website.addons.swift.provider import SwiftProvider
 from website.addons.swift.serializer import SwiftSerializer
 from website.addons.swift.utils import container_exists, get_bucket_names
+
+
+class SwiftProvider(BasicAuthProviderMixin):
+    """An alternative to `ExternalProvider` not tied to OAuth"""
+
+    name = 'NII Swift'
+    short_name = 'swift'
+
+    def __init__(self, account=None, tenant_name=None, username=None, password=None):
+        if username:
+            username = username.lower()
+        return super(SwiftProvider, self).__init__(account=account, host=tenant_name, username=username, password=password)
+
+    def __repr__(self):
+        return '<{name}: {status}>'.format(
+            name=self.__class__.__name__,
+            status=self.account.display_name if self.account else 'anonymous'
+        )
 
 
 class SwiftUserSettings(AddonOAuthUserSettingsBase):
@@ -26,6 +44,14 @@ class SwiftNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
 
     folder_id = fields.StringField()
     folder_name = fields.StringField()
+
+    _api = None
+
+    @property
+    def api(self):
+        if self._api is None:
+            self._api = SwiftProvider(self.external_account)
+        return self._api
 
     @property
     def folder_path(self):
@@ -99,16 +125,18 @@ class SwiftNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
     def serialize_waterbutler_credentials(self):
         if not self.has_auth:
             raise exceptions.AddonError('Cannot serialize credentials for Swift addon')
+        provider = SwiftProvider(self.external_account)
         return {
-            'access_key': self.external_account.oauth_key,
-            'secret_key': self.external_account.oauth_secret,
+            'tenant_name': provider.host
+            'username': provider.username,
+            'password': provider.password,
         }
 
     def serialize_waterbutler_settings(self):
         if not self.folder_id:
             raise exceptions.AddonError('Cannot serialize settings for Swift addon')
         return {
-            'bucket': self.folder_id
+            'container': self.folder_id
         }
 
     def create_waterbutler_log(self, auth, action, metadata):

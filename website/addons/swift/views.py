@@ -10,6 +10,7 @@ from framework.auth.decorators import must_be_logged_in
 
 from website.addons.base import generic_views
 from website.addons.swift import utils
+from website.addons.swift.model import SwiftProvider
 from website.addons.swift.serializer import SwiftSerializer
 from website.oauth.models import ExternalAccount
 from website.project.decorators import (
@@ -68,15 +69,16 @@ def swift_add_user_account(auth, **kwargs):
     try:
         access_key = request.json['access_key']
         secret_key = request.json['secret_key']
+        tenant_name = request.json['tenant_name']
     except KeyError:
         raise HTTPError(httplib.BAD_REQUEST)
 
-    if not (access_key and secret_key):
+    if not (access_key and secret_key and tenant_name):
         return {
             'message': 'All the fields above are required.'
         }, httplib.BAD_REQUEST
 
-    user_info = utils.get_user_info(access_key, secret_key)
+    user_info = utils.get_user_info(access_key, secret_key, tenant_name)
     if not user_info:
         return {
             'message': ('Unable to access account.\n'
@@ -90,27 +92,20 @@ def swift_add_user_account(auth, **kwargs):
                 'Listing buckets is required permission that can be changed via IAM')
         }, httplib.BAD_REQUEST
 
-    account = None
+    provider = SwiftProvider(account=None, host=tenant_name,
+                             username=access_key, password=secret_key)
     try:
-        account = ExternalAccount(
-            provider=SHORT_NAME,
-            provider_name=FULL_NAME,
-            oauth_key=access_key,
-            oauth_secret=secret_key,
-            provider_id=user_info['id'],
-            display_name=user_info['display_name'],
-        )
-        account.save()
+        provider.account.save()
     except KeyExistsException:
         # ... or get the old one
-        account = ExternalAccount.find_one(
+        provider.account = ExternalAccount.find_one(
             Q('provider', 'eq', SHORT_NAME) &
             Q('provider_id', 'eq', user_info['id'])
         )
-    assert account is not None
+    assert provider.account is not None
 
-    if account not in auth.user.external_accounts:
-        auth.user.external_accounts.append(account)
+    if provider.account not in auth.user.external_accounts:
+        auth.user.external_accounts.append(provider.account)
 
     # Ensure NII Swift is enabled.
     auth.user.get_or_add_addon('swift', auth=auth)
