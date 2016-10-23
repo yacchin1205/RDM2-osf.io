@@ -39,4 +39,4 @@ GET_HGRID_DATA = views._weko_root_folder
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 NODE_SETTINGS_TEMPLATE = os.path.join(HERE, 'templates', 'weko_node_settings.mako')
-USER_SETTINGS_TEMPLATE = os.path.join(HERE, 'templates', 'weko_user_settings.mako')
+USER_SETTINGS_TEMPLATE = None  # Use default template

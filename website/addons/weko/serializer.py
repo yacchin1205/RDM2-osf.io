@@ -49,6 +49,8 @@ class DataverseSerializer(OAuthAddonSerializer):
         host = external_account.oauth_key if external_account else ''
 
         return {
+            'auth': api_url_for('oauth_connect',
+                                service_name='weko'),
             'create': api_url_for('dataverse_add_user_account'),
             'set': node.api_url_for('dataverse_set_config'),
             'importAuth': node.api_url_for('dataverse_import_auth'),

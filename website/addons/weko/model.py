@@ -10,36 +10,42 @@ from website.addons.base import (
     AddonOAuthNodeSettingsBase, AddonOAuthUserSettingsBase, exceptions,
 )
 from website.addons.base import StorageAddonBase
+from website.oauth.models import ExternalProvider
 
 from website.addons.weko.client import connect_from_settings_or_401
 from website.addons.weko.serializer import DataverseSerializer
 from website.addons.weko.utils import DataverseNodeLogger
+from website.addons.weko import settings as weko_settings
 
 
-class DataverseProvider(object):
+class WEKOProvider(ExternalProvider):
     """An alternative to `ExternalProvider` not tied to OAuth"""
 
     name = 'WEKO'
     short_name = 'weko'
     serializer = DataverseSerializer
 
-    def __init__(self, account=None):
-        super(DataverseProvider, self).__init__()
-        # provide an unauthenticated session by default
-        self.account = account
+    client_id = weko_settings.CLIENT_ID
+    client_secret = weko_settings.CLIENT_SECRET
 
-    def __repr__(self):
-        return '<{name}: {status}>'.format(
-            name=self.__class__.__name__,
-            status=self.account.provider_id if self.account else 'anonymous'
-        )
+    auth_url_base = weko_settings.OAUTH_AUTHORIZE_URL
+    callback_url = weko_settings.OAUTH_ACCESS_TOKEN_URL
+
+    def handle_callback(self, response):
+        """View called when the OAuth flow is completed.
+        """
+        return {
+            'provider_id': 'test',
+            'display_name': 'test'
+        }
+
 
 class AddonWEKOUserSettings(AddonOAuthUserSettingsBase):
-    oauth_provider = DataverseProvider
+    oauth_provider = WEKOProvider
     serializer = DataverseSerializer
 
 class AddonWEKONodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
-    oauth_provider = DataverseProvider
+    oauth_provider = WEKOProvider
     serializer = DataverseSerializer
 
     dataverse_alias = fields.StringField()
