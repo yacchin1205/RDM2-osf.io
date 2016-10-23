@@ -1,10 +1,10 @@
-from website.addons.niiswift.serializer import SwiftSerializer
+from website.addons.swift.serializer import SwiftSerializer
 
 class SwiftProvider(object):
     """An alternative to `ExternalProvider` not tied to OAuth"""
 
     name = 'NII Swift'
-    short_name = 'niiswift'
+    short_name = 'swift'
     serializer = SwiftSerializer
 
     def __init__(self, account=None):

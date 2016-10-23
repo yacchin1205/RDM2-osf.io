@@ -5,30 +5,34 @@ from boto import exception
 from boto.s3.connection import S3Connection
 from boto.s3.connection import OrdinaryCallingFormat
 
+from swiftclient import Connection
+# from swiftclient import exceptions
+
 from framework.exceptions import HTTPError
 from website.addons.base.exceptions import InvalidAuthError, InvalidFolderError
-from website.addons.niiswift.settings import BUCKET_LOCATIONS
+from website.addons.swift.settings import BUCKET_LOCATIONS
 
 
 def connect_swift(access_key=None, secret_key=None, node_settings=None):
-    """Helper to build an S3Connection object
-    Can be used to change settings on all S3Connections
-    See: CallingFormat
+    """Helper to build an swiftclient.Connection object
     """
     if node_settings is not None:
         if node_settings.external_account is not None:
             access_key, secret_key = node_settings.external_account.oauth_key, node_settings.external_account.oauth_secret
-    connection = S3Connection(access_key, secret_key, calling_format=OrdinaryCallingFormat())
+    connection = Connection(auth_version='2',
+                            authurl='http://inter-auth.ecloud.nii.ac.jp:5000/v2.0/',
+                            user=access_key,
+                            key=secret_key,
+                            tenant_name='yamaji')
     return connection
 
 
 def get_bucket_names(node_settings):
     try:
-        buckets = connect_swift(node_settings=node_settings).get_all_buckets()
-    except exception.NoAuthHandlerFound:
-        raise HTTPError(httplib.FORBIDDEN)
-    except exception.BotoServerError as e:
-        raise HTTPError(e.status)
+        headers, containers = connect_swift(node_settings=node_settings).get_account()
+        return list(map(lambda c: c['name'], containers))
+    except exceptions.ClientException:
+        raise HTTPError(e.http_status)
 
     return [bucket.name for bucket in buckets]
 
@@ -87,22 +91,18 @@ def can_list(access_key, secret_key):
         return False
 
     try:
-        connect_swift(access_key, secret_key).get_all_buckets()
+        connect_swift(access_key, secret_key).get_account()
     except exception.S3ResponseError:
         return False
     return True
 
 def get_user_info(access_key, secret_key):
-    """Returns an S3 User with .display_name and .id, or None
+    """Returns an NII Swift User with .display_name and .id, or None
     """
     if not (access_key and secret_key):
         return None
 
-    try:
-        return connect_swift(access_key, secret_key).get_all_buckets().owner
-    except exception.S3ResponseError:
-        return None
-    return None
+    return {'display_name': access_key, 'id': access_key}
 
 def get_bucket_location_or_error(access_key, secret_key, bucket_name):
     """Returns the location of a bucket or raises AddonError

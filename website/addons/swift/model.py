@@ -8,10 +8,10 @@ from website.addons.base import exceptions
 from website.addons.base import AddonOAuthUserSettingsBase, AddonOAuthNodeSettingsBase
 from website.addons.base import StorageAddonBase
 
-from website.addons.niiswift.provider import SwiftProvider
-from website.addons.niiswift.serializer import SwiftSerializer
-from website.addons.niiswift.settings import ENCRYPT_UPLOADS_DEFAULT, BUCKET_LOCATIONS
-from website.addons.niiswift.utils import bucket_exists, get_bucket_names, get_bucket_location_or_error
+from website.addons.swift.provider import SwiftProvider
+from website.addons.swift.serializer import SwiftSerializer
+from website.addons.swift.settings import ENCRYPT_UPLOADS_DEFAULT, BUCKET_LOCATIONS
+from website.addons.swift.utils import bucket_exists, get_bucket_names, get_bucket_location_or_error
 
 
 class SwiftUserSettings(AddonOAuthUserSettingsBase):
@@ -75,7 +75,7 @@ class SwiftNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
 
         return [
             {
-                'addon': 'niiswift',
+                'addon': 'swift',
                 'kind': 'folder',
                 'id': bucket,
                 'name': bucket,
@@ -128,10 +128,10 @@ class SwiftNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
         }
 
     def create_waterbutler_log(self, auth, action, metadata):
-        url = self.owner.web_url_for('addon_view_or_download_file', path=metadata['path'], provider='niiswift')
+        url = self.owner.web_url_for('addon_view_or_download_file', path=metadata['path'], provider='swift')
 
         self.owner.add_log(
-            'niiswift_{0}'.format(action),
+            'swift_{0}'.format(action),
             auth=auth,
             params={
                 'project': self.owner.parent_id,

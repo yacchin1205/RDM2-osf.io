@@ -9,7 +9,7 @@ var Raven = require('raven-js');
 var bootbox = require('bootbox');
 require('js/osfToggleHeight');
 
-var language = require('js/osfLanguage').Addons.niiswift;
+var language = require('js/osfLanguage').Addons.swift;
 var osfHelpers = require('js/osfHelpers');
 var addonSettings = require('js/addonSettings');
 var ChangeMessageMixin = require('js/changeMessage');
@@ -26,7 +26,7 @@ function ViewModel(url) {
     self.properName = 'NII Swift';
     self.accessKey = ko.observable();
     self.secretKey = ko.observable();
-    self.account_url = '/api/v1/settings/niiswift/accounts/';
+    self.account_url = '/api/v1/settings/swift/accounts/';
     self.accounts = ko.observableArray();
 
     ChangeMessageMixin.call(self);

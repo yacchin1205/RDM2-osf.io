@@ -9,15 +9,15 @@ from framework.exceptions import HTTPError
 from framework.auth.decorators import must_be_logged_in
 
 from website.addons.base import generic_views
-from website.addons.niiswift import utils
-from website.addons.niiswift.serializer import SwiftSerializer
+from website.addons.swift import utils
+from website.addons.swift.serializer import SwiftSerializer
 from website.oauth.models import ExternalAccount
 from website.project.decorators import (
     must_have_addon, must_have_permission,
     must_be_addon_authorizer,
 )
 
-SHORT_NAME = 'niiswift'
+SHORT_NAME = 'swift'
 FULL_NAME = 'NII Swift'
 
 swift_account_list = generic_views.account_list(
@@ -97,15 +97,15 @@ def swift_add_user_account(auth, **kwargs):
             provider_name=FULL_NAME,
             oauth_key=access_key,
             oauth_secret=secret_key,
-            provider_id=user_info.id,
-            display_name=user_info.display_name,
+            provider_id=user_info['id'],
+            display_name=user_info['display_name'],
         )
         account.save()
     except KeyExistsException:
         # ... or get the old one
         account = ExternalAccount.find_one(
             Q('provider', 'eq', SHORT_NAME) &
-            Q('provider_id', 'eq', user_info.id)
+            Q('provider_id', 'eq', user_info['id'])
         )
     assert account is not None
 
@@ -113,16 +113,16 @@ def swift_add_user_account(auth, **kwargs):
         auth.user.external_accounts.append(account)
 
     # Ensure NII Swift is enabled.
-    auth.user.get_or_add_addon('niiswift', auth=auth)
+    auth.user.get_or_add_addon('swift', auth=auth)
     auth.user.save()
 
     return {}
 
 
 @must_be_addon_authorizer(SHORT_NAME)
-@must_have_addon('niiswift', 'node')
+@must_have_addon('swift', 'node')
 @must_have_permission('write')
-def create_bucket(auth, node_addon, **kwargs):
+def swift_create_bucket(auth, node_addon, **kwargs):
     bucket_name = request.json.get('bucket_name', '')
     bucket_location = request.json.get('bucket_location', '')
 

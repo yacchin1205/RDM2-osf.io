@@ -5,14 +5,14 @@ from nose.tools import *  # noqa (PEP8 asserts)
 
 from website.util import web_url_for
 from website.addons.base.testing.serializers import StorageAddonSerializerTestSuiteMixin
-from website.addons.niiswift.tests.factories import SwiftAccountFactory
-from website.addons.niiswift.serializer import SwiftSerializer
+from website.addons.swift.tests.factories import SwiftAccountFactory
+from website.addons.swift.serializer import SwiftSerializer
 
 from tests.base import OsfTestCase
 
 
 class TestSwiftSerializer(StorageAddonSerializerTestSuiteMixin, OsfTestCase):
-    addon_short_name = 'niiswift'
+    addon_short_name = 'swift'
     Serializer = SwiftSerializer
     ExternalAccountFactory = SwiftAccountFactory
     client = None
@@ -21,7 +21,7 @@ class TestSwiftSerializer(StorageAddonSerializerTestSuiteMixin, OsfTestCase):
         self.node_settings.folder_id = pid
 
     def setUp(self):
-        self.mock_can_list = mock.patch('website.addons.niiswift.serializer.utils.can_list')
+        self.mock_can_list = mock.patch('website.addons.swift.serializer.utils.can_list')
         self.mock_can_list.return_value = True
         self.mock_can_list.start()
         super(TestSwiftSerializer, self).setUp()

@@ -26,9 +26,9 @@
             var self = this;
             var parent = this.getByID(row.parentID);
             row.urls = {
-                'delete': parent.nodeApiUrl + 'niiswift/' + file.destination + '/',
-                'download': parent.nodeUrl + 'niiswift/' + file.destination + '/download/',
-                'view': parent.nodeUrl + 'niiswift/' + file.destination + '/'
+                'delete': parent.nodeApiUrl + 'swift/' + file.destination + '/',
+                'download': parent.nodeUrl + 'swift/' + file.destination + '/download/',
+                'view': parent.nodeUrl + 'swift/' + file.destination + '/'
             };
             row.permissions = parent.permissions;
             this.updateItem(row);

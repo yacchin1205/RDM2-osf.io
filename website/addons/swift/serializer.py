@@ -1,9 +1,9 @@
 from website.util import web_url_for
 from website.addons.base.serializer import StorageAddonSerializer
-from website.addons.niiswift import utils
+from website.addons.swift import utils
 
 class SwiftSerializer(StorageAddonSerializer):
-    addon_short_name = 'niiswift'
+    addon_short_name = 'swift'
 
     REQUIRED_URLS = []
 
@@ -14,7 +14,7 @@ class SwiftSerializer(StorageAddonSerializer):
 
         result = {
             'accounts': node.api_url_for('swift_account_list'),
-            'createBucket': node.api_url_for('create_bucket'),
+            'createBucket': node.api_url_for('swift_create_bucket'),
             'importAuth': node.api_url_for('swift_import_auth'),
             'create': node.api_url_for('swift_add_user_account'),
             'deauthorize': node.api_url_for('swift_deauthorize_node'),

@@ -7,8 +7,8 @@ from tests.factories import ProjectFactory
 
 from framework.auth import Auth
 from website.addons.base.testing import models
-from website.addons.niiswift.model import SwiftNodeSettings
-from website.addons.niiswift.tests.factories import (
+from website.addons.swift.model import SwiftNodeSettings
+from website.addons.swift.tests.factories import (
     SwiftUserSettingsFactory,
     SwiftNodeSettingsFactory,
     SwiftAccountFactory
@@ -16,13 +16,13 @@ from website.addons.niiswift.tests.factories import (
 
 class TestUserSettings(models.OAuthAddonUserSettingTestSuiteMixin, OsfTestCase):
 
-    short_name = 'niiswift'
+    short_name = 'swift'
     full_name = 'NII Swift'
     ExternalAccountFactory = SwiftAccountFactory
 
 class TestNodeSettings(models.OAuthAddonNodeSettingsTestSuiteMixin, OsfTestCase):
 
-    short_name = 'niiswift'
+    short_name = 'swift'
     full_name = 'NII Swift'
     ExternalAccountFactory = SwiftAccountFactory
     NodeSettingsFactory = SwiftNodeSettingsFactory
@@ -57,7 +57,7 @@ class TestNodeSettings(models.OAuthAddonNodeSettingsTestSuiteMixin, OsfTestCase)
             auth=Auth(user=self.user),
             data='hodor',
         )
-        assert_false(registration.has_addon('niiswift'))
+        assert_false(registration.has_addon('swift'))
 
     ## Overrides ##
 
@@ -72,8 +72,8 @@ class TestNodeSettings(models.OAuthAddonNodeSettingsTestSuiteMixin, OsfTestCase)
         assert_equal(credentials, expected)
 
 
-    @mock.patch('website.addons.niiswift.model.bucket_exists')
-    @mock.patch('website.addons.niiswift.model.get_bucket_location_or_error')
+    @mock.patch('website.addons.swift.model.bucket_exists')
+    @mock.patch('website.addons.swift.model.get_bucket_location_or_error')
     def test_set_folder(self, mock_location, mock_exists):
         mock_exists.return_value = True
         mock_location.return_value = ''

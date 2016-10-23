@@ -10,7 +10,7 @@ NODE_SETTINGS_MODEL = model.SwiftNodeSettings
 
 ROUTES = [routes.api_routes]
 
-SHORT_NAME = 'niiswift'
+SHORT_NAME = 'swift'
 FULL_NAME = 'NII Swift'
 
 

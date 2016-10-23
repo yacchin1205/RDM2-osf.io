@@ -1,13 +1,13 @@
 from framework.routing import Rule, json_renderer
 
-from website.addons.niiswift import views
+from website.addons.swift import views
 
 
 api_routes = {
     'rules': [
         Rule(
             [
-                '/settings/niiswift/accounts/',
+                '/settings/swift/accounts/',
             ],
             'post',
             views.swift_add_user_account,
@@ -15,7 +15,7 @@ api_routes = {
         ),
         Rule(
             [
-                '/settings/niiswift/accounts/',
+                '/settings/swift/accounts/',
             ],
             'get',
             views.swift_account_list,
@@ -23,8 +23,8 @@ api_routes = {
         ),
         Rule(
             [
-                '/project/<pid>/niiswift/settings/',
-                '/project/<pid>/node/<nid>/niiswift/settings/',
+                '/project/<pid>/swift/settings/',
+                '/project/<pid>/node/<nid>/swift/settings/',
             ],
             'put',
             views.swift_set_config,
@@ -32,8 +32,8 @@ api_routes = {
         ),
         Rule(
             [
-                '/project/<pid>/niiswift/settings/',
-                '/project/<pid>/node/<nid>/niiswift/settings/',
+                '/project/<pid>/swift/settings/',
+                '/project/<pid>/node/<nid>/swift/settings/',
             ],
             'get',
             views.swift_get_config,
@@ -41,8 +41,8 @@ api_routes = {
         ),
         Rule(
             [
-                '/project/<pid>/niiswift/user-auth/',
-                '/project/<pid>/node/<nid>/niiswift/user-auth/',
+                '/project/<pid>/swift/user-auth/',
+                '/project/<pid>/node/<nid>/swift/user-auth/',
             ],
             'put',
             views.swift_import_auth,
@@ -50,8 +50,8 @@ api_routes = {
         ),
         Rule(
             [
-                '/project/<pid>/niiswift/user-auth/',
-                '/project/<pid>/node/<nid>/niiswift/user-auth/',
+                '/project/<pid>/swift/user-auth/',
+                '/project/<pid>/node/<nid>/swift/user-auth/',
             ],
             'delete',
             views.swift_deauthorize_node,
@@ -59,8 +59,8 @@ api_routes = {
         ),
         Rule(
             [
-                '/project/<pid>/niiswift/buckets/',
-                '/project/<pid>/node/<nid>/niiswift/buckets/',
+                '/project/<pid>/swift/buckets/',
+                '/project/<pid>/node/<nid>/swift/buckets/',
             ],
             'get',
             views.swift_folder_list,
@@ -68,11 +68,11 @@ api_routes = {
         ),
         Rule(
             [
-                '/project/<pid>/niiswift/newbucket/',
-                '/project/<pid>/node/<nid>/niiswift/newbucket/',
+                '/project/<pid>/swift/newbucket/',
+                '/project/<pid>/node/<nid>/swift/newbucket/',
             ],
             'post',
-            views.create_bucket,
+            views.swift_create_bucket,
             json_renderer
         ),
     ],

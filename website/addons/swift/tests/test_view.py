@@ -10,20 +10,20 @@ from tests.base import get_default_metaschema
 from tests.factories import ProjectFactory, AuthUserFactory
 
 from website.addons.base import testing
-from website.addons.niiswift.tests.utils import S3AddonTestCase
-from website.addons.niiswift.utils import validate_bucket_name, validate_bucket_location
+from website.addons.swift.tests.utils import S3AddonTestCase
+from website.addons.swift.utils import validate_bucket_name, validate_bucket_location
 from website.util import api_url_for
 
 
 class TestS3Views(S3AddonTestCase, testing.views.OAuthAddonConfigViewsTestCaseMixin):
     def setUp(self):
-        self.mock_can_list = mock.patch('website.addons.niiswift.views.utils.can_list')
+        self.mock_can_list = mock.patch('website.addons.swift.views.utils.can_list')
         self.mock_can_list.return_value = True
         self.mock_can_list.start()
-        self.mock_uid = mock.patch('website.addons.niiswift.views.utils.get_user_info')
-        self.mock_uid.return_value = {'id': '1234567890', 'display_name': 'niiswift.user'}
+        self.mock_uid = mock.patch('website.addons.swift.views.utils.get_user_info')
+        self.mock_uid.return_value = {'id': '1234567890', 'display_name': 'swift.user'}
         self.mock_uid.start()
-        self.mock_exists = mock.patch('website.addons.niiswift.views.utils.bucket_exists')
+        self.mock_exists = mock.patch('website.addons.swift.views.utils.bucket_exists')
         self.mock_exists.return_value = True
         self.mock_exists.start()
         super(TestS3Views, self).setUp()
@@ -74,7 +74,7 @@ class TestS3Views(S3AddonTestCase, testing.views.OAuthAddonConfigViewsTestCaseMi
     def test_swift_set_bucket_no_auth(self):
 
         user = AuthUserFactory()
-        user.add_addon('niiswift')
+        user.add_addon('swift')
         self.project.add_contributor(user, save=True)
         url = self.project.api_url_for('swift_set_config')
         res = self.app.put_json(
@@ -96,7 +96,7 @@ class TestS3Views(S3AddonTestCase, testing.views.OAuthAddonConfigViewsTestCaseMi
 
         assert_equal(res.status_code, http.BAD_REQUEST)
 
-    @mock.patch('website.addons.niiswift.views.utils.can_list', return_value=False)
+    @mock.patch('website.addons.swift.views.utils.can_list', return_value=False)
     def test_user_settings_cant_list(self, mock_can_list):
         url = api_url_for('swift_add_user_account')
         rv = self.app.post_json(url, {
@@ -139,13 +139,13 @@ class TestS3Views(S3AddonTestCase, testing.views.OAuthAddonConfigViewsTestCaseMi
 
     ## Overrides ##
 
-    @mock.patch('website.addons.niiswift.model.get_bucket_names')
+    @mock.patch('website.addons.swift.model.get_bucket_names')
     def test_folder_list(self, mock_names):
         mock_names.return_value = ['bucket1', 'bucket2']
         super(TestS3Views, self).test_folder_list()
 
-    @mock.patch('website.addons.niiswift.model.bucket_exists')
-    @mock.patch('website.addons.niiswift.model.get_bucket_location_or_error')
+    @mock.patch('website.addons.swift.model.bucket_exists')
+    @mock.patch('website.addons.swift.model.get_bucket_location_or_error')
     def test_set_config(self, mock_location, mock_exists):
         mock_exists.return_value = True
         mock_location.return_value = ''
@@ -175,17 +175,17 @@ class TestCreateBucket(S3AddonTestCase):
         self.auth = self.user.auth
         self.project = ProjectFactory(creator=self.user)
 
-        self.project.add_addon('niiswift', auth=self.consolidated_auth)
-        self.project.creator.add_addon('niiswift')
+        self.project.add_addon('swift', auth=self.consolidated_auth)
+        self.project.creator.add_addon('swift')
 
-        self.user_settings = self.user.get_addon('niiswift')
+        self.user_settings = self.user.get_addon('swift')
         self.user_settings.access_key = 'We-Will-Rock-You'
         self.user_settings.secret_key = 'Idontknowanyqueensongs'
         self.user_settings.save()
 
-        self.node_settings = self.project.get_addon('niiswift')
+        self.node_settings = self.project.get_addon('swift')
         self.node_settings.bucket = 'Sheer-Heart-Attack'
-        self.node_settings.user_settings = self.project.creator.get_addon('niiswift')
+        self.node_settings.user_settings = self.project.creator.get_addon('swift')
 
         self.node_settings.save()
 
@@ -241,8 +241,8 @@ class TestCreateBucket(S3AddonTestCase):
         assert_true(validate_bucket_location('eu-west-1'))
 
 
-    @mock.patch('website.addons.niiswift.views.utils.create_bucket')
-    @mock.patch('website.addons.niiswift.views.utils.get_bucket_names')
+    @mock.patch('website.addons.swift.views.utils.create_bucket')
+    @mock.patch('website.addons.swift.views.utils.get_bucket_names')
     def test_create_bucket_pass(self, mock_names, mock_make):
         mock_make.return_value = True
         mock_names.return_value = [
@@ -263,20 +263,20 @@ class TestCreateBucket(S3AddonTestCase):
         assert_equal(ret.status_int, http.OK)
         assert_equal(ret.json, {})
 
-    @mock.patch('website.addons.niiswift.views.utils.create_bucket')
+    @mock.patch('website.addons.swift.views.utils.create_bucket')
     def test_create_bucket_fail(self, mock_make):
         error = S3ResponseError(418, 'because Im a test')
         error.message = 'This should work'
         mock_make.side_effect = error
 
-        url = "/api/v1/project/{0}/niiswift/newbucket/".format(self.project._id)
+        url = "/api/v1/project/{0}/swift/newbucket/".format(self.project._id)
         ret = self.app.post_json(url, {'bucket_name': 'doesntevenmatter'}, auth=self.user.auth, expect_errors=True)
 
         assert_equals(ret.body, '{"message": "This should work", "title": "Problem connecting to S3"}')
 
-    @mock.patch('website.addons.niiswift.views.utils.create_bucket')
+    @mock.patch('website.addons.swift.views.utils.create_bucket')
     def test_bad_location_fails(self, mock_make):
-        url = "/api/v1/project/{0}/niiswift/newbucket/".format(self.project._id)
+        url = "/api/v1/project/{0}/swift/newbucket/".format(self.project._id)
         ret = self.app.post_json(
             url,
             {

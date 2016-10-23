@@ -1,12 +1,12 @@
 # -*- coding: utf-8 -*-
 from website.addons.base.testing import OAuthAddonTestCaseMixin, AddonTestCase
-from website.addons.niiswift.provider import SwiftProvider
-from website.addons.niiswift.serializer import SwiftSerializer
-from website.addons.niiswift.tests.factories import SwiftAccountFactory
+from website.addons.swift.provider import SwiftProvider
+from website.addons.swift.serializer import SwiftSerializer
+from website.addons.swift.tests.factories import SwiftAccountFactory
 
 class SwiftAddonTestCase(OAuthAddonTestCaseMixin, AddonTestCase):
 
-    ADDON_SHORT_NAME = 'niiswift'
+    ADDON_SHORT_NAME = 'swift'
     ExternalAccountFactory = SwiftAccountFactory
     Provider = SwiftProvider
     Serializer = SwiftSerializer
