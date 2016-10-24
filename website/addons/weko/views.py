@@ -208,77 +208,25 @@ def weko_publish_dataset(node_addon, auth, **kwargs):
 def _weko_root_folder(node_addon, auth, **kwargs):
     node = node_addon.owner
 
-    default_version = 'latest-published'
-    version = 'latest-published' if not node.can_edit(auth) else default_version
-
     # Quit if no dataset linked
     if not node_addon.complete:
         return []
 
-    can_edit = node.can_edit(auth)
-
-    permissions = {
-        'edit': can_edit and not node.is_registration,
-        'view': node.can_view(auth)
-    }
-
-    try:
-        connection = client.connect_from_settings(node_addon)
-        dataverse = client.get_weko(connection, node_addon.weko_alias)
-        dataset = client.get_dataset(dataverse, node_addon.dataset_doi)
-    except SSLError:
-        return [rubeus.build_addon_root(
-            node_addon,
-            node_addon.dataset,
-            permissions=permissions,
-            private_key=kwargs.get('view_only', None),
-        )]
+    connection = client.connect_from_settings(node_addon)
+    weko = client.get_weko(connection, node_addon.weko_alias)
+    dataset = client.get_dataset(weko, node_addon.dataset_doi)
 
     # Quit if doi does not produce a dataset
     if dataset is None:
         return []
 
-    published_files = client.get_files(dataset, published=True)
-
-    # Produce draft version or quit if no published version is available
-    if not published_files:
-        if can_edit:
-            version = 'latest'
-        else:
-            return []
-
-    urls = {
-        'publish': node.api_url_for('weko_publish_dataset'),
-    }
-
-    # determine if there are any changes between the published and draft
-    # versions of the dataset
-    try:
-        dataset.get_metadata('latest-published')
-        dataset_is_published = True
-        dataset_draft_modified = dataset.get_state() == 'DRAFT'
-    except VersionJsonNotFoundError:
-        dataset_is_published = False
-        dataset_draft_modified = True
-
-    # Get the dataverse host
-    # (stored in oauth_key because dataverse doesn't use that)
-    weko_host = node_addon.external_account.oauth_key
-
     return [rubeus.build_addon_root(
         node_addon,
         node_addon.dataset,
-        urls=urls,
-        permissions=permissions,
+        permissions=[],
         dataset=node_addon.dataset,
-        doi=dataset.doi,
-        dataverse=dataverse.title,
-        hasPublishedFiles=bool(published_files),
-        dataverseIsPublished=dataverse.is_published,
-        datasetIsPublished=dataset_is_published,
-        datasetDraftModified=dataset_draft_modified,
-        version=version,
-        host=weko_host,
+        doi=dataset['href'],
+        weko=weko[1],
         private_key=kwargs.get('view_only', None),
     )]
 
@@ -321,15 +269,15 @@ def weko_get_widget_contents(node_addon, **kwargs):
     alias = node_addon.weko_alias
 
     connection = client.connect_from_settings_or_401(node_addon)
-    dataverse = client.get_weko(connection, alias)
-    dataset = client.get_dataset(dataverse, doi)
+    weko = client.get_weko(connection, alias)
+    dataset = client.get_dataset(weko, doi)
 
     if dataset is None:
         return {'data': data}, http.BAD_REQUEST
 
     weko_host = node_addon.external_account.oauth_key
-    weko_url = 'http://{0}/weko/{1}'.format(weko_host, alias)
-    dataset_url = 'https://doi.org/' + doi
+    weko_url = 'TODO' # TODO
+    dataset_url = 'TODO' # TODO
 
     data.update({
         'connected': True,
@@ -338,6 +286,6 @@ def weko_get_widget_contents(node_addon, **kwargs):
         'dataset': node_addon.dataset,
         'doi': doi,
         'datasetUrl': dataset_url,
-        'citation': dataset.citation,
+        'citation': []
     })
     return {'data': data}, http.OK

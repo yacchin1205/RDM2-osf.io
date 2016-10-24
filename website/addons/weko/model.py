@@ -54,6 +54,15 @@ class AddonWEKONodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
     _dataset_id = fields.StringField()
     dataset = fields.StringField()
 
+    _api = None
+
+    @property
+    def api(self):
+        """authenticated ExternalProvider instance"""
+        if self._api is None:
+            self._api = WEKOProvider(self.external_account)
+        return self._api
+
     @property
     def folder_name(self):
         return self.dataset
