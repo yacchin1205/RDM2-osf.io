@@ -91,13 +91,13 @@ class AddonWEKONodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
             auth=auth
         )
 
-    def set_folder(self, dataverse, dataset, auth=None):
-        self.weko_alias = dataverse.alias
-        self.dataverse = dataverse.title
+    def set_folder(self, weko, dataset, auth=None):
+        self.weko_alias = weko[1]
+        self.dataverse = weko[1]
 
-        self.dataset_doi = dataset.doi
-        self._dataset_id = dataset.id
-        self.dataset = dataset.title
+        self.dataset_doi = dataset['href']
+        self._dataset_id = dataset['href']
+        self.dataset = dataset['title']
 
         self.save()
 
@@ -107,7 +107,7 @@ class AddonWEKONodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
                 params={
                     'project': self.owner.parent_id,
                     'node': self.owner._id,
-                    'dataset': dataset.title,
+                    'dataset': dataset['title'],
                 },
                 auth=auth,
             )

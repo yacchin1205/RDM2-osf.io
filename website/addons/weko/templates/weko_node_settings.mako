@@ -38,12 +38,6 @@
         <div class="row">
             <div class="col-md-12">
 
-                <!-- The linked Dataverse Host -->
-                <p class="break-word">
-                    <strong>Dataverse Repository:</strong>
-                    <a data-bind="attr: {href: savedHostUrl()}, text: savedHost"></a>
-                </p>
-
                 <!-- The linked dataset -->
                 <p>
                     <strong>Current Dataset:</strong>

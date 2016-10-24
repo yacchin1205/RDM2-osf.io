@@ -40,7 +40,6 @@ function ViewModel(url) {
     self.datasetWasFound = ko.observable(false);
 
     self.accounts = ko.observable([]);
-    self.hosts = ko.observableArray([]);
     self.selectedHost = ko.observable();    // Host specified in select element
     self.customHost = ko.observable();      // Host specified in input element
     self.savedHost = ko.observable();       // Configured host
@@ -48,10 +47,6 @@ function ViewModel(url) {
     // Designated host, specified from select or input element
     self.host = ko.pureComputed(function() {
         return self.useCustomHost() ? self.customHost() : self.selectedHost();
-    });
-    // Hosts visible in select element. Includes presets and "Other" option
-    self.visibleHosts = ko.pureComputed(function() {
-        return self.hosts().concat([otherString]);
     });
     // Whether to use select element or input element for host designation
     self.useCustomHost = ko.pureComputed(function() {
@@ -246,7 +241,6 @@ ViewModel.prototype.updateFromData = function(data) {
     self.nodeHasAuth(data.nodeHasAuth);
     self.userHasAuth(data.userHasAuth);
     self.userIsOwner(data.userIsOwner);
-    self.hosts(data.hosts);
 
     if (self.nodeHasAuth()) {
         self.savedHost(data.dataverseHost);

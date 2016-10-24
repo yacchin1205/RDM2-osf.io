@@ -70,13 +70,13 @@ class DataverseSerializer(OAuthAddonSerializer):
             weko_host = external_account.oauth_key
 
             connection = client.connect_from_settings(self.node_settings)
-            dataverses = client.get_wekos(connection)
+            wekos = client.get_wekos(connection)
             result.update({
                 'dataverseHost': weko_host,
                 'connected': connection is not None,
                 'dataverses': [
-                    {'title': dataverse.title, 'alias': dataverse.alias}
-                    for dataverse in dataverses
+                    {'title': weko['title'], 'alias': weko['alias']}
+                    for weko in wekos
                 ],
                 'savedDataverse': {
                     'title': self.node_settings.dataverse,

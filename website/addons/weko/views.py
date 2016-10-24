@@ -143,12 +143,12 @@ def weko_set_config(node_addon, auth, **kwargs):
         return HTTPError(http.BAD_REQUEST)
 
     connection = client.connect_from_settings(node_addon)
-    dataverse = client.get_weko(connection, alias)
-    dataset = client.get_dataset(dataverse, doi)
+    weko = client.get_weko(connection, alias)
+    dataset = client.get_dataset(weko, doi)
 
-    node_addon.set_folder(dataverse, dataset, auth)
+    node_addon.set_folder(weko, dataset, auth)
 
-    return {'dataverse': dataverse.title, 'dataset': dataset.title}, http.OK
+    return {'dataverse': weko[1], 'dataset': dataset['title']}, http.OK
 
 
 @must_have_permission('write')
@@ -159,11 +159,11 @@ def weko_get_datasets(node_addon, **kwargs):
     alias = request.json.get('alias')
 
     connection = client.connect_from_settings(node_addon)
-    dataverse = client.get_weko(connection, alias)
-    datasets = client.get_datasets(dataverse)
+    weko = client.get_weko(connection, alias)
+    datasets = client.get_datasets(weko)
     ret = {
         'alias': alias,  # include alias to verify dataset container
-        'datasets': [{'title': dataset.title, 'doi': dataset.doi} for dataset in datasets],
+        'datasets': [{'title': dataset['title'], 'doi': dataset['href']} for dataset in datasets],
     }
     return ret, http.OK
 
@@ -182,8 +182,8 @@ def weko_publish_dataset(node_addon, auth, **kwargs):
 
     connection = client.connect_from_settings_or_401(node_addon)
 
-    dataverse = client.get_weko(connection, node_addon.weko_alias)
-    dataset = client.get_dataset(dataverse, node_addon.dataset_doi)
+    weko = client.get_weko(connection, node_addon.weko_alias)
+    dataset = client.get_dataset(weko, node_addon.dataset_doi)
 
     if publish_both:
         client.publish_weko(dataverse)

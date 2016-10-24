@@ -1,11 +1,37 @@
 import httplib as http
+import logging
+import requests
+from StringIO import StringIO
 
+from lxml import etree
 from dataverse import Connection
 from dataverse.exceptions import ConnectionError, UnauthorizedError, OperationFailedError
 
 from framework.exceptions import HTTPError
 
 from website.addons.weko import settings
+
+logger = logging.getLogger('addons.weko.client')
+
+APP_NAMESPACE = 'http://www.w3.org/2007/app'
+ATOM_NAMESPACE = 'http://www.w3.org/2005/Atom'
+
+class Connection(object):
+    host = None
+    token = None
+
+    def __init__(self, host, token):
+        self.host = host
+        self.token = token
+
+    def get(self, path):
+        headers = {"Authorization":"Bearer " + self.token}
+        resp = requests.get(self.host + path, headers=headers)
+        if resp.status_code != 200:
+            resp.raise_for_status()
+        tree = etree.parse(StringIO(resp.content))
+        logger.info('Connected: {}'.format(etree.tostring(tree)))
+        return tree
 
 def _connect(host, token):
     try:
@@ -18,11 +44,11 @@ def connect_from_settings(node_settings):
     if not (node_settings and node_settings.external_account):
         return None
 
-    host = node_settings.external_account.oauth_key
-    token = node_settings.external_account.oauth_secret
+    host = 'http://104.198.102.120/weko-oauth/htdocs/weko/sword/'
+    token = node_settings.external_account.oauth_key
 
     try:
-        return _connect(host, token)
+        return Connection(host, token)
     except UnauthorizedError:
         return None
 
@@ -41,8 +67,8 @@ def connect_from_settings_or_401(node_settings):
     if not (node_settings and node_settings.external_account):
         return None
 
-    host = node_settings.external_account.oauth_key
-    token = node_settings.external_account.oauth_secret
+    host = 'http://104.198.102.120/weko-oauth/htdocs/weko/sword/'
+    token = node_settings.external_account.oauth_key
 
     return connect_or_error(host, token)
 
@@ -52,63 +78,51 @@ def get_files(dataset, published=False):
     return dataset.get_files(version)
 
 
-def publish_weko(dataverse):
-    try:
-        dataverse.publish()
-    except OperationFailedError:
-        raise HTTPError(http.BAD_REQUEST)
-
-
-def publish_dataset(dataset):
-    if dataset.get_state() == 'RELEASED':
-        raise HTTPError(http.CONFLICT, data=dict(
-            message_short='Dataset conflict',
-            message_long='This version of the dataset has already been published.'
-        ))
-    if not dataset.dataverse.is_published:
-        raise HTTPError(http.METHOD_NOT_ALLOWED, data=dict(
-            message_short='Method not allowed',
-            message_long='A dataset cannot be published until its parent Dataverse is published.'
-        ))
-
-    try:
-        dataset.publish()
-    except OperationFailedError:
-        raise HTTPError(http.BAD_REQUEST)
-
-
-def get_datasets(dataverse):
-    if dataverse is None:
+def get_datasets(weko):
+    if weko is None:
         return []
-    return dataverse.get_datasets(timeout=settings.REQUEST_TIMEOUT)
+    connection, title = weko
+    root = connection.get('servicedocument.php')
+    datasets = []
+    for workspace in root.findall('.//{%s}workspace' % APP_NAMESPACE):
+        if title == workspace.find('{%s}title' % ATOM_NAMESPACE).text:
+            for collection in workspace.findall('{%s}collection' % APP_NAMESPACE):
+                dtitle = collection.find('{%s}title' % ATOM_NAMESPACE).text
+                dhref = collection.attrib['href']
+                datasets.append({'title': dtitle, 'href': dhref})
+
+    return datasets
 
 
-def get_dataset(dataverse, doi):
-    if dataverse is None:
+def get_dataset(weko, href):
+    if weko is None:
         return
-    dataset = dataverse.get_dataset_by_doi(doi, timeout=settings.REQUEST_TIMEOUT)
-    try:
-        if dataset and dataset.get_state() == 'DEACCESSIONED':
-            raise HTTPError(http.GONE, data=dict(
-                message_short='Dataset deaccessioned',
-                message_long='This dataset has been deaccessioned and can no longer be linked to the OSF.'
-            ))
-        return dataset
-    except UnicodeDecodeError:
-        raise HTTPError(http.NOT_ACCEPTABLE, data=dict(
-            message_short='Not acceptable',
-            message_long='This dataset cannot be connected due to forbidden '
-                         'characters in one or more of the file names.'
-        ))
+    connection, title = weko
+    root = connection.get('servicedocument.php')
+    datasets = []
+    for workspace in root.findall('.//{%s}workspace' % APP_NAMESPACE):
+        if title == workspace.find('{%s}title' % ATOM_NAMESPACE).text:
+            for collection in workspace.findall('{%s}collection' % APP_NAMESPACE):
+                dtitle = collection.find('{%s}title' % ATOM_NAMESPACE).text
+                dhref = collection.attrib['href']
+                if dhref == href:
+                    return {'title': dtitle, 'href': dhref}
+    return None
 
 
 def get_wekos(connection):
     if connection is None:
         return []
-    return connection.get_wekos()
+    root = connection.get('servicedocument.php')
+    wekos = []
+    for workspace in root.findall('.//{%s}workspace' % APP_NAMESPACE):
+        title = workspace.find('{%s}title' % ATOM_NAMESPACE).text
+        logger.info('title: {}'.format(title))
+        wekos.append({'title': title, 'alias': title})
+    return wekos
 
 
 def get_weko(connection, alias):
     if connection is None:
         return
-    return connection.get_weko(alias)
+    return (connection, alias)
