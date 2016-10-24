@@ -93,7 +93,7 @@ api_routes = {
             ],
             'get',
             views.weko_widget,
-            OsfWebRenderer('../addons/dataverse/templates/weko_widget.mako', trust=False),
+            OsfWebRenderer('../addons/weko/templates/weko_widget.mako', trust=False),
         ),
         Rule(
             [

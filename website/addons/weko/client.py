@@ -52,7 +52,7 @@ def get_files(dataset, published=False):
     return dataset.get_files(version)
 
 
-def publish_dataverse(dataverse):
+def publish_weko(dataverse):
     try:
         dataverse.publish()
     except OperationFailedError:
@@ -102,13 +102,13 @@ def get_dataset(dataverse, doi):
         ))
 
 
-def get_dataverses(connection):
+def get_wekos(connection):
     if connection is None:
         return []
-    return connection.get_dataverses()
+    return connection.get_wekos()
 
 
-def get_dataverse(connection, alias):
+def get_weko(connection, alias):
     if connection is None:
         return
-    return connection.get_dataverse(alias)
+    return connection.get_weko(alias)

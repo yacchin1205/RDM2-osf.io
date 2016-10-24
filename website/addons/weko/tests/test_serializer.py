@@ -8,12 +8,12 @@ from tests.factories import AuthUserFactory
 from framework.auth import Auth
 
 from website.addons.base.testing.serializers import OAuthAddonSerializerTestSuiteMixin
-from website.addons.dataverse.tests.utils import (
+from website.addons.weko.tests.utils import (
     create_mock_connection, DataverseAddonTestCase, create_external_account,
 )
-from website.addons.dataverse.serializer import DataverseSerializer
-from website.addons.dataverse.model import DataverseProvider
-from website.addons.dataverse.tests.factories import DataverseAccountFactory
+from website.addons.weko.serializer import DataverseSerializer
+from website.addons.weko.model import DataverseProvider
+from website.addons.weko.tests.factories import DataverseAccountFactory
 from website.util import api_url_for
 
 
@@ -33,7 +33,7 @@ class TestDataverseSerializer(DataverseAddonTestCase, OAuthAddonSerializerTestSu
             user_settings=self.user_settings,
             node_settings=self.node_settings
         )
-        self.mock_api = mock.patch('website.addons.dataverse.serializer.client.connect_from_settings')
+        self.mock_api = mock.patch('website.addons.weko.serializer.client.connect_from_settings')
         self.mock_api.return_value = create_mock_connection()
         self.mock_api.start()
 

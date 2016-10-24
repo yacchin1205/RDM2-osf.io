@@ -592,6 +592,6 @@ function DataverseNodeConfig(selector, url) {
     self.url = url;
     // On success, instantiate and bind the ViewModel
     self.viewModel = new ViewModel(url);
-    $osf.applyBindings(self.viewModel, '#dataverseScope');
+    $osf.applyBindings(self.viewModel, '#wekoScope');
 }
 module.exports = DataverseNodeConfig;

@@ -48,7 +48,7 @@ class AddonWEKONodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
     oauth_provider = WEKOProvider
     serializer = DataverseSerializer
 
-    dataverse_alias = fields.StringField()
+    weko_alias = fields.StringField()
     dataverse = fields.StringField()
     dataset_doi = fields.StringField()
     _dataset_id = fields.StringField()
@@ -60,9 +60,9 @@ class AddonWEKONodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
 
     @property
     def dataset_id(self):
-        if self._dataset_id is None and (self.dataverse_alias and self.dataset_doi):
+        if self._dataset_id is None and (self.weko_alias and self.dataset_doi):
             connection = connect_from_settings_or_401(self)
-            dataverse = connection.get_dataverse(self.dataverse_alias)
+            dataverse = connection.get_weko(self.weko_alias)
             dataset = dataverse.get_dataset_by_doi(self.dataset_doi)
             self._dataset_id = dataset.id
             self.save()
@@ -92,7 +92,7 @@ class AddonWEKONodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
         )
 
     def set_folder(self, dataverse, dataset, auth=None):
-        self.dataverse_alias = dataverse.alias
+        self.weko_alias = dataverse.alias
         self.dataverse = dataverse.title
 
         self.dataset_doi = dataset.doi
@@ -103,7 +103,7 @@ class AddonWEKONodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
 
         if auth:
             self.owner.add_log(
-                action='dataverse_dataset_linked',
+                action='weko_dataset_linked',
                 params={
                     'project': self.owner.parent_id,
                     'node': self.owner._id,
@@ -123,7 +123,7 @@ class AddonWEKONodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
 
     def clear_settings(self):
         """Clear selected Dataverse and dataset"""
-        self.dataverse_alias = None
+        self.weko_alias = None
         self.dataverse = None
         self.dataset_doi = None
         self._dataset_id = None
@@ -138,7 +138,7 @@ class AddonWEKONodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
         if add_log and auth:
             node = self.owner
             self.owner.add_log(
-                action='dataverse_node_deauthorized',
+                action='weko_node_deauthorized',
                 params={
                     'project': node.parent_id,
                     'node': node._id,
@@ -164,7 +164,7 @@ class AddonWEKONodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
     def create_waterbutler_log(self, auth, action, metadata):
         url = self.owner.web_url_for('addon_view_or_download_file', path=metadata['path'], provider='dataverse')
         self.owner.add_log(
-            'dataverse_{0}'.format(action),
+            'weko_{0}'.format(action),
             auth=auth,
             params={
                 'project': self.owner.parent_id,

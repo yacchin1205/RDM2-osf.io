@@ -1,7 +1,7 @@
 % if complete:
 <%inherit file="project/addon/widget.mako"/>
 
-    <div id="dataverseScope" class="scripted">
+    <div id="wekoScope" class="scripted">
 
 
         <span data-bind="if: loaded">

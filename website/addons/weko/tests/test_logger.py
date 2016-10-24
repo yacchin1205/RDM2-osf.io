@@ -3,7 +3,7 @@
 from nose.tools import *  # noqa (PEP8 asserts)
 
 from website.addons.base.testing.logger import StorageAddonNodeLoggerTestSuiteMixin
-from website.addons.dataverse.utils import DataverseNodeLogger
+from website.addons.weko.utils import DataverseNodeLogger
 
 from tests.base import OsfTestCase
 

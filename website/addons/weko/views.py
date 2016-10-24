@@ -14,7 +14,6 @@ from framework.exceptions import HTTPError
 from website.addons.base import generic_views
 from website.addons.weko import client
 from website.addons.weko.model import WEKOProvider
-from website.addons.weko.settings import DEFAULT_HOSTS
 from website.addons.weko.serializer import DataverseSerializer
 from dataverse.exceptions import VersionJsonNotFoundError
 from website.oauth.models import ExternalAccount
@@ -65,10 +64,9 @@ def weko_user_config_get(auth, **kwargs):
         'result': {
             'userHasAuth': user_has_auth,
             'urls': {
-                'create': api_url_for('dataverse_add_user_account'),
-                'accounts': api_url_for('dataverse_account_list'),
+                'create': api_url_for('weko_add_user_account'),
+                'accounts': api_url_for('weko_account_list'),
             },
-            'hosts': DEFAULT_HOSTS,
         },
     }, http.OK
 
@@ -145,7 +143,7 @@ def weko_set_config(node_addon, auth, **kwargs):
         return HTTPError(http.BAD_REQUEST)
 
     connection = client.connect_from_settings(node_addon)
-    dataverse = client.get_dataverse(connection, alias)
+    dataverse = client.get_weko(connection, alias)
     dataset = client.get_dataset(dataverse, doi)
 
     node_addon.set_folder(dataverse, dataset, auth)
@@ -161,7 +159,7 @@ def weko_get_datasets(node_addon, **kwargs):
     alias = request.json.get('alias')
 
     connection = client.connect_from_settings(node_addon)
-    dataverse = client.get_dataverse(connection, alias)
+    dataverse = client.get_weko(connection, alias)
     datasets = client.get_datasets(dataverse)
     ret = {
         'alias': alias,  # include alias to verify dataset container
@@ -184,16 +182,16 @@ def weko_publish_dataset(node_addon, auth, **kwargs):
 
     connection = client.connect_from_settings_or_401(node_addon)
 
-    dataverse = client.get_dataverse(connection, node_addon.dataverse_alias)
+    dataverse = client.get_weko(connection, node_addon.weko_alias)
     dataset = client.get_dataset(dataverse, node_addon.dataset_doi)
 
     if publish_both:
-        client.publish_dataverse(dataverse)
+        client.publish_weko(dataverse)
     client.publish_dataset(dataset)
 
     # Add a log
     node.add_log(
-        action='dataverse_dataset_published',
+        action='weko_dataset_published',
         params={
             'project': node.parent_id,
             'node': node._id,
@@ -226,7 +224,7 @@ def _weko_root_folder(node_addon, auth, **kwargs):
 
     try:
         connection = client.connect_from_settings(node_addon)
-        dataverse = client.get_dataverse(connection, node_addon.dataverse_alias)
+        dataverse = client.get_weko(connection, node_addon.weko_alias)
         dataset = client.get_dataset(dataverse, node_addon.dataset_doi)
     except SSLError:
         return [rubeus.build_addon_root(
@@ -250,7 +248,7 @@ def _weko_root_folder(node_addon, auth, **kwargs):
             return []
 
     urls = {
-        'publish': node.api_url_for('dataverse_publish_dataset'),
+        'publish': node.api_url_for('weko_publish_dataset'),
     }
 
     # determine if there are any changes between the published and draft
@@ -265,7 +263,7 @@ def _weko_root_folder(node_addon, auth, **kwargs):
 
     # Get the dataverse host
     # (stored in oauth_key because dataverse doesn't use that)
-    dataverse_host = node_addon.external_account.oauth_key
+    weko_host = node_addon.external_account.oauth_key
 
     return [rubeus.build_addon_root(
         node_addon,
@@ -280,7 +278,7 @@ def _weko_root_folder(node_addon, auth, **kwargs):
         datasetIsPublished=dataset_is_published,
         datasetDraftModified=dataset_draft_modified,
         version=version,
-        host=dataverse_host,
+        host=weko_host,
         private_key=kwargs.get('view_only', None),
     )]
 
@@ -320,23 +318,23 @@ def weko_get_widget_contents(node_addon, **kwargs):
         return {'data': data}, http.OK
 
     doi = node_addon.dataset_doi
-    alias = node_addon.dataverse_alias
+    alias = node_addon.weko_alias
 
     connection = client.connect_from_settings_or_401(node_addon)
-    dataverse = client.get_dataverse(connection, alias)
+    dataverse = client.get_weko(connection, alias)
     dataset = client.get_dataset(dataverse, doi)
 
     if dataset is None:
         return {'data': data}, http.BAD_REQUEST
 
-    dataverse_host = node_addon.external_account.oauth_key
-    dataverse_url = 'http://{0}/dataverse/{1}'.format(dataverse_host, alias)
+    weko_host = node_addon.external_account.oauth_key
+    weko_url = 'http://{0}/weko/{1}'.format(weko_host, alias)
     dataset_url = 'https://doi.org/' + doi
 
     data.update({
         'connected': True,
         'dataverse': node_addon.dataverse,
-        'dataverseUrl': dataverse_url,
+        'dataverseUrl': weko_url,
         'dataset': node_addon.dataset,
         'doi': doi,
         'datasetUrl': dataset_url,

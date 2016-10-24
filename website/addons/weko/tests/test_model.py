@@ -6,12 +6,12 @@ from framework.auth.decorators import Auth
 
 from website.addons.base.testing import models
 
-from website.addons.dataverse.model import AddonDataverseNodeSettings
-from website.addons.dataverse.tests.factories import (
+from website.addons.weko.model import AddonDataverseNodeSettings
+from website.addons.weko.tests.factories import (
     DataverseAccountFactory, DataverseNodeSettingsFactory,
     DataverseUserSettingsFactory
 )
-from website.addons.dataverse.tests import utils 
+from website.addons.weko.tests import utils 
 
 class TestNodeSettings(models.OAuthAddonNodeSettingsTestSuiteMixin, utils.DataverseAddonTestCase):
 
@@ -66,7 +66,7 @@ class TestNodeSettings(models.OAuthAddonNodeSettingsTestSuiteMixin, utils.Datave
         )
 
     def test_set_folder(self):
-        dataverse = utils.create_mock_dataverse()
+        dataverse = utils.create_mock_weko()
         dataset = utils.create_mock_dataset()
         self.node_settings.set_folder(dataverse, dataset, auth=Auth(self.user))
         # Folder was set

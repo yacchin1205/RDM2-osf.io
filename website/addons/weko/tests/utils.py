@@ -4,8 +4,8 @@ from dataverse import Connection, Dataverse, Dataset, DataverseFile
 
 from tests.factories import ExternalAccountFactory
 from website.addons.base.testing import OAuthAddonTestCaseMixin, AddonTestCase
-from website.addons.dataverse.model import DataverseProvider
-from website.addons.dataverse.tests.factories import DataverseAccountFactory
+from website.addons.weko.model import DataverseProvider
+from website.addons.weko.tests.factories import DataverseAccountFactory
 
 
 class DataverseAddonTestCase(OAuthAddonTestCaseMixin, AddonTestCase):
@@ -15,7 +15,7 @@ class DataverseAddonTestCase(OAuthAddonTestCaseMixin, AddonTestCase):
 
     def set_node_settings(self, settings):
         super(DataverseAddonTestCase, self).set_node_settings(settings)
-        settings.dataverse_alias = 'ALIAS2'
+        settings.weko_alias = 'ALIAS2'
         settings.dataverse = 'Example 2'
         settings.dataset_doi = 'doi:12.3456/DVN/00001'
         settings._dataset_id = '18'
@@ -26,7 +26,7 @@ class DataverseAddonTestCase(OAuthAddonTestCaseMixin, AddonTestCase):
 
 def create_external_account(host='foo.bar.baz', token='doremi-abc-123'):
     """Creates external account for Dataverse with fields populated the same
-    way as `dataverse_add_user_account`"""
+    way as `weko_add_user_account`"""
 
     return ExternalAccountFactory(
         provider='dataverse',
@@ -54,37 +54,37 @@ def create_mock_connection(token='snowman-frosty'):
 
     mock_connection.token = token
 
-    mock_connection.get_dataverses.return_value = [
-        create_mock_dataverse('Example 1'),
-        create_mock_dataverse('Example 2'),
-        create_mock_dataverse('Example 3'),
+    mock_connection.get_wekos.return_value = [
+        create_mock_weko('Example 1'),
+        create_mock_weko('Example 2'),
+        create_mock_weko('Example 3'),
     ]
 
-    def _get_dataverse(alias):
+    def _get_weko(alias):
         return next((
-            dataverse for dataverse in mock_connection.get_dataverses()
+            dataverse for dataverse in mock_connection.get_wekos()
             if alias is not None and dataverse.title[-1] == alias[-1]), None
         )
 
-    mock_connection.get_dataverse = mock.MagicMock(
-        side_effect=_get_dataverse
+    mock_connection.get_weko = mock.MagicMock(
+        side_effect=_get_weko
     )
-    mock_connection.get_dataverse.return_value = create_mock_dataverse()
+    mock_connection.get_weko.return_value = create_mock_weko()
 
     return mock_connection
 
 
-def create_mock_dataverse(title='Example Dataverse 0'):
+def create_mock_weko(title='Example Dataverse 0'):
 
-    mock_dataverse = mock.create_autospec(Dataverse)
+    mock_weko = mock.create_autospec(Dataverse)
 
-    type(mock_dataverse).title = mock.PropertyMock(return_value=title)
-    type(mock_dataverse).is_published = mock.PropertyMock(return_value=True)
-    type(mock_dataverse).alias = mock.PropertyMock(
+    type(mock_weko).title = mock.PropertyMock(return_value=title)
+    type(mock_weko).is_published = mock.PropertyMock(return_value=True)
+    type(mock_weko).alias = mock.PropertyMock(
         return_value='ALIAS{}'.format(title[-1])
     )
 
-    mock_dataverse.get_datasets.return_value = [
+    mock_weko.get_datasets.return_value = [
         create_mock_dataset('DVN/00001'),
         create_mock_dataset('DVN/00002'),
         create_mock_dataset('DVN/00003'),
@@ -92,15 +92,15 @@ def create_mock_dataverse(title='Example Dataverse 0'):
 
     def _get_dataset_by_doi(doi, timeout=None):
         return next((
-            dataset for dataset in mock_dataverse.get_datasets(timeout=timeout)
+            dataset for dataset in mock_weko.get_datasets(timeout=timeout)
             if dataset.doi == doi), None
         )
 
-    mock_dataverse.get_dataset_by_doi = mock.MagicMock(
+    mock_weko.get_dataset_by_doi = mock.MagicMock(
         side_effect=_get_dataset_by_doi
     )
 
-    return mock_dataverse
+    return mock_weko
 
 
 def create_mock_dataset(id='DVN/12345'):
@@ -150,9 +150,9 @@ mock_responses = {
         u'name': u'file.txt',
         u'ext': u'.txt',
         u'file_id': u'54321',
-        u'urls': {u'download': u'/project/xxxxx/dataverse/file/54321/download/',
-                 u'delete': u'/api/v1/project/xxxxx/dataverse/file/54321/',
-                 u'view': u'/project/xxxxx/dataverse/file/54321/'},
+        u'urls': {u'download': u'/project/xxxxx/weko/file/54321/download/',
+                 u'delete': u'/api/v1/project/xxxxx/weko/file/54321/',
+                 u'view': u'/project/xxxxx/weko/file/54321/'},
         u'permissions': {u'edit': False, u'view': True},
         u'addon': u'dataverse',
         u'hasPublishedFiles': True,

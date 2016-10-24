@@ -1,6 +1,5 @@
 from website.addons.base.serializer import OAuthAddonSerializer
 from website.addons.weko import client
-from website.addons.weko.settings import DEFAULT_HOSTS
 from website.util import api_url_for, web_url_for
 
 
@@ -51,30 +50,29 @@ class DataverseSerializer(OAuthAddonSerializer):
         return {
             'auth': api_url_for('oauth_connect',
                                 service_name='weko'),
-            'create': api_url_for('dataverse_add_user_account'),
-            'set': node.api_url_for('dataverse_set_config'),
-            'importAuth': node.api_url_for('dataverse_import_auth'),
-            'deauthorize': node.api_url_for('dataverse_deauthorize_node'),
-            'getDatasets': node.api_url_for('dataverse_get_datasets'),
+            'create': api_url_for('weko_add_user_account'),
+            'set': node.api_url_for('weko_set_config'),
+            'importAuth': node.api_url_for('weko_import_auth'),
+            'deauthorize': node.api_url_for('weko_deauthorize_node'),
+            'getDatasets': node.api_url_for('weko_get_datasets'),
             'datasetPrefix': 'https://doi.org/',
-            'dataversePrefix': 'http://{0}/dataverse/'.format(host),
-            'accounts': api_url_for('dataverse_account_list'),
+            'dataversePrefix': 'http://{0}/weko/'.format(host),
+            'accounts': api_url_for('weko_account_list'),
         }
 
     @property
     def serialized_node_settings(self):
         result = super(DataverseSerializer, self).serialized_node_settings
-        result['hosts'] = DEFAULT_HOSTS
 
         # Update with Dataverse specific fields
         if self.node_settings.has_auth:
             external_account = self.node_settings.external_account
-            dataverse_host = external_account.oauth_key
+            weko_host = external_account.oauth_key
 
             connection = client.connect_from_settings(self.node_settings)
-            dataverses = client.get_dataverses(connection)
+            dataverses = client.get_wekos(connection)
             result.update({
-                'dataverseHost': dataverse_host,
+                'dataverseHost': weko_host,
                 'connected': connection is not None,
                 'dataverses': [
                     {'title': dataverse.title, 'alias': dataverse.alias}
@@ -82,7 +80,7 @@ class DataverseSerializer(OAuthAddonSerializer):
                 ],
                 'savedDataverse': {
                     'title': self.node_settings.dataverse,
-                    'alias': self.node_settings.dataverse_alias,
+                    'alias': self.node_settings.weko_alias,
                 },
                 'savedDataset': {
                     'title': self.node_settings.dataset,

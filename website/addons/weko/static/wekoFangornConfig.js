@@ -20,7 +20,7 @@ function _downloadEvent(event, item, col) {
 }
 
 // Define Fangorn Button Actions
-var _dataverseItemButtons = {
+var _wekoItemButtons = {
     view: function (ctrl, args, children) {
         var buttons = [];
         var tb = args.treebeard;
@@ -331,5 +331,5 @@ Fangorn.config.dataverse = {
     resolveRows: _fangornColumns,
     lazyload:_fangornLazyLoad,
     canDrop: _canDrop,
-    itemButtons: _dataverseItemButtons
+    itemButtons: _wekoItemButtons
 };

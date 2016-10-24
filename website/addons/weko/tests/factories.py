@@ -3,7 +3,7 @@
 from factory import SubFactory, Sequence
 from tests.factories import ModularOdmFactory, UserFactory, ProjectFactory, ExternalAccountFactory
 
-from website.addons.dataverse.model import (
+from website.addons.weko.model import (
     AddonDataverseUserSettings,
     AddonDataverseNodeSettings
 )

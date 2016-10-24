@@ -2,8 +2,8 @@ from nose.tools import *
 
 from dataverse import Dataverse, Dataset, DataverseFile
 
-from website.addons.dataverse.tests.utils import (
-    create_mock_dataverse, create_mock_dataset, create_mock_draft_file,
+from website.addons.weko.tests.utils import (
+    create_mock_weko, create_mock_dataset, create_mock_draft_file,
     create_mock_connection, DataverseAddonTestCase,
 )
 
@@ -13,15 +13,15 @@ class TestUtils(DataverseAddonTestCase):
     def test_mock_connection(self):
         mock_connection = create_mock_connection()
         assert_equal(mock_connection.token, 'snowman-frosty')
-        assert_equal(len(mock_connection.get_dataverses()), 3)
-        assert_is_instance(mock_connection.get_dataverses()[0], Dataverse)
+        assert_equal(len(mock_connection.get_wekos()), 3)
+        assert_is_instance(mock_connection.get_wekos()[0], Dataverse)
         assert_equal(
-            mock_connection.get_dataverse(mock_connection.get_dataverses()[1].alias),
-            mock_connection.get_dataverses()[1],
+            mock_connection.get_weko(mock_connection.get_wekos()[1].alias),
+            mock_connection.get_wekos()[1],
         )
 
-    def test_mock_dataverse(self):
-        mock_dv = create_mock_dataverse('Example 1')
+    def test_mock_weko(self):
+        mock_dv = create_mock_weko('Example 1')
         assert_equal(mock_dv.title, 'Example 1')
         assert_true(mock_dv.is_published)
         assert_equal(mock_dv.alias, 'ALIAS1')
