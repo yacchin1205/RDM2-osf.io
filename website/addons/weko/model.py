@@ -158,7 +158,7 @@ class AddonWEKONodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
     def serialize_waterbutler_credentials(self):
         if not self.has_auth:
             raise exceptions.AddonError('Addon is not authorized')
-        return {'token': self.external_account.oauth_secret}
+        return {'token': self.external_account.oauth_key}
 
     def serialize_waterbutler_settings(self):
         if not self.folder_id:
