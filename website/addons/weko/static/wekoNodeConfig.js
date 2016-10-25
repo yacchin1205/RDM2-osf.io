@@ -579,7 +579,7 @@ ViewModel.prototype.changeMessage = function(text, css, timeout) {
     }
 };
 
-function DataverseNodeConfig(selector, url) {
+function WEKONodeConfig(selector, url) {
     // Initialization code
     var self = this;
     self.selector = selector;
@@ -588,4 +588,4 @@ function DataverseNodeConfig(selector, url) {
     self.viewModel = new ViewModel(url);
     $osf.applyBindings(self.viewModel, '#wekoScope');
 }
-module.exports = DataverseNodeConfig;
+module.exports = WEKONodeConfig;

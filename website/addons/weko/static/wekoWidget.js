@@ -58,11 +58,11 @@ function ViewModel(url) {
 }
 
 // Public API
-function DataverseWidget(selector, url) {
+function WEKOWidget(selector, url) {
     var self = this;
     self.viewModel = new ViewModel(url);
     $osf.applyBindings(self.viewModel, selector);
     self.viewModel.init();
 }
 
-module.exports = DataverseWidget;
+module.exports = WEKOWidget;

@@ -1,7 +1,7 @@
-var DataverseWidget = require('./wekoWidget.js');
+var WEKOWidget = require('./wekoWidget.js');
 
 var url = window.contextVars.node.urls.api + 'weko/widget/contents/';
 // #wekoScope will only be in the DOM if the addon is properly configured
 if ($('#wekoScope')[0]) {
-    new DataverseWidget('#wekoScope', url);
+    new WEKOWidget('#wekoScope', url);
 }
