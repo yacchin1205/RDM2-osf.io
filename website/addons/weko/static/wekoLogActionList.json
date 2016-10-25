@@ -1,11 +1,11 @@
 {
-    "weko_file_added" : "${user} added file ${filename} to Dataverse dataset ${dataset} in ${node}",
-    "weko_file_removed" : "${user} removed file ${filename} from Dataverse dataset ${dataset} in ${node}",
-    "weko_dataset_linked" : "${user} linked Dataverse dataset ${dataset} to ${node}",
-    "weko_study_linked" : "${user} linked Dataverse dataset ${study} to ${node}",
-    "weko_dataset_published" : "${user} published a new version of Dataverse dataset ${dataset} on ${node}",
-    "weko_study_released" : "${user} published a new version of Dataverse dataset ${study} to ${node}",
-    "weko_node_authorized" : "${user} authorized the Dataverse addon for ${node}",
-    "weko_node_deauthorized" : "${user} deauthorized the Dataverse addon for ${node}",
-    "weko_node_deauthorized_no_user" : "Dataverse addon for ${node} deauthorized"
+    "weko_file_added" : "${user} added file ${filename} to WEKO dataset ${dataset} in ${node}",
+    "weko_file_removed" : "${user} removed file ${filename} from WEKO dataset ${dataset} in ${node}",
+    "weko_dataset_linked" : "${user} linked WEKO dataset ${dataset} to ${node}",
+    "weko_study_linked" : "${user} linked WEKO dataset ${study} to ${node}",
+    "weko_dataset_published" : "${user} published a new version of WEKO dataset ${dataset} on ${node}",
+    "weko_study_released" : "${user} published a new version of WEKO dataset ${study} to ${node}",
+    "weko_node_authorized" : "${user} authorized the WEKO addon for ${node}",
+    "weko_node_deauthorized" : "${user} deauthorized the WEKO addon for ${node}",
+    "weko_node_deauthorized_no_user" : "WEKO addon for ${node} deauthorized"
 }
