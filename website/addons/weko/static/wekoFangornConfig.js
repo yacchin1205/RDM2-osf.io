@@ -325,7 +325,7 @@ function _canDrop(item) {
         item.data.version === 'latest';
 }
 
-Fangorn.config.dataverse = {
+Fangorn.config.weko = {
     folderIcon: _fangornFolderIcons,
     resolveDeleteUrl: _fangornDeleteUrl,
     resolveRows: _fangornColumns,
