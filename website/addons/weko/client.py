@@ -4,8 +4,6 @@ import requests
 from StringIO import StringIO
 
 from lxml import etree
-from dataverse import Connection
-from dataverse.exceptions import ConnectionError, UnauthorizedError, OperationFailedError
 
 from framework.exceptions import HTTPError
 

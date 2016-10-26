@@ -79,7 +79,7 @@ class DataverseSerializer(OAuthAddonSerializer):
                     for weko in wekos
                 ],
                 'savedDataverse': {
-                    'title': self.node_settings.dataverse,
+                    'title': self.node_settings.weko,
                     'alias': self.node_settings.weko_alias,
                 },
                 'savedDataset': {

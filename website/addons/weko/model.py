@@ -49,7 +49,7 @@ class AddonWEKONodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
     serializer = DataverseSerializer
 
     weko_alias = fields.StringField()
-    dataverse = fields.StringField()
+    weko = fields.StringField()
     dataset_doi = fields.StringField()
     _dataset_id = fields.StringField()
     dataset = fields.StringField()
@@ -71,8 +71,8 @@ class AddonWEKONodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
     def dataset_id(self):
         if self._dataset_id is None and (self.weko_alias and self.dataset_doi):
             connection = connect_from_settings_or_401(self)
-            dataverse = connection.get_weko(self.weko_alias)
-            dataset = dataverse.get_dataset_by_doi(self.dataset_doi)
+            weko = connection.get_weko(self.weko_alias)
+            dataset = weko.get_dataset_by_doi(self.dataset_doi)
             self._dataset_id = dataset.id
             self.save()
         return self._dataset_id
@@ -102,7 +102,7 @@ class AddonWEKONodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
 
     def set_folder(self, weko, dataset, auth=None):
         self.weko_alias = weko[1]
-        self.dataverse = weko[1]
+        self.weko = weko[1]
 
         self.dataset_doi = dataset['href']
         self._dataset_id = dataset['href']
@@ -133,7 +133,7 @@ class AddonWEKONodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
     def clear_settings(self):
         """Clear selected Dataverse and dataset"""
         self.weko_alias = None
-        self.dataverse = None
+        self.weko = None
         self.dataset_doi = None
         self._dataset_id = None
         self.dataset = None
@@ -171,7 +171,7 @@ class AddonWEKONodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
         }
 
     def create_waterbutler_log(self, auth, action, metadata):
-        url = self.owner.web_url_for('addon_view_or_download_file', path=metadata['path'], provider='dataverse')
+        url = self.owner.web_url_for('addon_view_or_download_file', path=metadata['path'], provider='weko')
         self.owner.add_log(
             'weko_{0}'.format(action),
             auth=auth,

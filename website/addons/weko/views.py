@@ -15,7 +15,6 @@ from website.addons.base import generic_views
 from website.addons.weko import client
 from website.addons.weko.model import WEKOProvider
 from website.addons.weko.serializer import DataverseSerializer
-from dataverse.exceptions import VersionJsonNotFoundError
 from website.oauth.models import ExternalAccount
 from website.project.decorators import (
     must_have_addon, must_be_addon_authorizer,
@@ -186,7 +185,7 @@ def weko_publish_dataset(node_addon, auth, **kwargs):
     dataset = client.get_dataset(weko, node_addon.dataset_doi)
 
     if publish_both:
-        client.publish_weko(dataverse)
+        client.publish_weko(weko)
     client.publish_dataset(dataset)
 
     # Add a log
@@ -223,7 +222,7 @@ def _weko_root_folder(node_addon, auth, **kwargs):
     return [rubeus.build_addon_root(
         node_addon,
         node_addon.dataset,
-        permissions=[],
+        permissions={'view': True, 'edit': True},
         dataset=node_addon.dataset,
         doi=dataset['href'],
         weko=weko[1],
@@ -281,7 +280,7 @@ def weko_get_widget_contents(node_addon, **kwargs):
 
     data.update({
         'connected': True,
-        'dataverse': node_addon.dataverse,
+        'dataverse': node_addon.weko,
         'dataverseUrl': weko_url,
         'dataset': node_addon.dataset,
         'doi': doi,
