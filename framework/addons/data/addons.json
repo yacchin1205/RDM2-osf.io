@@ -180,6 +180,36 @@
                 "text": "Dataverse content will be registered, but version history will not be copied to the registration."
             }
         },
+        "WEKO": {
+            "Permissions": {
+                "status": "partial",
+                "text": "Making an OSF project public or private is independent of making a Dataverse study public or private. The OSF allows you to release the latest draft version of a Dataverse dataset."
+            },
+            "View / download file versions": {
+                "status": "partial",
+                "text": "Files from the latest release of the selected Dataverse study can be viewed/downloaded. OSF users with write permissions can view/download draft files as well."
+            },
+            "Add / update files": {
+                "status": "full",
+                "text": "Adding/updating files in the project via OSF will be reflected in Dataverse."
+            },
+            "Delete files": {
+                "status": "full",
+                "text": "Files deleted via OSF will be deleted in Dataverse."
+            },
+            "Logs": {
+                "status": "partial",
+                "text": "The OSF keeps track of changes you make to your Dataverse studies through the OSF, but not for changes made using Dataverse directly."
+            },
+            "Forking": {
+                "status": "partial",
+                "text": "Forking a project or component does not copy Dataverse authorization unless the user forking the project is the same user who authorized the Dataverse add-on in the source project being forked."
+            },
+            "Registering": {
+                "status": "partial",
+                "text": "Dataverse content will be registered, but version history will not be copied to the registration."
+            }
+        },
         "Google Drive": {
             "Permissions": {
                 "status": "partial",

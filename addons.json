@@ -2,6 +2,7 @@
     "addons": [
         "box",
         "dataverse",
+        "weko",
         "dropbox",
         "figshare",
         "forward",
@@ -20,6 +21,7 @@
         "osfstorage": "full",
         "box": "partial",
         "dataverse": "partial",
+        "weko": "partial",
         "dropbox": "partial",
         "figshare": "partial",
         "forward": "full",
@@ -34,6 +36,7 @@
         "osfstorage",
         "box",
         "dataverse",
+        "weko",
         "dropbox",
         "figshare",
         "github",
@@ -49,6 +52,7 @@
     "addons_description": {
         "box": "Box is a file storage add-on. Connect your Box account to an OSF project to interact with files hosted on Box via the OSF.",
         "dataverse": "Dataverse is an open source software application to share, cite, and archive data. Connect your Dataverse account to share your Dataverse datasets via the OSF.",
+        "weko": "WEKO is an application server to share, archive data.",
         "dropbox": "Dropbox is a file storage add-on. Connect your Dropbox account to an OSF project to interact with files hosted on Dropbox via the OSF.",
         "figshare": "Figshare is an online digital repository. Connect your figshare account to share your figshare files along with other materials in your OSF project.",
         "forward": "The External Link add-on allows you to provide a link to a website outside of the OSF.",
@@ -66,6 +70,7 @@
     "addons_url": {
         "box": "http://www.box.com",
         "dataverse": "https://dataverse.harvard.edu/",
+        "weko": "https://weko.at.nii.ac.jp/",
         "dropbox": "http://www.dropbox.com",
         "figshare": "http://www.figshare.com",
         "github": "http://www.github.com",
