@@ -60,6 +60,36 @@
                 "text": "S3 content will be registered, but version history will not be copied to the registration."
             }
         },
+        "NII Swift": {
+            "Permissions": {
+                "status": "partial",
+                "text": "Making an OSF project public or private is independent of making an Swift container public or private."
+            },
+            "View / download file versions": {
+                "status": "partial",
+                "text": "The Swift add-on supports file versions if versioning is enabled for your Swift containers."
+            },
+            "Add / update files": {
+                "status": "full",
+                "text": "Adding/updating files in the project via OSF will be reflected in NII Swift."
+            },
+            "Delete files": {
+                "status": "full",
+                "text": "Files deleted via OSF will be deleted in NII Swift."
+            },
+            "Logs": {
+                "status": "partial",
+                "text": "The OSF keeps track of changes you make to your Swift containers through the OSF, but not for changes made using Swift directly."
+            },
+            "Forking": {
+                "status": "partial",
+                "text": "Forking a project or component does not copy Swift authorization unless the user forking the project is the same user who authorized the Swift add-on in the source project being forked."
+            },
+            "Registering": {
+                "status": "partial",
+                "text": "Swift object will be registered, but version history will not be copied to the registration."
+            }
+        },
         "figshare": {
             "Permissions": {
                 "status": "partial",
