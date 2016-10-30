@@ -22,6 +22,13 @@ class Connection(object):
         self.host = host
         self.token = token
 
+    def get_login_user(self, default_user=None):
+        headers = {"Authorization":"Bearer " + self.token}
+        resp = requests.get(self.host + 'servicedocument.php', headers=headers)
+        if resp.status_code != 200:
+            resp.raise_for_status()
+        return resp.headers.get('X-WEKO-Login-User', default_user)
+
     def get(self, path):
         headers = {"Authorization":"Bearer " + self.token}
         resp = requests.get(self.host + path, headers=headers)

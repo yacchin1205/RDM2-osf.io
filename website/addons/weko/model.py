@@ -17,7 +17,7 @@ from website.oauth.models import ExternalProvider
 from oauthlib.oauth2.rfc6749.errors import MissingTokenError
 from requests.exceptions import HTTPError as RequestsHTTPError
 
-from website.addons.weko.client import connect_from_settings_or_401
+from website.addons.weko.client import connect_or_error, connect_from_settings_or_401
 from website.addons.weko.serializer import WEKOSerializer
 from website.addons.weko.utils import DataverseNodeLogger
 from website.addons.weko import settings as weko_settings
@@ -110,16 +110,20 @@ class WEKOProvider(ExternalProvider):
         # pre-set as many values as possible for the ``ExternalAccount``
         info = self._default_handle_callback(response)
         # call the hook for subclasses to parse values from the response
-        info.update(self.handle_callback(response))
+        info.update(self.handle_callback(repoid, response))
 
         return self._set_external_account(user, info)
 
-    def handle_callback(self, response):
+    def handle_callback(self, repoid, response):
         """View called when the OAuth flow is completed.
         """
+        repo_settings = weko_settings.REPOSITORIES[repoid]
+        connection = connect_or_error(repo_settings['host'],
+                                      response.get('access_token'))
+        login_user = connection.get_login_user('unknown')
         return {
-            'provider_id': 'test',
-            'display_name': 'test'
+            'provider_id': login_user + '@' + repoid,
+            'display_name': login_user + '@' + repoid
         }
 
 
