@@ -43,6 +43,8 @@ function ViewModel(url) {
     self.selectedHost = ko.observable();    // Host specified in select element
     self.customHost = ko.observable();      // Host specified in input element
     self.savedHost = ko.observable();       // Configured host
+    self.selectedRepo = ko.observable();
+    self.repositories = ko.observableArray();
 
     // Designated host, specified from select or input element
     self.host = ko.pureComputed(function() {
@@ -347,7 +349,7 @@ ViewModel.prototype.getDatasets = function() {
 };
 
 /** Send POST request to authorize Dataverse */
-ViewModel.prototype.sendAuth = function() {
+ViewModel.prototype.connectOAuth = function() {
     var self = this;
 
     // Selection should not be empty

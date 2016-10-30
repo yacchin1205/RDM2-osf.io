@@ -25,7 +25,7 @@
 
             <!-- Oauth Start Button -->
             <span data-bind="if: showTokenCreateButton">
-                <a href="#dataverseInputCredentials" data-toggle="modal" class="pull-right text-primary addon-auth">
+                <a href="#wekoInputCredentials" data-toggle="modal" class="pull-right text-primary addon-auth">
                     Connect  Account
                 </a>
             </span>
