@@ -5,6 +5,7 @@ import httplib as http
 from requests.exceptions import SSLError
 
 from flask import request
+from flask import redirect
 from modularodm import Q
 from modularodm.storage.base import KeyExistsException
 
@@ -14,7 +15,8 @@ from framework.exceptions import HTTPError
 from website.addons.base import generic_views
 from website.addons.weko import client
 from website.addons.weko.model import WEKOProvider
-from website.addons.weko.serializer import DataverseSerializer
+from website.addons.weko.serializer import WEKOSerializer
+from website.addons.weko import settings as weko_settings
 from website.oauth.models import ExternalAccount
 from website.project.decorators import (
     must_have_addon, must_be_addon_authorizer,
@@ -23,18 +25,43 @@ from website.project.decorators import (
 )
 from website.util import rubeus, api_url_for
 from website.util.sanitize import assert_clean
+from website.oauth.utils import get_service
+from website.oauth.signals import oauth_complete
 
 SHORT_NAME = 'weko'
 FULL_NAME = 'WEKO'
 
+@must_be_logged_in
+def weko_oauth_connect(repoid, auth):
+    service = get_service(SHORT_NAME)
+    return redirect(service.get_repo_auth_url(repoid))
+
+@must_be_logged_in
+def weko_oauth_callback(repoid, auth):
+    user = auth.user
+    provider = get_service(SHORT_NAME)
+
+    # Retrieve permanent credentials from provider
+    if not provider.repo_auth_callback(user=user, repoid=repoid):
+        return {}
+
+    if provider.account not in user.external_accounts:
+        user.external_accounts.append(provider.account)
+        user.save()
+
+    oauth_complete.send(provider, account=provider.account, user=user)
+
+    return {}
+
+
 weko_account_list = generic_views.account_list(
     SHORT_NAME,
-    DataverseSerializer
+    WEKOSerializer
 )
 
 weko_import_auth = generic_views.import_auth(
     SHORT_NAME,
-    DataverseSerializer
+    WEKOSerializer
 )
 
 weko_deauthorize_node = generic_views.deauthorize_node(
@@ -43,7 +70,7 @@ weko_deauthorize_node = generic_views.deauthorize_node(
 
 weko_get_config = generic_views.get_config(
     SHORT_NAME,
-    DataverseSerializer
+    WEKOSerializer
 )
 
 ## Auth ##
@@ -66,6 +93,7 @@ def weko_user_config_get(auth, **kwargs):
                 'create': api_url_for('weko_add_user_account'),
                 'accounts': api_url_for('weko_account_list'),
             },
+            'repositories': weko_settings.REPOSITORY_IDS
         },
     }, http.OK
 

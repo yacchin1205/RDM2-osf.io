@@ -3,6 +3,24 @@ from website.routes import OsfWebRenderer
 
 from . import views
 
+oauth_routes = {
+    'rules': [
+        Rule(
+            '/connect/weko/<repoid>/',
+            'get',
+            views.weko_oauth_connect,
+            json_renderer,
+        ),
+        Rule(
+            '/callback/weko/<repoid>/',
+            'get',
+            views.weko_oauth_callback,
+            OsfWebRenderer('util/oauth_complete.mako', trust=False),
+        ),
+    ],
+    'prefix': '/oauth'
+  }
+
 api_routes = {
     'rules': [
         Rule(

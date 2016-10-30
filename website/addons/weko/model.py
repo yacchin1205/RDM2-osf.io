@@ -5,31 +5,114 @@ from modularodm import fields
 
 from framework.auth.decorators import Auth
 from framework.exceptions import HTTPError
+from framework.sessions import session
+from requests_oauthlib import OAuth2Session
+from flask import request
 
 from website.addons.base import (
     AddonOAuthNodeSettingsBase, AddonOAuthUserSettingsBase, exceptions,
 )
 from website.addons.base import StorageAddonBase
 from website.oauth.models import ExternalProvider
+from oauthlib.oauth2.rfc6749.errors import MissingTokenError
+from requests.exceptions import HTTPError as RequestsHTTPError
 
 from website.addons.weko.client import connect_from_settings_or_401
-from website.addons.weko.serializer import DataverseSerializer
+from website.addons.weko.serializer import WEKOSerializer
 from website.addons.weko.utils import DataverseNodeLogger
 from website.addons.weko import settings as weko_settings
+from website.util import web_url_for, api_v2_url
 
+OAUTH2 = 2
 
 class WEKOProvider(ExternalProvider):
     """An alternative to `ExternalProvider` not tied to OAuth"""
 
     name = 'WEKO'
     short_name = 'weko'
-    serializer = DataverseSerializer
+    serializer = WEKOSerializer
 
-    client_id = weko_settings.CLIENT_ID
-    client_secret = weko_settings.CLIENT_SECRET
+    client_id = None
+    client_secret = None
+    auth_url_base = None
+    callback_url = None
 
-    auth_url_base = weko_settings.OAUTH_AUTHORIZE_URL
-    callback_url = weko_settings.OAUTH_ACCESS_TOKEN_URL
+    def get_repo_auth_url(self, repoid):
+        """The URL to begin the OAuth dance.
+
+        This property method has side effects - it at least adds temporary
+        information to the session so that callbacks can be associated with
+        the correct user.  For OAuth1, it calls the provider to obtain
+        temporary credentials to start the flow.
+        """
+
+        # create a dict on the session object if it's not already there
+        if session.data.get('oauth_states') is None:
+            session.data['oauth_states'] = {}
+
+        repo_settings = weko_settings.REPOSITORIES[repoid]
+
+        assert self._oauth_version == OAUTH2
+        # build the URL
+        oauth = OAuth2Session(
+            repo_settings['client_id'],
+            redirect_uri=web_url_for('weko_oauth_callback',
+                                     repoid=repoid,
+                                     _absolute=True),
+            scope=self.default_scopes,
+        )
+
+        url, state = oauth.authorization_url(repo_settings['authorize_url'])
+
+        # save state token to the session for confirmation in the callback
+        session.data['oauth_states'][self.short_name] = {'state': state}
+
+        return url
+
+    def repo_auth_callback(self, user, repoid, **kwargs):
+        """Exchange temporary credentials for permanent credentials
+
+        This is called in the view that handles the user once they are returned
+        to the OSF after authenticating on the external service.
+        """
+
+        if 'error' in request.args:
+            return False
+
+        repo_settings = weko_settings.REPOSITORIES[repoid]
+
+        # make sure the user has temporary credentials for this provider
+        try:
+            cached_credentials = session.data['oauth_states'][self.short_name]
+        except KeyError:
+            raise PermissionsError('OAuth flow not recognized.')
+
+        assert self._oauth_version == OAUTH2
+        state = request.args.get('state')
+
+        # make sure this is the same user that started the flow
+        if cached_credentials.get('state') != state:
+            raise PermissionsError('Request token does not match')
+
+        try:
+            callback_url = web_url_for('weko_oauth_callback', repoid=repoid,
+                                       _absolute=True)
+            response = OAuth2Session(
+                repo_settings['client_id'],
+                redirect_uri=callback_url,
+            ).fetch_token(
+                repo_settings['access_token_url'],
+                client_secret=repo_settings['client_secret'],
+                code=request.args.get('code'),
+            )
+        except (MissingTokenError, RequestsHTTPError):
+            raise HTTPError(http.SERVICE_UNAVAILABLE)
+        # pre-set as many values as possible for the ``ExternalAccount``
+        info = self._default_handle_callback(response)
+        # call the hook for subclasses to parse values from the response
+        info.update(self.handle_callback(response))
+
+        return self._set_external_account(user, info)
 
     def handle_callback(self, response):
         """View called when the OAuth flow is completed.
@@ -42,11 +125,11 @@ class WEKOProvider(ExternalProvider):
 
 class AddonWEKOUserSettings(AddonOAuthUserSettingsBase):
     oauth_provider = WEKOProvider
-    serializer = DataverseSerializer
+    serializer = WEKOSerializer
 
 class AddonWEKONodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
     oauth_provider = WEKOProvider
-    serializer = DataverseSerializer
+    serializer = WEKOSerializer
 
     weko_alias = fields.StringField()
     weko = fields.StringField()

@@ -1,9 +1,10 @@
 from website.addons.base.serializer import OAuthAddonSerializer
 from website.addons.weko import client
+from website.addons.weko import settings as weko_settings
 from website.util import api_url_for, web_url_for
 
 
-class DataverseSerializer(OAuthAddonSerializer):
+class WEKOSerializer(OAuthAddonSerializer):
 
     addon_short_name = 'weko'
 
@@ -11,7 +12,7 @@ class DataverseSerializer(OAuthAddonSerializer):
 
     # Include host information with more informative labels / formatting
     def serialize_account(self, external_account):
-        ret = super(DataverseSerializer, self).serialize_account(external_account)
+        ret = super(WEKOSerializer, self).serialize_account(external_account)
         host = external_account.oauth_key
         ret.update({
             'host': host,
@@ -48,8 +49,8 @@ class DataverseSerializer(OAuthAddonSerializer):
         host = external_account.oauth_key if external_account else ''
 
         return {
-            'auth': api_url_for('oauth_connect',
-                                service_name='weko'),
+            'auth': api_url_for('weko_oauth_connect',
+                                repoid='<repoid>'),
             'create': api_url_for('weko_add_user_account'),
             'set': node.api_url_for('weko_set_config'),
             'importAuth': node.api_url_for('weko_import_auth'),
@@ -62,7 +63,8 @@ class DataverseSerializer(OAuthAddonSerializer):
 
     @property
     def serialized_node_settings(self):
-        result = super(DataverseSerializer, self).serialized_node_settings
+        result = super(WEKOSerializer, self).serialized_node_settings
+        result['repositories'] = weko_settings.REPOSITORY_IDS
 
         # Update with Dataverse specific fields
         if self.node_settings.has_auth:
