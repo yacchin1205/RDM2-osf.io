@@ -135,11 +135,8 @@ class AddonWEKONodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
     oauth_provider = WEKOProvider
     serializer = WEKOSerializer
 
-    weko_alias = fields.StringField()
-    weko = fields.StringField()
-    dataset_doi = fields.StringField()
-    _dataset_id = fields.StringField()
-    dataset = fields.StringField()
+    index_title = fields.StringField()
+    index_id = fields.StringField()
 
     _api = None
 
@@ -152,25 +149,15 @@ class AddonWEKONodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
 
     @property
     def folder_name(self):
-        return self.dataset
-
-    @property
-    def dataset_id(self):
-        if self._dataset_id is None and (self.weko_alias and self.dataset_doi):
-            connection = connect_from_settings_or_401(self)
-            weko = connection.get_weko(self.weko_alias)
-            dataset = weko.get_dataset_by_doi(self.dataset_doi)
-            self._dataset_id = dataset.id
-            self.save()
-        return self._dataset_id
+        return self.index_title
 
     @property
     def complete(self):
-        return bool(self.has_auth and self.dataset_doi is not None)
+        return bool(self.has_auth and self.index_id is not None)
 
     @property
     def folder_id(self):
-        return self.dataset_id
+        return self.index_id
 
     @property
     def folder_path(self):
@@ -187,13 +174,9 @@ class AddonWEKONodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
             auth=auth
         )
 
-    def set_folder(self, weko, dataset, auth=None):
-        self.weko_alias = weko[1]
-        self.weko = weko[1]
-
-        self.dataset_doi = dataset['href']
-        self._dataset_id = dataset['href']
-        self.dataset = dataset['title']
+    def set_folder(self, index, auth=None):
+        self.index_id = index.identifier
+        self.index_title = index.title
 
         self.save()
 
@@ -203,7 +186,7 @@ class AddonWEKONodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
                 params={
                     'project': self.owner.parent_id,
                     'node': self.owner._id,
-                    'dataset': dataset['title'],
+                    'dataset': index.title,
                 },
                 auth=auth,
             )
@@ -219,11 +202,8 @@ class AddonWEKONodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
 
     def clear_settings(self):
         """Clear selected Dataverse and dataset"""
-        self.weko_alias = None
-        self.weko = None
-        self.dataset_doi = None
-        self._dataset_id = None
-        self.dataset = None
+        self.index_id = None
+        self.index_title = None
 
     def deauthorize(self, auth=None, add_log=True):
         """Remove user authorization from this node and log the event."""
@@ -252,9 +232,9 @@ class AddonWEKONodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
             raise exceptions.AddonError('Dataverse is not configured')
         return {
             'host': self.external_account.oauth_key,
-            'doi': self.dataset_doi,
-            'id': self.dataset_id,
-            'name': self.dataset,
+            'url': weko_settings.REPOSITORIES[self.external_account.provider_id.split('@')[-1]]['host'],
+            'index_id': self.index_id,
+            'index_title': self.index_title,
         }
 
     def create_waterbutler_log(self, auth, action, metadata):

@@ -79,15 +79,6 @@ api_routes = {
         ),
         Rule(
             [
-                '/project/<pid>/weko/list-datasets/',
-                '/project/<pid>/node/<nid>/weko/list-datasets/',
-            ],
-            'post',
-            views.weko_get_datasets,
-            json_renderer,
-        ),
-        Rule(
-            [
                 '/project/<pid>/weko/hgrid/root/',
                 '/project/<pid>/node/<nid>/weko/hgrid/root/',
             ],

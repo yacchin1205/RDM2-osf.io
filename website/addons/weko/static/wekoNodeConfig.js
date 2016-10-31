@@ -9,7 +9,7 @@ var Raven = require('raven-js');
 
 var $osf = require('js/osfHelpers');
 
-var $modal = $('#dataverseInputCredentials');
+var $modal = $('#wekoInputCredentials');
 
 
 function ViewModel(url) {
@@ -27,17 +27,12 @@ function ViewModel(url) {
     self.userIsOwner = ko.observable(false);
     self.validCredentials = ko.observable(false);
     self.loadedSettings = ko.observable(false);
-    self.loadedDatasets = ko.observable(false);
     self.submitting = ko.observable(false);
 
-    self.dataverses = ko.observableArray([]);
-    self.datasets = ko.observableArray([]);
+    self.indices = ko.observableArray([]);
 
-    self.savedDatasetDoi = ko.observable();
-    self.savedDatasetTitle = ko.observable();
-    self.savedDataverseAlias = ko.observable();
-    self.savedDataverseTitle = ko.observable();
-    self.datasetWasFound = ko.observable(false);
+    self.savedIndexId = ko.observable();
+    self.savedIndexTitle = ko.observable();
 
     self.accounts = ko.observable([]);
     self.selectedHost = ko.observable();    // Host specified in select element
@@ -115,63 +110,39 @@ function ViewModel(url) {
         }),
         setInfoSuccess: ko.pureComputed(function() {
             var filesUrl = window.contextVars.node.urls.web + 'files/';
-            return 'Successfully linked dataset \'' + $osf.htmlEscape(self.savedDatasetTitle()) + '\'. Go to the <a href="' +
+            return 'Successfully linked dataset \'' + $osf.htmlEscape(self.savedIndexTitle()) + '\'. Go to the <a href="' +
                 filesUrl + '">Files page</a> to view your content.';
         }),
         setDatasetError: ko.pureComputed(function() {
             return 'Could not connect to this dataset. Please refresh the page or ' +
                 'contact <a href="mailto: support@osf.io">support@osf.io</a> if the ' +
                 'problem persists.';
-        }),
-        getDatasetsError: ko.pureComputed(function() {
-            return 'Could not load datasets. Please refresh the page or ' +
-                'contact <a href="mailto: support@osf.io">support@osf.io</a> if the ' +
-                'problem persists.';
         })
     };
 
-    self.savedDatasetUrl = ko.pureComputed(function() {
-        return (self.urls()) ? self.urls().datasetPrefix + self.savedDatasetDoi() : null;
-    });
-    self.savedDataverseUrl = ko.pureComputed(function() {
-        return (self.urls()) ? self.urls().dataversePrefix + self.savedDataverseAlias() : null;
+    self.savedIndexUrl = ko.pureComputed(function() {
+        for (var i = 0; i < self.indices().length; i++) {
+            var data = self.indices()[i];
+            if (data.id === self.selectedIndexId()) {
+                return data.about;
+            }
+        }
+        return null;
     });
 
-    self.selectedDataverseAlias = ko.observable();
-    self.selectedDatasetDoi = ko.observable();
-    self.selectedDataverseTitle = ko.pureComputed(function() {
-        for (var i = 0; i < self.dataverses().length; i++) {
-            var data = self.dataverses()[i];
-            if (data.alias === self.selectedDataverseAlias()) {
+    self.selectedIndexId = ko.observable();
+    self.selectedIndexTitle = ko.pureComputed(function() {
+        for (var i = 0; i < self.indices().length; i++) {
+            var data = self.indices()[i];
+            if (data.id === self.selectedIndexId()) {
                 return data.title;
             }
         }
         return null;
     });
-    self.selectedDatasetTitle = ko.pureComputed(function() {
-        for (var i = 0; i < self.datasets().length; i++) {
-            var data = self.datasets()[i];
-            if (data.doi === self.selectedDatasetDoi()) {
-                return data.title;
-            }
-        }
-        return null;
-    });
-    self.dataverseHasDatasets = ko.pureComputed(function() {
-        return self.datasets().length > 0;
-    });
 
-    self.showDatasetSelect = ko.pureComputed(function() {
-        return self.loadedDatasets() && self.dataverseHasDatasets();
-    });
-    self.showNoDatasets = ko.pureComputed(function() {
-        return self.loadedDatasets() && !self.dataverseHasDatasets();
-    });
-    self.showLinkedDataset = ko.pureComputed(function() {
-        return self.savedDatasetDoi();
-    });
-    self.showLinkDataverse = ko.pureComputed(function() {
-        return self.userHasAuth() && !self.nodeHasAuth() && self.loadedSettings();
+    self.showLinkedIndex = ko.pureComputed(function() {
+        return self.savedIndexId();
     });
     self.credentialsChanged = ko.pureComputed(function() {
         return self.nodeHasAuth() && !self.validCredentials();
@@ -180,18 +151,15 @@ function ViewModel(url) {
         return (self.credentialsChanged() && self.userIsOwner()) ||
             (!self.userHasAuth() && !self.nodeHasAuth() && self.loadedSettings());
     });
-    self.hasDataverses = ko.pureComputed(function() {
-        return self.dataverses().length > 0;
+    self.hasIndices = ko.pureComputed(function() {
+        return self.indices().length > 0;
     });
-    self.showNotFound = ko.pureComputed(function() {
-        return self.savedDatasetDoi() && self.loadedDatasets() && !self.datasetWasFound();
-    });
-    self.showSubmitDataset = ko.pureComputed(function() {
+    self.showSubmitIndex = ko.pureComputed(function() {
         return self.nodeHasAuth() && self.validCredentials() && self.userIsOwner();
     });
-    self.enableSubmitDataset = ko.pureComputed(function() {
-        return !self.submitting() && self.dataverseHasDatasets() &&
-            self.savedDatasetDoi() !== self.selectedDatasetDoi();
+    self.enableSubmitIndex = ko.pureComputed(function() {
+        return !self.submitting() &&
+            self.savedIndexId() !== self.selectedIndexId();
     });
 
     self.showSettings = ko.pureComputed(function() {
@@ -219,7 +187,7 @@ function ViewModel(url) {
         self.loadedSettings(true);
     }).fail(function(xhr, textStatus, error) {
         self.changeMessage(self.messages.userSettingsError, 'text-danger');
-        Raven.captureMessage('Could not GET dataverse settings', {
+        Raven.captureMessage('Could not GET WEKO settings', {
             extra: {
                 url: url,
                 textStatus: textStatus,
@@ -245,17 +213,12 @@ ViewModel.prototype.updateFromData = function(data) {
     self.userIsOwner(data.userIsOwner);
 
     if (self.nodeHasAuth()) {
-        self.savedHost(data.dataverseHost);
-        self.dataverses(data.dataverses);
-        self.savedDataverseAlias(data.savedDataverse.alias);
-        self.savedDataverseTitle(data.savedDataverse.title);
-        self.selectedDataverseAlias(data.savedDataverse.alias);
-        self.savedDatasetDoi(data.savedDataset.doi);
-        self.savedDatasetTitle(data.savedDataset.title);
+        self.selectedRepo(data.wekoHost);
+        self.indices(data.indices);
+        self.savedIndexId(data.savedIndex.id);
+        self.savedIndexTitle(data.savedIndex.title);
+        self.selectedIndexId(data.savedIndex.id);
         self.validCredentials(data.connected);
-        if (self.userIsOwner()) {
-            self.getDatasets(); // Sets datasets, selectedDatasetDoi
-        }
     }
 };
 
@@ -265,7 +228,7 @@ ViewModel.prototype.clearModal = function() {
     self.message('');
     self.messageClass('text-info');
     self.apiToken(null);
-    self.selectedHost(null);
+    self.selectedRepo(null);
     self.customHost(null);
 };
 
@@ -275,73 +238,24 @@ ViewModel.prototype.setInfo = function() {
     return $osf.postJSON(
         self.urls().set,
         ko.toJS({
-            dataverse: {
-                alias: self.selectedDataverseAlias
-            },
-            dataset: {
-                doi: self.selectedDatasetDoi
+            index: {
+                id: self.selectedIndexId
             }
         })
     ).done(function() {
         self.submitting(false);
-        self.savedDataverseAlias(self.selectedDataverseAlias());
-        self.savedDataverseTitle(self.selectedDataverseTitle());
-        self.savedDatasetDoi(self.selectedDatasetDoi());
-        self.savedDatasetTitle(self.selectedDatasetTitle());
-        self.datasetWasFound(true);
+        self.savedIndexId(self.selectedIndexId());
+        self.savedIndexTitle(self.selectedIndexTitle());
         self.changeMessage(self.messages.setInfoSuccess, 'text-success');
     }).fail(function(xhr, textStatus, error) {
         self.submitting(false);
         var errorMessage = (xhr.status === 410) ? self.messages.datasetDeaccessioned :
             (xhr.status = 406) ? self.messages.forbiddenCharacters : self.messages.setDatasetError;
         self.changeMessage(errorMessage, 'text-danger');
-        Raven.captureMessage('Could not authenticate with Dataverse', {
+        Raven.captureMessage('Could not authenticate with WEKO', {
             extra: {
                 url: self.urls().set,
                 textStatus: textStatus,
-                error: error
-            }
-        });
-    });
-};
-
-/**
- * Looks for dataset in list of datasets when first loaded.
- * This prevents an additional request to the server, but requires additional logic.
- */
-ViewModel.prototype.findDataset = function() {
-    var self = this;
-    for (var i in self.datasets()) {
-        if (self.datasets()[i].doi === self.savedDatasetDoi()) {
-            self.datasetWasFound(true);
-            return;
-        }
-    }
-};
-
-ViewModel.prototype.getDatasets = function() {
-    var self = this;
-    self.datasets([]);
-    self.loadedDatasets(false);
-    return $osf.postJSON(
-        self.urls().getDatasets,
-        ko.toJS({
-            alias: self.selectedDataverseAlias
-        })
-    ).done(function(response) {
-        // Don't update if another Dataverse has been selected
-        if (response.alias === self.selectedDataverseAlias()) {
-            self.datasets(response.datasets);
-            self.loadedDatasets(true);
-            self.selectedDatasetDoi(self.savedDatasetDoi());
-            self.findDataset();
-        }
-    }).fail(function(xhr, status, error) {
-        self.changeMessage(self.messages.getDatasetsError, 'text-danger');
-        Raven.captureMessage('Could not GET datasets', {
-            extra: {
-                url: self.urls().getDatasets,
-                textStatus: status,
                 error: error
             }
         });

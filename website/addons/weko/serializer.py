@@ -55,7 +55,6 @@ class WEKOSerializer(OAuthAddonSerializer):
             'set': node.api_url_for('weko_set_config'),
             'importAuth': node.api_url_for('weko_import_auth'),
             'deauthorize': node.api_url_for('weko_deauthorize_node'),
-            'getDatasets': node.api_url_for('weko_get_datasets'),
             'datasetPrefix': 'https://doi.org/',
             'dataversePrefix': 'http://{0}/weko/'.format(host),
             'accounts': api_url_for('weko_account_list'),
@@ -71,22 +70,20 @@ class WEKOSerializer(OAuthAddonSerializer):
             external_account = self.node_settings.external_account
             weko_host = external_account.oauth_key
 
-            connection = client.connect_from_settings(self.node_settings)
-            wekos = client.get_wekos(connection)
+            connection = client.connect_from_settings(weko_settings, self.node_settings)
+            all_indices = client.get_all_indices(connection)
+            indices = list(filter(lambda i: i.nested == 0, all_indices))
+
             result.update({
                 'dataverseHost': weko_host,
                 'connected': connection is not None,
-                'dataverses': [
-                    {'title': weko['title'], 'alias': weko['alias']}
-                    for weko in wekos
+                'indices': [
+                    {'title': index.title, 'id': index.identifier, 'about': index.about}
+                    for index in indices
                 ],
-                'savedDataverse': {
-                    'title': self.node_settings.weko,
-                    'alias': self.node_settings.weko_alias,
-                },
-                'savedDataset': {
-                    'title': self.node_settings.dataset,
-                    'doi': self.node_settings.dataset_doi,
+                'savedIndex': {
+                    'title': self.node_settings.index_title,
+                    'id': self.node_settings.index_id,
                 }
             })
 

@@ -38,15 +38,14 @@
         <div class="row">
             <div class="col-md-12">
 
-                <!-- The linked dataset -->
+                <!-- The linked index -->
                 <p>
-                    <strong>Current Dataset:</strong>
+                    <strong>Current Index:</strong>
                     <span data-bind="ifnot: submitting">
-                        <span data-bind="if: showLinkedDataset">
-                            <a data-bind="attr: {href: savedDatasetUrl()}, text: savedDatasetTitle"></a> on
-                            <a data-bind="attr: {href: savedDataverseUrl()}, text: savedDataverseTitle || '' + Dataverse"></a>.
+                        <span data-bind="if: showLinkedIndex">
+                            <a data-bind="attr: {href: savedIndexUrl()}, text: savedIndexTitle"></a>
                         </span>
-                        <span data-bind="ifnot: showLinkedDataset" class="text-muted">
+                        <span data-bind="ifnot: showLinkedIndex" class="text-muted">
                             None
                         </span>
                     </span>
@@ -55,59 +54,31 @@
                     </span>
                 </p>
 
-                <div data-bind="if: showNotFound" class="text-danger">
-                    The current dataset was not found on Dataverse.
-                </div>
-
                 <div data-bind="if: userIsOwner">
-                    <span data-bind="if: hasDataverses">
+                    <span data-bind="if: hasIndices">
                         <div class="row">
 
-                            <!-- Dataverse Picker -->
+                            <!--  Picker -->
                             <div class="col-md-6">
-                                Dataverse:
+                                Index:
                                 <select class="form-control"
-                                        data-bind="options: dataverses,
-                                                   optionsValue: 'alias',
+                                        data-bind="options: indices,
+                                                   optionsValue: 'id',
                                                    optionsText: 'title',
-                                                   value: selectedDataverseAlias,
-                                                   event: {change: getDatasets}">
+                                                   value: selectedIndexId">
                                 </select>
-                            </div>
-
-                            <!-- Dataset Picker -->
-                            <div class="col-md-6">
-                                Dataset:
-                                <div data-bind="if: showDatasetSelect">
-                                    <select class="form-control"
-                                            data-bind="options: datasets,
-                                                       optionsValue: 'doi',
-                                                       optionsText: 'title',
-                                                       value: selectedDatasetDoi">
-                                    </select>
-                                </div>
-                                <div data-bind="if: showNoDatasets">
-                                    <div class="text-info" style="padding-top: 8px">
-                                        No datasets available.
-                                    </div>
-                                </div>
-                                <div data-bind="ifnot: loadedDatasets">
-                                    <i class="fa fa-spinner fa-lg fa-spin"
-                                       style="padding-bottom: 8px; padding-top: 8px"></i>
-                                    <span class="text-info">Retrieving datasets...</span>
-                                </div>
                             </div>
                         </div>
                     </span>
 
-                    <span class="text-info" data-bind="ifnot: hasDataverses">
-                         There are no dataverses, datasets, or files associated with the connected account.
+                    <span class="text-info" data-bind="ifnot: hasIndices">
+                         There are no indices associated with the connected account.
                    </span>
 
                 <!-- Save button for set info -->
-                    <span data-bind="if: showSubmitDataset">
+                    <span data-bind="if: showSubmitIndex">
                         <br>
-                        <button data-bind="enable: enableSubmitDataset, click: setInfo"
+                        <button data-bind="enable: enableSubmitIndex, click: setInfo"
                                 class="btn btn-success pull-right">
                             Save
                         </button>

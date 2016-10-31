@@ -149,7 +149,7 @@ def weko_add_user_account(auth, **kwargs):
 @must_have_addon(SHORT_NAME, 'node')
 @must_be_addon_authorizer(SHORT_NAME)
 def weko_set_config(node_addon, auth, **kwargs):
-    """Saves selected Dataverse and dataset to node settings"""
+    """Saves selected WEKO and Index to node settings"""
 
     user_settings = node_addon.user_settings
     user = auth.user
@@ -163,36 +163,17 @@ def weko_set_config(node_addon, auth, **kwargs):
         # TODO: Test me!
         raise HTTPError(http.NOT_ACCEPTABLE)
 
-    alias = request.json.get('dataverse', {}).get('alias')
-    doi = request.json.get('dataset', {}).get('doi')
+    index_id = request.json.get('index', {}).get('id')
 
-    if doi is None or alias is None:
+    if index_id is None:
         return HTTPError(http.BAD_REQUEST)
 
-    connection = client.connect_from_settings(node_addon)
-    weko = client.get_weko(connection, alias)
-    dataset = client.get_dataset(weko, doi)
+    connection = client.connect_from_settings(weko_settings, node_addon)
+    index = client.get_index_by_id(connection, index_id)
 
-    node_addon.set_folder(weko, dataset, auth)
+    node_addon.set_folder(index, auth)
 
-    return {'dataverse': weko[1], 'dataset': dataset['title']}, http.OK
-
-
-@must_have_permission('write')
-@must_have_addon(SHORT_NAME, 'user')
-@must_have_addon(SHORT_NAME, 'node')
-def weko_get_datasets(node_addon, **kwargs):
-    """Get list of datasets from provided Dataverse alias"""
-    alias = request.json.get('alias')
-
-    connection = client.connect_from_settings(node_addon)
-    weko = client.get_weko(connection, alias)
-    datasets = client.get_datasets(weko)
-    ret = {
-        'alias': alias,  # include alias to verify dataset container
-        'datasets': [{'title': dataset['title'], 'doi': dataset['href']} for dataset in datasets],
-    }
-    return ret, http.OK
+    return {'index': index.title}, http.OK
 
 ## Crud ##
 
@@ -207,7 +188,7 @@ def weko_publish_dataset(node_addon, auth, **kwargs):
 
     now = datetime.datetime.utcnow()
 
-    connection = client.connect_from_settings_or_401(node_addon)
+    connection = client.connect_from_settings_or_401(weko_settings, node_addon)
 
     weko = client.get_weko(connection, node_addon.weko_alias)
     dataset = client.get_dataset(weko, node_addon.dataset_doi)
@@ -235,25 +216,20 @@ def weko_publish_dataset(node_addon, auth, **kwargs):
 def _weko_root_folder(node_addon, auth, **kwargs):
     node = node_addon.owner
 
-    # Quit if no dataset linked
+    # Quit if no indices linked
     if not node_addon.complete:
         return []
 
-    connection = client.connect_from_settings(node_addon)
-    weko = client.get_weko(connection, node_addon.weko_alias)
-    dataset = client.get_dataset(weko, node_addon.dataset_doi)
+    connection = client.connect_from_settings(weko_settings, node_addon)
+    index = client.get_index_by_id(connection, node_addon.index_id)
 
-    # Quit if doi does not produce a dataset
-    if dataset is None:
+    if index is None:
         return []
 
     return [rubeus.build_addon_root(
         node_addon,
-        node_addon.dataset,
+        node_addon.index_title,
         permissions={'view': True, 'edit': True},
-        dataset=node_addon.dataset,
-        doi=dataset['href'],
-        weko=weko[1],
         private_key=kwargs.get('view_only', None),
     )]
 
@@ -295,7 +271,7 @@ def weko_get_widget_contents(node_addon, **kwargs):
     doi = node_addon.dataset_doi
     alias = node_addon.weko_alias
 
-    connection = client.connect_from_settings_or_401(node_addon)
+    connection = client.connect_from_settings_or_401(weko_settings, node_addon)
     weko = client.get_weko(connection, alias)
     dataset = client.get_dataset(weko, doi)
 
