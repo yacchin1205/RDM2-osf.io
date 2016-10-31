@@ -245,7 +245,7 @@ class AddonWEKONodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
             params={
                 'project': self.owner.parent_id,
                 'node': self.owner._id,
-                'dataset': self.dataset,
+                'dataset': self.index_title,
                 'filename': metadata['materialized'].strip('/'),
                 'urls': {
                     'view': url,
