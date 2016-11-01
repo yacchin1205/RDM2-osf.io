@@ -3,6 +3,8 @@ import requests
 from io import BytesIO
 from lxml import etree
 import base64
+from datetime import datetime
+from urllib.parse import urlparse, parse_qs
 
 logger = logging.getLogger('addons.weko.client')
 
@@ -56,7 +58,7 @@ class Item(object):
 
     @property
     def file_id(self):
-        return base64.b64encode(self.raw['id'].encode(encoding='utf-8')).decode(encoding='utf-8')
+        return 'item{}'.format(itemId(self.raw['id']))
 
     @property
     def title(self):
@@ -92,7 +94,6 @@ class Connection(object):
         if resp.status_code != 200:
             resp.raise_for_status()
         tree = etree.parse(BytesIO(resp.content))
-        logger.info('Connected: {}'.format(etree.tostring(tree)))
         return tree
 
     def get_url(self, url):
@@ -101,8 +102,13 @@ class Connection(object):
         if resp.status_code != 200:
             resp.raise_for_status()
         tree = etree.parse(BytesIO(resp.content))
-        logger.info('Connected: {}'.format(etree.tostring(tree)))
         return tree
+
+    def delete_url(self, url):
+        headers = {"Authorization":"Bearer " + self.token}
+        resp = requests.delete(url, headers=headers)
+        if resp.status_code != 200:
+            resp.raise_for_status()
 
     def post_url(self, url, stream, headers={}):
         headers = headers.copy()
@@ -111,9 +117,18 @@ class Connection(object):
         if resp.status_code != 200:
             resp.raise_for_status()
         tree = etree.parse(BytesIO(resp.content))
-        logger.info('Connected: {}'.format(etree.tostring(tree)))
         return tree
 
+
+def itemId(url, default_value=None):
+    query = parse_qs(urlparse(url).query)
+    if 'item_id' in query:
+        return query['item_id'][0]
+    elif 'itemId' in query:
+        return query['itemId'][0]
+    else:
+        logger.warn('Unexpected Query: {}'.format(str(query)))
+        return default_value
 
 def _connect(host, token):
     try:
@@ -187,16 +202,30 @@ def get_items(connection, index):
         items.append(Item(entry))
     return items
 
+def delete(connection, url):
+    connection.delete_url(url)
 
-def post(connection, target, stream, stream_size):
-    logger.info('Post: {}'.format(target))
+def post(connection, insert_index_id, stream, stream_size):
+    root = connection.get('servicedocument.php')
+    target = None
+    for collection in root.findall('.//{%s}collection' % APP_NAMESPACE):
+        target = collection.attrib['href']
+    logger.info('Post: {} on {}'.format(insert_index_id, target))
     weko_headers = {
         "Content-Disposition": "filename=temp.zip",
         "Content-Type": "application/zip",
         "Packaging": "http://purl.org/net/sword/package/SimpleZip",
         "Content-Length": str(stream_size),
+        "insert_index": str(insert_index_id)
     }
-    return connection.post_url(target, stream, headers=weko_headers)
+    resp = connection.post_url(target, stream, headers=weko_headers)
+    logger.info(etree.tostring(resp))
+    for index, elem in enumerate(resp.findall('.//{%s}content' % ATOM_NAMESPACE)):
+        src = elem.attrib['src']
+        logger.info(src)
+        if 'message' in elem.attrib:
+            logger.warn('{}: {}'.format(index + 1, elem.attrib['message']))
+    return src
 
 
 def get_datasets(weko):
