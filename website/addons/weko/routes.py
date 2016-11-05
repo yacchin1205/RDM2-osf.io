@@ -61,6 +61,15 @@ api_routes = {
         ),
         Rule(
             [
+                '/project/<pid>/weko/serviceitemtype/',
+                '/project/<pid>/node/<nid>/weko/serviceitemtype/',
+            ],
+            'get',
+            views.weko_get_serviceitemtype,
+            json_renderer,
+        ),
+        Rule(
+            [
                 '/project/<pid>/weko/user-auth/',
                 '/project/<pid>/node/<nid>/weko/user-auth/',
             ],

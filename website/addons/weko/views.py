@@ -177,6 +177,11 @@ def weko_set_config(node_addon, auth, **kwargs):
 
 ## Crud ##
 
+@must_be_contributor_or_public
+@must_have_addon(SHORT_NAME, 'node')
+def weko_get_serviceitemtype(node_addon, **kwargs):
+    connection = client.connect_from_settings_or_401(weko_settings, node_addon)
+    return client.get_serviceitemtype(connection)
 
 @must_have_permission('write')
 @must_not_be_registration

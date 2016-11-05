@@ -4,7 +4,6 @@ from io import BytesIO
 from lxml import etree
 import base64
 from datetime import datetime
-from urllib.parse import urlparse, parse_qs
 
 logger = logging.getLogger('addons.weko.client')
 
@@ -201,6 +200,44 @@ def get_items(connection, index):
         logger.info('Name: {}'.format(entry.find('{%s}title' % ATOM_NAMESPACE).text))
         items.append(Item(entry))
     return items
+
+def get_serviceitemtype(connection):
+    root = connection.get('serviceitemtype.php')
+    logger.info('Serviceitemtype: {}'.format(etree.tostring(root)))
+    r = {'metadata': [], 'item_type': []}
+    for metadata in root.findall('metadata'):
+        for k in filter(lambda k: k.startswith('columnname_'),
+                        metadata.attrib.keys()):
+            r['metadata'].append({'column_id': k[11:],
+                                  'column_name': metadata.attrib[k]})
+    for item_types_elem in root.findall('itemTypes'):
+        for item_type_elem in item_types_elem.findall('itemType'):
+            item_type = {'mapping_info': item_type_elem.attrib['mapping_info'],
+                         'name': item_type_elem.find('name').text,
+                         'basic_attributes': [],
+                         'additional_attributes': []}
+            basic_attributes_elem = item_type_elem.find('basicAttributes')
+            if basic_attributes_elem is not None:
+                for attr_elem in basic_attributes_elem:
+                    columns = []
+                    for k in filter(lambda k: k.startswith('columnname_'),
+                                    attr_elem.attrib.keys()):
+                        columns.append({'column_id': k[11:],
+                                        'column_name': attr_elem.attrib[k]})
+                    item_type['basic_attributes'].append({'type': attr_elem.tag,
+                                                          'columns': columns})
+            for additional_attr_elem in item_type_elem.findall('.//additionalAttribute'):
+                columns = []
+                additional_attr = {'name': additional_attr_elem.find('name').text}
+                for k in additional_attr_elem.attrib.keys():
+                    if k.startswith('columnname_'):
+                        columns.append({'column_id': k[11:],
+                                        'column_name': additional_attr_elem.attrib[k]})
+                    else:
+                        additional_attr[k] = additional_attr_elem.attrib[k]
+                item_type['additional_attributes'].append(additional_attr)
+            r['item_type'].append(item_type)
+    return r
 
 def delete(connection, url):
     connection.delete_url(url)
