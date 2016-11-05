@@ -104,24 +104,6 @@ api_routes = {
             views.weko_publish_dataset,
             json_renderer,
         ),
-        Rule(
-            [
-                '/project/<pid>/weko/widget/',
-                '/project/<pid>/node/<nid>/weko/widget/',
-            ],
-            'get',
-            views.weko_widget,
-            OsfWebRenderer('../addons/weko/templates/weko_widget.mako', trust=False),
-        ),
-        Rule(
-            [
-                '/project/<pid>/weko/widget/contents/',
-                '/project/<pid>/node/<nid>/weko/widget/contents/',
-            ],
-            'get',
-            views.weko_get_widget_contents,
-            json_renderer,
-        ),
     ],
     'prefix': '/api/v1'
 }

@@ -19,19 +19,15 @@ OWNERS = ['user', 'node']
 ADDED_DEFAULT = []
 ADDED_MANDATORY = []
 
-VIEWS = ['widget']
+VIEWS = []
 CONFIGS = ['accounts', 'node']
 
 CATEGORIES = ['storage']
 
-INCLUDE_JS = {
-    'widget': [],
-    'page': [],
-    'files': [],
-}
+INCLUDE_JS = {}
 
 INCLUDE_CSS = {
-    'widget': ['weko.css'],
+    'widget': [],
     'page': [],
 }
 
