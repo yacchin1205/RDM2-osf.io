@@ -187,34 +187,43 @@ def weko_get_serviceitemtype(node_addon, **kwargs):
 @must_not_be_registration
 @must_have_addon(SHORT_NAME, 'node')
 @must_be_addon_authorizer(SHORT_NAME)
-def weko_publish_dataset(node_addon, auth, **kwargs):
+def weko_create_index(node_addon, auth, **kwargs):
     node = node_addon.owner
-    publish_both = request.json.get('publish_both', False)
 
     now = datetime.datetime.utcnow()
+    parent_path = request.json.get('parent_path', None)
+    title_ja = request.json.get('title_ja', None)
+    title_en = request.json.get('title_en', None)
 
     connection = client.connect_from_settings_or_401(weko_settings, node_addon)
+    if parent_path is None:
+        parent_index_id = node_addon.index_id
+    else:
+        parent_index_id = parent_path.split('/') [-2]
 
-    weko = client.get_weko(connection, node_addon.weko_alias)
-    dataset = client.get_dataset(weko, node_addon.dataset_doi)
-
-    if publish_both:
-        client.publish_weko(weko)
-    client.publish_dataset(dataset)
+    index_id = client.create_index(connection, title_ja, title_en,
+                                   parent_index_id)
 
     # Add a log
     node.add_log(
-        action='weko_dataset_published',
+        action='weko_index_created',
         params={
             'project': node.parent_id,
             'node': node._id,
-            'dataset': dataset.title,
+            'new_title_ja': title_ja,
+            'new_title_en': title_en
         },
         auth=auth,
         log_date=now,
     )
 
-    return {'dataset': dataset.title}, http.OK
+    indices = client.get_all_indices(connection)
+
+    return {'nodeId': node._id,
+            'name': title_ja,
+            'kind': 'folder',
+            'path': _get_path(indices, index_id),
+            'provider': SHORT_NAME}, http.OK
 
 ## HGRID ##
 
@@ -243,3 +252,11 @@ def _weko_root_folder(node_addon, auth, **kwargs):
 @must_have_addon(SHORT_NAME, 'node')
 def weko_root_folder(node_addon, auth, **kwargs):
     return _weko_root_folder(node_addon, auth=auth)
+
+def _get_path(indices, index_id):
+    index = filter(lambda i: str(i.identifier) == str(index_id), indices)[0]
+    if index.parentIdentifier is None:
+        return '/{}/'.format(index_id)
+    else:
+        return '{}{}/'.format(_get_path(indices, index.parentIdentifier),
+                              index_id)

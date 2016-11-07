@@ -97,11 +97,11 @@ api_routes = {
         ),
         Rule(
             [
-                '/project/<pid>/weko/publish/',
-                '/project/<pid>/node/<nid>/weko/publish/',
+                '/project/<pid>/weko/indices/',
+                '/project/<pid>/node/<nid>/weko/indices/',
             ],
-            'put',
-            views.weko_publish_dataset,
+            'post',
+            views.weko_create_index,
             json_renderer,
         ),
     ],

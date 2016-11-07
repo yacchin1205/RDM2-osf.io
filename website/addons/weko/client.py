@@ -264,6 +264,75 @@ def post(connection, insert_index_id, stream, stream_size):
             logger.warn('{}: {}'.format(index + 1, elem.attrib['message']))
     return src
 
+def create_index(connection, title_ja=None, title_en=None, relation=None):
+    root = connection.get('servicedocument.php')
+    indices = []
+    for desc in root.findall('.//{%s}Description' % RDF_NAMESPACE):
+        indices.append(Index(desc))
+    index_id = max(map(lambda i: int(i.identifier), indices)) + 1
+
+    target = None
+    for collection in root.findall('.//{%s}collection' % APP_NAMESPACE):
+        target = collection.attrib['href']
+    logger.info('Create: {} on {}'.format(index_id, target))
+    post_xml = etree.Element('{%s}RDF' % RDF_NAMESPACE,
+                             nsmap={'rdf': RDF_NAMESPACE, 'dc': DC_NAMESPACE})
+    desc_elem = etree.SubElement(post_xml, '{%s}Description' % RDF_NAMESPACE)
+    id_elem = etree.SubElement(desc_elem, '{%s}identifier' % DC_NAMESPACE)
+    id_elem.text = str(index_id)
+    if title_ja is not None:
+        title_elem = etree.SubElement(desc_elem, '{%s}title' % DC_NAMESPACE)
+        title_elem.attrib['{http://www.w3.org/XML/1998/namespace}lang'] = 'ja'
+        title_elem.text = title_ja
+    if title_en is not None:
+        title_elem = etree.SubElement(desc_elem, '{%s}title' % DC_NAMESPACE)
+        title_elem.attrib['{http://www.w3.org/XML/1998/namespace}lang'] = 'en'
+        title_elem.text = title_en
+    if relation is not None:
+        rel_elem = etree.SubElement(desc_elem, '{%s}relation' % DC_NAMESPACE)
+        rel_elem.text = relation
+    logger.debug('XML: {}'.format(etree.tostring(post_xml)))
+    stream = etree.tostring(post_xml, encoding='UTF-8', xml_declaration=True)
+    weko_headers = {
+        "Content-Disposition": "filename=tree.xml",
+        "Content-Type": "text/xml",
+        "Content-Length": str(len(stream)),
+    }
+    root = connection.post_url(target, stream, headers=weko_headers)
+    logger.info('Result: {}'.format(etree.tostring(root)))
+    return index_id
+
+def update_index(connection, index_id, title_ja=None, title_en=None, relation=None):
+    root = connection.get('servicedocument.php')
+    target = None
+    for collection in root.findall('.//{%s}collection' % APP_NAMESPACE):
+        target = collection.attrib['href']
+    logger.info('Update: {} on {}'.format(index_id, target))
+    post_xml = etree.Element('{%s}RDF' % RDF_NAMESPACE,
+                             nsmap={'rdf': RDF_NAMESPACE, 'dc': DC_NAMESPACE})
+    desc_elem = etree.SubElement(post_xml, '{%s}Description' % RDF_NAMESPACE)
+    source_elem = etree.SubElement(desc_elem, '{%s}source' % DC_NAMESPACE)
+    source_elem.text = index_id
+    if title_ja is not None:
+        title_elem = etree.SubElement(desc_elem, '{%s}title' % DC_NAMESPACE)
+        title_elem.attrib['{http://www.w3.org/XML/1998/namespace}lang'] = 'ja'
+        title_elem.text = title_ja
+    if title_en is not None:
+        title_elem = etree.SubElement(desc_elem, '{%s}title' % DC_NAMESPACE)
+        title_elem.attrib['{http://www.w3.org/XML/1998/namespace}lang'] = 'en'
+        title_elem.text = title_en
+    if relation is not None:
+        rel_elem = etree.SubElement(desc_elem, '{%s}relation' % DC_NAMESPACE)
+        rel_elem.text = relation
+    logger.debug('XML: {}'.format(etree.tostring(post_xml)))
+    stream = etree.tostring(post_xml, encoding='UTF-8', xml_declaration=True)
+    weko_headers = {
+        "Content-Disposition": "filename=tree.xml",
+        "Content-Type": "text/xml",
+        "Content-Length": str(len(stream)),
+    }
+    root = connection.post_url(target, stream, headers=weko_headers)
+    logger.info('Result: {}'.format(etree.tostring(root)))
 
 def get_datasets(weko):
     if weko is None:

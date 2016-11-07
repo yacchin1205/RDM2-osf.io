@@ -1,5 +1,6 @@
 'use strict';
 
+var ko = require('knockout');
 var m = require('mithril');
 var URI = require('URIjs');
 var $ = require('jquery');
@@ -70,6 +71,66 @@ var _wekoItemButtons = {
                 });;
         }
 
+        function startCreatingIndex(event, item, col) {
+            console.log('Show modal dialog...');
+            console.log(item);
+            var indexDesc = { 'title_ja': m.prop(''),
+                              'title_en': m.prop('') };
+            var modalContent = [m('.form-group', [
+                                    m('label', 'Title(ja)'),
+                                    m('input[type="text"].form-control', {
+                                            'onchange': m.withAttr('value', indexDesc.title_ja),
+                                            'placeholder': 'New index name(ja)'
+                                        })
+                                  ]),
+                                m('.form-group', [
+                                    m('label', 'Title(en)'),
+                                    m('input[type="text"].form-control', {
+                                            'onchange': m.withAttr('value', indexDesc.title_en),
+                                            'placeholder': 'New index name(en)'
+                                        })
+                                  ])];
+            var modalActions = [m('button.btn.btn-default', {
+                    'onclick': function () {
+                        tb.modal.dismiss();
+                    }
+                }, 'Cancel'),
+                m('button.btn.btn-primary', {
+                    'onclick': function () {
+                        createIndex(item,
+                                    indexDesc.title_ja(),
+                                    indexDesc.title_en(),
+                                    function() { tb.modal.dismiss(); });
+                    }
+                }, 'Next')];
+            tb.modal.update(modalContent, modalActions,
+                            m('h3.break-word.modal-title', 'Input descriptions about new index'));
+        }
+
+        function createIndex(parent_item, titleJa, titleEn, dismissCallback) {
+            console.log('Creating... ' + item + ' - ' + titleJa + ' - ' + titleEn);
+            var parentPath = null;
+            if(parent_item.kind == 'folder') {
+                parentPath = parent_item.data.path;
+            }
+            $osf.postJSON(
+                    item.data.nodeApiUrl + 'weko/indices/',
+                    ko.toJS({
+                        parent_path: parentPath,
+                        title_ja: titleJa,
+                        title_en: titleEn
+                    })
+                ).done(function(item){
+                    console.log('Created');
+                    item = tb.createItem(item, parent_item.id);
+                    item.notify.update('New index created!', 'success',
+                                       undefined, 1000);
+                    if(dismissCallback) {
+                        dismissCallback();
+                    }
+                });
+        }
+
         if (tb.options.placement !== 'fileview') {
             if (item.kind === 'folder') {
                 buttons.push(m.component(Fangorn.Components.button, {
@@ -79,6 +140,13 @@ var _wekoItemButtons = {
                                              icon: 'fa fa-upload',
                                              className: 'text-success'
                                          }, 'Register Item'));
+                buttons.push(m.component(Fangorn.Components.button, {
+                                             onclick: function(event) {
+                                                 startCreatingIndex.call(tb, event, item);
+                                             },
+                                             icon: 'fa fa-plus',
+                                             className: 'text-success'
+                                         }, 'Create Index'));
                 buttons.push(
                     m.component(Fangorn.Components.button, {
                         onclick: function (event) {
