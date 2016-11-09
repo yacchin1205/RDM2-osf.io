@@ -31,45 +31,6 @@ var _wekoItemButtons = {
             tb.dropzone.hiddenFileInput.click();
             tb.dropzoneItemCache = item;
         }
-        function registerItem(event, item, col) {
-            console.log('Retrieving serviceitemtype...');
-            console.log(item.data);
-            $.getJSON(item.data.nodeApiUrl + 'weko/serviceitemtype').done(function (data) {
-                console.log('ServiceItemType loaded');
-                console.log(data);
-                var modalContent = [m('p.m-md', 'Service item type'),
-                                    m('select', {onchange: function(value){ console.log(value); }},
-                                      data.item_type.map(function(d, i){
-                                          return m('option', { value: i, innerHTML: d.name });
-                                      }))];
-                var modalActions = [m('button.btn.btn-default', {
-                        'onclick': function () {
-                            tb.modal.dismiss();
-                        }
-                    }, 'Cancel'),
-                    m('button.btn.btn-primary', {
-                        'onclick': function () {
-                            publishDataset();
-                        }
-                    }, 'Next')];
-                tb.modal.update(modalContent, modalActions, m('h3.break-word.modal-title', 'Select service item type'));
-            }).fail(function (xhr, status, error) {
-                    var statusCode = xhr.responseJSON.code;
-                    var message = 'Error: Something went wrong when retrieving serviceitemtype. statusCode=' + statusCode;
-
-                    var modalContent = [
-                        m('p.m-md', message)
-                    ];
-                    var modalActions = [
-                        m('button.btn.btn-primary', {
-                            'onclick': function () {
-                                tb.modal.dismiss();
-                            }
-                        }, 'Okay')
-                    ];
-                    tb.modal.update(modalContent, modalActions);
-                });;
-        }
 
         function startCreatingIndex(event, item, col) {
             console.log('Show modal dialog...');
@@ -133,13 +94,6 @@ var _wekoItemButtons = {
 
         if (tb.options.placement !== 'fileview') {
             if (item.kind === 'folder') {
-                buttons.push(m.component(Fangorn.Components.button, {
-                                             onclick: function(event) {
-                                                 registerItem.call(tb, event, item);
-                                             },
-                                             icon: 'fa fa-upload',
-                                             className: 'text-success'
-                                         }, 'Register Item'));
                 buttons.push(m.component(Fangorn.Components.button, {
                                              onclick: function(event) {
                                                  startCreatingIndex.call(tb, event, item);
@@ -265,11 +219,131 @@ function _canDrop(item) {
     return true;
 }
 
+function _uploadUrl(item, file) {
+    return item.data.nodeApiUrl + 'weko/draft/';
+}
+
+function _uploadMethod(item) {
+    return 'POST';
+}
+
+function _cancelDraft(file, item, response, dismissCallback) {
+    console.log('canceled');
+    $.ajax({
+        url: response.nodeApiUrl + 'weko/draft/' + response.draft_id + '/',
+        type: 'DELETE',
+        success: function(result) {
+            console.log('Deleted');
+            console.log(item);
+
+            dismissCallback();
+        }
+    });
+}
+
+function _submitDraft(file, parentItem, response, metadata, dismissCallback) {
+    console.log('confirmed');
+    console.log(file);
+    console.log(metadata);
+    console.log(parentItem);
+    $osf.putJSON(response.nodeApiUrl + 'weko/draft/' + response.draft_id + '/',
+                  ko.toJS({asWEKOExport: metadata.asWEKOExport,
+                           serviceItemType: metadata.serviceItemType,
+                           insertIndex: parentItem.data.path})
+        ).done(function(item){
+            console.log('Created');
+            console.log(item);
+
+            dismissCallback();
+        });
+}
+
+function _findItem(item, item_id) {
+    if(item.id == item_id) {
+        return item;
+    }else if(item.children){
+        for(var i = 0; i < item.children.length; i ++) {
+            var found = _findItem(item.children[i], item_id);
+            if(found) {
+                return found;
+            }
+        }
+    }
+    return null;
+}
+
+function _uploadSuccess(file, item, response) {
+    var tb = this;
+    console.log('Retrieving serviceitemtype...');
+    $.getJSON(response.nodeApiUrl + 'weko/serviceitemtype').done(function (data) {
+        console.log('ServiceItemType loaded');
+        var fileDesc = {asWEKOExport: m.prop(false), serviceItemType: m.prop(0)};
+        var modalContent = [m('.form-group', [
+                               m('label', [
+                                   m('input[type=checkbox]',
+                                     {onchange: function() {
+                                                    fileDesc.asWEKOExport(this.checked);
+                                                    $('#service_item_type').prop('disabled', this.checked);
+                                                },
+                                      disabled: ! response.hasImportXml}),
+                                   'Import as WEKO EXPORT zip'
+                                 ])
+                              ]),
+                            m('.form-group', [
+                               m('label', 'Service item type'),
+                               m('select.form-control#service_item_type',
+                                  {onchange: m.withAttr('value', fileDesc.serviceItemType),
+                                   disabled: fileDesc.asWEKOExport()},
+                                  data.item_type.map(function(d, i){
+                                      return m('option', { value: i, innerHTML: d.name });
+                                  }))
+                              ])];
+        var modalActions = [m('button.btn.btn-default', {onclick: function () {
+                                _cancelDraft(file, item, response,
+                                             function() {
+                                                 tb.modal.dismiss();
+                                                 tb.updateFolder(null, _findItem(tb.treeData, item.parentID));
+                                             });
+                            }}, 'Cancel'),
+                            m('button.btn.btn-primary', {onclick: function () {
+                                _submitDraft(file,
+                                             _findItem(tb.treeData, item.parentID),
+                                             response,
+                                             {asWEKOExport: fileDesc.asWEKOExport(),
+                                              serviceItemType: fileDesc.serviceItemType()},
+                                             function() {
+                                                 tb.modal.dismiss();
+                                                 tb.updateFolder(null, _findItem(tb.treeData, item.parentID));
+                                             });
+                            }}, 'Submit')];
+        tb.modal.update(modalContent, modalActions, m('h3.break-word.modal-title', 'Select file type'));
+    }).fail(function (xhr, status, error) {
+        var statusCode = xhr.responseJSON.code;
+        var message = 'Error: Something went wrong when retrieving serviceitemtype. statusCode=' + statusCode;
+
+        var modalContent = [
+                m('p.m-md', message)
+            ];
+        var modalActions = [
+                m('button.btn.btn-primary', {
+                        'onclick': function () {
+                            tb.modal.dismiss();
+                        }
+                    }, 'Okay')
+            ];
+        tb.modal.update(modalContent, modalActions);
+    });
+    return {};
+}
+
 Fangorn.config.weko = {
     folderIcon: _fangornFolderIcons,
     resolveDeleteUrl: _fangornDeleteUrl,
     resolveRows: _fangornColumns,
     lazyload:_fangornLazyLoad,
     canDrop: _canDrop,
+    uploadUrl: _uploadUrl,
+    uploadMethod: _uploadMethod,
+    uploadSuccess: _uploadSuccess,
     itemButtons: _wekoItemButtons
 };

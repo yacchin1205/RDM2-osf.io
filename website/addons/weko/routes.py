@@ -104,6 +104,33 @@ api_routes = {
             views.weko_create_index,
             json_renderer,
         ),
+        Rule(
+            [
+                '/project/<pid>/weko/draft/',
+                '/project/<pid>/node/<nid>/weko/draft/',
+            ],
+            'post',
+            views.weko_upload_draft,
+            json_renderer,
+        ),
+        Rule(
+            [
+                '/project/<pid>/weko/draft/<draftid>/',
+                '/project/<pid>/node/<nid>/weko/draft/<draftid>/',
+            ],
+            'put',
+            views.weko_submit_draft,
+            json_renderer,
+        ),
+        Rule(
+            [
+                '/project/<pid>/weko/draft/<draftid>/',
+                '/project/<pid>/node/<nid>/weko/draft/<draftid>/',
+            ],
+            'delete',
+            views.weko_cancel_draft,
+            json_renderer,
+        ),
     ],
     'prefix': '/api/v1'
 }

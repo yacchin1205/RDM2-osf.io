@@ -2,6 +2,9 @@
 # -*- coding: utf-8 -*-
 import datetime
 import httplib as http
+import uuid
+import os
+import zipfile
 from requests.exceptions import SSLError
 
 from flask import request
@@ -224,6 +227,59 @@ def weko_create_index(node_addon, auth, **kwargs):
             'kind': 'folder',
             'path': _get_path(indices, index_id),
             'provider': SHORT_NAME}, http.OK
+
+@must_have_permission('write')
+@must_not_be_registration
+@must_have_addon(SHORT_NAME, 'node')
+@must_be_addon_authorizer(SHORT_NAME)
+def weko_upload_draft(node_addon, auth, **kwargs):
+    node = node_addon.owner
+
+    base_id = node._id + '-' + uuid.uuid1().hex
+    fn = os.path.join(weko_settings.DRAFT_DIR,
+                      'weko-' + base_id + '.draft')
+    with open(fn, 'wb') as f:
+        f.write(request.data)
+
+    hasImportXml = False
+    try:
+        with zipfile.ZipFile(fn, 'r') as zf:
+            hasImportXml = 'import.xml' in zf.namelist()
+    except:
+        pass
+    return {'draft_id': base_id,
+            'hasImportXml': hasImportXml,
+            'nodeApiUrl': '/api/v1/project/{}/'.format(node._id)}, http.OK
+
+@must_have_permission('write')
+@must_not_be_registration
+@must_have_addon(SHORT_NAME, 'node')
+@must_be_addon_authorizer(SHORT_NAME)
+def weko_submit_draft(draftid, node_addon, auth, **kwargs):
+    as_weko_export = request.json.get('asWEKOExport', False)
+    target_index_id = request.json.get('insertIndex', None)
+    target_index_id = target_index_id.split('/')[-2] if target_index_id is not None else None
+    if as_weko_export:
+        archived_file = os.path.join(weko_settings.DRAFT_DIR,
+                                     'weko-' + draftid + '.draft')
+    else:
+        raise NotImplementedError()
+
+    connection = client.connect_from_settings_or_401(weko_settings, node_addon)
+    with open(archived_file, 'r') as f:
+        client.post(connection, target_index_id, f,
+                    os.path.getsize(archived_file))
+
+    return {'result': 'test'}, http.OK
+
+@must_have_permission('write')
+@must_not_be_registration
+@must_have_addon(SHORT_NAME, 'node')
+@must_be_addon_authorizer(SHORT_NAME)
+def weko_cancel_draft(draftid, node_addon, auth, **kwargs):
+    os.remove(os.path.join(weko_settings.DRAFT_DIR,
+                           'weko-' + draftid + '.draft'))
+    return {'draft_id': draftid, 'status': 'canceled'}, http.OK
 
 ## HGRID ##
 

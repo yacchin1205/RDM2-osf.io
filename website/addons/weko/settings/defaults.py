@@ -8,3 +8,4 @@ REPOSITORIES = {'test.repo.nii.ac.jp':
                   'access_token_url': None}}
 REPOSITORY_IDS = list(sorted(REPOSITORIES.keys()))
 
+DRAFT_DIR = '/tmp/'
