@@ -5,7 +5,9 @@ import httplib as http
 import uuid
 import os
 import zipfile
+import tempfile
 from requests.exceptions import SSLError
+from lxml import etree
 
 from flask import request
 from flask import redirect
@@ -259,18 +261,44 @@ def weko_submit_draft(draftid, node_addon, auth, **kwargs):
     as_weko_export = request.json.get('asWEKOExport', False)
     target_index_id = request.json.get('insertIndex', None)
     target_index_id = target_index_id.split('/')[-2] if target_index_id is not None else None
+
+    connection = client.connect_from_settings_or_401(weko_settings, node_addon)
+    uploaded_filename = request.json.get('filename', None)
+
     if as_weko_export:
         archived_file = os.path.join(weko_settings.DRAFT_DIR,
                                      'weko-' + draftid + '.draft')
     else:
-        raise NotImplementedError()
+        service_item_type = int(request.json.get('serviceItemType', None))
+        item_types = client.get_serviceitemtype(connection)['item_type']
+        internal_item_type_id = 10000 + service_item_type + 1
 
-    connection = client.connect_from_settings_or_401(weko_settings, node_addon)
+        item_type = item_types[service_item_type]
+        title, ext = os.path.splitext(uploaded_filename)
+        title_en = title
+
+        with tempfile.NamedTemporaryFile(delete=False) as ziptf:
+            with zipfile.ZipFile(ziptf, 'w', zipfile.ZIP_DEFLATED) as zipf:
+                with tempfile.NamedTemporaryFile(delete=False) as importf:
+                    post_xml = client.create_import_xml(item_type,
+                                                        internal_item_type_id,
+                                                        uploaded_filename,
+                                                        title, title_en)
+                    importf.write(etree.tostring(post_xml,
+                                                 encoding='UTF-8',
+                                                 xml_declaration=True))
+                    importfn = importf.name
+                zipf.write(importfn, 'import.xml')
+                zipf.write(os.path.join(weko_settings.DRAFT_DIR,
+                                     'weko-' + draftid + '.draft'),
+                           uploaded_filename)
+            archived_file = ziptf.name
+
     with open(archived_file, 'r') as f:
         client.post(connection, target_index_id, f,
                     os.path.getsize(archived_file))
 
-    return {'result': 'test'}, http.OK
+    return {'draft_id': draftid, 'status': 'submitted'}, http.OK
 
 @must_have_permission('write')
 @must_not_be_registration

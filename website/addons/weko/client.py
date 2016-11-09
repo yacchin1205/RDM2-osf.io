@@ -4,6 +4,9 @@ from io import BytesIO
 from lxml import etree
 import base64
 from datetime import datetime
+import os
+import datetime
+import mimetypes
 
 logger = logging.getLogger('addons.weko.client')
 
@@ -203,7 +206,7 @@ def get_items(connection, index):
 
 def get_serviceitemtype(connection):
     root = connection.get('serviceitemtype.php')
-    logger.info('Serviceitemtype: {}'.format(etree.tostring(root)))
+    logger.debug('Serviceitemtype: {}'.format(etree.tostring(root)))
     r = {'metadata': [], 'item_type': []}
     for metadata in root.findall('metadata'):
         for k in filter(lambda k: k.startswith('columnname_'),
@@ -235,6 +238,8 @@ def get_serviceitemtype(connection):
                                         'column_name': additional_attr_elem.attrib[k]})
                     else:
                         additional_attr[k] = additional_attr_elem.attrib[k]
+                if additional_attr_elem.find('candidates') is not None:
+                    additional_attr['candidates'] = additional_attr_elem.find('candidates').text.split(additional_attr['delimiters'])
                 item_type['additional_attributes'].append(additional_attr)
             r['item_type'].append(item_type)
     return r
@@ -382,3 +387,91 @@ def get_weko(connection, alias):
     if connection is None:
         return
     return (connection, alias)
+
+def create_import_xml(item_type, internal_item_type_id, uploaded_filename, title, title_en):
+    post_xml = etree.Element('export')
+    item_elem = etree.SubElement(post_xml, 'repository_item')
+    item_elem.attrib['item_id'] = '1'
+    item_elem.attrib['item_no'] = '1'
+    item_elem.attrib['revision_no'] = '0'
+    item_elem.attrib['prev_revision_no'] = '0'
+    item_elem.attrib['item_type_id'] = str(internal_item_type_id)
+    item_elem.attrib['title'] = title
+    item_elem.attrib['title_english'] = title_en
+    item_elem.attrib['language'] = 'ja'
+    item_elem.attrib['review_status'] = '0'
+    item_elem.attrib['review_date'] = ''
+    item_elem.attrib['shown_status'] = '1'
+    item_elem.attrib['shown_date'] = datetime.datetime.now().strftime('%Y-%m-%d')
+
+    item_elem.attrib['reject_status'] = '0'
+    item_elem.attrib['reject_date'] = ''
+    item_elem.attrib['reject_reason'] = ''
+    item_elem.attrib['search_key'] = ''
+    item_elem.attrib['search_key_english'] = ''
+    item_elem.attrib['remark'] = ''
+
+    item_type_elem = etree.SubElement(post_xml, 'repository_item_type')
+    item_type_elem.attrib['item_type_id'] = str(internal_item_type_id)
+    item_type_elem.attrib['item_type_name'] = item_type['name']
+    item_type_elem.attrib['item_type_short_name'] = item_type['name']
+    item_type_elem.attrib['mapping_info'] = item_type['mapping_info']
+    item_type_elem.attrib['explanation'] = 'default item type'
+
+    for index, item_attr_type in enumerate(item_type['additional_attributes']):
+        item_attr_type_elem = etree.SubElement(post_xml, 'repository_item_attr_type')
+        item_attr_type_elem.attrib['item_type_id'] = str(internal_item_type_id)
+        item_attr_type_elem.attrib['attribute_id'] = str(index + 1)
+        item_attr_type_elem.attrib['show_order'] = str(index + 1)
+        item_attr_type_elem.attrib['attribute_name'] = item_attr_type['name']
+        item_attr_type_elem.attrib['attribute_short_name'] = item_attr_type['name']
+        item_attr_type_elem.attrib['input_type'] = _get_export_type(item_attr_type['type'])
+        item_attr_type_elem.attrib['is_required'] = '1' if item_attr_type['required'] == 'true' else '0'
+        item_attr_type_elem.attrib['plural_enable'] = '1' if item_attr_type['allowmultipleinput'] == 'true' else '0'
+        item_attr_type_elem.attrib['line_feed_enable'] = '1' if item_attr_type['specifynewline'] == 'true' else '0'
+        item_attr_type_elem.attrib['list_view_enable'] = '1' if item_attr_type['listing'] == 'true' else '0'
+        item_attr_type_elem.attrib['hidden'] = '1' if item_attr_type['hidden'] == 'true' else '0'
+        for k in filter(lambda k: k.endswith('_mapping') or k == 'display_lang_type', item_attr_type.keys()):
+            item_attr_type_elem.attrib[k] = item_attr_type[k]
+
+        if item_attr_type['type'] == 'file' and item_attr_type['junii2_mapping'] == 'fullTextURL':
+            file_elem = etree.SubElement(post_xml, 'repository_file')
+            file_elem.attrib['item_type_id'] = str(internal_item_type_id)
+            file_elem.attrib['attribute_id'] = str(index + 1)
+            file_elem.attrib['item_no'] = '1'
+            file_elem.attrib['file_no'] = '1'
+            file_elem.attrib['file_name'] = uploaded_filename
+            filename_body, filename_ext = os.path.splitext(uploaded_filename)
+            file_elem.attrib['display_name'] = filename_body
+            file_elem.attrib['display_type'] = '0'
+            file_elem.attrib['mime_type'] = mimetypes.guess_type(uploaded_filename)[0]
+            file_elem.attrib['extension'] = filename_ext
+            file_elem.attrib['license_id'] = '0'
+            file_elem.attrib['license_notation'] = ''
+            file_elem.attrib['pub_date'] = datetime.datetime.now().strftime('%Y-%m-%d')
+            file_elem.attrib['item_id'] = '1'
+            file_elem.attrib['browsing_flag'] = '0'
+            file_elem.attrib['cover_created_flag'] = '0'
+
+            license_elem = etree.SubElement(post_xml, 'repository_license_master')
+            license_elem.attrib['license_id'] = '0'
+            license_elem.attrib['license_notation'] = ''
+
+        if 'candidates' in item_attr_type:
+            for cand_no, candidate in enumerate(item_attr_type['candidates']):
+                item_attr_cand_elem = etree.SubElement(post_xml, 'repository_item_attr_candidate')
+                item_attr_cand_elem.attrib['item_type_id'] = str(internal_item_type_id)
+                item_attr_cand_elem.attrib['attribute_id'] = str(index + 1)
+                item_attr_cand_elem.attrib['candidate_no'] = str(cand_no + 1)
+                item_attr_cand_elem.attrib['candidate_value'] = candidate
+                item_attr_cand_elem.attrib['candidate_short_value'] = candidate
+
+    return post_xml
+
+def _get_export_type(serviceitemtype_type):
+    if serviceitemtype_type == 'pulldownmenu':
+        return 'select'
+    if serviceitemtype_type == 'biblioinfo':
+        return 'biblio_info'
+    return serviceitemtype_type
+

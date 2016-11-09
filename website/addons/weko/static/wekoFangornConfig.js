@@ -248,6 +248,7 @@ function _submitDraft(file, parentItem, response, metadata, dismissCallback) {
     console.log(parentItem);
     $osf.putJSON(response.nodeApiUrl + 'weko/draft/' + response.draft_id + '/',
                   ko.toJS({asWEKOExport: metadata.asWEKOExport,
+                           filename: file.name,
                            serviceItemType: metadata.serviceItemType,
                            insertIndex: parentItem.data.path})
         ).done(function(item){
