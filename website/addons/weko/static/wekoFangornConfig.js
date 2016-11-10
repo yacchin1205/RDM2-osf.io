@@ -15,11 +15,6 @@ function changeState(grid, item, version) {
     grid.updateFolder(null, item);
 }
 
-function _downloadEvent(event, item, col) {
-    event.stopPropagation();
-    window.location = waterbutler.buildTreeBeardDownload(item, {path: item.data.extra.fileId});
-}
-
 // Define Fangorn Button Actions
 var _wekoItemButtons = {
     view: function (ctrl, args, children) {
@@ -114,15 +109,6 @@ var _wekoItemButtons = {
                 buttons.push(
                     m.component(Fangorn.Components.button, {
                         onclick: function (event) {
-                            _downloadEvent.call(tb, event, item);
-                        },
-                        icon: 'fa fa-download',
-                        className: 'text-primary'
-                    }, 'Download')
-                );
-                buttons.push(
-                    m.component(Fangorn.Components.button, {
-                        onclick: function (event) {
                             Fangorn.ButtonEvents._removeEvent.call(tb, event, [item]);
                         },
                         icon: 'fa fa-trash',
@@ -132,7 +118,7 @@ var _wekoItemButtons = {
                 buttons.push(
                     m.component(Fangorn.Components.button, {
                         onclick: function(event) {
-                            gotoFile(item);
+                            gotoItem(item);
                         },
                         icon: 'fa fa-external-link',
                         className : 'text-info'
@@ -143,56 +129,13 @@ var _wekoItemButtons = {
     }
 };
 
-function gotoFile (item) {
-    var redir = new URI(item.data.nodeUrl);
-    window.location = redir
-        .segment('files')
-        .segment(item.data.provider)
-        .segment(item.data.extra.fileId)
-        .query({version: item.data.extra.datasetVersion})
-        .toString();
-}
+function gotoItem (item) {
+    var itemId = /\/item([0-9]+)$/.exec(item.data.path)[1];
 
-function _fangornColumns(item) {
-    var tb = this;
-    var columns = [];
-    columns.push({
-        data : 'name',
-        folderIcons : true,
-        filter : true
+    $.getJSON(item.data.nodeApiUrl + 'weko/item_view/' + itemId + '/').done(function (data) {
+        window.open(data.url, '_blank');
     });
-    if (tb.options.placement === 'project-files') {
-        columns.push(
-        {
-            data  : 'size',
-            sortInclude : false,
-            filter : false,
-            custom : function() {return m('');}
-        });
-        columns.push(
-        {
-            data  : 'downloads',
-            sortInclude : false,
-            filter : false,
-            custom : function() {return m('');}
-        });
-        columns.push({
-            data: 'version',
-            filter: false,
-            sortInclude : false,
-            custom: function() {return m('');}
-        });
-    }
-    if(tb.options.placement !== 'fileview') {
-        columns.push({
-            data : 'modified',
-            filter: false,
-            custom : function() {return m('');}
-        });
-    }
-    return columns;
 }
-
 
 function _fangornFolderIcons(item) {
     if (item.data.iconUrl) {
@@ -340,7 +283,6 @@ function _uploadSuccess(file, item, response) {
 Fangorn.config.weko = {
     folderIcon: _fangornFolderIcons,
     resolveDeleteUrl: _fangornDeleteUrl,
-    resolveRows: _fangornColumns,
     lazyload:_fangornLazyLoad,
     canDrop: _canDrop,
     uploadUrl: _uploadUrl,

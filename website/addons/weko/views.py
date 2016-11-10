@@ -6,6 +6,7 @@ import uuid
 import os
 import zipfile
 import tempfile
+import re
 from requests.exceptions import SSLError
 from lxml import etree
 
@@ -187,6 +188,15 @@ def weko_set_config(node_addon, auth, **kwargs):
 def weko_get_serviceitemtype(node_addon, **kwargs):
     connection = client.connect_from_settings_or_401(weko_settings, node_addon)
     return client.get_serviceitemtype(connection)
+
+@must_be_contributor_or_public
+@must_have_addon(SHORT_NAME, 'node')
+def weko_get_item_view(itemid, node_addon, **kwargs):
+    weko_host = weko_settings.REPOSITORIES[node_addon.external_account.provider_id.split('@')[-1]]['host']
+    connection = client.connect_from_settings_or_401(weko_settings, node_addon)
+    index_url = client.get_all_indices(connection)[0].about
+    base_url = re.compile(r'^(.+)\?action=.*$').match(index_url).group(1)
+    return {'url': '{}?action=repository_uri&item_id={}'.format(base_url, itemid)}, http.OK
 
 @must_have_permission('write')
 @must_not_be_registration

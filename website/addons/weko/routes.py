@@ -97,6 +97,15 @@ api_routes = {
         ),
         Rule(
             [
+                '/project/<pid>/weko/item_view/<itemid>/',
+                '/project/<pid>/node/<nid>/weko/item_view/<itemid>/',
+            ],
+            'get',
+            views.weko_get_item_view,
+            json_renderer,
+        ),
+        Rule(
+            [
                 '/project/<pid>/weko/indices/',
                 '/project/<pid>/node/<nid>/weko/indices/',
             ],
