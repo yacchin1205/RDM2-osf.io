@@ -186,7 +186,7 @@ class AddonWEKONodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
                 params={
                     'project': self.owner.parent_id,
                     'node': self.owner._id,
-                    'index': index.title,
+                    'dataset': index.title,
                 },
                 auth=auth,
             )
