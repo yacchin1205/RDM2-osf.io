@@ -270,7 +270,7 @@ def weko_upload_draft(node_addon, auth, **kwargs):
 def weko_submit_draft(draftid, node_addon, auth, **kwargs):
     as_weko_export = request.json.get('asWEKOExport', False)
     target_index_id = request.json.get('insertIndex', None)
-    target_index_id = target_index_id.split('/')[-2] if target_index_id is not None else None
+    target_index_id = target_index_id.split('/')[-2] if target_index_id is not None else node_addon.index_id
 
     connection = client.connect_from_settings_or_401(weko_settings, node_addon)
     uploaded_filename = request.json.get('filename', None)
