@@ -182,11 +182,11 @@ class AddonWEKONodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
 
         if auth:
             self.owner.add_log(
-                action='weko_dataset_linked',
+                action='weko_index_linked',
                 params={
                     'project': self.owner.parent_id,
                     'node': self.owner._id,
-                    'dataset': index.title,
+                    'index': index.title,
                 },
                 auth=auth,
             )
