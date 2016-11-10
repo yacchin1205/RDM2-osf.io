@@ -225,8 +225,7 @@ def weko_create_index(node_addon, auth, **kwargs):
         params={
             'project': node.parent_id,
             'node': node._id,
-            'new_title_ja': title_ja,
-            'new_title_en': title_en
+            'filename': title_ja
         },
         auth=auth,
         log_date=now,
