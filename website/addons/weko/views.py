@@ -201,7 +201,6 @@ def weko_get_item_view(itemid, node_addon, **kwargs):
 @must_have_permission('write')
 @must_not_be_registration
 @must_have_addon(SHORT_NAME, 'node')
-@must_be_addon_authorizer(SHORT_NAME)
 def weko_create_index(node_addon, auth, **kwargs):
     node = node_addon.owner
 
@@ -242,7 +241,6 @@ def weko_create_index(node_addon, auth, **kwargs):
 @must_have_permission('write')
 @must_not_be_registration
 @must_have_addon(SHORT_NAME, 'node')
-@must_be_addon_authorizer(SHORT_NAME)
 def weko_upload_draft(node_addon, auth, **kwargs):
     node = node_addon.owner
 
@@ -265,7 +263,6 @@ def weko_upload_draft(node_addon, auth, **kwargs):
 @must_have_permission('write')
 @must_not_be_registration
 @must_have_addon(SHORT_NAME, 'node')
-@must_be_addon_authorizer(SHORT_NAME)
 def weko_submit_draft(draftid, node_addon, auth, **kwargs):
     as_weko_export = request.json.get('asWEKOExport', False)
     target_index_id = request.json.get('insertIndex', None)
@@ -318,7 +315,6 @@ def weko_submit_draft(draftid, node_addon, auth, **kwargs):
 @must_have_permission('write')
 @must_not_be_registration
 @must_have_addon(SHORT_NAME, 'node')
-@must_be_addon_authorizer(SHORT_NAME)
 def weko_cancel_draft(draftid, node_addon, auth, **kwargs):
     os.remove(os.path.join(weko_settings.DRAFT_DIR,
                            'weko-' + draftid + '.draft'))
