@@ -277,13 +277,19 @@ def weko_submit_draft(draftid, node_addon, auth, **kwargs):
         title, ext = os.path.splitext(uploaded_filename)
         title_en = title
 
+        contributors = []
+        for contributor in node_addon.owner.contributors:
+            contributors.append({'family': contributor.family_name,
+                                 'name': contributor.given_name})
+
         with tempfile.NamedTemporaryFile(delete=False) as ziptf:
             with zipfile.ZipFile(ziptf, 'w', zipfile.ZIP_DEFLATED) as zipf:
                 with tempfile.NamedTemporaryFile(delete=False) as importf:
                     post_xml = client.create_import_xml(item_type,
                                                         internal_item_type_id,
                                                         uploaded_filename,
-                                                        title, title_en)
+                                                        title, title_en,
+                                                        contributors)
                     importf.write(etree.tostring(post_xml,
                                                  encoding='UTF-8',
                                                  xml_declaration=True))

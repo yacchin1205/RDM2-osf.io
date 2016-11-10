@@ -388,7 +388,7 @@ def get_weko(connection, alias):
         return
     return (connection, alias)
 
-def create_import_xml(item_type, internal_item_type_id, uploaded_filename, title, title_en):
+def create_import_xml(item_type, internal_item_type_id, uploaded_filename, title, title_en, contributors):
     post_xml = etree.Element('export')
     item_elem = etree.SubElement(post_xml, 'repository_item')
     item_elem.attrib['item_id'] = '1'
@@ -456,6 +456,23 @@ def create_import_xml(item_type, internal_item_type_id, uploaded_filename, title
             license_elem = etree.SubElement(post_xml, 'repository_license_master')
             license_elem.attrib['license_id'] = '0'
             license_elem.attrib['license_notation'] = ''
+        elif item_attr_type['type'] == 'name' and item_attr_type['junii2_mapping'] == 'creator':
+            for name_index, contributor in enumerate(contributors):
+                logger.info('Contributor: {}'.format(contributor))
+                name_elem = etree.SubElement(post_xml, 'repository_personal_name')
+                name_elem.attrib['item_type_id'] = str(internal_item_type_id)
+                name_elem.attrib['attribute_id'] = str(index + 1)
+                name_elem.attrib['item_no'] = '1'
+                name_elem.attrib['personal_name_no'] = str(name_index + 1)
+                name_elem.attrib['author_id'] = str(name_index + 1)
+                name_elem.attrib['family'] = contributor['family']
+                name_elem.attrib['family_ruby'] = contributor['family']
+                name_elem.attrib['name'] = contributor['name']
+                name_elem.attrib['name_ruby'] = contributor['name']
+                name_elem.attrib['e_mail_address'] = ''
+                name_elem.attrib['prefix_name'] = ''
+                name_elem.attrib['suffix'] = ''
+                name_elem.attrib['item_id'] = '1'
 
         if 'candidates' in item_attr_type:
             for cand_no, candidate in enumerate(item_attr_type['candidates']):
