@@ -274,6 +274,7 @@ def weko_submit_draft(draftid, node_addon, auth, **kwargs):
     if as_weko_export:
         archived_file = os.path.join(weko_settings.DRAFT_DIR,
                                      'weko-' + draftid + '.draft')
+        title = uploaded_filename
     else:
         service_item_type = int(request.json.get('serviceItemType', None))
         item_types = client.get_serviceitemtype(connection)['item_type']
@@ -309,6 +310,18 @@ def weko_submit_draft(draftid, node_addon, auth, **kwargs):
     with open(archived_file, 'r') as f:
         client.post(connection, target_index_id, f,
                     os.path.getsize(archived_file))
+
+    # Add a log
+    node_addon.owner.add_log(
+        action='weko_item_created',
+        params={
+            'project': node_addon.owner.parent_id,
+            'node': node_addon.owner._id,
+            'filename': title
+        },
+        auth=auth,
+        log_date=datetime.datetime.utcnow(),
+    )
 
     return {'draft_id': draftid, 'status': 'submitted'}, http.OK
 
