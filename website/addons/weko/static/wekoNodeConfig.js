@@ -152,6 +152,7 @@ function ViewModel(url) {
     }).done(function(response) {
         // Update view model
         self.updateFromData(response.result);
+        self.repositories(response.result.repositories);
         self.loadedSettings(true);
     }).fail(function(xhr, textStatus, error) {
         self.changeMessage(self.messages.userSettingsError, 'text-danger');
@@ -231,34 +232,28 @@ ViewModel.prototype.setInfo = function() {
 /** Send POST request to authorize Dataverse */
 ViewModel.prototype.connectOAuth = function() {
     var self = this;
-
     // Selection should not be empty
-    if( !self.selectedHost() ){
-        self.changeMessage("Please select a Dataverse repository.", 'text-danger');
+    if(!self.selectedRepo()) {
+        self.changeMessage('Please select WEKO repository.', 'text-danger');
         return;
     }
-    var url = self.urls().create;
-    return $osf.postJSON(
-        url,
-        ko.toJS({
-            host: self.host,
-        })
-    ).done(function() {
+    console.log('Connect via OAuth: ' + self.selectedRepo());
+    window.oauthComplete = function() {
         self.clearModal();
         $modal.modal('hide');
         self.userHasAuth(true);
         self.importAuth();
-    }).fail(function(xhr, textStatus, error) {
-        var errorMessage = (xhr.status === 401) ? self.messages.authInvalid : self.messages.authError;
-        self.changeMessage(errorMessage, 'text-danger');
-        Raven.captureMessage('Could not authenticate with Dataverse', {
-            extra: {
-                url: url,
-                textStatus: textStatus,
-                error: error
+
+        var accountCount = self.accounts().length;
+        self.updateAccounts().done( function() {
+            if (self.accounts().length > accountCount) {
+                self.setMessage('Add-on successfully authorized. To link this add-on to an OSF project, go to the settings page of the project, enable WEKO, and choose content to connect.', 'text-success');
+            } else {
+                self.setMessage('Error while authorizing add-on. Please log in to your WEKO account and grant access to the OSF to enable this add-on.', 'text-danger');
             }
         });
-    });
+    };
+    window.open('/oauth/connect/weko/' + self.selectedRepo() + '/');
 };
 
 ViewModel.prototype.fetchAccounts = function() {
