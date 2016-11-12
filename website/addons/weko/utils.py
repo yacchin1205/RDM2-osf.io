@@ -1,6 +1,6 @@
 from website.addons.base.logger import AddonNodeLogger
 
-class DataverseNodeLogger(AddonNodeLogger):
+class WEKONodeLogger(AddonNodeLogger):
 
     addon_short_name = 'weko'
 

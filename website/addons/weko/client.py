@@ -172,7 +172,7 @@ def connect_from_settings_or_401(weko_settings, node_settings):
     return connect_or_error(host, token)
 
 
-def get_all_indices(connection, dataset=None):
+def get_all_indices(connection):
     root = connection.get('servicedocument.php')
     indices = []
     for desc in root.findall('.//{%s}Description' % RDF_NAMESPACE):
@@ -338,55 +338,6 @@ def update_index(connection, index_id, title_ja=None, title_en=None, relation=No
     }
     root = connection.post_url(target, stream, headers=weko_headers)
     logger.info('Result: {}'.format(etree.tostring(root)))
-
-def get_datasets(weko):
-    if weko is None:
-        return []
-    connection, title = weko
-    root = connection.get('servicedocument.php')
-    datasets = []
-    for workspace in root.findall('.//{%s}workspace' % APP_NAMESPACE):
-        if title == workspace.find('{%s}title' % ATOM_NAMESPACE).text:
-            for collection in workspace.findall('{%s}collection' % APP_NAMESPACE):
-                dtitle = collection.find('{%s}title' % ATOM_NAMESPACE).text
-                dhref = collection.attrib['href']
-                datasets.append({'title': dtitle, 'href': dhref})
-
-    return datasets
-
-
-def get_dataset(weko, href):
-    if weko is None:
-        return
-    connection, title = weko
-    root = connection.get('servicedocument.php')
-    datasets = []
-    for workspace in root.findall('.//{%s}workspace' % APP_NAMESPACE):
-        if title == workspace.find('{%s}title' % ATOM_NAMESPACE).text:
-            for collection in workspace.findall('{%s}collection' % APP_NAMESPACE):
-                dtitle = collection.find('{%s}title' % ATOM_NAMESPACE).text
-                dhref = collection.attrib['href']
-                if dhref == href:
-                    return {'title': dtitle, 'href': dhref}
-    return None
-
-
-def get_wekos(connection):
-    if connection is None:
-        return []
-    root = connection.get('servicedocument.php')
-    wekos = []
-    for workspace in root.findall('.//{%s}workspace' % APP_NAMESPACE):
-        title = workspace.find('{%s}title' % ATOM_NAMESPACE).text
-        logger.info('title: {}'.format(title))
-        wekos.append({'title': title, 'alias': title})
-    return wekos
-
-
-def get_weko(connection, alias):
-    if connection is None:
-        return
-    return (connection, alias)
 
 def create_import_xml(item_type, internal_item_type_id, uploaded_filename, title, title_en, contributors):
     post_xml = etree.Element('export')

@@ -1,5 +1,5 @@
 /**
- * Module that controls the Dataverse node settings. Includes Knockout view-model
+ * Module that controls the WEKO node settings. Includes Knockout view-model
  * for syncing data.
  */
 
@@ -58,9 +58,8 @@ function ViewModel(url) {
             return 'The API token provided for ' + $osf.htmlEscape(self.host()) + ' is invalid.';
         }),
         authError: ko.pureComputed(function() {
-            return 'Sorry, but there was a problem connecting to that instance of Dataverse. It ' +
-                'is likely that the instance hasn\'t been upgraded to Dataverse 4.0. If you ' +
-                'have any questions or believe this to be an error, please contact ' +
+            return 'Sorry, but there was a problem connecting to that instance of WEKO.' +
+                'If you have any questions or believe this to be an error, please contact ' +
                 'support@osf.io.';
         }),
         tokenImportSuccess: ko.pureComputed(function() {
@@ -74,22 +73,13 @@ function ViewModel(url) {
                 'this time. Please refresh the page. If the problem persists, email ' +
                 '<a href="mailto:support@osf.io">support@osf.io</a>.';
         }),
-        datasetDeaccessioned: ko.pureComputed(function() {
-            return 'This dataset has already been deaccessioned on Dataverse ' +
-                'and cannot be connected to the OSF.';
-        }),
-        forbiddenCharacters: ko.pureComputed(function() {
-            return 'This dataset cannot be connected due to forbidden characters ' +
-                'in one or more of the dataset\'s file names. This issue has been forwarded to our ' +
-                'development team.';
-        }),
         setInfoSuccess: ko.pureComputed(function() {
             var filesUrl = window.contextVars.node.urls.web + 'files/';
-            return 'Successfully linked dataset \'' + $osf.htmlEscape(self.savedIndexTitle()) + '\'. Go to the <a href="' +
+            return 'Successfully linked index \'' + $osf.htmlEscape(self.savedIndexTitle()) + '\'. Go to the <a href="' +
                 filesUrl + '">Files page</a> to view your content.';
         }),
-        setDatasetError: ko.pureComputed(function() {
-            return 'Could not connect to this dataset. Please refresh the page or ' +
+        setIndexError: ko.pureComputed(function() {
+            return 'Could not connect to this index. Please refresh the page or ' +
                 'contact <a href="mailto: support@osf.io">support@osf.io</a> if the ' +
                 'problem persists.';
         })
@@ -191,7 +181,7 @@ ViewModel.prototype.updateFromData = function(data) {
     }
 };
 
-/** Reset all fields from Dataverse host selection modal */
+/** Reset all fields from WEKO host selection modal */
 ViewModel.prototype.clearModal = function() {
     var self = this;
     self.message('');
@@ -216,8 +206,7 @@ ViewModel.prototype.setInfo = function() {
         self.changeMessage(self.messages.setInfoSuccess, 'text-success');
     }).fail(function(xhr, textStatus, error) {
         self.submitting(false);
-        var errorMessage = (xhr.status === 410) ? self.messages.datasetDeaccessioned :
-            (xhr.status = 406) ? self.messages.forbiddenCharacters : self.messages.setDatasetError;
+        var errorMessage = self.messages.setIndexError;
         self.changeMessage(errorMessage, 'text-danger');
         Raven.captureMessage('Could not authenticate with WEKO', {
             extra: {
@@ -229,7 +218,7 @@ ViewModel.prototype.setInfo = function() {
     });
 };
 
-/** Send POST request to authorize Dataverse */
+/** Send POST request to authorize WEKO */
 ViewModel.prototype.connectOAuth = function() {
     var self = this;
     // Selection should not be empty
@@ -244,14 +233,7 @@ ViewModel.prototype.connectOAuth = function() {
         self.userHasAuth(true);
         self.importAuth();
 
-        var accountCount = self.accounts().length;
-        self.updateAccounts().done( function() {
-            if (self.accounts().length > accountCount) {
-                self.setMessage('Add-on successfully authorized. To link this add-on to an OSF project, go to the settings page of the project, enable WEKO, and choose content to connect.', 'text-success');
-            } else {
-                self.setMessage('Error while authorizing add-on. Please log in to your WEKO account and grant access to the OSF to enable this add-on.', 'text-danger');
-            }
-        });
+        self.updateAccounts();
     };
     window.open('/oauth/connect/weko/' + self.selectedRepo() + '/');
 };

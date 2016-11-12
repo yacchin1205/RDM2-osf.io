@@ -31,7 +31,6 @@ class WEKOSerializer(OAuthAddonSerializer):
         ret = {
             'settings': web_url_for('user_addons'),  # TODO: Is this needed?
         }
-        # Dataverse users do not currently have profile URLs
         if external_account and external_account.profile_url:
             ret['owner'] = external_account.profile_url
 
@@ -55,8 +54,6 @@ class WEKOSerializer(OAuthAddonSerializer):
             'set': node.api_url_for('weko_set_config'),
             'importAuth': node.api_url_for('weko_import_auth'),
             'deauthorize': node.api_url_for('weko_deauthorize_node'),
-            'datasetPrefix': 'https://doi.org/',
-            'dataversePrefix': 'http://{0}/weko/'.format(host),
             'accounts': api_url_for('weko_account_list'),
         }
 
@@ -65,17 +62,13 @@ class WEKOSerializer(OAuthAddonSerializer):
         result = super(WEKOSerializer, self).serialized_node_settings
         result['repositories'] = weko_settings.REPOSITORY_IDS
 
-        # Update with Dataverse specific fields
+        # Update with WEKO specific fields
         if self.node_settings.has_auth:
-            external_account = self.node_settings.external_account
-            weko_host = external_account.oauth_key
-
             connection = client.connect_from_settings(weko_settings, self.node_settings)
             all_indices = client.get_all_indices(connection)
             indices = list(filter(lambda i: i.nested == 0, all_indices))
 
             result.update({
-                'dataverseHost': weko_host,
                 'connected': connection is not None,
                 'indices': [
                     {'title': index.title, 'id': index.identifier, 'about': index.about}

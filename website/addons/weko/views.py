@@ -84,7 +84,7 @@ weko_get_config = generic_views.get_config(
 @must_be_logged_in
 def weko_user_config_get(auth, **kwargs):
     """View for getting a JSON representation of the logged-in user's
-    Dataverse user settings.
+    WEKO user settings.
     """
 
     user_addon = auth.user.get_addon('weko')
@@ -118,7 +118,6 @@ def weko_add_user_account(auth, **kwargs):
     # Verify that credentials are valid
     client.connect_or_error(host, api_token)
 
-    # Note: `DataverseSerializer` expects display_name to be a URL
     try:
         provider.account = ExternalAccount(
             provider=provider.short_name,
@@ -126,7 +125,7 @@ def weko_add_user_account(auth, **kwargs):
             display_name=host,       # no username; show host
             oauth_key=host,          # hijacked; now host
             oauth_secret=api_token,  # hijacked; now api_token
-            provider_id=api_token,   # Change to username if Dataverse allows
+            provider_id=api_token,
         )
         provider.account.save()
     except KeyExistsException:
@@ -144,7 +143,7 @@ def weko_add_user_account(auth, **kwargs):
         user.add_addon('weko')
     user.save()
 
-    # Need to ensure that the user has dataverse enabled at this point
+    # Need to ensure that the user has WEKO enabled at this point
     user.get_or_add_addon('weko', auth=auth)
     user.save()
 

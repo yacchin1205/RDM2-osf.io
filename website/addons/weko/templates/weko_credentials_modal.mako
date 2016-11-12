@@ -13,7 +13,7 @@
 
                         <div class="col-sm-6">
 
-                            <!-- Select Dataverse installation -->
+                            <!-- Select WEKO installation -->
                             <div class="form-group">
                                 <label for="hostSelect">WEKO Repository</label>
                                 <select class="form-control"

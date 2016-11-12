@@ -19,7 +19,7 @@ from requests.exceptions import HTTPError as RequestsHTTPError
 
 from website.addons.weko.client import connect_or_error, connect_from_settings_or_401
 from website.addons.weko.serializer import WEKOSerializer
-from website.addons.weko.utils import DataverseNodeLogger
+from website.addons.weko.utils import WEKONodeLogger
 from website.addons.weko import settings as weko_settings
 from website.util import web_url_for, api_v2_url
 
@@ -169,7 +169,7 @@ class AddonWEKONodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
         auth = None
         if self.user_settings:
             auth = Auth(self.user_settings.owner)
-        return DataverseNodeLogger(
+        return WEKONodeLogger(
             node=self.owner,
             auth=auth
         )
@@ -191,17 +191,8 @@ class AddonWEKONodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
                 auth=auth,
             )
 
-    def _get_fileobj_child_metadata(self, filenode, user, cookie=None, version=None):
-        try:
-            return super(AddonDataverseNodeSettings, self)._get_fileobj_child_metadata(filenode, user, cookie=cookie, version=version)
-        except HTTPError as e:
-            # The Dataverse API returns a 404 if the dataset has no published files
-            if e.code == http.NOT_FOUND and version == 'latest-published':
-                return []
-            raise
-
     def clear_settings(self):
-        """Clear selected Dataverse and dataset"""
+        """Clear selected index"""
         self.index_id = None
         self.index_title = None
 
@@ -229,7 +220,7 @@ class AddonWEKONodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
 
     def serialize_waterbutler_settings(self):
         if not self.folder_id:
-            raise exceptions.AddonError('Dataverse is not configured')
+            raise exceptions.AddonError('WEKO is not configured')
         return {
             'host': self.external_account.oauth_key,
             'url': weko_settings.REPOSITORIES[self.external_account.provider_id.split('@')[-1]]['host'],
