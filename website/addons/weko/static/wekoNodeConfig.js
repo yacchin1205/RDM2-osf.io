@@ -14,12 +14,10 @@ var $modal = $('#wekoInputCredentials');
 
 function ViewModel(url) {
     var self = this;
-    const otherString = 'Other (Please Specify)';
 
     self.addonName = 'WEKO';
     self.url = url;
     self.urls = ko.observable();
-    self.apiToken = ko.observable();
 
     self.ownerName = ko.observable();
     self.nodeHasAuth = ko.observable(false);
@@ -35,31 +33,8 @@ function ViewModel(url) {
     self.savedIndexTitle = ko.observable();
 
     self.accounts = ko.observable([]);
-    self.selectedHost = ko.observable();    // Host specified in select element
-    self.customHost = ko.observable();      // Host specified in input element
-    self.savedHost = ko.observable();       // Configured host
     self.selectedRepo = ko.observable();
     self.repositories = ko.observableArray();
-
-    // Designated host, specified from select or input element
-    self.host = ko.pureComputed(function() {
-        return self.useCustomHost() ? self.customHost() : self.selectedHost();
-    });
-    // Whether to use select element or input element for host designation
-    self.useCustomHost = ko.pureComputed(function() {
-        return self.selectedHost() === otherString;
-    });
-    self.showApiTokenInput = ko.pureComputed(function() {
-        return Boolean(self.selectedHost());
-    });
-    self.tokenUrl = ko.pureComputed(function() {
-        var tokenPath = self.host() === 'dataverse.lib.virginia.edu'
-                ? '/account/apitoken' : '/dataverseuser.xhtml?selectTab=apiTokenTab';
-        return self.host() ? 'https://' + self.host() + tokenPath : null;
-    });
-    self.savedHostUrl = ko.pureComputed(function() {
-        return 'https://' + self.savedHost();
-    });
 
     self.messages = {
         userSettingsError: ko.pureComputed(function() {
@@ -144,13 +119,6 @@ function ViewModel(url) {
     self.showLinkedIndex = ko.pureComputed(function() {
         return self.savedIndexId();
     });
-    self.credentialsChanged = ko.pureComputed(function() {
-        return self.nodeHasAuth() && !self.validCredentials();
-    });
-    self.showInputCredentials = ko.pureComputed(function() {
-        return (self.credentialsChanged() && self.userIsOwner()) ||
-            (!self.userHasAuth() && !self.nodeHasAuth() && self.loadedSettings());
-    });
     self.hasIndices = ko.pureComputed(function() {
         return self.indices().length > 0;
     });
@@ -227,9 +195,7 @@ ViewModel.prototype.clearModal = function() {
     var self = this;
     self.message('');
     self.messageClass('text-info');
-    self.apiToken(null);
     self.selectedRepo(null);
-    self.customHost(null);
 };
 
 ViewModel.prototype.setInfo = function() {
@@ -276,7 +242,6 @@ ViewModel.prototype.connectOAuth = function() {
         url,
         ko.toJS({
             host: self.host,
-            api_token: self.apiToken
         })
     ).done(function() {
         self.clearModal();
