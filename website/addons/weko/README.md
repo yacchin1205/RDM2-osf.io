@@ -1,43 +1,38 @@
-# OSF Dataverse Add-on
+# OSF WEKO Add-on
 
-Enabling the addon for development
+## WEKO Add-onの設定方法
 
- - Install gpg.
- ```sh
- $ brew install gpg
- ```
- - Import a private key into your GnuPG keyring.
-```sh
-$ invoke encryption
+`website/addons/weko/settings/local.py` に以下の内容を記述する必要があります。
+
 ```
- - In `website/settings/local.py` add, `"dataverse"` to `ADDONS_REQUESTED`.
+REPOSITORIES = {'sample.repo.nii.ac.jp':
+                 {'host': 'http://sample.repo.nii.ac.jp/weko/sword/',
+                  'client_id': 'testclient2016a', 'client_secret': 'testpass2016a',
+                  'authorize_url': 'http://sample.repo.nii.ac.jp/oauth/authorize.php',
+                  'access_token_url': 'http://sample.repo.nii.ac.jp/oauth/token.php'}}
+REPOSITORY_IDS = list(sorted(REPOSITORIES.keys()))
+```
 
-Creating a Dataverse dataset on the test server
 
-1. Go to https://demo.dataverse.org/ and create an account
-2. On the homepage, click the "Create Dataverse" button to create a Dataverse
-3. Click the options icon on the Dataverse page
-4. On the Settings tab, set "Dataverse Publish Settings" to "Published" and save changes.
-5. On the Datasets tab, click "Create Dataset + Upload Data" and create a dataset (only title is required)
+設定したホストにHTTPSではないホストが含まれている場合、osf.io起動時の環境変数に以下を含める必要があります。
 
-To link a Dataverse dataset to a node (project or component):
+```
+OAUTHLIB_INSECURE_TRANSPORT=1
+```
 
-1. Go to user settings. Under "Add-ons", select "Dataverse" and click submit.
-2. Under "Configure Add-ons", enter your Dataverse credentials and click submit.
-3. Go to the the node settings page. Under "Select Add-ons", select "Dataverse" and click submit.
-4. Under "Configure Add-ons", select a Dataverse and dataset and click submit.
+## WEKOのインデックスとのリンク方法
+
+1. Go to user settings. Under "Add-ons", select "WEKO" and click submit.
+2. Under "Configure Add-ons", select your the repository and log-in by your account.
+3. Go to the the node settings page. Under "Select Add-ons", select "WEKO" and click submit.
+4. Under "Configure Add-ons", select your index and click submit.
 
 Notes on privacy settings:
- - Only the user that linked his or her Dataverse account can change the Dataverse or dataset linked from that account. Other contributors can still deauthorize the node.
+ - Only the user that linked his or her WEKO account can change the index linked from that account. Other contributors can still deauthorize the node.
  - For contributors with write permission to the node:
-    - The user can access the dataset title, doi, host Dataverse, and citation.
-    - The draft version and most-recently published version of a dataset are accessible as separate lists.
-    - Files from either the draft or published version can be viewed or downloaded.
-    - Files from the draft version can be uploaded, updated, or deleted.
-    - Draft versions can be published.
+    - The user can access the content of indices and items.
+    - Items in index can be viewed.
+    - Items can be uploaded, or deleted.
  - For non-contributors, when a node is public:
-    - The user can access the dataset title, doi, host Dataverse, and citation.
-    - Only the most-recently published version of the dataset is accessible.
-        - If there are no published files, the dataset is not displayed.
-    - Files from the published version can be viewed or downloaded.
- - For non-contributors, when a node is private, there is no access to the Dataverse add-on.
+    - The user can access the content of indices and items.
+ - For non-contributors, when a node is private, there is no access to the WEKO add-on.
