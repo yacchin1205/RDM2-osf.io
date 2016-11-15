@@ -76,11 +76,13 @@ COPY ./requirements/ /code/requirements/
 COPY ./website/addons/badges/requirements.txt /code/website/addons/badges/
 COPY ./website/addons/box/requirements.txt /code/website/addons/box/
 COPY ./website/addons/dataverse/requirements.txt /code/website/addons/dataverse/
+COPY ./website/addons/weko/requirements.txt /code/website/addons/weko/
 COPY ./website/addons/dropbox/requirements.txt /code/website/addons/dropbox/
 COPY ./website/addons/github/requirements.txt /code/website/addons/github/
 COPY ./website/addons/mendeley/requirements.txt /code/website/addons/mendeley/
 COPY ./website/addons/owncloud/requirements.txt /code/website/addons/owncloud/
 COPY ./website/addons/s3/requirements.txt /code/website/addons/s3/
+COPY ./website/addons/swift/requirements.txt /code/website/addons/swift/
 COPY ./website/addons/twofactor/requirements.txt /code/website/addons/twofactor/
 COPY ./website/addons/zotero/requirements.txt /code/website/addons/zotero/
 
@@ -91,11 +93,13 @@ RUN pip install --no-cache-dir -c /code/requirements/constraints.txt -r /code/re
 RUN pip install --no-cache-dir -c /code/requirements/constraints.txt -r /code/website/addons/badges/requirements.txt \
     && pip install --no-cache-dir -c /code/requirements/constraints.txt -r /code/website/addons/box/requirements.txt \
     && pip install --no-cache-dir -c /code/requirements/constraints.txt -r /code/website/addons/dataverse/requirements.txt \
+    && pip install --no-cache-dir -c /code/requirements/constraints.txt -r /code/website/addons/weko/requirements.txt \
     && pip install --no-cache-dir -c /code/requirements/constraints.txt -r /code/website/addons/dropbox/requirements.txt \
     && pip install --no-cache-dir -c /code/requirements/constraints.txt -r /code/website/addons/github/requirements.txt \
     && pip install --no-cache-dir -c /code/requirements/constraints.txt -r /code/website/addons/mendeley/requirements.txt \
     && pip install --no-cache-dir -c /code/requirements/constraints.txt -r /code/website/addons/owncloud/requirements.txt \
     && pip install --no-cache-dir -c /code/requirements/constraints.txt -r /code/website/addons/s3/requirements.txt \
+    && pip install --no-cache-dir -c /code/requirements/constraints.txt -r /code/website/addons/swift/requirements.txt \
     && pip install --no-cache-dir -c /code/requirements/constraints.txt -r /code/website/addons/twofactor/requirements.txt \
     && pip install --no-cache-dir -c /code/requirements/constraints.txt -r /code/website/addons/zotero/requirements.txt
 
@@ -128,6 +132,7 @@ COPY ./website/addons/badges/static/ /code/website/addons/badges/static/
 COPY ./website/addons/box/static/ /code/website/addons/box/static/
 COPY ./website/addons/citations/static/ /code/website/addons/citations/static/
 COPY ./website/addons/dataverse/static/ /code/website/addons/dataverse/static/
+COPY ./website/addons/weko/static/ /code/website/addons/weko/static/
 COPY ./website/addons/dropbox/static/ /code/website/addons/dropbox/static/
 COPY ./website/addons/figshare/static/ /code/website/addons/figshare/static/
 COPY ./website/addons/forward/static/ /code/website/addons/forward/static/
@@ -137,6 +142,7 @@ COPY ./website/addons/mendeley/static/ /code/website/addons/mendeley/static/
 COPY ./website/addons/osfstorage/static/ /code/website/addons/osfstorage/static/
 COPY ./website/addons/owncloud/static/ /code/website/addons/owncloud/static/
 COPY ./website/addons/s3/static/ /code/website/addons/s3/static/
+COPY ./website/addons/swift/static/ /code/website/addons/swift/static/
 COPY ./website/addons/twofactor/static/ /code/website/addons/twofactor/static/
 COPY ./website/addons/wiki/static/ /code/website/addons/wiki/static/
 COPY ./website/addons/zotero/static/ /code/website/addons/zotero/static/
