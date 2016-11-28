@@ -81,6 +81,11 @@ module.exports = {
             userSettingsError: 'Could not retrieve settings. Please refresh the page or ' +
                 'contact ' + SUPPORT_LINK + ' if the problem persists.',
         },
+        azureblobstorage:{
+            authError: 'Could not connect to Azure Blob Storage at this time. Please try again later.',
+            userSettingsError: 'Could not retrieve settings. Please refresh the page or ' +
+                'contact ' + SUPPORT_LINK + ' if the problem persists.',
+        },
         googledrive: {
           // Shown on clicking "Delete Access Token" for googledrive
             confirmDeauth: 'Are you sure you want to disconnect the Google Drive account? ' +
