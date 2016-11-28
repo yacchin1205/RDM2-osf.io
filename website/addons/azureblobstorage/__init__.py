@@ -11,7 +11,7 @@ NODE_SETTINGS_MODEL = model.AzureBlobStorageNodeSettings
 ROUTES = [routes.api_routes]
 
 SHORT_NAME = 'azureblobstorage'
-FULL_NAME = 'AzureBlobStorage'
+FULL_NAME = 'Azure Blob Storage'
 
 
 OWNERS = ['user', 'node']
