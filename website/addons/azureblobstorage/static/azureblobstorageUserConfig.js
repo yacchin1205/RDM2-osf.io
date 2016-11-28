@@ -26,7 +26,6 @@ function ViewModel(url) {
     self.properName = 'Azure Blob Storage';
     self.accessKey = ko.observable();
     self.secretKey = ko.observable();
-    self.tenantName = ko.observable();
     self.account_url = '/api/v1/settings/azureblobstorage/accounts/';
     self.accounts = ko.observableArray();
 
@@ -38,12 +37,11 @@ function ViewModel(url) {
         self.messageClass('text-info');
         self.accessKey(null);
         self.secretKey(null);
-        self.tenantName(null);
     };
     /** Send POST request to authorize Azure Blob Storage */
     self.connectAccount = function() {
         // Selection should not be empty
-        if( !self.accessKey() && !self.secretKey() && !self.tenantName()){
+        if( !self.accessKey() && !self.secretKey()){
             self.changeMessage('Please enter both an API access key and secret key.', 'text-danger');
             return;
         }
@@ -58,16 +56,11 @@ function ViewModel(url) {
             return;
         }
 
-        if (!self.tenantName() ){
-            self.changeMessage('Please enter your tenant name.', 'text-danger');
-            return;
-        }
         return osfHelpers.postJSON(
             self.account_url,
             ko.toJS({
                 access_key: self.accessKey,
-                secret_key: self.secretKey,
-                tenant_name: self.tenantName
+                secret_key: self.secretKey
             })
         ).done(function() {
             self.clearModal();
@@ -97,7 +90,6 @@ function ViewModel(url) {
                 var externalAccount =  new ExternalAccount(account);
                 externalAccount.accessKey = account.oauth_key;
                 externalAccount.secretKey = account.oauth_secret;
-                externalAccount.tenantName = account.tenant_name;
                 return externalAccount;
             }));
             $('#azureblobstorage-header').osfToggleHeight({height: 160});

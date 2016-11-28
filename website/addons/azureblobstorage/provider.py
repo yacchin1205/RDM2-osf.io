@@ -9,10 +9,11 @@ class AzureBlobStorageProvider(BasicAuthProviderMixin):
     name = 'Azure Blob Storage'
     short_name = 'azureblobstorage'
 
-    def __init__(self, account=None, tenant_name=None, username=None, password=None):
-        if username:
-            username = username.lower()
-        return super(AzureBlobStorageProvider, self).__init__(account=account, host=tenant_name, username=username, password=password)
+    def __init__(self, account=None):
+        super(AzureBlobStorageProvider, self).__init__()
+
+        # provide an unauthenticated session by default
+        self.account = account
 
     def __repr__(self):
         return '<{name}: {status}>'.format(

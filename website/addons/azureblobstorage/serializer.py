@@ -38,8 +38,6 @@ class AzureBlobStorageSerializer(StorageAddonSerializer):
     def credentials_are_valid(self, user_settings, client=None):
         if user_settings:
             for account in user_settings.external_accounts:
-                provider = AzureBlobStorageProvider(account)
-                if utils.can_list(provider.username, provider.password,
-                                  provider.host):
+                if utils.can_list(account.oauth_key, account.oauth_secret):
                     return True
         return False

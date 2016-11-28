@@ -14,15 +14,11 @@
                         
                         <div class="col-sm-6">
                             <div class="form-group">
-                                <label for="azureblobstorageAddon">Tenant name</label>
-                                <input class="form-control" data-bind="value: tenantName" id="tenant_name" name="tenant_name" ${'disabled' if disabled else ''} />
-                            </div>
-                            <div class="form-group">
-                                <label for="azureblobstorageAddon">Username</label>
+                                <label for="azureblobstorageAddon">Account Name</label>
                                 <input class="form-control" data-bind="value: accessKey" id="access_key" name="access_key" ${'disabled' if disabled else ''} />
                             </div>
                             <div class="form-group">
-                                <label for="azureblobstorageAddon">Password</label>
+                                <label for="azureblobstorageAddon">Account Key</label>
                                 <input type="password" class="form-control" data-bind="value: secretKey" id="secret_key" name="secret_key" ${'disabled' if disabled else ''} />
                             </div>
                         </div>

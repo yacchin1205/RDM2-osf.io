@@ -1,8 +1,8 @@
 import re
 import httplib
 
-from azureblobstorageclient import Connection
-#from azureblobstorageclient import exceptions as azureblobstorage_exceptions
+from azure.storage.blob import BlockBlobService
+from azure.common import AzureHttpError
 
 from framework.exceptions import HTTPError
 from website.addons.base.exceptions import InvalidAuthError, InvalidFolderError
@@ -10,29 +10,23 @@ from website.addons.azureblobstorage.settings import BUCKET_LOCATIONS
 
 from website.addons.azureblobstorage.provider import AzureBlobStorageProvider
 
-def connect_azureblobstorage(access_key=None, secret_key=None, tenant_name=None, node_settings=None):
+def connect_azureblobstorage(account_name=None, account_key=None, node_settings=None):
     """Helper to build an azureblobstorageclient.Connection object
     """
     if node_settings is not None:
         if node_settings.external_account is not None:
-            provider = AzureBlobStorageProvider(node_settings.external_account)
-            access_key, secret_key, tenant_name = provider.username, provider.password, provider.host
-    connection = Connection(auth_version='2',
-                            authurl='http://inter-auth.ecloud.nii.ac.jp:5000/v2.0/',
-                            user=access_key,
-                            key=secret_key,
-                            tenant_name=tenant_name)
-    return connection
+            account = node_settings.external_account
+            account_name, account_key = account.oauth_key, account.oauth_secret
+    service = BlockBlobService(account_name=account_name, account_key=account_key)
+    return service
 
 
 def get_bucket_names(node_settings):
     try:
-        headers, containers = connect_azureblobstorage(node_settings=node_settings).get_account()
-        return list(map(lambda c: c['name'], containers))
-    except azureblobstorage_exceptions.ClientException as e:
-        raise HTTPError(e.http_status)
-
-    return [bucket.name for bucket in buckets]
+        containers = connect_azureblobstorage(node_settings=node_settings).list_containers()
+        return list(map(lambda c: c.name, containers))
+    except AzureHttpError as e:
+        raise HTTPError(e.status_code)
 
 
 def validate_bucket_name(name):
@@ -70,25 +64,25 @@ def container_exists(access_key, secret_key, tenant_name, container_name):
     return True
 
 
-def can_list(access_key, secret_key, tenant_name):
+def can_list(access_key, secret_key):
     """Return whether or not a user can list
     all buckets accessable by this keys
     """
     # Bail out early as boto does not handle getting
     # Called with (None, None)
-    if not (access_key and secret_key and tenant_name):
+    if not (access_key and secret_key):
         return False
 
     try:
-        connect_azureblobstorage(access_key, secret_key, tenant_name).get_account()
-    except exception.S3ResponseError:
+        connect_azureblobstorage(access_key, secret_key).list_containers()
+    except AzureHttpError:
         return False
     return True
 
-def get_user_info(access_key, secret_key, tenant_name):
+def get_user_info(account_name, account_key):
     """Returns an Azure Blob Storage User with .display_name and .id, or None
     """
-    if not (access_key and secret_key and tenant_name):
+    if not (account_name and account_key):
         return None
 
-    return {'display_name': access_key, 'id': access_key}
+    return {'display_name': account_name, 'id': account_name}

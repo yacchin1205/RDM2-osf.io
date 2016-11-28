@@ -28,14 +28,6 @@ class AzureBlobStorageNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase)
     folder_id = fields.StringField()
     folder_name = fields.StringField()
 
-    _api = None
-
-    @property
-    def api(self):
-        if self._api is None:
-            self._api = AzureBlobStorageProvider(self.external_account)
-        return self._api
-
     @property
     def folder_path(self):
         return self.folder_name
@@ -48,8 +40,7 @@ class AzureBlobStorageNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase)
         return u'{0}: {1}'.format(self.config.full_name, self.folder_id)
 
     def set_folder(self, folder_id, auth):
-        provider = AzureBlobStorageProvider(self.external_account)
-        if not container_exists(provider.username, provider.password, provider.host, folder_id):
+        if not container_exists(self.external_account.oauth_key, self.external_account.oauth_secret, folder_id):
             error_message = ('We are having trouble connecting to that bucket. '
                              'Try a different one.')
             raise exceptions.InvalidFolderError(error_message)
@@ -109,11 +100,9 @@ class AzureBlobStorageNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase)
     def serialize_waterbutler_credentials(self):
         if not self.has_auth:
             raise exceptions.AddonError('Cannot serialize credentials for Azure Blob Storage addon')
-        provider = AzureBlobStorageProvider(self.external_account)
         return {
-            'tenant_name': provider.host,
-            'username': provider.username,
-            'password': provider.password
+            'account_name': self.external_account.oauth_key,
+            'account_key': self.external_account.oauth_secret
         }
 
     def serialize_waterbutler_settings(self):

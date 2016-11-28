@@ -69,16 +69,15 @@ def azureblobstorage_add_user_account(auth, **kwargs):
     try:
         access_key = request.json['access_key']
         secret_key = request.json['secret_key']
-        tenant_name = request.json['tenant_name']
     except KeyError:
         raise HTTPError(httplib.BAD_REQUEST)
 
-    if not (access_key and secret_key and tenant_name):
+    if not (access_key and secret_key):
         return {
             'message': 'All the fields above are required.'
         }, httplib.BAD_REQUEST
 
-    user_info = utils.get_user_info(access_key, secret_key, tenant_name)
+    user_info = utils.get_user_info(access_key, secret_key)
     if not user_info:
         return {
             'message': ('Unable to access account.\n'
@@ -86,26 +85,32 @@ def azureblobstorage_add_user_account(auth, **kwargs):
                 'and that they have permission to list buckets.')
         }, httplib.BAD_REQUEST
 
-    if not utils.can_list(access_key, secret_key, tenant_name):
+    if not utils.can_list(access_key, secret_key):
         return {
             'message': ('Unable to list buckets.\n'
                 'Listing buckets is required permission that can be changed via IAM')
         }, httplib.BAD_REQUEST
 
-    provider = AzureBlobStorageProvider(account=None, tenant_name=tenant_name,
-                             username=access_key, password=secret_key)
     try:
-        provider.account.save()
+        account = ExternalAccount(
+            provider=SHORT_NAME,
+            provider_name=FULL_NAME,
+            oauth_key=access_key,
+            oauth_secret=secret_key,
+            provider_id=user_info['id'],
+            display_name=user_info['display_name'],
+        )
+        account.save()
     except KeyExistsException:
         # ... or get the old one
-        provider.account = ExternalAccount.find_one(
+        account = ExternalAccount.find_one(
             Q('provider', 'eq', SHORT_NAME) &
-            Q('provider_id', 'eq', '{}:{}'.format(tenant_name, access_key).lower())
+            Q('provider_id', 'eq', user_info['id'])
         )
-    assert provider.account is not None
+    assert account is not None
 
-    if provider.account not in auth.user.external_accounts:
-        auth.user.external_accounts.append(provider.account)
+    if account not in auth.user.external_accounts:
+        auth.user.external_accounts.append(account)
 
     # Ensure Azure Blob Storage is enabled.
     auth.user.get_or_add_addon('azureblobstorage', auth=auth)
