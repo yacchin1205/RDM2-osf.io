@@ -46,20 +46,20 @@ def create_container(node_settings, container_name):
     return connect_azureblobstorage(node_settings=node_settings).put_container(container_name)
 
 
-def container_exists(access_key, secret_key, tenant_name, container_name):
+def container_exists(access_key, secret_key, container_name):
     """Tests for the existance of a bucket and if the user
     can access it with the given keys
     """
     if not container_name:
         return False
 
-    connection = connect_azureblobstorage(access_key, secret_key, tenant_name)
+    connection = connect_azureblobstorage(access_key, secret_key)
 
     try:
         # Will raise an exception if container_name doesn't exist
-        connect_azureblobstorage(access_key, secret_key, tenant_name).head_container(container_name)
-    except exception.S3ResponseError as e:
-        if e.status not in (301, 302):
+        connection.get_container_properties(container_name)
+    except AzureHttpError as e:
+        if e.status_code not in (301, 302):
             return False
     return True
 
