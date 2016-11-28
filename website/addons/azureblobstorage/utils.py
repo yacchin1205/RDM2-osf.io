@@ -30,20 +30,17 @@ def get_bucket_names(node_settings):
 
 
 def validate_bucket_name(name):
-    """Make sure the bucket name conforms to Amazon's expectations as described at:
-    http://docs.aws.amazon.com/AmazonS3/latest/dev/BucketRestrictions.html#bucketnamingrules
-    The laxer rules for US East (N. Virginia) are not supported.
+    """Make sure the bucket name conforms to Azure's expectations
     """
-    label = '[a-z0-9]+(?:[a-z0-9\-]*[a-z0-9])?'
-    validate_name = re.compile('^' + label + '(?:\\.' + label + ')*$')
-    is_ip_address = re.compile('^[0-9]+(?:\.[0-9]+){3}$')
+    label = '[a-z0-9]+(?:[a-z0-9\-]*[a-z0-9])*'
+    validate_name = re.compile('^' + label + '$')
     return (
-        len(name) >= 3 and len(name) <= 63 and bool(validate_name.match(name)) and not bool(is_ip_address.match(name))
+        len(name) >= 3 and len(name) <= 63 and bool(validate_name.match(name))
     )
 
 
 def create_container(node_settings, container_name):
-    return connect_azureblobstorage(node_settings=node_settings).put_container(container_name)
+    return connect_azureblobstorage(node_settings=node_settings).create_container(container_name)
 
 
 def container_exists(access_key, secret_key, container_name):

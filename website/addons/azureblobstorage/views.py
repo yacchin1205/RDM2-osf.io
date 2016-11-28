@@ -1,6 +1,6 @@
 import httplib
 
-#from azureblobstorageclient import exceptions as azureblobstorage_exceptions
+from azure.common import AzureHttpError
 from flask import request
 from modularodm import Q
 from modularodm.storage.base import KeyExistsException
@@ -127,26 +127,16 @@ def azureblobstorage_create_container(auth, node_addon, **kwargs):
 
     if not utils.validate_bucket_name(bucket_name):
         return {
-            'message': 'That bucket name is not valid.',
-            'title': 'Invalid bucket name',
+            'message': 'That container name is not valid.',
+            'title': 'Invalid container name',
         }, httplib.BAD_REQUEST
 
     try:
         utils.create_container(node_addon, bucket_name)
-    except exception.S3ResponseError as e:
+    except AzureHttpError as e:
         return {
             'message': e.message,
             'title': 'Problem connecting to Azure Blob Storage',
-        }, httplib.BAD_REQUEST
-    except exception.S3CreateError as e:
-        return {
-            'message': e.message,
-            'title': "Problem creating bucket '{0}'".format(bucket_name),
-        }, httplib.BAD_REQUEST
-    except exception.BotoClientError as e:  # Base class catchall
-        return {
-            'message': e.message,
-            'title': 'Error connecting to Azure Blob Storage',
         }, httplib.BAD_REQUEST
 
     return {}

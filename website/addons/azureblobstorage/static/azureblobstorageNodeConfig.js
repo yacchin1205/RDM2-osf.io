@@ -211,8 +211,8 @@ var azureblobstorageFolderPickerViewModel = oop.extend(OauthAddonFolderPicker, {
                         } else if (!self.isValidBucketName(bucketName, false)) {
                             bootbox.confirm({
                                 title: 'Invalid container name',
-                                message: 'Azure Blob Storage containers can contain lowercase letters, numbers, and hyphens separated by' +
-                                ' periods.  Please try another name.',
+                                message: 'Azure Blob Storage containers can contain lowercase letters, numbers, and hyphens.' +
+                                '  Please try another name.',
                                 callback: function (result) {
                                     if (result) {
                                         self.openCreateContainer();
