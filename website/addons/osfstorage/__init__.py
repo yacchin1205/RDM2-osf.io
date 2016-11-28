@@ -12,7 +12,7 @@ ROUTES = [
 ]
 
 SHORT_NAME = 'osfstorage'
-FULL_NAME = 'OSF Storage'
+FULL_NAME = 'NII Storage'
 
 OWNERS = ['node']
 
