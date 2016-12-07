@@ -90,6 +90,36 @@
                 "text": "Swift object will be registered, but version history will not be copied to the registration."
             }
         },
+        "Azure Blob Storage": {
+            "Permissions": {
+                "status": "partial",
+                "text": "*** TODO ***"
+            },
+            "View / download file versions": {
+                "status": "partial",
+                "text": "*** TODO ***"
+            },
+            "Add / update files": {
+                "status": "full",
+                "text": "*** TODO ***"
+            },
+            "Delete files": {
+                "status": "full",
+                "text": "*** TODO ***"
+            },
+            "Logs": {
+                "status": "partial",
+                "text": "*** TODO ***"
+            },
+            "Forking": {
+                "status": "partial",
+                "text": "*** TODO ***"
+            },
+            "Registering": {
+                "status": "partial",
+                "text": "*** TODO ***"
+            }
+        },
         "figshare": {
             "Permissions": {
                 "status": "partial",
