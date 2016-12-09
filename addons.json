@@ -62,7 +62,7 @@
         "osfstorage": "NII Storage is the default storage provider for NII projects.",
         "owncloud": "ownCloud is an open source, self-hosted file sync and share app platform. Connect your ownCloud account to an OSF project to interact with files hosted on ownCloud via the OSF.",
         "s3": "Amazon S3 is a file storage add-on. Connect your S3 account to an OSF project to interact with files hosted on S3 via the OSF.",
-        "azureblobstorage": "*** TODO ***",
+        "azureblobstorage": "Azure Blob Storage is a file storage add-on. Connect your Azure Storage account to an OSF project to interact with files hosted on Azure Blob Storage via the OSF.",
         "twofactor": "Two-factor authentication is a security add-on. By using two-factor authentication, you'll protect your OSF account with both your password and your mobile phone.",
         "wiki": "The wiki is a versatile communication tool. Wikis can be used to explain the main points of your project and can contain information like lab notes or contact information.",
         "googledrive": "Google Drive is a file storage add-on. Connect your Google Drive account to an OSF project to interact with files hosted on Google Drive via the OSF."
