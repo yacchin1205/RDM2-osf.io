@@ -93,31 +93,31 @@
         "Azure Blob Storage": {
             "Permissions": {
                 "status": "partial",
-                "text": "*** TODO ***"
+                "text": "Making an OSF project public or private is independent of making an Azure Blob Storage container public or private."
             },
             "View / download file versions": {
                 "status": "partial",
-                "text": "*** TODO ***"
+                "text": "The Azure Blob Storage add-on does not support file versions."
             },
             "Add / update files": {
                 "status": "full",
-                "text": "*** TODO ***"
+                "text": "Adding/updating files in the project via OSF will be reflected in Azure Blob Storage."
             },
             "Delete files": {
                 "status": "full",
-                "text": "*** TODO ***"
+                "text": "Files deleted via OSF will be deleted in Azure Blob Storage."
             },
             "Logs": {
                 "status": "partial",
-                "text": "*** TODO ***"
+                "text": "The OSF keeps track of changes you make to your Azure Blob Storage containers through the OSF, but not for changes made using Azure Blob Storage directly."
             },
             "Forking": {
                 "status": "partial",
-                "text": "*** TODO ***"
+                "text": "Forking a project or component does not copy Azure Blob Storage authorization unless the user forking the project is the same user who authorized the Azure Blob Storage add-on in the source project being forked."
             },
             "Registering": {
-                "status": "partial",
-                "text": "*** TODO ***"
+                "status": "none",
+                "text": "Azure Blob Storage content will not be registered."
             }
         },
         "figshare": {

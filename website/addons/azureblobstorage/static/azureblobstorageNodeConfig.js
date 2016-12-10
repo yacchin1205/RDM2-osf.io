@@ -16,18 +16,20 @@ var azureblobstorageFolderPickerViewModel = oop.extend(OauthAddonFolderPicker, {
 
     constructor: function(addonName, url, selector, folderPicker, opts, tbOpts) {
         var self = this;
-        self.super.constructor(addonName, url, selector, folderPicker, tbOpts);
+        // TODO: [OSF-7069]
+        self.super.super.constructor.call(self, addonName, url, selector, folderPicker, tbOpts);
+        self.super.construct.call(self, addonName, url, selector, folderPicker, opts, tbOpts);
         // Non-OAuth fields
         self.accessKey = ko.observable('');
         self.secretKey = ko.observable('');
         // Treebeard config
         self.treebeardOptions = $.extend(
             {},
-            OauthAddonFolderPicker.prototype.treebeardOptions,
+            self.treebeardOptions,
             {   // TreeBeard Options
                 columnTitles: function() {
                     return [{
-                        title: 'Buckets',
+                        title: 'Containers',
                         width: '75%',
                         sort: false
                     }, {
@@ -140,13 +142,13 @@ var azureblobstorageFolderPickerViewModel = oop.extend(OauthAddonFolderPicker, {
             $osf.unblock();
             self.loadedFolders(false);
             self.activatePicker();
-            var msg = 'Successfully created bucket "' + $osf.htmlEscape(bucketName) + '". You can now select it from the list.';
+            var msg = 'Successfully created container "' + $osf.htmlEscape(bucketName) + '". You can now select it from the list.';
             var msgType = 'text-success';
             self.changeMessage(msg, msgType, null, true);
         }).fail(function(xhr) {
             var resp = JSON.parse(xhr.responseText);
             var message = resp.message;
-            var title = resp.title || 'Problem creating bucket';
+            var title = resp.title || 'Problem creating container';
             $osf.unblock();
             if (!message) {
                 message = 'Looks like that name is taken. Try another name?';
@@ -172,7 +174,7 @@ var azureblobstorageFolderPickerViewModel = oop.extend(OauthAddonFolderPicker, {
         var self = this;
 
         bootbox.dialog({
-            title: 'Create a new bucket',
+            title: 'Create a new container',
             message:
                     '<div class="row"> ' +
                         '<div class="col-md-12"> ' +
@@ -180,16 +182,13 @@ var azureblobstorageFolderPickerViewModel = oop.extend(OauthAddonFolderPicker, {
                                 '<div class="form-group"> ' +
                                     '<label class="col-md-4 control-label" for="bucketName">Container Name</label> ' +
                                     '<div class="col-md-8"> ' +
-                                        '<input id="bucketName" name="bucketName" type="text" placeholder="Enter bucket name" class="form-control" autofocus> ' +
+                                        '<input id="bucketName" name="bucketName" type="text" placeholder="Enter container name" class="form-control" autofocus> ' +
                                         '<div>' +
                                             '<span id="bucketModalErrorMessage" ></span>' +
                                         '</div>'+
                                     '</div>' +
                                 '</div>' +
                             '</form>' +
-                            '<span>For more information on locations, click ' +
-                                '<a href="http://www.bucketexplorer.com/documentation/amazon-s3--amazon-s3-buckets-and-regions.html">here</a>' + 
-                            '</span>' +
                         '</div>' +
                     '</div>',
             buttons: {
