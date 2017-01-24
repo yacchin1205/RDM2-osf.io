@@ -234,8 +234,8 @@
                 "text": "Forking a project or component does not copy WEKO authorization unless the user forking the project is the same user who authorized the WEKO add-on in the source project being forked."
             },
             "Registering": {
-                "status": "partial",
-                "text": "WEKO content will be registered, but version history will not be copied to the registration."
+                "status": "none",
+                "text": "WEKO content will not be registered."
             }
         },
         "Google Drive": {
