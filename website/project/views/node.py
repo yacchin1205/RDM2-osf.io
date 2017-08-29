@@ -301,6 +301,9 @@ def node_setting(auth, node, **kwargs):
         'project': 'Project'
     })
 
+    ret['group'] = node.group.name if node.group is not None else None
+    ret['can_delete'] = True if node.group is None else False
+
     return ret
 def collect_node_config_js(addons):
     """Collect webpack bundles for each of the addons' node-cfg.js modules. Return
