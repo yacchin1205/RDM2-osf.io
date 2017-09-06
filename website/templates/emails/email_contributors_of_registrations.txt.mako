@@ -10,7 +10,7 @@ For example, Sam initiates a registration of the private project "Destroy One Ri
 
 How will this affect you?  The new functionality will not apply to existing private OSF registrations - they can remain private.  If you have any public OSF registrations or ever decide to make those private registrations public, you will not be able to make them private.  If you want to avoid this, then you must set your public registrations to private before June 8, 2015.  As of June 8, 2015, all new registrations will become public immediately or following their embargo date.  As such, treat registration like journal publication - it is difficult to go back.
 
-Please let us know if you have any questions or would like help addressing your current public registrations: support@osf.io
+Please let us know if you have any questions or would like help addressing your current public registrations: nii-rdmp@meatmail.jp
 
 Regards,
 

@@ -168,7 +168,7 @@ $(document).ready(function() {
             }
         }
         function failedAddonUpdate() {
-            var msg = 'Sorry, we had trouble saving your settings. If this persists please contact <a href="mailto: support@osf.io">support@osf.io</a>';
+            var msg = 'Sorry, we had trouble saving your settings. If this persists please contact <a href="mailto: nii-rdmp@meatmail.jp">nii-rdmp@meatmail.jp</a>';
             bootbox.alert({
                 title: 'Request failed',
                 message: msg,

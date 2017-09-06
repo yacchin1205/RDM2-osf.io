@@ -21,7 +21,7 @@ logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
 
 
-FROM_ADDR = 'OSF Support <support@osf.io>'
+FROM_ADDR = 'OSF Support <nii-rdmp@meatmail.jp>'
 MESSAGE_NAME = 'permissions_change'
 SECURITY_MESSAGE = mails.Mail(
     'security_permissions_change',

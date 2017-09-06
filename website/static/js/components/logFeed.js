@@ -202,7 +202,7 @@ var LogFeed = {
             // Error message if the log request fails
             ctrl.failed ? m('p', [
                 'Unable to retrieve logs at this time. Please refresh the page or contact ',
-                m('a', {'href': 'mailto:support@osf.io'}, 'support@osf.io'),
+                m('a', {'href': 'mailto:nii-rdmp@meatmail.jp'}, 'nii-rdmp@meatmail.jp'),
                 ' if the problem persists.'
             ]) :
             // Show OSF spinner while there is a pending log request

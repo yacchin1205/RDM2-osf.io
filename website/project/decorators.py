@@ -181,7 +181,7 @@ def check_can_access(node, user, key=None, api_node=None):
             status.push_status_message('The view-only links you used are expired.', trust=False)
         raise HTTPError(http.FORBIDDEN, data={'message_long': ('User has restricted access to this page. '
             'If this should not have occurred and the issue persists, please report it to '
-            '<a href="mailto:support@osf.io">support@osf.io</a>.')})
+            '<a href="mailto:nii-rdmp@meatmail.jp">nii-rdmp@meatmail.jp</a>.')})
     return True
 
 

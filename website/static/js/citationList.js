@@ -125,7 +125,7 @@ var AlternativeModel = function(citation, view, parent) {
                             }
                         }).fail(function(response){
                             $osf.growl('Error:',
-                                'An unexpected error has occurred.  Please try again later.  If problem persists contact <a href="mailto: support@osf.io">support@osf.io</a>', 'danger'
+                                'An unexpected error has occurred.  Please try again later.  If problem persists contact <a href="mailto: nii-rdmp@meatmail.jp">nii-rdmp@meatmail.jp</a>', 'danger'
                             );
                         });
                     }
@@ -188,7 +188,7 @@ var AlternativeModel = function(citation, view, parent) {
                 }
             }).fail(function (response) {
                 $osf.growl('Error:',
-                    'An unexpected error has occurred.  Please try again later.  If problem persists contact <a href="mailto: support@osf.io">support@osf.io</a>', 'danger'
+                    'An unexpected error has occurred.  Please try again later.  If problem persists contact <a href="mailto: nii-rdmp@meatmail.jp">nii-rdmp@meatmail.jp</a>', 'danger'
                 );
             });
         }

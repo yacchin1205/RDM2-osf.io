@@ -96,12 +96,12 @@ var FolderPickerViewModel = oop.defclass({
                 return 'Could not retrieve ' + addonSafeName + ' settings at ' +
                     'this time. Please refresh ' +
                     'the page. If the problem persists, email ' +
-                    '<a href="mailto:support@osf.io">support@osf.io</a>.';
+                    '<a href="mailto:nii-rdmp@meatmail.jp">nii-rdmp@meatmail.jp</a>.';
             }),
             updateAccountsError: ko.pureComputed(function() {
                 return 'Could not retrieve ' + addonSafeName + ' account list at ' +
                     'this time. Please refresh the page. If the problem persists, email ' +
-                    '<a href="mailto:support@osf.io">support@osf.io</a>.';
+                    '<a href="mailto:nii-rdmp@meatmail.jp">nii-rdmp@meatmail.jp</a>.';
             }),
             deauthorizeSuccess: ko.pureComputed(function() {
                 return 'Disconnected ' + addonSafeName + '.';

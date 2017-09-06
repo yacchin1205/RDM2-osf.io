@@ -615,7 +615,7 @@ class TestProjectViews(OsfTestCase):
         assert_equal(res.json['message_long'],
                      'You do not have permission to perform this action. '
                      'If this should not have occurred and the issue persists, '
-                     'please report it to <a href="mailto:support@osf.io">support@osf.io</a>.'
+                     'please report it to <a href="mailto:nii-rdmp@meatmail.jp">nii-rdmp@meatmail.jp</a>.'
                      )
         assert_in(self.user1, self.project.contributors)
 

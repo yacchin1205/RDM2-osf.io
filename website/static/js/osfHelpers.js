@@ -283,7 +283,7 @@ var setXHRAuthorization = function (xhr, options) {
 
 var errorDefaultShort = 'Unable to resolve';
 var errorDefaultLong = 'OSF was unable to resolve your request. If this issue persists, ' +
-    'please report it to <a href="mailto:support@osf.io">support@osf.io</a>.';
+    'please report it to <a href="mailto:nii-rdmp@meatmail.jp">nii-rdmp@meatmail.jp</a>.';
 
 var handleAddonApiHTTPError = function(error){
     var response;

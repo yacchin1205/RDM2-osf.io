@@ -185,7 +185,7 @@ var ViewModel = function(data) {
                 }
             }
         }).fail(function (xhr, status, error) {
-            $osf.growl('Unable to modify the institution on this node. Please try again. If the problem persists, email <a href="mailto:support@osf.io.">support@osf.io</a>');
+            $osf.growl('Unable to modify the institution on this node. Please try again. If the problem persists, email <a href="mailto:nii-rdmp@meatmail.jp.">nii-rdmp@meatmail.jp</a>');
             Raven.captureMessage('Unable to modify this institution!', {
                 extra: {
                     url: url,

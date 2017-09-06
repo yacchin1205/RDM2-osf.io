@@ -20,7 +20,7 @@ Recently, we released an update that will require you to reauthorize any connect
 
 Until you reauthorize the connection between your account and these add-ons, the files stored there will not display correctly on the OSF.
 
-We apologize for any inconvenience. Please don't hesitate to email support@osf.io with questions. 
+We apologize for any inconvenience. Please don't hesitate to email nii-rdmp@meatmail.jp with questions. 
 
 Sincerely,
 

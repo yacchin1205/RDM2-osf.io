@@ -115,7 +115,7 @@
     </div>
     % else:
     <div class="alert alert-danger" role="alert">
-      Analytics unavailable. Please contact <a href="mailto:support@osfio">support@osf.io</a> if the problem persists.
+      Analytics unavailable. Please contact <a href="mailto:nii-rdmp@meatmail.jp">nii-rdmp@meatmail.jp</a> if the problem persists.
     </div>
     % endif
 %endif

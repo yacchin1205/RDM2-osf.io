@@ -57,7 +57,7 @@ var PrivateLinkViewModel = function(url) {
 
     function onFetchError() {
         $osf.growl('Could not retrieve projects.', 'Please refresh the page or ' +
-                'contact <a href="mailto: support@osf.io">support@osf.io</a> if the ' +
+                'contact <a href="mailto: nii-rdmp@meatmail.jp">nii-rdmp@meatmail.jp</a> if the ' +
                 'problem persists.');
     }
 

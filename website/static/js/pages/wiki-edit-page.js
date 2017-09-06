@@ -104,7 +104,7 @@ $(document).ready(function () {
         grid.addClass('hidden');
         errorMsg.removeClass('hidden');
         errorMsg.append('<p>Could not retrieve wiki pages. If this issue persists, ' +
-            'please report it to <a href="mailto:support@osf.io">support@osf.io</a>.</p>');
+            'please report it to <a href="mailto:nii-rdmp@meatmail.jp">nii-rdmp@meatmail.jp</a>.</p>');
         Raven.captureMessage('Could not GET wiki menu pages', {
             extra: { url: ctx.urls.grid, status: status, error: error }
         });

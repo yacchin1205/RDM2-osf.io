@@ -119,10 +119,10 @@ function confirmEmails(emailsToAdd) {
         }
 
         var confirmFailMessage = 'There was a problem adding \<b>' + email.address +
-            '\</b>. Please contact <a href="mailto: support@osf.io">support@osf.io</a> if the problem persists.';
+            '\</b>. Please contact <a href="mailto: nii-rdmp@meatmail.jp">nii-rdmp@meatmail.jp</a> if the problem persists.';
 
         var cancelFailMessage = 'There was a problem removing \<b>' + email.address +
-            '\</b>. Please contact <a href="mailto: support@osf.io">support@osf.io</a> if the problem persists.';
+            '\</b>. Please contact <a href="mailto: nii-rdmp@meatmail.jp">nii-rdmp@meatmail.jp</a> if the problem persists.';
 
         bootbox.dialog({
             title: title,

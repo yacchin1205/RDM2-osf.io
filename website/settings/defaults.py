@@ -121,7 +121,7 @@ USE_CDN_FOR_CLIENT_LIBS = True
 
 USE_EMAIL = True
 FROM_EMAIL = 'openscienceframework-noreply@osf.io'
-SUPPORT_EMAIL = 'support@osf.io'
+SUPPORT_EMAIL = 'nii-rdmp@meatmail.jp'
 
 # SMTP Settings
 MAIL_SERVER = 'smtp.sendgrid.net'

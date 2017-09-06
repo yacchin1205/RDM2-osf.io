@@ -41,7 +41,7 @@ var RegistrationRetractionViewModel = oop.extend(
             });
         },
         SUBMIT_ERROR_MESSAGE: 'Error submitting your withdrawal request, please try again. If the problem ' +
-                'persists, email <a href="mailto:support@osf.iop">support@osf.io</a>',
+                'persists, email <a href="mailto:nii-rdmp@meatmail.jpp">nii-rdmp@meatmail.jp</a>',
         CONFIRMATION_ERROR_MESSAGE: 'Please enter the registration title before clicking Withdraw Registration',
         JUSTIFICATON_ERROR_MESSAGE: 'Your justification is too long, please enter a justification with no more ' +
             'than 2048 characters long.',
