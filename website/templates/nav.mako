@@ -32,7 +32,7 @@
                 <li><a href="${domain}meetings/">${osf_page_name}<b>MEETINGS</b></a></li>
             </ul>
         </div>
-        % endif 
+        % endif
     </div>
     <div id="navbar" class="navbar-collapse collapse navbar-right">
         <ul class="nav navbar-nav"></ul>
@@ -46,9 +46,11 @@
                 % endif
                     <li><a href="${domain}search/">Search</a></li>
             % endif
+            % if nav_support:
             <li class="dropdown">
             <a href="${service_support_url}">Support</a>
             </li>
+            % endif:
 
             % if user_name and display_name:
             <li class="dropdown">
@@ -61,7 +63,9 @@
 
             <ul class="dropdown-menu auth-dropdown" role="menu">
                 <li><a href="${domain}profile/"><i class="fa fa-user fa-lg p-r-xs"></i> My Profile</a></li>
+                % if nav_support:
                 <li><a href="${domain}support/" ><i class="fa fa-life-ring fa-lg p-r-xs"></i> OSF Support</a></li>
+                % endif
                 <li><a href="${web_url_for('user_profile')}"><i class="fa fa-cog fa-lg p-r-xs"></i> Settings</a></li>
                 <li><a href="${web_url_for('auth_logout')}"><i class="fa fa-sign-out fa-lg p-r-xs"></i> Log out</a></li>
             </ul>
