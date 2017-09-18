@@ -32,5 +32,6 @@ PROVIDERS = {
     'owncloud': 'ownCloud',
     's3': 'Amazon S3',
     'swift': 'Swift',
-    'azureblobstorage': 'Azure Blob Storage'
+    'azureblobstorage': 'Azure Blob Storage',
+    'weko': 'WEKO'
 }
