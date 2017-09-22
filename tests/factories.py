@@ -115,6 +115,12 @@ class UserFactory(ModularOdmFactory):
     verification_key_v2 = {}
 
     @post_generation
+    def set_have_email(self, create, extracted):
+        self.have_email = True
+        if create:
+            self.save()
+
+    @post_generation
     def set_names(self, create, extracted):
         parsed = impute_names_model(self.fullname)
         for key, value in parsed.items():

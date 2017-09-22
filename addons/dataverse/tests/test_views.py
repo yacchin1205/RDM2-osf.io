@@ -44,7 +44,7 @@ class TestAuthViews(DataverseAddonTestCase, OsfTestCase, unittest.TestCase):
 
     def test_user_config_get(self):
         url = api_url_for('dataverse_user_config_get')
-        new_user = AuthUserFactory.build()
+        new_user = AuthUserFactory()
         res = self.app.get(url, auth=new_user.auth)
 
         result = res.json.get('result')
