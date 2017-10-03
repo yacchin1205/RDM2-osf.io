@@ -287,3 +287,10 @@ OSF_SHELL_USER_IMPORTS = None
 
 # Settings for use in the admin
 OSF_URL = 'https://osf.io'
+
+
+### NII extensions
+LOGIN_BY_EPPN = osf_settings.to_bool('LOGIN_BY_EPPN', False)
+USER_TIMEZONE = osf_settings.USER_TIMEZONE
+USER_LOCALE = osf_settings.USER_LOCALE
+CLOUD_GATAWAY_ISMEMBEROF_PREFIX = osf_settings.CLOUD_GATAWAY_ISMEMBEROF_PREFIX
