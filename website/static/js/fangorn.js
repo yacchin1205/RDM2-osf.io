@@ -1595,7 +1595,7 @@ function expandStateLoad(item) {
     var tb = this,
         i;
     if (item.children.length > 0 && item.depth === 1) {
-        // NOTE: On the RPP *only*: Load the top-level project's OSF Storage
+        // NOTE: On the RPP *only*: Load the top-level project's NII Storage
         // but do NOT lazy-load children in order to save hundreds of requests.
         // TODO: We might want to do this for every project, but that's TBD.
         // /sloria
@@ -1609,7 +1609,7 @@ function expandStateLoad(item) {
     }
     if (item.children.length > 0 && item.depth === 2) {
         for (i = 0; i < item.children.length; i++) {
-            if (item.children[i].data.isAddonRoot || item.children[i].data.addonFullName === 'OSF Storage' ) {
+            if (item.children[i].data.isAddonRoot || item.children[i].data.addonFullName === 'NII Storage' ) {
                 tb.updateFolder(null, item.children[i]);
             }
         }
