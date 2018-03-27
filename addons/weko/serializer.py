@@ -67,7 +67,6 @@ class WEKOSerializer(OAuthAddonSerializer):
     @property
     def serialized_node_settings(self):
         result = super(WEKOSerializer, self).serialized_node_settings
-        result['repositories'] = weko_settings.REPOSITORY_IDS
 
         # Update with WEKO specific fields
         if self.node_settings.has_auth:
@@ -104,7 +103,6 @@ class WEKOSerializer(OAuthAddonSerializer):
         valid_credentials = self.credentials_are_valid(user_settings, client)
 
         result = {
-            'repositories': weko_settings.REPOSITORY_IDS,
             'userIsOwner': user_is_owner,
             'nodeHasAuth': node_settings.has_auth,
             'urls': self.serialized_urls,

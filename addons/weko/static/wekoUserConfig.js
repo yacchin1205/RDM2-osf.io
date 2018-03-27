@@ -24,8 +24,6 @@ function ViewModel(configUrl, accountsUrl) {
     var self = this;
 
     self.properName = 'WEKO';
-    self.selectedRepo = ko.observable();
-    self.repositories = ko.observableArray();
     self.swordUrl = ko.observable('');
     self.accessKey = ko.observable('');
     self.secretKey = ko.observable('');
@@ -176,7 +174,6 @@ function ViewModel(configUrl, accountsUrl) {
             dataType: 'json'
         }).done(function (response) {
             var data = response.result;
-            self.repositories(data.repositories);
             self.updateAccounts();
         }).fail(function (xhr, textStatus, error) {
             self.changeMessage(language.userSettingsError, 'text-danger');

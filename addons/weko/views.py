@@ -72,8 +72,7 @@ def weko_user_config_get(auth, **kwargs):
             'userHasAuth': user_has_auth,
             'urls': {
                 'accounts': api_url_for('weko_account_list'),
-            },
-            'repositories': weko_settings.REPOSITORY_IDS
+            }
         },
     }, http.OK
 
