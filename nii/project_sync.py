@@ -15,7 +15,7 @@ from website import settings
 logger = getLogger(__name__)
 
 CERT = settings.GAKUNIN_SP_CERT
-KEY  = settings.GAKUNIN_SP_KEY
+KEY = settings.GAKUNIN_SP_KEY
 HOST = settings.CLOUD_GATAWAY_HOST
 
 def json_print(text):
@@ -84,7 +84,6 @@ def leave_group_project_sync(node, dict_new_contributors):
 
 def project_sync_one(node, cgapi=None):
     from osf.models.user import OSFUser
-    from modularodm import Q
     from website.util.permissions import CREATOR_PERMISSIONS, DEFAULT_CONTRIBUTOR_PERMISSIONS
 
     if not node.group:
@@ -108,23 +107,23 @@ def project_sync_one(node, cgapi=None):
         return
 
     dict_admins = {}
-    admin_entries = o_admins['entry'] if o_admins.has_key('entry') else {}
+    admin_entries = o_admins['entry'] if 'entry' in o_admins else {}
     for entry in admin_entries:
-        if not entry.has_key('id'):
+        if 'id' not in entry:
             continue
         i = entry['id']  # eptid
         if i is not None and i != '':
             dict_admins[i] = True
 
     dict_new_contributors = {}
-    user_entries = o_users['entry'] if o_users.has_key('entry') else {}
+    user_entries = o_users['entry'] if 'entry' in o_users else {}
     for entry in user_entries:
-        if not entry.has_key('id'):
+        if 'id' not in entry:
             continue
         eptid = entry['id']  # eptid
         try:
             user = OSFUser.objects.get(eptid=eptid)
-        except Exception as e:
+        except Exception:
             # unknown user
             #logger.warning('unknown user (eptid=' + eptid + '): ' +
             #               str(e.args))
@@ -133,9 +132,9 @@ def project_sync_one(node, cgapi=None):
             continue
 
         dict_new_contributors[user.id] = user
-        group_admin = dict_admins.has_key(eptid)
+        group_admin = eptid in dict_admins
 
-        if node.is_deleted == True and group_admin:
+        if node.is_deleted and group_admin:
             log_event('RE-OPEN', node.group.name, user.username)
             node.is_deleted = False   # re-enabled
 
