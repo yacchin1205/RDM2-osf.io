@@ -7,7 +7,6 @@ import re
 from lxml import etree
 
 from flask import request
-from flask import redirect
 
 from framework.auth.decorators import must_be_logged_in
 from framework.exceptions import HTTPError
@@ -28,8 +27,6 @@ from website.project.decorators import (
 
 from website.util import rubeus, api_url_for
 from website.util.sanitize import assert_clean
-from website.oauth.utils import get_service
-from website.oauth.signals import oauth_complete
 
 SHORT_NAME = 'weko'
 FULL_NAME = 'WEKO'

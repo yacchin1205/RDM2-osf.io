@@ -1,28 +1,16 @@
 # -*- coding: utf-8 -*-
-import httplib as http
-
 from addons.base import exceptions
 from addons.base.models import (BaseOAuthNodeSettings, BaseOAuthUserSettings,
                                 BaseStorageAddon)
 from django.db import models
 
 from framework.auth.decorators import Auth
-from framework.exceptions import HTTPError, PermissionsError
-from framework.sessions import session
-from requests_oauthlib import OAuth2Session
-from flask import request
 
-from osf.models.external import ExternalProvider
 from osf.models.files import File, Folder, BaseFileNode
-from oauthlib.oauth2.rfc6749.errors import MissingTokenError
-from requests.exceptions import HTTPError as RequestsHTTPError
 
-from addons.weko.client import connect_or_error
 from addons.weko.provider import WEKOProvider
 from addons.weko.serializer import WEKOSerializer
 from addons.weko.utils import WEKONodeLogger
-from addons.weko import settings as weko_settings
-from website.util import web_url_for
 
 OAUTH2 = 2
 
