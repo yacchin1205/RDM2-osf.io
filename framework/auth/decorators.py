@@ -162,7 +162,7 @@ def create_group_project(user, groupname):
     from osf.models.user import CGGroup
 
     node = Node(title=groupname,
-                category="project",
+                category='project',
                 description=groupname,
                 creator=user)
     group, created = CGGroup.objects.get_or_create(name=groupname)
