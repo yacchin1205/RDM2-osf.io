@@ -50,7 +50,7 @@ def nextcloud_add_user_account(auth, **kwargs):
     host_url = request.json.get('host')
     host = furl()
     host.host = host_url.rstrip('/').replace('https://', '').replace('http://', '')
-    host.scheme = 'https'
+    host.scheme = 'http'
 
     username = request.json.get('username')
     password = request.json.get('password')

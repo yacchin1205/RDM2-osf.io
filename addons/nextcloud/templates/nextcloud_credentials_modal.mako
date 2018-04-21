@@ -29,7 +29,7 @@
                             <div data-bind="if: useCustomHost">
                                 <label>Host URL</label>
                                 <div class="input-group form-group">
-                                    <div class="input-group-addon">https://</div>
+                                    <div class="input-group-addon">http://</div>
                                     <input type="text" class="form-control" name="customHost" data-bind="value: customHost" placeholder="nextcloud.example.org">
                                 </div>
                                 <div class="text-muted" style="text-align: center">
