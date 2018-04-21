@@ -1,2 +1,2 @@
 DEFAULT_HOSTS = []
-USE_SSL = True
+USE_SSL = False
