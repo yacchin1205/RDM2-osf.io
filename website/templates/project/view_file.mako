@@ -15,7 +15,7 @@
   <div class="col-sm-5">
     <h2 class="break-word">
       ## Split file name into two parts: with and without extension
-      <span id="fileTitleEditable">${file_name | h}</span>
+      ${file_name_title | h}<span id="file-ext">${file_name_ext | h}</span>
       <a id='versionLink' class='scripted'>(Version: ${ version_id | h})</a>
       % if file_revision:
         <small>&nbsp;${file_revision | h}</small>
@@ -26,7 +26,20 @@
     <div id="toggleBar" class="pull-right"></div>
   </div>
 </div>
+<div class="row">
+  <div class="col-sm-5">
+    <h4 class="break-word">
+    % if timestamp_verify_result_title == 'OK':
+      <font color="green"><b>Timestamp verification:${ timestamp_verify_result_title | h}</b></font>
+    % else:
+      <font color="red"><b>Timestamp verification:${ timestamp_verify_result_title | h}</b></font>
+    % endif
+    </h4>
+  </div>
+</div>
 <hr>
+
+
 
 %if file_id == node['preprint_file_id'] and node['is_preprint']:
 <div class="row">
@@ -218,7 +231,7 @@
             userId: ${ user['id'] | sjson, n },
             userName: ${ user['fullname'] | sjson, n },
             userUrl: ${ ('/' + user['id'] + '/') if user['id'] else None | sjson, n },
-            userProfileImage: ${ urls['profile_image'].replace('&amp;', '&') | sjson, n }
+            userGravatar: ${ urls['profile_image'].replace('&amp;', '&') | sjson, n }
         },
         node: {
           urls: {
