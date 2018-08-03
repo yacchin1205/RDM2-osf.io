@@ -6,7 +6,7 @@ ENV GOSU_VERSION=1.10 \
     YARN_VERSION=1.1.0
 
 # Libraries such as matplotlib require a HOME directory for cache and configuration
-RUN apt-get update && apt-get install -y gpg \
+RUN apt-get update && apt-get install -y gnupg \
     && apt-get clean \
     && apt-get autoremove -y \
     && rm -rf /var/lib/apt/lists/*
