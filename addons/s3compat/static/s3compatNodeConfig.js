@@ -15,6 +15,8 @@ var OauthAddonFolderPicker = require('js/oauthAddonNodeConfig')._OauthAddonNodeC
 var s3compatFolderPickerViewModel = oop.extend(OauthAddonFolderPicker, {
     constructor: function(addonName, url, selector, folderPicker, opts, tbOpts) {
         var self = this;
+        // TODO: [OSF-7069]
+        self.super.super.constructor.call(self, addonName, url, selector, folderPicker, tbOpts);
         self.super.constructor(addonName, url, selector, folderPicker, tbOpts);
         // Non-OAuth fields
         self.availableServices = ko.observableArray(s3compatSettings['availableServices']);
