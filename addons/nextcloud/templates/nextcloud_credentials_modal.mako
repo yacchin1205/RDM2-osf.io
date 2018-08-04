@@ -16,7 +16,6 @@
                                 <div class="form-group">
                                     <label for="hostSelect">Nextcloud Instance</label>
                                     <select class="form-control"
-                                            id="hostSelect"
                                             data-bind="options: visibleHosts,
                                                        optionsCaption: 'Select an Nextcloud Instance',
                                                        value: selectedHost,
