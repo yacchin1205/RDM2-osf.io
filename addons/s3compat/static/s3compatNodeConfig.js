@@ -26,7 +26,7 @@ var s3compatFolderPickerViewModel = oop.extend(OauthAddonFolderPicker, {
         // Treebeard config
         self.treebeardOptions = $.extend(
             {},
-            OauthAddonFolderPicker.prototype.treebeardOptions,
+            self.treebeardOptions,
             {   // TreeBeard Options
                 columnTitles: function() {
                     return [{
