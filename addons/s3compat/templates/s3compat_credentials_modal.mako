@@ -15,15 +15,15 @@
                         <div class="col-sm-6">
                             <div class="form-group">
                                 <label for="s3compatAddon">S3 Compatible Service</label>
-                                <select class="form-control" data-bind="value: selectedService, options: availableServices, optionsText: 'name'" id="selected_service" name="selected_service" ${'disabled' if disabled else ''}></select>
+                                <select class="form-control" data-bind="value: selectedService, options: availableServices, optionsText: 'name'" name="selected_service" ${'disabled' if disabled else ''}></select>
                             </div>
                             <div class="form-group">
                                 <label for="s3compatAddon">Access Key</label>
-                                <input class="form-control" data-bind="value: accessKey" id="access_key" name="access_key" ${'disabled' if disabled else ''} />
+                                <input class="form-control" data-bind="value: accessKey" name="access_key" ${'disabled' if disabled else ''} />
                             </div>
                             <div class="form-group">
                                 <label for="s3compatAddon">Secret Key</label>
-                                <input type="password" class="form-control" data-bind="value: secretKey" id="secret_key" name="secret_key" ${'disabled' if disabled else ''} />
+                                <input type="password" class="form-control" data-bind="value: secretKey" name="secret_key" ${'disabled' if disabled else ''} />
                             </div>
                         </div>
                     </div><!-- end row -->

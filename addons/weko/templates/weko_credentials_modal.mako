@@ -17,7 +17,6 @@
                             <div class="form-group">
                                 <label for="hostSelect">WEKO Repository</label>
                                 <select class="form-control"
-                                        id="hostSelect"
                                         data-bind="options: repositories,
                                                    optionsCaption: 'Select a WEKO repository',
                                                    value: selectedRepo,
@@ -31,15 +30,15 @@
                         <div class="col-sm-6" data-bind="visible: selectedRepo() == 'Other Repository (Basic Auth)'">
                             <div class="form-group">
                                 <label for="wekoAddon">WEKO SWORD URL</label>
-                                <input class="form-control" data-bind="value: swordUrl" id="sword_url" name="sword_url" ${'disabled' if disabled else ''} />
+                                <input class="form-control" data-bind="value: swordUrl" name="sword_url" ${'disabled' if disabled else ''} />
                             </div>
                             <div class="form-group">
                                 <label for="wekoAddon">WEKO Username</label>
-                                <input class="form-control" data-bind="value: accessKey" id="access_key" name="access_key" ${'disabled' if disabled else ''} />
+                                <input class="form-control" data-bind="value: accessKey" name="access_key" ${'disabled' if disabled else ''} />
                             </div>
                             <div class="form-group">
                                 <label for="wekoAddon">WEKO Password</label>
-                                <input type="password" class="form-control" data-bind="value: secretKey" id="secret_key" name="secret_key" ${'disabled' if disabled else ''} />
+                                <input type="password" class="form-control" data-bind="value: secretKey" name="secret_key" ${'disabled' if disabled else ''} />
                             </div>
                         </div>
 
