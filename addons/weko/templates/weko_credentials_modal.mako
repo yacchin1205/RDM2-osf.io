@@ -3,7 +3,7 @@
         <div class="modal-content">
 
             <div class="modal-header">
-                <h3>Select a WEKO repository</h3>
+                <h3>Connect a WEKO Account</h3>
             </div>
 
             <form>
@@ -17,7 +17,6 @@
                             <div class="form-group">
                                 <label for="hostSelect">WEKO Repository</label>
                                 <select class="form-control"
-                                        id="hostSelect"
                                         data-bind="options: repositories,
                                                    optionsCaption: 'Select a WEKO repository',
                                                    value: selectedRepo,
@@ -25,6 +24,22 @@
                                 </select>
                             </div>
 
+                        </div>
+
+                        <!-- for Basic Auth -->
+                        <div class="col-sm-6" data-bind="visible: selectedRepo() == 'Other Repository (Basic Auth)'">
+                            <div class="form-group">
+                                <label for="wekoAddon">WEKO SWORD URL</label>
+                                <input class="form-control" data-bind="value: swordUrl" name="sword_url" ${'disabled' if disabled else ''} />
+                            </div>
+                            <div class="form-group">
+                                <label for="wekoAddon">WEKO Username</label>
+                                <input class="form-control" data-bind="value: accessKey" name="access_key" ${'disabled' if disabled else ''} />
+                            </div>
+                            <div class="form-group">
+                                <label for="wekoAddon">WEKO Password</label>
+                                <input type="password" class="form-control" data-bind="value: secretKey" name="secret_key" ${'disabled' if disabled else ''} />
+                            </div>
                         </div>
 
                     </div><!-- end row -->
