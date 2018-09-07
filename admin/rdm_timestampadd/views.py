@@ -358,11 +358,11 @@ class AddTimestampData(RdmPermissionMixin, View):
                                                 download_file_path, tmp_dir)
             shutil.rmtree(tmp_dir)
         except Exception as err:
-            if os.path.exists(tmp_dir):
-                shutil.rmtree(tmp_dir)
-            raise ValueError('Exception:{}'.format(err))
-
-        request_data.update({'result': result})
+            if tmp_dir:
+                if os.path.exists(tmp_dir):
+                    shutil.rmtree(tmp_dir)
+        if 'result' in locals():
+            request_data.update({'result': result})
         return HttpResponse(json.dumps(request_data), content_type='application/json')
 
     def web_api_url(self, node_id):

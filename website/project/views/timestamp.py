@@ -213,13 +213,15 @@ def get_timestamp_error_data(auth, node, **kwargs):
                                               node._id, data['provider'], data['file_path'], download_file_path, tmp_dir)
 
         shutil.rmtree(tmp_dir)
+        return result
 
     except Exception as err:
-        if os.path.exists(tmp_dir):
-            shutil.rmtree(tmp_dir)
+        if tmp_dir:
+            if os.path.exists(tmp_dir):
+                shutil.rmtree(tmp_dir)
         logger.exception(err)
 
-    return result
+#    return result
 
 
 @must_be_contributor_or_public
@@ -267,13 +269,15 @@ def add_timestamp_token(auth, node, **kwargs):
         #data['file_name'], tmp_dir)
 
         shutil.rmtree(tmp_dir)
+        return result
 
     except Exception as err:
-        if os.path.exists(tmp_dir):
-            shutil.rmtree(tmp_dir)
+        if tmp_dir:
+            if os.path.exists(tmp_dir):
+                shutil.rmtree(tmp_dir)
         logger.exception(err)
 
-    return result
+#    return result
 
 
 @must_be_contributor_or_public
