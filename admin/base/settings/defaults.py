@@ -252,3 +252,6 @@ if DEBUG:
 
 # If set to True, automated tests with extra queries will fail.
 NPLUSONE_RAISE = False
+FCM_SETTINGS = {
+    'FCM_SERVER_KEY': ''
+}

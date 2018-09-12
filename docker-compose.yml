@@ -462,6 +462,7 @@ services:
       - osf_node_modules_vol:/code/node_modules
       - osf_admin_bower_components_vol:/code/admin/static/vendor/bower_components
       - osf_admin_node_modules_vol:/code/admin/node_modules
+      - /host_server/user_key_info:/user_key_info
 
   api:
     image: quay.io/centerforopenscience/osf:develop
@@ -506,4 +507,5 @@ services:
       - preprints_dist_vol:/preprints
       - registries_dist_vol:/registries
       - reviews_dist_vol:/reviews
+      - /host_server/user_key_info:/user_key_info
     stdin_open: true

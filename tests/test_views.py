@@ -91,6 +91,12 @@ from osf_tests.factories import (
 from osf.models import RdmUserKey, RdmTimestampGrantPattern, RdmFileTimestamptokenVerifyResult, Guid, BaseFileNode
 from api.base import settings as api_settings
 
+from website.views import (
+    userkey_generation,
+    userkey_generation_check,
+)
+import os
+
 @mock_app.route('/errorexc')
 def error_exc():
     UserFactory()
@@ -4877,7 +4883,7 @@ class TestRdmUserKey(OsfTestCase):
             pub_key_path = os.path.join(api_settings.KEY_SAVE_PATH, rdmuserkey_pub_key.key_name)
             os.remove(pub_key_path)
             rdmuserkey_pub_key.delete()
-        self.user.remove()
+        self.user.delete()
 
     def test_userkey_generation_check_return_true(self):
         userkey_generation(self.user._id)
@@ -5020,7 +5026,7 @@ class TestTimestampView(OsfTestCase):
     def tearDown(self):
         super(TestTimestampView, self).tearDown()
         osfuser_id = Guid.objects.get(_id=self.user._id).object_id
-        self.user.remove()
+        self.user.delete()
 
         rdmuserkey_pvt_key = RdmUserKey.objects.get(guid=osfuser_id, key_kind=api_settings.PRIVATE_KEY_VALUE)
         pvt_key_path = os.path.join(api_settings.KEY_SAVE_PATH, rdmuserkey_pvt_key.key_name)
@@ -5117,7 +5123,7 @@ class TestAddonFileViewTimestampFunc(OsfTestCase):
     def tearDown(self):
         super(TestAddonFileViewTimestampFunc, self).tearDown()
         osfuser_id = Guid.objects.get(_id=self.user._id).object_id
-        self.user.remove()
+        self.user.delete()
 
         rdmuserkey_pvt_key = RdmUserKey.objects.get(guid=osfuser_id, key_kind=api_settings.PRIVATE_KEY_VALUE)
         pvt_key_path = os.path.join(api_settings.KEY_SAVE_PATH, rdmuserkey_pvt_key.key_name)
