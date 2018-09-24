@@ -11,11 +11,11 @@ RUN set -ex \
     && chown www-data:www-data /var/www \
     && apt-get update \
     && apt-get install -y gnupg2 \
-    # GOSU
-    && gpg --keyserver hkp://pool.sks-keyservers.net:80 --recv-keys B42F6819007F00F88E364FD4036A9C25BF357DD4 \
     && for key in \
       # https://github.com/nodejs/docker-node/blob/9c25cbe93f9108fd1e506d14228afe4a3d04108f/8.2/Dockerfile
       # gpg keys listed at https://github.com/nodejs/node#release-team
+      # GOSU
+      B42F6819007F00F88E364FD4036A9C25BF357DD4 \
       # Node
       9554F04D7259F04124DE6B476D5A82AC7E37093B \
       94AE36675C464D64BAFA68DD7434390BDBE9B9C5 \
