@@ -1,5 +1,6 @@
 import mock
-from nose.tools import *  # flake8: noqa
+from nose.tools import *  # noqa:
+
 import pytest
 
 from django.utils import timezone
@@ -173,7 +174,7 @@ class TestPreprintList(ApiTestCase):
         pp.date_withdrawn = timezone.now()
         pp.save()
 
-        assert not pp.ever_public # Sanity check
+        assert not pp.ever_public  # Sanity check
 
         unauth_res = self.app.get(self.url)
         user_res = self.app.get(self.url, auth=self.user.auth)
@@ -559,7 +560,7 @@ class TestPreprintCreate(ApiTestCase):
                     [
                         SubjectFactory()._id]],
                 'is_published': True})
-        res = self.app.post_json_api(
+        self.app.post_json_api(
             self.url,
             private_project_payload,
             auth=self.user.auth)
@@ -577,7 +578,7 @@ class TestPreprintCreate(ApiTestCase):
                     [
                         SubjectFactory()._id]],
                 'is_published': False})
-        res = self.app.post_json_api(
+        self.app.post_json_api(
             self.url,
             private_project_payload,
             auth=self.user.auth)
