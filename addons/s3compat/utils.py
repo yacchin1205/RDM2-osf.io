@@ -4,6 +4,7 @@ import httplib
 from boto import exception
 from boto.s3.connection import S3Connection, OrdinaryCallingFormat, NoHostProvided
 from boto.s3.bucket import Bucket
+import addons.s3compat.settings as settings
 
 from framework.exceptions import HTTPError
 
@@ -55,6 +56,14 @@ def get_bucket_names(node_settings):
     return [bucket.name for bucket in buckets]
 
 
+def validate_bucket_location(node_settings, location):
+    if location == '':
+        return True
+    host = node_settings.external_account.provider_id.split('\t')[0]
+    service = [s for s in settings.AVAILABLE_SERVICES if s['host'] == host][0]
+    return location in service['bucketLocations']
+
+
 def validate_bucket_name(name):
     """Make sure the bucket name conforms to Amazon's expectations as described at:
     http://docs.aws.amazon.com/AmazonS3/latest/dev/BucketRestrictions.html#bucketnamingrules
@@ -68,8 +77,8 @@ def validate_bucket_name(name):
     )
 
 
-def create_bucket(node_settings, bucket_name):
-    return connect_s3compat(node_settings=node_settings).create_bucket(bucket_name)
+def create_bucket(node_settings, bucket_name, location=''):
+    return connect_s3compat(node_settings=node_settings).create_bucket(bucket_name, location=location)
 
 
 def bucket_exists(host, access_key, secret_key, bucket_name):
@@ -121,3 +130,17 @@ def get_user_info(host, access_key, secret_key):
     except exception.S3ResponseError:
         return None
     return None
+
+def get_bucket_location_or_error(host, access_key, secret_key, bucket_name):
+    """Returns the location of a bucket or raises AddonError
+    """
+    try:
+        connection = connect_s3compat(host, access_key, secret_key)
+    except:
+        raise InvalidAuthError()
+
+    try:
+        # Will raise an exception if bucket_name doesn't exist
+        return connection.get_bucket(bucket_name, validate=False).get_location()
+    except exception.S3ResponseError:
+        raise InvalidFolderError()

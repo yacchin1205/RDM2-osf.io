@@ -2,6 +2,12 @@
     "availableServices": [{"name": "IDCF Cloud",
                            "host": "ds.jp-east.idcfcloud.com"},
                           {"name": "SAKURA Cloud",
-                           "host": "b.sakurastorage.jp"}],
+                           "host": "b.sakurastorage.jp"},
+                          {"name": "WASABI",
+                           "host": "s3.wasabisys.com",
+                           "bucketLocations": {
+                             "us-west-1": "Oregon",
+                             "us-east-1": "Virginia"
+                           }}],
     "encryptUploads": true
 }

@@ -8,8 +8,10 @@ from osf.models.files import File, Folder, BaseFileNode
 from addons.base import exceptions
 from addons.s3compat.provider import S3CompatProvider
 from addons.s3compat.serializer import S3CompatSerializer
-from addons.s3compat.settings import ENCRYPT_UPLOADS_DEFAULT
+from addons.s3compat.settings import (ENCRYPT_UPLOADS_DEFAULT,
+                                      AVAILABLE_SERVICES)
 from addons.s3compat.utils import (bucket_exists,
+                                     get_bucket_location_or_error,
                                      get_bucket_names)
 
 class S3CompatFileNode(BaseFileNode):
@@ -55,7 +57,24 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
             raise exceptions.InvalidFolderError(error_message)
 
         self.folder_id = str(folder_id)
-        self.folder_name = str(folder_id)
+        host = self.external_account.provider_id.split('\t')[0]
+        service = [s for s in AVAILABLE_SERVICES if s['host'] == host][0]
+
+        bucket_location = get_bucket_location_or_error(
+            host,
+            self.external_account.oauth_key,
+            self.external_account.oauth_secret,
+            folder_id
+        )
+        if bucket_location is None or bucket_location == '':
+            bucket_location = 'Default'
+        try:
+            bucket_location = service['bucketLocations'][bucket_location]
+        except KeyError:
+            # Unlisted location, Default to the key.
+            pass
+
+        self.folder_name = '{} ({})'.format(folder_id, bucket_location)
         self.save()
 
         self.nodelogger.log(action='bucket_linked', extra={'bucket': str(folder_id)}, save=True)
