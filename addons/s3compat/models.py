@@ -8,11 +8,11 @@ from osf.models.files import File, Folder, BaseFileNode
 from addons.base import exceptions
 from addons.s3compat.provider import S3CompatProvider
 from addons.s3compat.serializer import S3CompatSerializer
-from addons.s3compat.settings import (ENCRYPT_UPLOADS_DEFAULT,
-                                      AVAILABLE_SERVICES)
+from addons.s3compat.settings import ENCRYPT_UPLOADS_DEFAULT
 from addons.s3compat.utils import (bucket_exists,
                                      get_bucket_location_or_error,
-                                     get_bucket_names)
+                                     get_bucket_names,
+                                     find_service_by_host)
 
 class S3CompatFileNode(BaseFileNode):
     _provider = 's3compat'
@@ -58,7 +58,6 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
 
         self.folder_id = str(folder_id)
         host = self.external_account.provider_id.split('\t')[0]
-        service = [s for s in AVAILABLE_SERVICES if s['host'] == host][0]
 
         bucket_location = get_bucket_location_or_error(
             host,
@@ -69,6 +68,7 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
         if bucket_location is None or bucket_location == '':
             bucket_location = 'Default'
         try:
+            service = find_service_by_host(host)
             bucket_location = service['bucketLocations'][bucket_location]
         except KeyError:
             # Unlisted location, Default to the key.

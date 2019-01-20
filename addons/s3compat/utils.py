@@ -57,11 +57,18 @@ def get_bucket_names(node_settings):
     return [bucket.name for bucket in buckets]
 
 
+def find_service_by_host(host):
+    services = [s for s in settings.AVAILABLE_SERVICES if s['host'] == host]
+    if len(services) == 0:
+        raise KeyError(host)
+    return services[0]
+
+
 def validate_bucket_location(node_settings, location):
     if location == '':
         return True
     host = node_settings.external_account.provider_id.split('\t')[0]
-    service = [s for s in settings.AVAILABLE_SERVICES if s['host'] == host][0]
+    service = find_service_by_host(host)
     return location in service['bucketLocations']
 
 
