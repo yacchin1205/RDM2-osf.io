@@ -7,6 +7,7 @@ from boto.s3.bucket import Bucket
 import addons.s3compat.settings as settings
 
 from framework.exceptions import HTTPError
+from addons.base.exceptions import InvalidAuthError, InvalidFolderError
 
 
 class S3CompatConnection(S3Connection):
