@@ -85,7 +85,7 @@ class TestNodeSettings(OAuthAddonNodeSettingsTestSuiteMixin, unittest.TestCase):
     @mock.patch('addons.s3compat.models.bucket_exists')
     @mock.patch('addons.s3compat.models.get_bucket_location_or_error')
     @mock.patch('addons.s3compat.models.find_service_by_host')
-    def test_set_folder_default_location(self, mock_service, mock_location, mock_exists):
+    def test_set_folder(self, mock_service, mock_location, mock_exists):
         mock_exists.return_value = True
         mock_location.return_value = ''
         mock_service.return_value = {'name': 'Dummy', 'host': 'dummy.example.com'}
