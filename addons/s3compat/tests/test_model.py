@@ -83,13 +83,55 @@ class TestNodeSettings(OAuthAddonNodeSettingsTestSuiteMixin, unittest.TestCase):
         assert_equal(credentials, expected)
 
     @mock.patch('addons.s3compat.models.bucket_exists')
-    def test_set_folder(self, mock_exists):
+    @mock.patch('addons.s3compat.models.get_bucket_location_or_error')
+    @mock.patch('addons.s3compat.models.find_service_by_host')
+    def test_set_folder_default_location(self, mock_service, mock_location, mock_exists):
         mock_exists.return_value = True
+        mock_location.return_value = ''
+        mock_service.return_value = {'name': 'Dummy', 'host': 'dummy.example.com'}
         folder_id = '1234567890'
         self.node_settings.set_folder(folder_id, auth=Auth(self.user))
         self.node_settings.save()
         # Bucket was set
         assert_equal(self.node_settings.folder_id, folder_id)
+        assert_equal(self.node_settings.folder_name, '{} (Default)'.format(folder_id))
+        # Log was saved
+        last_log = self.node.logs.latest()
+        assert_equal(last_log.action, '{0}_bucket_linked'.format(self.short_name))
+
+    @mock.patch('addons.s3compat.models.bucket_exists')
+    @mock.patch('addons.s3compat.models.get_bucket_location_or_error')
+    @mock.patch('addons.s3compat.models.find_service_by_host')
+    def test_set_folder_undefined_location(self, mock_service, mock_location, mock_exists):
+        mock_exists.return_value = True
+        mock_location.return_value = 'dummy-1'
+        mock_service.return_value = {'name': 'Dummy', 'host': 'dummy.example.com'}
+        folder_id = '1234567890'
+        self.node_settings.set_folder(folder_id, auth=Auth(self.user))
+        self.node_settings.save()
+        # Bucket was set
+        assert_equal(self.node_settings.folder_id, folder_id)
+        assert_equal(self.node_settings.folder_name, '{} (dummy-1)'.format(folder_id))
+        # Log was saved
+        last_log = self.node.logs.latest()
+        assert_equal(last_log.action, '{0}_bucket_linked'.format(self.short_name))
+
+    @mock.patch('addons.s3compat.models.bucket_exists')
+    @mock.patch('addons.s3compat.models.get_bucket_location_or_error')
+    @mock.patch('addons.s3compat.models.find_service_by_host')
+    def test_set_folder_defined_location(self, mock_service, mock_location, mock_exists):
+        mock_exists.return_value = True
+        mock_location.return_value = 'dummy-2'
+        mock_service.return_value = {'name': 'Dummy',
+                                     'host': 'dummy.example.com',
+                                     'bucketLocations': {'dummy-1': 'Location1',
+                                                         'dummy-2': 'Location2'}}
+        folder_id = '1234567890'
+        self.node_settings.set_folder(folder_id, auth=Auth(self.user))
+        self.node_settings.save()
+        # Bucket was set
+        assert_equal(self.node_settings.folder_id, folder_id)
+        assert_equal(self.node_settings.folder_name, '{} (Location2)'.format(folder_id))
         # Log was saved
         last_log = self.node.logs.latest()
         assert_equal(last_log.action, '{0}_bucket_linked'.format(self.short_name))
