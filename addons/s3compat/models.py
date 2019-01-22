@@ -37,6 +37,7 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
 
     folder_id = models.TextField(blank=True, null=True)
     folder_name = models.TextField(blank=True, null=True)
+    folder_location = models.TextField(blank=True, null=True)
     encrypt_uploads = models.BooleanField(default=ENCRYPT_UPLOADS_DEFAULT)
     user_settings = models.ForeignKey(UserSettings, null=True, blank=True)
 
@@ -65,11 +66,12 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
             self.external_account.oauth_secret,
             folder_id
         )
+        self.folder_location = bucket_location
         if bucket_location is None or bucket_location == '':
             bucket_location = 'Default'
         try:
             service = find_service_by_host(host)
-            bucket_location = service['bucketLocations'][bucket_location]
+            bucket_location = service['bucketLocations'][bucket_location]['name']
         except KeyError:
             # Unlisted location, Default to the key.
             pass
@@ -112,6 +114,7 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
     def clear_settings(self):
         self.folder_id = None
         self.folder_name = None
+        self.folder_location = None
 
     def deauthorize(self, auth=None, log=True):
         """Remove user authorization from this node and log the event."""
@@ -128,8 +131,16 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
     def serialize_waterbutler_credentials(self):
         if not self.has_auth:
             raise exceptions.AddonError('Cannot serialize credentials for S3 Compatible Storage addon')
+        host = self.external_account.provider_id.split('\t')[0]
+        if self.folder_location is not None and len(self.folder_location) > 0:
+            try:
+                service = find_service_by_host(host)
+                host = service['bucketLocations'][self.folder_location]['host']
+            except KeyError:
+                # Unlisted location, use default host
+                pass
         return {
-            'host': self.external_account.provider_id.split('\t')[0],
+            'host': host,
             'access_key': self.external_account.oauth_key,
             'secret_key': self.external_account.oauth_secret,
         }
