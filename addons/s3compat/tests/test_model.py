@@ -93,6 +93,7 @@ class TestNodeSettings(OAuthAddonNodeSettingsTestSuiteMixin, unittest.TestCase):
         self.user_settings.external_accounts[0].oauth_key = 'key-11'
         self.user_settings.external_accounts[0].oauth_secret = 'secret-15'
         self.user_settings.save()
+        folder_id = '1234567890'
         self.node_settings.set_folder(folder_id, auth=Auth(self.user))
         self.node_settings.save()
         credentials = self.node_settings.serialize_waterbutler_credentials()
@@ -117,6 +118,7 @@ class TestNodeSettings(OAuthAddonNodeSettingsTestSuiteMixin, unittest.TestCase):
         self.user_settings.external_accounts[0].oauth_key = 'key-11'
         self.user_settings.external_accounts[0].oauth_secret = 'secret-15'
         self.user_settings.save()
+        folder_id = '1234567890'
         self.node_settings.set_folder(folder_id, auth=Auth(self.user))
         self.node_settings.save()
         credentials = self.node_settings.serialize_waterbutler_credentials()

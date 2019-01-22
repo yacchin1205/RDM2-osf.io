@@ -67,14 +67,14 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
             folder_id
         )
         self.folder_location = bucket_location
-        if bucket_location is None or bucket_location == '':
-            bucket_location = 'Default'
         try:
             service = find_service_by_host(host)
             bucket_location = service['bucketLocations'][bucket_location]['name']
         except KeyError:
             # Unlisted location, Default to the key.
             pass
+        if bucket_location is None or bucket_location == '':
+            bucket_location = 'Default'
 
         self.folder_name = '{} ({})'.format(folder_id, bucket_location)
         self.save()
