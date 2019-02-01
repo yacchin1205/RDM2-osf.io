@@ -160,7 +160,7 @@ class InstitutionAuthentication(BaseAuthentication):
                     to_addr=user.username,
                     mail=WELCOME_OSF4I,
                     mimetype='html',
-                    user=user
+                    user=user,
                 )
             ### the user is not available when have_email is False.
 
