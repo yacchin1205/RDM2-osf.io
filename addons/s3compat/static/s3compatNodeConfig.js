@@ -219,9 +219,14 @@ var s3compatFolderPickerViewModel = oop.extend(OauthAddonFolderPicker, {
             }
             var options = '';
             var locations = self.attachedService.bucketLocations;
+            var names = new Array();
             for (var location in locations) {
                 if (locations.hasOwnProperty(location)) {
-                    options = options + ['<option value="', location, '">', $osf.htmlEscape(locations[location]['name']), '</option>', '\n'].join('');
+                    var name = locations[location]['name'];
+                    if (names.indexOf(name) < 0) {
+                        options = options + ['<option value="', location, '">', $osf.htmlEscape(name), '</option>', '\n'].join('');
+                        names.push(name);
+                    }
                 }
             }
             return options;
