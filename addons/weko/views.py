@@ -20,7 +20,7 @@ from addons.weko import client
 from addons.weko.serializer import WEKOSerializer
 from addons.weko import settings as weko_settings
 from addons.weko.provider import REPOID_BASIC_AUTH, WEKOProvider
-from website.util import permissions
+from osf.utils import permissions
 from website.project.decorators import (
     must_have_addon, must_be_addon_authorizer,
     must_have_permission, must_not_be_registration,
