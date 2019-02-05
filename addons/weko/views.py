@@ -28,7 +28,6 @@ from website.project.decorators import (
 )
 
 from website.util import rubeus, api_url_for
-from website.util.sanitize import assert_clean
 from website.oauth.utils import get_service
 from website.oauth.signals import oauth_complete
 
@@ -118,12 +117,6 @@ def weko_set_config(node_addon, user_addon, auth, **kwargs):
 
     if user_settings and user_settings.owner != user:
         raise HTTPError(http.FORBIDDEN)
-
-    try:
-        assert_clean(request.json)
-    except AssertionError:
-        # TODO: Test me!
-        raise HTTPError(http.NOT_ACCEPTABLE)
 
     index_id = request.json.get('index', {}).get('id')
 
