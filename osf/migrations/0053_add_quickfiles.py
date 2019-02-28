@@ -18,6 +18,8 @@ logging.basicConfig(level=logging.INFO)
 
 def add_quickfiles(*args, **kwargs):
     logger.info('Test...!')
+    for i, o in enumeration(OSFUser.objects.all()):
+        logger.info('Object: #{} {}'.format(i + 1, o))
     ids_without_quickfiles = list(OSFUser.objects.exclude(nodes_created__type=QuickFilesNode._typedmodels_type).values_list('id', flat=True))
 
     users_without_quickfiles = OSFUser.objects.filter(id__in=ids_without_quickfiles).order_by('id')
