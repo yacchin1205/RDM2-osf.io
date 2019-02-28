@@ -20,7 +20,8 @@ def add_quickfiles(*args, **kwargs):
     logger.info('Test...!')
     for i, o in enumerate(OSFUser.objects.values_list('id', flat=True)):
         logger.info('Object: #{} {}'.format(i + 1, o))
-    ids_without_quickfiles = list(OSFUser.objects.exclude(nodes_created__type=QuickFilesNode._typedmodels_type).values_list('id', flat=True))
+    #ids_without_quickfiles = list(OSFUser.objects.exclude(nodes_created__type=QuickFilesNode._typedmodels_type).values_list('id', flat=True))
+    ids_without_quickfiles = list(OSFUser.objects.values_list('id', flat=True))
 
     users_without_quickfiles = OSFUser.objects.filter(id__in=ids_without_quickfiles).order_by('id')
     total_quickfiles_to_create = users_without_quickfiles.count()
