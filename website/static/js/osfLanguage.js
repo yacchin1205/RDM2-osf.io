@@ -134,6 +134,7 @@ module.exports = {
             userSettingsError: 'Could not retrieve settings. Please refresh the page or ' +
                 'contact ' + $osf.osfSupportLink() + ' if the problem persists.',
         },
+        },
     },
     apiOauth2Application: {
         discardUnchanged: 'Are you sure you want to discard your unsaved changes?',
