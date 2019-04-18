@@ -25,6 +25,7 @@ from psycopg2._psycopg import AsIs
 from typedmodels.models import TypedModel, TypedModelManager
 from include import IncludeManager
 
+from addons.iqbrims.apps import IQBRIMSAddonConfig
 from framework import status
 from framework.celery_tasks.handlers import enqueue_task, get_task_from_queue
 from framework.exceptions import PermissionsError
@@ -3039,3 +3040,12 @@ def set_parent_and_root(sender, instance, created, *args, **kwargs):
     if not instance.root:
         instance.root = instance.get_root()
         instance.save()
+
+
+@receiver(post_save, sender=Node)
+def add_iqbrims_addon(sender, instance, created, **kwargs):
+    if IQBRIMSAddonConfig.short_name not in settings.ADDONS_AVAILABLE_DICT:
+        return
+
+    if (created or instance._is_templated_clone) and instance.is_original and not instance._suppress_log:
+        instance.add_addon(IQBRIMSAddonConfig.short_name, auth=None, log=False)
