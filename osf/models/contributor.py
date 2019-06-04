@@ -1,12 +1,16 @@
 from django.db import models
+from django.db.models.signals import post_save, post_delete
+from django.dispatch import receiver
 from include import IncludeManager
 
+from addons.iqbrims.apps import IQBRIMSAddonConfig
 from osf.utils.fields import NonNaiveDateTimeField
 from osf.utils.permissions import (
     READ,
     WRITE,
     ADMIN,
 )
+from website import settings
 
 
 class AbstractBaseContributor(models.Model):
@@ -80,3 +84,27 @@ def get_contributor_permissions(contributor, as_list=True):
         return perm
     else:
         return perm[-1]
+
+
+@receiver(post_save, sender=Contributor)
+@receiver(post_delete, sender=Contributor)
+def change_iqbrims_addon_enabled(sender, instance, **kwargs):
+    from osf.models import Node, RdmAddonOption
+
+    if IQBRIMSAddonConfig.short_name not in settings.ADDONS_AVAILABLE_DICT:
+        return
+
+    organizational_node = instance.node
+    rdm_addon_options = RdmAddonOption.objects.filter(
+        provider=IQBRIMSAddonConfig.short_name,
+        is_allowed=True,
+        management_node__isnull=False,
+        organizational_node=organizational_node
+    ).all()
+
+    for rdm_addon_option in rdm_addon_options:
+        for node in Node.find_by_institutions(rdm_addon_option.institution):
+            if organizational_node.is_contributor(node.creator):
+                node.add_addon(IQBRIMSAddonConfig.short_name, auth=None, log=False)
+            else:
+                node.delete_addon(IQBRIMSAddonConfig.short_name, auth=None)
