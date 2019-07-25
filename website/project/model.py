@@ -5,7 +5,7 @@ import re
 from django.apps import apps
 from django.core.exceptions import ValidationError
 
-from website.util import sanitize
+from osf.utils import sanitize
 
 logger = logging.getLogger(__name__)
 
@@ -38,7 +38,7 @@ def get_valid_mentioned_users_guids(comment, contributors):
     :param list contributors: List of contributors on the node
     :return list new_mentions: List of valid users mentioned in the comment content
     """
-    new_mentions = set(re.findall(r"\[[@|\+].*?\]\(htt[ps]{1,2}:\/\/[a-z\d:.]+?\/([a-z\d]{5})\/\)", comment.content))
+    new_mentions = set(re.findall(r'\[[@|\+].*?\]\(htt[ps]{1,2}:\/\/[a-z\d:.]+?\/([a-z\d]{5})\/\)', comment.content))
     new_mentions = [
         m for m in new_mentions if
         m not in comment.ever_mentioned.values_list('guids___id', flat=True) and

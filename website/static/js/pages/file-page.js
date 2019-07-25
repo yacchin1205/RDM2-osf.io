@@ -8,7 +8,7 @@ require('jquery-tagsinput');
 
 m.mount(document.getElementsByClassName('file-view-panels')[0], FileViewPage(window.contextVars));
 
-var tagUrl = '/api/v1/project/' + window.contextVars.node.id + '/osfstorage' + window.contextVars.file.path + '/tags/';
+var tagUrl = '/api/v1/' + window.contextVars.node.id + '/osfstorage' + window.contextVars.file.path + '/tags/';
 
 $(function() {
     // Tag input
@@ -16,7 +16,7 @@ $(function() {
         width: '100%',
         interactive: window.contextVars.currentUser.canEdit,
         maxChars: 128,
-        defaultText: 'add a tag to enhance discoverability',
+        defaultText: 'Add a tag to enhance discoverability',
         onAddTag: function (tag) {
             var url = tagUrl;
             var request = $osf.postJSON(url, {'tag': tag });

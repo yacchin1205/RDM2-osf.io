@@ -5,30 +5,37 @@
 <nav class="navbar navbar-inverse navbar-fixed-top" id="navbarScope" role="navigation">
     <div class="container">
         <div class="navbar-header">
-            <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#secondary-navigation" aria-label="Toggle secondary navigation"}}>
-                <span class="sr-only">Toggle navigation</span>
-                <span class="icon-bar"></span>
-                <span class="icon-bar"></span>
-                <span class="icon-bar"></span>
-            </button>
         <a class="navbar-brand" href="/" aria-label="Go home"><span class="osf-navbar-logo"></span></a>
         <div class="service-name">
             <a href="${service_url}">
-                <span class="hidden-xs"> OSF </span>
+                <span class="hidden-xs"> ${osf_page_name} </span>
+              % if nav_dropdown:
                 <span class="current-service"><strong>${service_name}</strong></span>
+              % endif
             </a>
         </div>
+        % if nav_dropdown:
         <div class="dropdown primary-nav">
             <button data-bind="click: trackClick.bind($data, 'Dropdown Arrow')" id="primary-navigation" class="dropdown-toggle btn-link" data-toggle="dropdown" role="button" aria-expanded="false" aria-label="Toggle primary navigation">
                 <span class="fa fa-caret-down fa-2x"></span>
             </button>
             <ul class="dropdown-menu service-dropdown" role="menu">
-                <li><a data-bind="click: trackClick.bind($data, 'Home')" href="${domain}">OSF<b>HOME</b></a></li>
-                <li><a data-bind="click: trackClick.bind($data, 'Preprints')" href="${domain}preprints/">OSF<b>PREPRINTS</b></a></li>
-                <li><a data-bind="click: trackClick.bind($data, 'Registries')" href="${domain}registries/">OSF<b>REGISTRIES</b></a></li>
-                <li><a data-bind="click: trackClick.bind($data, 'Meetings')" href="${domain}meetings/">OSF<b>MEETINGS</b></a></li>
+                <li><a data-bind="click: trackClick.bind($data, 'Home')" href="${domain}">${osf_page_name}<b>HOME</b></a></li>
+                <li><a data-bind="click: trackClick.bind($data, 'Preprints')" href="${domain}preprints/">${osf_page_name}<b>PREPRINTS</b></a></li>
+                <li><a data-bind="click: trackClick.bind($data, 'Registries')" href="${domain}registries/">${osf_page_name}<b>REGISTRIES</b></a></li>
+                <li><a data-bind="click: trackClick.bind($data, 'Meetings')" href="${domain}meetings/">${osf_page_name}<b>MEETINGS</b></a></li>
+                % if institutional_landing_flag:
+                    <li><a data-bind="click: trackClick.bind($data, 'Institutions')" href="${domain}institutions/">${osf_page_name}<b>INSTITUTIONS</b></a></li>
+                % endif
             </ul>
         </div>
+        % endif
+        <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#secondary-navigation" aria-label="Toggle secondary navigation"}}>
+            <span class="sr-only">Toggle navigation</span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+        </button>
     </div>
     <div id="navbar" class="navbar-collapse collapse navbar-right">
         <ul class="nav navbar-nav"></ul>
@@ -38,17 +45,25 @@
         <ul class="nav navbar-nav">
             % if service_name == 'HOME':
                 % if user_name:
+                    % if nav_quickfiles:
                     <li><a data-bind="click: trackClick.bind($data, 'MyQuickFiles')" href="${domain}${user_id}/quickfiles/">My Quick Files</a></li>
+                    % endif
                     <li><a data-bind="click: trackClick.bind($data, 'MyProjects')" href="${domain}myprojects/">My Projects</a></li>
                 % endif
+                    % if nav_search:
                     <li><a id="navbar-search" data-bind="click: trackClick.bind($data, 'Search')" href="${domain}search/">Search</a></li>
+                    % endif
             % endif
+            % if nav_support:
             <li class="dropdown">
             <a id="navbar-support" data-bind="click: trackClick.bind($data, '${service_name} Support')" href="${service_support_url}">Support</a>
             </li>
-            <li class="navbar-donate-button"><a id="navbar-donate" data-bind="click: trackClick.bind($data, 'Donate')" href="https://cos.io/donate">Donate</a></li>
+            % endif
+            % if nav_donate:
+            <li class="navbar-donate-button"><a id="navbar-donate" data-bind="click: trackClick.bind($data, 'Donate')" href="https://nii.ac.jp/donate">Donate</a></li>
+            % endif
             % if user_name and display_name:
-            <li class="dropdown">
+            <li class="dropdown secondary-nav-dropdown">
                 <a class="dropdown-toggle btn-link" data-toggle="dropdown" role="button" aria-expanded="false" aria-label="Toggle auth dropdown">
                     <div class="osf-profile-image">
                         <img src="${user_profile_image}" alt="User profile image">
@@ -61,7 +76,9 @@
 
                 <ul class="dropdown-menu auth-dropdown" role="menu">
                     <li><a data-bind="click: trackClick.bind($data, 'MyProfile')" href="${domain}profile/"><i class="fa fa-user fa-lg p-r-xs"></i> My Profile</a></li>
-                    <li><a data-bind="click: trackClick.bind($data, 'Support')" href="${domain}support/" ><i class="fa fa-life-ring fa-lg p-r-xs"></i> OSF Support</a></li>
+                    % if nav_support:
+                    <li><a data-bind="click: trackClick.bind($data, 'Support')" href="${domain}support/" ><i class="fa fa-life-ring fa-lg p-r-xs"></i> GakuNin RDM Support</a></li>
+                    % endif
                     <li><a data-bind="click: trackClick.bind($data, 'Settings')" href="${web_url_for('user_profile')}"><i class="fa fa-cog fa-lg p-r-xs"></i> Settings</a></li>
                     <li><a data-bind="click: trackClick.bind($data, 'Logout')" href="${web_url_for('auth_logout')}"><i class="fa fa-sign-out fa-lg p-r-xs"></i> Log out</a></li>
                 </ul>
@@ -80,8 +97,29 @@
                 %else :
                 <li class="dropdown sign-in">
                     <div class="col-sm-12">
+		        %if not embedded_ds:
+                        %if nav_signup:
                         <a data-bind="click: trackClick.bind($data, 'SignUp')" href="${web_url_for('auth_register')}" class="btn btn-success btn-top-signup m-r-xs">Sign Up</a>
+                        % endif:
                         <a data-bind="click: trackClick.bind($data, 'SignIn')" href="${login_url}" class="btn btn-info btn-top-login p-sm">Sign In</a>
+		        %else :
+<!-- embedded DS -->
+<script type="text/javascript" charset="UTF-8"><!--
+  var li = document.createElement('li');
+  li.innerHTML = '<a id="shibbolethDS" href="#" class="user-item login-link" onclick="return toggleDs()">DS</a>';
+  document.getElementById('login-link').parentNode.parentNode.appendChild(li);
+    //-->
+</script>
+<script type="text/javascript" src="/js/embedded-wayf_disp.js"></script>
+<div id="wayfInMenu" style="float: right; clear: right; position: relative;">
+<script type="text/javascript" src="/js/embedded-wayf_config.js"></script>
+<script type="text/javascript" charset="UTF-8"><!--
+  document.write('<script type="text/javascript" src="${embedded_ds_url}?' + (new Date().getTime()) + '"></scr'+'ipt>');
+    //-->
+</script>
+</div>
+<!-- embbeded DS -->
+                        %endif
                     </div>
                 </li>
                 %endif

@@ -420,20 +420,15 @@ var MyProjects = {
 
         // Add All my Projects and All my registrations to collections
         self.systemCollections = options.systemCollections || [
-            new LinkObject('collection', { nodeType : 'projects'}, 'All my projects'),
-            new LinkObject('collection', { nodeType : 'registrations'}, 'All my registrations'),
-            new LinkObject('collection', { nodeType : 'preprints'}, 'All my preprints')
+            new LinkObject('collection', { nodeType : 'projects'}, 'All my projects')
         ];
 
         self.fetchers = {};
         if (!options.systemCollections) {
           self.fetchers[self.systemCollections[0].id] = new NodeFetcher('nodes');
-          self.fetchers[self.systemCollections[1].id] = new NodeFetcher('registrations');
-          self.fetchers[self.systemCollections[2].id] = new NodeFetcher('preprints', self.systemCollections[2].data.link);
         } else {
             // TODO: This assumes that there are two systemcolelctiosn passes and what they are. It should ideally loop through passed collections.
           self.fetchers[self.systemCollections[0].id] = new NodeFetcher('nodes', self.systemCollections[0].data.link);
-          self.fetchers[self.systemCollections[1].id] = new NodeFetcher('registrations', self.systemCollections[1].data.link);
         }
 
         // Initial Breadcrumb for All my projects
@@ -536,11 +531,60 @@ var MyProjects = {
             self.getCurrentLogs();
         };
 
+        self.filterHistoryData = {
+            undefined: {title: 'My Projects', name: ''},
+            1: {title: 'My Registrations', name: '#registrations'},
+            2: {title: 'My Preprints', name: '#preprints'}
+        };
+
+        /**
+         * Sets the url history with filter param when filter is updated
+         * @param index {Number} the filter id - 1 or index of the filter in the collections array
+         */
+        self.setFilterHistory = function(index) {
+            // if not on the myprojects version of this page, don't change state (e.g., institutions)
+            if (window.location.href.indexOf('/myprojects') === -1 ) {
+                return;
+            }
+            var filter;
+            if (index in self.filterHistoryData) {
+                filter = self.filterHistoryData[index];
+            }   else {
+                filter = self.filterHistoryData[undefined];
+            }
+            // Uses replaceState instead of pushState because back buttons will not reset the filter on back without forcing a page refresh
+            // A bug in history causes titles not to change despite setting them here.
+            window.history.replaceState({setFilter: index}, 'OSF | ' + filter.title, '/myprojects/' + filter.name);
+        };
+
+        /**
+         * Sets the initial filter based on href
+         */
+        self.getFilterIndex = function() {
+            // if not on the myprojects version of this page, don't change state (e.g., institutions)
+            if (window.location.href.indexOf('/myprojects') === -1 ) {
+                return 0;
+            }
+            // Cast to string undefined => "undefined" to handle upper/lower case anchors
+            var name = String(window.location.href.split('#')[1]).toLowerCase();
+            switch(name) {
+                case 'registrations':
+                    return 1;
+                case 'preprints':
+                    return 2;
+                default:
+                    return 0;
+            }
+        };
+
         /**
          * Update the currentView
          * @param filter
          */
         self.updateFilter = function _updateFilter(filter) {
+            // index for the filter is id - 1
+            self.setFilterHistory(filter.id - 1);
+
             // if collection, reset currentView otherwise toggle the item in the list of currentview items
             if (['node', 'collection'].indexOf(filter.type) === -1 ) {
                 var filterIndex = self.currentView()[filter.type].indexOf(filter);
@@ -704,9 +748,9 @@ var MyProjects = {
                         if (self.institutionId) {
                             template = m('.db-non-load-template.m-md.p-md.osf-box',
                                 'There have been no completed registrations for this institution, but you can view the ',
-                                m('a', {href: 'https://osf.io/explore/activity/#newPublicRegistrations'}, 'newest public registrations'),
+                                m('a', {href: 'https://rdm.nii.ac.jp/explore/activity/#newPublicRegistrations'}, 'newest public registrations'),
                                 ' or ',
-                                m('a', {href: 'https://osf.io/explore/activity/#popularPublicRegistrations'}, 'popular public registrations.'));
+                                m('a', {href: 'https://rdm.nii.ac.jp/explore/activity/#popularPublicRegistrations'}, 'popular public registrations.'));
                         } else {
                             template = m('.db-non-load-template.m-md.p-md.osf-box',
                             'You have not made any registrations yet. Go to ',
@@ -971,7 +1015,9 @@ var MyProjects = {
         self.init = function _init_fileBrowser() {
             self.loadCategories().then(function(){
                 self.fetchers[self.systemCollections[0].id].on(['page', 'done'], self.onPageLoad);
-                self.fetchers[self.systemCollections[1].id].on(['page', 'done'], self.onPageLoad);
+                if(self.systemCollections[1]){
+                    self.fetchers[self.systemCollections[1].id].on(['page', 'done'], self.onPageLoad);
+                }
                 if(self.systemCollections[2]){
                     self.fetchers[self.systemCollections[2].id].on(['page', 'done'], self.onPageLoad);
                 }
@@ -982,7 +1028,9 @@ var MyProjects = {
                 self.loadCollections(collectionsUrl);
             }
             // Add linkObject to the currentView
-            self.updateFilter(self.collections()[0]);
+            var filterIndex = self.getFilterIndex();
+            self.updateBreadcrumbs(self.collections()[filterIndex]);
+            self.updateFilter(self.collections()[filterIndex]);
         };
 
         self.init();

@@ -15,7 +15,7 @@ def set_preprint_providers():
     """Populate `PreprintProvider` to test database for testing."""
 
     providers = {
-        'osf': 'Open Science Framework',
+        'osf': 'GakuNin RDM',
         'socarxiv': 'SocArXiv',
         'engrxiv': 'EngrXiv',
         'psyarxiv': 'PsyArXiv',
@@ -43,6 +43,7 @@ class TestCampaignInitialization(OsfTestCase):
             'engrxiv-preprints',
             'psyarxiv-preprints',
             'osf-registries',
+            'osf-registered-reports',
         ]
         self.refresh = timezone.now()
         campaigns.CAMPAIGNS = None  # force campaign refresh now that preprint providers are populated

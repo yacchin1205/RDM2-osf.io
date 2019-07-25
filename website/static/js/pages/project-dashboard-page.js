@@ -28,6 +28,7 @@ var ctx = window.contextVars;
 var node = window.contextVars.node;
 var nodeApiUrl = ctx.node.urls.api;
 var nodeCategories = ctx.nodeCategories || [];
+var currentUserRequestState = ctx.currentUserRequestState;
 
 
 // Listen for the nodeLoad event (prevents multiple requests for data)
@@ -42,7 +43,10 @@ $('body').on('nodeLoad', function(event, data) {
         new CitationWidget('#citationStyleInput', '#citationText');
     }
     // Initialize nodeControl
-    new NodeControl.NodeControl('#projectScope', data, {categories: nodeCategories});
+    new NodeControl.NodeControl('#projectScope', data, {categories: nodeCategories, currentUserRequestState: currentUserRequestState});
+
+    // Enable the otherActionsButton once the page is loaded so the menu is properly populated
+    $('#otherActionsButton').removeClass('disabled');
 });
 
 // Initialize comment pane w/ its viewmodel
@@ -97,7 +101,16 @@ var institutionLogos = {
 };
 
 
+var ArrangeLogDownload = function (){};
+var RefreshLog = function(){};
 $(document).ready(function () {
+    // Allows dropdown elements to persist after being clicked
+    // Used for the "Share" button in the more actions menu
+    $('.dropdown').on('click', 'li', function (evt) {
+        var target = $(evt.target);
+        // If the clicked element has .keep-open, don't allow the event to propagate
+        return !(target.hasClass('keep-open') || target.parents('.keep-open').length);
+    });
 
     var AddComponentButton = m.component(AddProject, {
         buttonTemplate: m('.btn.btn-sm.btn-default[data-toggle="modal"][data-target="#addSubComponent"]', {onclick: function() {
@@ -126,6 +139,103 @@ $(document).ready(function () {
 
         // Recent Activity widget
         m.mount(document.getElementById('logFeed'), m.component(LogFeed.LogFeed, {node: node}));
+
+        //Download Log button
+
+        ArrangeLogDownload = function (d){
+            var i, NodeLogs=[], x={};
+            for (i in d.data){
+                x={'date': new Date(d.data[i].attributes.date + 'Z').toLocaleString(),
+                   'user': d.data[i].embeds.user.data.attributes.full_name,
+                   'project_id': d.data[i].attributes.params.params_node.id,
+                   'project_title': d.data[i].attributes.params.params_node.title,
+                   'action':  d.data[i].attributes.action,
+                   };
+                if (typeof d.data[i].attributes.params.contributors[0] !== 'undefined' && d.data[i].attributes.params.contributors[0] !== null) {
+                    x.targetUserFullId = d.data[i].attributes.params.contributors[0].id;
+                    x.targetUserFullName = d.data[i].attributes.params.contributors[0].full_name;
+                }
+                if (d.data[i].attributes.action.includes('checked')){
+                    x.item = d.data[i].attributes.params.kind;
+                    x.path = d.data[i].attributes.params.path;
+                }
+                if (d.data[i].attributes.action.includes('osf_storage')){
+                    x.path = d.data[i].attributes.params.path;
+                }
+                if (d.data[i].attributes.action.includes('addon')){
+                    x.addon = d.data[i].attributes.params.addon;
+                }
+                if (d.data[i].attributes.action.includes('tag')){
+                    x.tag = d.data[i].attributes.params.tag;
+                }
+                if (d.data[i].attributes.action.includes('wiki')){
+                    x.version = d.data[i].attributes.params.version;
+                    x.page = d.data[i].attributes.params.page;
+                }
+                NodeLogs = NodeLogs.concat(x);
+            }
+            $('<a />', {
+                'download': 'NodeLogs_'+ node.id + '_' + $.now() + '.json', 'href' : 'data:application/json;charset=utf-8,' + encodeURIComponent(JSON.stringify({'NodeLogs': NodeLogs})),
+            }).appendTo('body')
+             .click(function() {
+                $(this).remove();
+            })[0].click();
+        };
+        $('#DownloadLog').on('click', function(){
+            var urlPrefix = (node.isRegistration || node.is_registration) ? 'registrations' : 'nodes';
+            var query = { 'embed' : 'user'};
+            var urlMain = $osf.apiV2Url(urlPrefix + '/' + node.id + '/logs/',{query: query});
+            var urlNodeLogs = urlMain + '&page[size]=1';
+            var promise = m.request({ method: 'GET', config: $osf.setXHRAuthorization, url: urlNodeLogs});
+            promise.then(function (data) {
+                var pageSize = Math.ceil((Number(data.links.meta.total))/(Number(data.links.meta.per_page)));
+                if ( pageSize >= 2){
+                    urlNodeLogs =  urlMain + '&page[size]=' + pageSize.toString();
+                    promise = m.request({ method: 'GET', config: $osf.setXHRAuthorization, url: urlNodeLogs});
+                    promise.then(function(data){
+                        new ArrangeLogDownload(data);
+                    });
+                }else{
+                    new ArrangeLogDownload(data);
+                }
+            }, function(xhr, textStatus, error) {
+                Raven.captureMessage('Error retrieving filebrowser', {extra: {url: urlFilesGrid, textStatus: textStatus, error: error}});
+            });
+         });
+
+        // Refresh button
+        RefreshLog =function (){
+            var LogSearchName = $('#LogSearchName').val();
+            if (LogSearchName === '') {
+                document.getElementById('LogSearchKeyUser').value = '';
+            }else{
+                var query = { 'filter[full_name]' : LogSearchName};
+                var urlUsers = $osf.apiV2Url('/users/');
+                var promise = m.request({ method: 'GET', config: $osf.setXHRAuthorization, url: urlUsers});
+                promise.then(function (data) {
+                    var i;
+                    var total = Number(data.links.meta.total);
+                    document.getElementById('LogSearchKeyUser').value = '';
+                    for (i in data.data){
+                        if (LogSearchName === data.data[i].attributes.full_name){
+                            document.getElementById('LogSearchKeyUser').value = (total -Number(i)).toString();
+                        }
+                    }
+                    if(document.getElementById('LogSearchKeyUser').value === ''){$osf.growl('user not found','user:' + LogSearchName + ' is no activity','warning');}
+                }, function(xhr, textStatus, error) {
+                    Raven.captureMessage('Error retrieving filebrowser', {extra: {url: urlFilesGrid, textStatus: textStatus, error: error}});
+                });
+            }
+            setTimeout(function(){m.mount(document.getElementById('logFeed'), m.component(LogFeed.LogFeed, {node: node}));}, 350);
+        };
+        $('#RefreshLog').on('click', RefreshLog);
+        $('#LogSearchName,#LogSearchE,#LogSearchS').on('keypress', function(e){
+            var key = e.which;
+            if (key === 13){
+                new RefreshLog();
+                return false;
+            }
+        });
 
         // Treebeard Files view
         var urlFilesGrid = nodeApiUrl + 'files/grid/';
@@ -199,7 +309,7 @@ $(document).ready(function () {
                     document.getElementById('shareButtonsPopover'),
                     m.component(
                         SocialShare.ShareButtonsPopover,
-                        {title: window.contextVars.node.title, url: window.location.href}
+                        {title: window.contextVars.node.title, url: window.location.href, type: 'link'}
                     )
                 );
             }
@@ -225,9 +335,9 @@ $(document).ready(function () {
         width: '100%',
         interactive: window.contextVars.currentUser.canEditTags,
         maxChars: 128,
-        defaultText: 'add a tag to enhance discoverability',
+        defaultText: 'Add a tag to enhance discoverability',
         onAddTag: function(tag) {
-            $('#node-tags_tag').attr('data-default', 'add a tag');
+            $('#node-tags_tag').attr('data-default', 'Add a tag');
             window.contextVars.node.tags.push(tag);
             var payload = {
                 data: {
@@ -321,7 +431,15 @@ $(document).ready(function () {
             url: ctx.urls.wikiContent
         });
         request.done(function(resp) {
-            var rawText = resp.wiki_content || '*Add important information, links, or images here to describe your project.*';
+            var rawText;
+            if(resp.wiki_content){
+                rawText = resp.wiki_content;
+            } else if(window.contextVars.currentUser.canEdit) {
+                rawText = '*Add important information, links, or images here to describe your project.*';
+            } else {
+                rawText = '*No wiki content.*';
+            }
+
             var renderedText = ctx.renderedBeforeUpdate ? oldMd.render(rawText) : md.render(rawText);
             // don't truncate the text when length = 400
             var truncatedText = $.truncate(renderedText, {length: 401});
@@ -336,6 +454,20 @@ $(document).ready(function () {
         $('a[title="Removing tag"]').remove();
         $('span.tag span').each(function(idx, elm) {
             $(elm).text($(elm).text().replace(/\s*$/, ''));
+        });
+    }
+
+    // Show or hide collection details
+    if ($('.collection-details').length) {
+        $('.collection-details').each( function() {
+            var caret = '#' + $(this).attr('id') + '-toggle';
+            $(this).on('hidden.bs.collapse', function(e) {
+                $(caret).removeClass('fa-angle-up')
+                       .addClass('fa-angle-down');
+            }).on('shown.bs.collapse', function(e) {
+                $(caret).removeClass('fa-angle-down')
+                        .addClass('fa-angle-up');
+            });
         });
     }
 });

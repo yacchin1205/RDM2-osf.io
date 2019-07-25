@@ -13,6 +13,7 @@ from osf_tests.factories import (
     CollectionFactory,
 )
 from osf.models import NodeRelation
+from osf.utils import permissions
 from tests.base import OsfTestCase, get_default_metaschema
 
 from framework.auth import Auth
@@ -20,10 +21,11 @@ from website.project.views.node import _view_project, _serialize_node_search, _g
 from website.views import serialize_node_summary
 from website.profile import utils
 from website import filters, settings
-from website.util import permissions
 
 pytestmark = pytest.mark.django_db
 
+@pytest.mark.enable_bookmark_creation
+@pytest.mark.enable_quickfiles_creation
 class TestUserSerializers(OsfTestCase):
     def test_serialize_user(self):
         master = UserFactory()
@@ -80,6 +82,7 @@ class TestUserSerializers(OsfTestCase):
         assert_equal(d['number_public_projects'], len(public_projects))
 
 
+@pytest.mark.enable_bookmark_creation
 class TestNodeSerializers(OsfTestCase):
 
     # Regression test for #489
@@ -199,6 +202,7 @@ class TestNodeSerializers(OsfTestCase):
         assert_false(serialized_node['etal'])
 
 
+@pytest.mark.enable_bookmark_creation
 class TestViewProject(OsfTestCase):
 
     def setUp(self):
@@ -239,6 +243,7 @@ class TestViewProject(OsfTestCase):
 
 
 
+@pytest.mark.enable_bookmark_creation
 class TestViewProjectEmbeds(OsfTestCase):
 
     def setUp(self):

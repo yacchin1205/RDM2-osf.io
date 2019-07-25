@@ -11,6 +11,7 @@ import itsdangerous
 import jwe
 import jwt
 import mock
+import pytest
 from django.utils import timezone
 from django.contrib.auth.models import Permission
 from framework.auth import cas, signing
@@ -19,23 +20,29 @@ from framework.exceptions import HTTPError
 from nose.tools import *  # noqa
 from osf_tests import factories
 from tests.base import OsfTestCase, get_default_metaschema
+from api_tests.utils import create_test_file
 from osf_tests.factories import (AuthUserFactory, ProjectFactory,
                              RegistrationFactory)
 from website import settings
-from website.util.paths import webpack_asset
+from api.base import settings as api_settings
 from addons.base import views
 from addons.github.exceptions import ApiError
 from addons.github.models import GithubFolder, GithubFile, GithubFileNode
 from addons.github.tests.factories import GitHubAccountFactory
-from osf.models import Session, MetaSchema
+from addons.osfstorage.models import OsfStorageFileNode
+from addons.osfstorage.tests.factories import FileVersionFactory
+from osf.models import NodeLog, Session, RegistrationSchema, QuickFilesNode, RdmFileTimestamptokenVerifyResult, RdmUserKey
 from osf.models import files as file_models
-from osf.models.files import BaseFileNode, TrashedFileNode
+from osf.models.files import BaseFileNode, TrashedFileNode, FileVersion
 from website.project import new_private_link
 from website.project.views.node import _view_project as serialize_node
 from website.project.views.node import serialize_addons, collect_node_config_js
 from website.util import api_url_for, rubeus
+from website.util.timestamp import userkey_generation
 from dateutil.parser import parse as parse_date
 from framework import sentry
+from tests.test_timestamp import create_test_file
+
 
 class SetEnvironMiddleware(object):
 
@@ -99,6 +106,28 @@ class TestAddonAuth(OsfTestCase):
         observed_url.port = expected_url.port
         assert_equal(expected_url, observed_url)
 
+    def test_auth_render_action_returns_200(self):
+        url = self.build_url(action='render')
+        res = self.app.get(url, auth=self.user.auth)
+        assert_equal(res.status_code, 200)
+
+    def test_auth_render_action_requires_read_permission(self):
+        node = ProjectFactory(is_public=False)
+        url = self.build_url(action='render', nid=node._id)
+        res = self.app.get(url, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 403)
+
+    def test_auth_export_action_returns_200(self):
+        url = self.build_url(action='export')
+        res = self.app.get(url, auth=self.user.auth)
+        assert_equal(res.status_code, 200)
+
+    def test_auth_export_action_requires_read_permission(self):
+        node = ProjectFactory(is_public=False)
+        url = self.build_url(action='export', nid=node._id)
+        res = self.app.get(url, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 403)
+
     def test_auth_missing_args(self):
         url = self.build_url(cookie=None)
         res = self.app.get(url, expect_errors=True)
@@ -140,8 +169,17 @@ class TestAddonLogs(OsfTestCase):
     def setUp(self):
         super(TestAddonLogs, self).setUp()
         self.user = AuthUserFactory()
+        self.user_non_contrib = AuthUserFactory()
         self.auth_obj = Auth(user=self.user)
         self.node = ProjectFactory(creator=self.user)
+        self.file = OsfStorageFileNode.create(
+            target=self.node,
+            path='/testfile',
+            _id='testfile',
+            name='testfile',
+            materialized_path='/testfile'
+        )
+        self.file.save()
         self.session = Session(data={'auth_user_id': self.user._id})
         self.session.save()
         self.cookie = itsdangerous.Signer(settings.SECRET_KEY).sign(self.session._id)
@@ -189,11 +227,74 @@ class TestAddonLogs(OsfTestCase):
             'signature': signature,
         }
 
+    @mock.patch('website.util.waterbutler.get_node_info')
+    @mock.patch('website.util.waterbutler.download_file')
     @mock.patch('website.notifications.events.files.FileAdded.perform')
-    def test_add_log(self, mock_perform):
+    @mock.patch('requests.get', {'code': 404, 'referrer': None, 'message_short': 'Page not found'})
+    def test_add_log_timestamptoken(self, mock_perform, mock_downloadfile, mock_nodeinfo):
+        mock_downloadfile.return_value = '/testfile'
+        mock_nodeinfo.return_value = {}
+
+        result_list1_count = RdmFileTimestamptokenVerifyResult.objects.filter(project_id=self.node._id).count()
+        nodelog_count1 = NodeLog.objects.all().count()
         path = 'pizza'
         url = self.node.api_url_for('create_waterbutler_log')
-        payload = self.build_payload(metadata={'path': path})
+        userkey_generation(self.user._id)
+        file_node = create_test_file(node=self.node, user=self.user, filename=path)
+        file_node._path = '/' + path
+        file_node.save()
+        payload = self.build_payload(metadata={
+            'provider': 'github',
+            'name': path,
+            'materialized': '/' + path,
+            'path': '/' + path,
+            'kind': 'file',
+            'size': 2345,
+            'created_utc': '',
+            'modified_utc': '',
+            'extra': {
+                'version': '1'
+            }
+        })
+        nlogs = self.node.logs.count()
+
+        self.app.put_json(url, payload, headers={'Content-Type': 'application/json'})
+        self.node.reload()
+        assert_equal(self.node.logs.count(), nlogs + 1)
+        nodelog_count2 = NodeLog.objects.all().count()
+        assert_equal(nodelog_count1 + 1, nodelog_count2)
+        result_list2 = RdmFileTimestamptokenVerifyResult.objects.filter(project_id=self.node._id)
+        assert_true(mock_perform.called, 'perform not called')
+
+        ## tearDown
+        rdmuserkey_pvt_key = RdmUserKey.objects.get(guid=self.user.id, key_kind=api_settings.PRIVATE_KEY_VALUE)
+        pvt_key_path = os.path.join(api_settings.KEY_SAVE_PATH, rdmuserkey_pvt_key.key_name)
+        os.remove(pvt_key_path)
+        rdmuserkey_pvt_key.delete()
+
+        rdmuserkey_pub_key = RdmUserKey.objects.get(guid=self.user.id, key_kind=api_settings.PUBLIC_KEY_VALUE)
+        pub_key_path = os.path.join(api_settings.KEY_SAVE_PATH, rdmuserkey_pub_key.key_name)
+        os.remove(pub_key_path)
+        rdmuserkey_pub_key.delete()
+
+    @mock.patch('addons.base.views.timestamp')
+    @mock.patch('website.notifications.events.files.FileAdded.perform')
+    def test_add_log(self, mock_perform, mock_timestamp):
+        path = 'pizza'
+        url = self.node.api_url_for('create_waterbutler_log')
+        payload = self.build_payload(metadata={
+            'provider': 'osfstorage',
+            'name': 'Hello.txt',
+            'materialized': path,
+            'path': path,
+            'kind': 'file',
+            'size': 2345,
+            'created_utc': '',
+            'modified_utc': '',
+            'extra': {
+                'version': '1'
+            }
+        })
         nlogs = self.node.logs.count()
         self.app.put_json(url, payload, headers={'Content-Type': 'application/json'})
         self.node.reload()
@@ -201,6 +302,28 @@ class TestAddonLogs(OsfTestCase):
         # # Mocking form_message and perform so that the payload need not be exact.
         # assert_true(mock_form_message.called, "form_message not called")
         assert_true(mock_perform.called, 'perform not called')
+
+    @mock.patch('addons.base.views.timestamp')
+    @pytest.mark.enable_quickfiles_creation
+    def test_waterbutler_hook_succeeds_for_quickfiles_nodes(self, mock_timestamp):
+        quickfiles = QuickFilesNode.objects.get_for_user(self.user)
+        materialized_path = 'pizza'
+        url = quickfiles.api_url_for('create_waterbutler_log')
+        payload = self.build_payload(metadata={
+            'provider': 'osfstorage',
+            'name': 'Hello.txt',
+            'materialized': materialized_path,
+            'path': 'abc123',
+            'kind': 'file',
+            'size': 2345,
+            'created_utc': '',
+            'modified_utc': '',
+            'extra': {
+                'version': '1'
+            }
+        }, provider='osfstorage')
+        resp = self.app.put_json(url, payload, headers={'Content-Type': 'application/json'})
+        assert resp.status_code == 200
 
     def test_add_log_missing_args(self):
         path = 'pizza'
@@ -263,46 +386,17 @@ class TestAddonLogs(OsfTestCase):
         self.node.reload()
         assert_equal(self.node.logs.count(), nlogs)
 
-    def test_action_file_rename(self):
-        url = self.node.api_url_for('create_waterbutler_log')
-        payload = self.build_payload(
-            action='rename',
-            metadata={
-                'path': 'foo',
-            },
-            source={
-                'materialized': 'foo',
-                'provider': 'github',
-                'node': {'_id': self.node._id},
-                'name': 'new.txt',
-                'kind': 'file',
-            },
-            destination={
-                'path': 'foo',
-                'materialized': 'foo',
-                'provider': 'github',
-                'node': {'_id': self.node._id},
-                'name': 'old.txt',
-                'kind': 'file',
-            },
-        )
-        self.app.put_json(
-            url,
-            payload,
-            headers={'Content-Type': 'application/json'}
-        )
-        self.node.reload()
-
-        assert_equal(
-            self.node.logs.latest().action,
-            'github_addon_file_renamed',
-        )
-
-    def test_action_downloads(self):
+    def test_action_downloads_contrib(self):
         url = self.node.api_url_for('create_waterbutler_log')
         download_actions=('download_file', 'download_zip')
+        base_url = self.node.osfstorage_region.waterbutler_url
+        wb_url = base_url + '?version=1'
         for action in download_actions:
-            payload = self.build_payload(metadata={'path': 'foo'}, action=action)
+            payload = self.build_payload(metadata={'path': '/testfile',
+                                                   'nid': self.node._id},
+                                         action_meta={'is_mfr_render': False},
+                                         request_meta={'url': wb_url},
+                                         action=action)
             nlogs = self.node.logs.count()
             res = self.app.put_json(
                 url,
@@ -315,11 +409,24 @@ class TestAddonLogs(OsfTestCase):
         self.node.reload()
         assert_equal(self.node.logs.count(), nlogs)
 
-    def test_add_file_osfstorage_log(self):
+    @mock.patch('addons.base.views.timestamp')
+    def test_add_file_osfstorage_log(self, mock_timestamp):
         self.configure_osf_addon()
         path = 'pizza'
         url = self.node.api_url_for('create_waterbutler_log')
-        payload = self.build_payload(metadata={'materialized': path, 'kind': 'file', 'path': path})
+        payload = self.build_payload(metadata={
+            'provider': 'osfstorage',
+            'name': 'Hello.txt',
+            'materialized': path,
+            'path': path,
+            'kind': 'file',
+            'size': 2345,
+            'created_utc': '',
+            'modified_utc': '',
+            'extra': {
+                'version': '1'
+            }
+        })
         nlogs = self.node.logs.count()
         self.app.put_json(url, payload, headers={'Content-Type': 'application/json'})
         self.node.reload()
@@ -369,7 +476,7 @@ class TestCheckAuth(OsfTestCase):
             views.check_access(self.node, Auth(), 'download', None)
         assert_equal(exc_info.exception.code, 401)
 
-    def test_has_permission_on_parent_node_copyto_pass_if_registration(self):
+    def test_has_permission_on_parent_node_upload_pass_if_registration(self):
         component_admin = AuthUserFactory()
         ProjectFactory(creator=component_admin, parent=self.node)
         registration = RegistrationFactory(project=self.node)
@@ -377,7 +484,7 @@ class TestCheckAuth(OsfTestCase):
         component_registration = registration._nodes.first()
 
         assert_false(component_registration.has_permission(self.user, 'write'))
-        res = views.check_access(component_registration, Auth(user=self.user), 'copyto', None)
+        res = views.check_access(component_registration, Auth(user=self.user), 'upload', None)
         assert_true(res)
 
     def test_has_permission_on_parent_node_metadata_pass_if_registration(self):
@@ -390,13 +497,13 @@ class TestCheckAuth(OsfTestCase):
         res = views.check_access(component_registration, Auth(user=self.user), 'metadata', None)
         assert_true(res)
 
-    def test_has_permission_on_parent_node_copyto_fail_if_not_registration(self):
+    def test_has_permission_on_parent_node_upload_fail_if_not_registration(self):
         component_admin = AuthUserFactory()
         component = ProjectFactory(creator=component_admin, parent=self.node)
 
         assert_false(component.has_permission(self.user, 'write'))
         with assert_raises(HTTPError):
-            views.check_access(component, Auth(user=self.user), 'copyto', None)
+            views.check_access(component, Auth(user=self.user), 'upload', None)
 
     def test_has_permission_on_parent_node_copyfrom(self):
         component_admin = AuthUserFactory()
@@ -415,7 +522,7 @@ class TestCheckPreregAuth(OsfTestCase):
         administer_permission = Permission.objects.get(codename='administer_prereg')
         self.prereg_challenge_admin_user.user_permissions.add(administer_permission)
         self.prereg_challenge_admin_user.save()
-        prereg_schema = MetaSchema.objects.get(name='Prereg Challenge', schema_version=2)
+        prereg_schema = RegistrationSchema.objects.get(name='Prereg Challenge', schema_version=2)
 
         self.user = AuthUserFactory()
         self.node = factories.ProjectFactory(creator=self.user)
@@ -617,7 +724,7 @@ class TestAddonFileViews(OsfTestCase):
         version.save()
         ret = GithubFile(
             name='Test',
-            node=self.project,
+            target=self.project,
             path='/test/Test',
             materialized_path='/test/Test',
         )
@@ -630,7 +737,33 @@ class TestAddonFileViews(OsfTestCase):
         version.save()
         ret = GithubFile(
             name='Test2',
-            node=self.project,
+            target=self.project,
+            path='/test/Test2',
+            materialized_path='/test/Test2',
+        )
+        ret.save()
+        ret.versions.add(version)
+        return ret
+
+    def get_uppercased_ext_test_file(self):
+        version = file_models.FileVersion(identifier='1')
+        version.save()
+        ret = GithubFile(
+            name='Test2.pdf',
+            target=self.project,
+            path='/test/Test2',
+            materialized_path='/test/Test2',
+        )
+        ret.save()
+        ret.versions.add(version)
+        return ret
+
+    def get_ext_test_file(self):
+        version = file_models.FileVersion(identifier='1')
+        version.save()
+        ret = GithubFile(
+            name='Test2.pdf',
+            target=self.project,
             path='/test/Test2',
             materialized_path='/test/Test2',
         )
@@ -680,7 +813,7 @@ class TestAddonFileViews(OsfTestCase):
         assert_equals(resp.status_code, 302)
         assert_equals(resp.location, 'http://localhost:80/{}/'.format(guid._id))
 
-    def test_action_download_redirects_to_download(self):
+    def test_action_download_redirects_to_download_with_param(self):
         file_node = self.get_test_file()
         guid = file_node.get_guid(create=True)
 
@@ -689,6 +822,28 @@ class TestAddonFileViews(OsfTestCase):
         assert_equals(resp.status_code, 302)
         location = furl.furl(resp.location)
         assert_urls_equal(location.url, file_node.generate_waterbutler_url(action='download', direct=None, version=''))
+
+    def test_action_download_redirects_to_download_with_path(self):
+        file_node = self.get_uppercased_ext_test_file()
+        guid = file_node.get_guid(create=True)
+
+        resp = self.app.get('/{}/download?format=pdf'.format(guid._id), auth=self.user.auth)
+
+        assert_equals(resp.status_code, 302)
+        location = furl.furl(resp.location)
+        assert_equal(location.url, file_node.generate_waterbutler_url(action='download', direct=None, version='', format='pdf'))
+
+
+    def test_action_download_redirects_to_download_with_path_uppercase(self):
+        file_node = self.get_uppercased_ext_test_file()
+        guid = file_node.get_guid(create=True)
+
+        resp = self.app.get('/{}/download?format=pdf'.format(guid._id), auth=self.user.auth)
+
+        assert_equals(resp.status_code, 302)
+        location = furl.furl(resp.location)
+        assert_equal(location.url, file_node.generate_waterbutler_url(action='download', direct=None, version='', format='pdf'))
+
 
     def test_action_download_redirects_to_download_with_version(self):
         file_node = self.get_test_file()
@@ -702,6 +857,7 @@ class TestAddonFileViews(OsfTestCase):
         assert_urls_equal(location.url, file_node.generate_waterbutler_url(action='download', direct=None, revision=1, version=''))
 
     @mock.patch('addons.base.views.addon_view_file')
+    @pytest.mark.enable_bookmark_creation
     def test_action_view_calls_view_file(self, mock_view_file):
         self.user.reload()
         self.project.reload()
@@ -721,6 +877,7 @@ class TestAddonFileViews(OsfTestCase):
         assert_true(isinstance(args[3], file_node.touch(None).__class__))
 
     @mock.patch('addons.base.views.addon_view_file')
+    @pytest.mark.enable_bookmark_creation
     def test_no_action_calls_view_file(self, mock_view_file):
         self.user.reload()
         self.project.reload()
@@ -754,6 +911,7 @@ class TestAddonFileViews(OsfTestCase):
 
         assert_true(file_node.get_guid())
 
+    @pytest.mark.enable_bookmark_creation
     def test_view_file_does_not_delete_file_when_requesting_invalid_version(self):
         with mock.patch('addons.github.models.NodeSettings.is_private',
                         new_callable=mock.PropertyMock) as mock_is_private:
@@ -871,7 +1029,7 @@ class TestAddonFileViews(OsfTestCase):
                 'materialized': '/test/Test'
             }
         }
-        views.addon_delete_file_node(self=None, node=self.project, user=self.user, event_type='file_removed', payload=payload)
+        views.addon_delete_file_node(self=None, target=self.project, user=self.user, event_type='file_removed', payload=payload)
         assert_false(GithubFileNode.load(file_node._id))
         assert_true(TrashedFileNode.load(file_node._id))
 
@@ -879,7 +1037,7 @@ class TestAddonFileViews(OsfTestCase):
         file_node = self.get_test_file()
         subfolder = GithubFolder(
             name='folder',
-            node=self.project,
+            target=self.project,
             path='/test/folder/',
             materialized_path='/test/folder/',
         )
@@ -891,7 +1049,7 @@ class TestAddonFileViews(OsfTestCase):
                 'materialized': '/test/'
             }
         }
-        views.addon_delete_file_node(self=None, node=self.project, user=self.user, event_type='file_removed', payload=payload)
+        views.addon_delete_file_node(self=None, target=self.project, user=self.user, event_type='file_removed', payload=payload)
         assert_false(GithubFileNode.load(subfolder._id))
         assert_true(TrashedFileNode.load(file_node._id))
 
@@ -1132,6 +1290,8 @@ class TestViewUtils(OsfTestCase):
         self.cookie = itsdangerous.Signer(settings.SECRET_KEY).sign(self.session._id)
         self.configure_addon()
         self.JWE_KEY = jwe.kdf(settings.WATERBUTLER_JWE_SECRET.encode('utf-8'), settings.WATERBUTLER_JWE_SALT.encode('utf-8'))
+        self.mock_api_credentials_are_valid = mock.patch('addons.github.api.GitHubClient.check_authorization', return_value=True)
+        self.mock_api_credentials_are_valid.start()
 
     def configure_addon(self):
         self.user.add_addon('github')
@@ -1150,7 +1310,8 @@ class TestViewUtils(OsfTestCase):
         self.user_addon.oauth_grants[self.node._id] = {self.oauth_settings._id: []}
         self.user_addon.save()
 
-    def test_serialize_addons(self):
+    @mock.patch('addons.github.models.NodeSettings.get_folders', return_value=[])
+    def test_serialize_addons(self, mock_folders):
         addon_dicts = serialize_addons(self.node, self.auth_obj)
 
         enabled_addons = [addon for addon in addon_dicts if addon['enabled']]
@@ -1162,7 +1323,8 @@ class TestViewUtils(OsfTestCase):
         assert len(default_addons) == 1
         assert default_addons[0]['short_name'] == 'osfstorage'
 
-    def test_include_template_json(self):
+    @mock.patch('addons.github.models.NodeSettings.get_folders', return_value=[])
+    def test_include_template_json(self, mock_folders):
         """ Some addons (github, gitlab) need more specialized template infomation so we want to
         ensure we get those extra variables that when the addon is enabled.
         """
@@ -1175,7 +1337,8 @@ class TestViewUtils(OsfTestCase):
         assert 'node_has_auth' in enabled_addons[0]
         assert 'valid_credentials' in enabled_addons[0]
 
-    def test_collect_node_config_js(self):
+    @mock.patch('addons.github.models.NodeSettings.get_folders', return_value=[])
+    def test_collect_node_config_js(self, mock_folders):
 
         addon_dicts = serialize_addons(self.node, self.auth_obj)
 

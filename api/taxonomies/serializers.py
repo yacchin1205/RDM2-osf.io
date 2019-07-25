@@ -8,19 +8,43 @@ class TaxonomyField(ser.Field):
         if not isinstance(subject, Subject):
             subject = Subject.load(subject)
         if subject is not None:
-            return {'id': subject._id,
-                    'text': subject.text}
+            return {
+                'id': subject._id,
+                'text': subject.text,
+            }
         return None
 
     def to_internal_value(self, subject_id):
         return subject_id
+
+
+class TaxonomizableSerializerMixin(ser.Serializer):
+    """ Mixin for Taxonomizable objects
+
+    Note: subclasses will need to update `filterable_fields` and `update`
+    to handle subjects correctly.
+    """
+    writeable_method_fields = frozenset([
+        'subjects',
+    ])
+
+    subjects = ser.SerializerMethodField()
+
+    def get_subjects(self, obj):
+        from api.taxonomies.serializers import TaxonomyField
+        return [
+            [
+                TaxonomyField().to_representation(subj) for subj in hier
+            ] for hier in obj.subject_hierarchy
+        ]
+
 
 class TaxonomySerializer(JSONAPISerializer):
     filterable_fields = frozenset([
         'text',
         'parents',
         'parent',
-        'id'
+        'id',
     ])
     id = ser.CharField(source='_id', required=True)
     text = ser.CharField(max_length=200)

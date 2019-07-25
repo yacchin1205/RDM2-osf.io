@@ -4,6 +4,8 @@ from api.base.settings.defaults import API_BASE, MAX_PAGE_SIZE
 from api_tests.nodes.filters.test_filters import NodesListFilteringMixin, NodesListDateFilteringMixin
 from framework.auth.core import Auth
 from osf.models import AbstractNode, Node, NodeLog
+from osf.utils.sanitize import strip_html
+from osf.utils import permissions
 from osf_tests.factories import (
     CollectionFactory,
     ProjectFactory,
@@ -12,11 +14,12 @@ from osf_tests.factories import (
     AuthUserFactory,
     UserFactory,
     PreprintFactory,
+    InstitutionFactory,
+    RegionFactory
 )
+from addons.osfstorage.settings import DEFAULT_REGION_ID
 from rest_framework import exceptions
 from tests.utils import assert_items_equal
-from website.util import permissions
-from website.util.sanitize import strip_html
 from website.views import find_bookmark_collection
 
 
@@ -138,8 +141,15 @@ class TestNodeList:
         res = app.get('{}?sort=title'.format(url))
         assert res.status_code == 200
 
+    def test_node_list_embed_region(self, app, url, public_project):
+        res = app.get('{}?embed=region'.format(url))
+        assert res.status_code == 200
+        assert res.json['data'][0]['embeds']['region']['data']['id'] == DEFAULT_REGION_ID
+
 
 @pytest.mark.django_db
+@pytest.mark.enable_quickfiles_creation
+@pytest.mark.enable_bookmark_creation
 class TestNodeFiltering:
 
     @pytest.fixture()
@@ -189,7 +199,7 @@ class TestNodeFiltering:
 
     @pytest.fixture()
     def public_project_three(self):
-        return ProjectFactory(title='Unique Test Title', is_public=True)
+        return ProjectFactory(title='Unique Test Title', description='three', is_public=True)
 
     @pytest.fixture()
     def user_one_private_project(self, user_one):
@@ -898,11 +908,19 @@ class TestNodeFiltering:
 
 
 @pytest.mark.django_db
+@pytest.mark.enable_quickfiles_creation
+@pytest.mark.enable_implicit_clean
 class TestNodeCreate:
 
     @pytest.fixture()
-    def user_one(self):
-        return AuthUserFactory()
+    def institution_one(self):
+        return InstitutionFactory()
+
+    @pytest.fixture()
+    def user_one(self, institution_one):
+        auth_user = AuthUserFactory()
+        auth_user.affiliated_institutions.add(institution_one)
+        return auth_user
 
     @pytest.fixture()
     def user_two(self):
@@ -925,7 +943,15 @@ class TestNodeCreate:
         return 'data'
 
     @pytest.fixture()
-    def public_project(self, title, description, category):
+    def region(self):
+        return RegionFactory(name='Frankfort', _id='eu-central-1')
+
+    @pytest.fixture()
+    def url_with_region_query_param(self, region, url):
+        return url + '?region={}'.format(region._id)
+
+    @pytest.fixture()
+    def public_project(self, title, description, category, institution_one):
         return {
             'data': {
                 'type': 'nodes',
@@ -934,7 +960,17 @@ class TestNodeCreate:
                     'description': description,
                     'category': category,
                     'public': True,
-                }
+                },
+                'relationships': {
+                    'affiliated_institutions': {
+                        'data': [
+                            {
+                                'type': 'institutions',
+                                'id': institution_one._id,
+                            }
+                        ]
+                    }
+                },
             }
         }
 
@@ -982,19 +1018,23 @@ class TestNodeCreate:
         assert 'detail' in res.json['errors'][0]
 
     def test_creates_public_project_logged_in(
-            self, app, user_one, public_project, url):
+            self, app, user_one, public_project, url, institution_one):
         res = app.post_json_api(
             url, public_project,
             expect_errors=True,
             auth=user_one.auth)
         assert res.status_code == 201
+        self_link = res.json['data']['links']['self']
         assert res.json['data']['attributes']['title'] == public_project['data']['attributes']['title']
         assert res.json['data']['attributes']['description'] == public_project['data']['attributes']['description']
         assert res.json['data']['attributes']['category'] == public_project['data']['attributes']['category']
+        assert res.json['data']['relationships']['affiliated_institutions']['links']['self']['href'] ==  \
+               '{}relationships/institutions/'.format(self_link)
         assert res.content_type == 'application/vnd.api+json'
         pid = res.json['data']['id']
         project = AbstractNode.load(pid)
-        assert project.logs.latest().action == NodeLog.PROJECT_CREATED
+        assert project.logs.latest().action == NodeLog.AFFILIATED_INSTITUTION_ADDED
+        assert institution_one in project.affiliated_institutions.all()
 
     def test_creates_private_project_logged_in_contributor(
             self, app, user_one, private_project, url):
@@ -1190,6 +1230,91 @@ class TestNodeCreate:
             new_component.contributors
         ) == len(parent_project.contributors)
 
+    def test_create_project_with_region_relationship(
+            self, app, user_one, region, institution_one, private_project, url):
+        private_project['data']['relationships'] = {
+            'region': {
+                'data': {
+                    'type': 'region',
+                    'id': region._id
+                }
+            }
+        }
+        res = app.post_json_api(
+            url, private_project, auth=user_one.auth
+        )
+        assert res.status_code == 201
+        region_id = res.json['data']['relationships']['region']['data']['id']
+        assert region_id == region._id
+
+        institution_two = InstitutionFactory()
+        user_one.affiliated_institutions.add(institution_two)
+
+        private_project['data']['relationships'] = {
+            'affiliated_institutions': {
+                'data': [
+                    {
+                        'type': 'institutions',
+                        'id': institution_one._id
+                    },
+                    {
+                        'type': 'institutions',
+                        'id': institution_two._id
+                    }
+                ]
+            },
+            'region': {
+                'data': {
+                    'type': 'region',
+                    'id': region._id
+                }
+            }
+        }
+        res = app.post_json_api(
+            url, private_project, auth=user_one.auth
+        )
+        assert res.status_code == 201
+        region_id = res.json['data']['relationships']['region']['data']['id']
+        assert region_id == region._id
+
+        node_id = res.json['data']['id']
+        node = AbstractNode.load(node_id)
+        assert institution_one in node.affiliated_institutions.all()
+        assert institution_two in node.affiliated_institutions.all()
+
+    def test_create_project_with_region_query_param(
+            self, app, user_one, region, private_project, url_with_region_query_param):
+        res = app.post_json_api(
+            url_with_region_query_param, private_project, auth=user_one.auth
+        )
+        assert res.status_code == 201
+        pid = res.json['data']['id']
+        project = AbstractNode.load(pid)
+
+        node_settings = project.get_addon('osfstorage')
+        assert node_settings.region_id == region.id
+
+    def test_create_project_with_no_region_specified(self, app, user_one, private_project, url):
+        res = app.post_json_api(
+            url, private_project, auth=user_one.auth
+        )
+        assert res.status_code == 201
+        project = AbstractNode.load(res.json['data']['id'])
+
+        node_settings = project.get_addon('osfstorage')
+        # NodeSettings just left at default region on creation
+        assert node_settings.region_id == 1
+
+    def test_create_project_with_bad_region_query_param(
+            self, app, user_one, region, private_project, url):
+        bad_region_id = 'bad-region-1'
+        res = app.post_json_api(
+            url + '?region={}'.format(bad_region_id), private_project,
+            auth=user_one.auth, expect_errors=True
+        )
+        assert res.status_code == 400
+        assert res.json['errors'][0]['detail'] == 'Region {} is invalid.'.format(bad_region_id)
+
     def test_create_project_errors(
             self, app, user_one, title, description, category, url):
 
@@ -1243,8 +1368,8 @@ class TestNodeCreate:
             url, project, auth=user_one.auth,
             expect_errors=True)
         assert res.status_code == 400
-        assert res.json['errors'][0]['detail'] == 'Request must include /data/attributes.'
-        assert res.json['errors'][0]['source']['pointer'] == '/data/attributes'
+        assert res.json['errors'][0]['detail'] == 'This field is required.'
+        assert res.json['errors'][0]['source']['pointer'] == '/data/attributes/category'
 
     #   test_create_project_invalid_title
         project = {
@@ -1429,7 +1554,7 @@ class TestNodeBulkCreate:
             expect_errors=True, bulk=True)
 
         assert res.status_code == 400
-        assert res.json['errors'][0]['source']['pointer'] == '/data/attributes'
+        assert res.json['errors'][0]['source']['pointer'] == '/data/1/attributes/category'
 
         res = app.get(url, auth=user_one.auth)
         assert len(res.json['data']) == 0
@@ -2942,10 +3067,12 @@ class TestNodeBulkDelete:
     def test_bulk_delete_project_with_component(
             self, app, user_one,
             public_project_parent,
+            public_project_one,
             public_component, url):
+
         new_payload = {'data': [
             {'id': public_project_parent._id, 'type': 'nodes'},
-            {'id': public_component._id, 'type': 'nodes'}
+            {'id': public_project_one._id, 'type': 'nodes'}
         ]}
         res = app.delete_json_api(
             url, new_payload, auth=user_one.auth,
@@ -2953,9 +3080,46 @@ class TestNodeBulkDelete:
         assert res.status_code == 400
 
         new_payload = {'data': [
-            {'id': public_component._id, 'type': 'nodes'},
-            {'id': public_project_parent._id, 'type': 'nodes'}
+            {'id': public_project_parent._id, 'type': 'nodes'},
+            {'id': public_component._id, 'type': 'nodes'}
         ]}
+        res = app.delete_json_api(
+            url, new_payload, auth=user_one.auth, bulk=True)
+        assert res.status_code == 204
+
+    # Regression test for PLAT-859
+    def test_bulk_delete_project_with_already_deleted_component(
+            self, app, user_one,
+            public_project_parent,
+            public_project_one,
+            public_component, url):
+
+        public_component.is_deleted = True
+        public_component.save()
+
+        new_payload = {'data': [
+            {'id': public_project_parent._id, 'type': 'nodes'},
+            {'id': public_project_one._id, 'type': 'nodes'}
+        ]}
+
+        res = app.delete_json_api(
+            url, new_payload, auth=user_one.auth, bulk=True)
+        assert res.status_code == 204
+
+    # Regression test for PLAT-889
+    def test_bulk_delete_project_with_linked_node(
+            self, app, user_one,
+            public_project_parent,
+            public_component, url):
+
+        node_link = NodeFactory(is_public=True, creator=user_one)
+        public_project_parent.add_pointer(node_link, auth=Auth(user_one))
+
+        new_payload = {'data': [
+            {'id': public_project_parent._id, 'type': 'nodes'},
+            {'id': public_component._id, 'type': 'nodes'}
+        ]}
+
         res = app.delete_json_api(
             url, new_payload, auth=user_one.auth, bulk=True)
         assert res.status_code == 204
@@ -3107,6 +3271,7 @@ class TestNodeBulkDeleteSkipUneditable:
 
 
 @pytest.mark.django_db
+@pytest.mark.enable_quickfiles_creation
 class TestNodeListPagination:
 
     @pytest.fixture()

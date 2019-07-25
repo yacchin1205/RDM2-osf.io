@@ -2,7 +2,7 @@ import mock
 import pytest
 from urlparse import urlparse
 
-from addons.wiki.tests.factories import NodeWikiFactory
+from addons.wiki.tests.factories import WikiFactory
 from api.base.settings.defaults import API_BASE
 from api.base.settings import osf_settings
 from api_tests import utils as test_utils
@@ -19,6 +19,7 @@ from rest_framework import exceptions
 
 
 @pytest.mark.django_db
+@pytest.mark.enable_implicit_clean
 class CommentDetailMixin(object):
 
     @pytest.fixture()
@@ -879,7 +880,12 @@ class TestWikiCommentDetailView(CommentDetailMixin):
     @pytest.fixture()
     def wiki(self, user, private_project):
         with mock.patch('osf.models.AbstractNode.update_search'):
-            return NodeWikiFactory(node=private_project, user=user)
+            wiki = WikiFactory(
+                user=user,
+                node=private_project,
+                page_name='not home'
+            )
+            return wiki
 
     @pytest.fixture()
     def comment(self, user, private_project, wiki):
@@ -908,7 +914,10 @@ class TestWikiCommentDetailView(CommentDetailMixin):
     @pytest.fixture()
     def public_wiki(self, user, public_project):
         with mock.patch('osf.models.AbstractNode.update_search'):
-            return NodeWikiFactory(node=public_project, user=user)
+            return WikiFactory(
+                user=user,
+                node=public_project,
+            )
 
     @pytest.fixture()
     def public_comment(self, user, public_project, public_wiki):
@@ -942,7 +951,10 @@ class TestWikiCommentDetailView(CommentDetailMixin):
     @pytest.fixture()
     def registration_wiki(self, registration, user):
         with mock.patch('osf.models.AbstractNode.update_search'):
-            return NodeWikiFactory(node=registration, user=user)
+            return WikiFactory(
+                user=user,
+                node=registration,
+            )
 
     @pytest.fixture()
     def registration_comment(self, user, registration, registration_wiki):
@@ -981,10 +993,13 @@ class TestWikiCommentDetailView(CommentDetailMixin):
     def test_public_node_non_contrib_commenter_can_update_wiki_comment(
             self, app, user, non_contrib, set_up_payload):
         project = ProjectFactory(is_public=True)
-        test_wiki = NodeWikiFactory(node=project, user=user)
+        wiki_page = WikiFactory(
+            user=user,
+            node=project,
+        )
         comment = CommentFactory(
             node=project,
-            target=Guid.load(test_wiki._id),
+            target=Guid.load(wiki_page._id),
             user=non_contrib
         )
         url = '/{}comments/{}/'.format(API_BASE, comment._id)
@@ -996,10 +1011,13 @@ class TestWikiCommentDetailView(CommentDetailMixin):
     def test_public_node_non_contrib_commenter_cannot_update_own_wiki_comment_if_comment_level_private(
             self, app, user, non_contrib, set_up_payload):
         project = ProjectFactory(is_public=True)
-        test_wiki = NodeWikiFactory(node=project, user=user)
+        wiki_page = WikiFactory(
+            user=user,
+            node=project,
+        )
         comment = CommentFactory(
             node=project,
-            target=Guid.load(test_wiki._id),
+            target=Guid.load(wiki_page._id),
             user=non_contrib
         )
         project.comment_level = 'private'
@@ -1016,10 +1034,13 @@ class TestWikiCommentDetailView(CommentDetailMixin):
     def test_public_node_non_contrib_commenter_can_delete_wiki_comment(
             self, app, user, non_contrib):
         project = ProjectFactory(is_public=True, comment_level='public')
-        test_wiki = NodeWikiFactory(node=project, user=user)
+        wiki_page = WikiFactory(
+            user=user,
+            node=project,
+        )
         comment = CommentFactory(
             node=project,
-            target=Guid.load(test_wiki._id),
+            target=Guid.load(wiki_page._id),
             user=non_contrib
         )
         url = '/{}comments/{}/'.format(API_BASE, comment._id)
@@ -1029,6 +1050,6 @@ class TestWikiCommentDetailView(CommentDetailMixin):
     def test_comment_detail_for_deleted_wiki_is_not_returned(
             self, app, user, wiki, private_url, private_project):
         # Delete commented wiki page
-        private_project.delete_node_wiki(wiki.page_name, core.Auth(user))
+        wiki.delete(core.Auth(user))
         res = app.get(private_url, auth=user.auth, expect_errors=True)
         assert res.status_code == 404

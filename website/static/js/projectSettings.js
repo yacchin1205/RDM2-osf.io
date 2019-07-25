@@ -36,6 +36,9 @@ var ProjectSettings = oop.extend(
             self.updateUrl = params.updateUrl;
             self.node_id = params.node_id;
 
+            self.selectedTimestampPattern = ko.observable(params.timestampPattern);
+            self.timestampPatternPlaceholder = params.timestampPattern;
+
             self.originalProjectSettings = ko.observable(self.serialize());
             self.dirty = ko.pureComputed(function(){
                 return JSON.stringify(self.originalProjectSettings()) !== JSON.stringify(self.serialize());
@@ -68,22 +71,20 @@ var ProjectSettings = oop.extend(
                 self.changeMessage(language.updateSuccessMessage, 'text-success');
                 return;
             }
-            var requestPayload = JSON.stringify(self.serialize());
-            var request = $.ajax({
-                    url: self.updateUrl,
-                    type: 'PATCH',
-                    dataType: 'json',
-                    contentType: 'application/vnd.api+json',
-                    crossOrigin: true,
-                    xhrFields: {withCredentials: true},
-                    processData: false,
-                    data: requestPayload
-                });
+            var request = $osf.ajaxJSON('PATCH', self.updateUrl, {
+                data: self.serialize(),
+                isCors: true,
+                fields: {
+                    processData: false
+                }
+            });
             request.done(function(response) {
                 self.categoryPlaceholder = response.data.attributes.category;
                 self.titlePlaceholder = response.data.attributes.title;
                 self.descriptionPlaceholder = response.data.attributes.description;
+                self.timestampPatternPlaceholder = self.selectedTimestampPattern();
                 self.selectedCategory(self.categoryPlaceholder);
+                self.selectedTimestampPattern(self.timestampPatternPlaceholder);
                 self.title(self.titlePlaceholder);
                 self.description(self.descriptionPlaceholder);
                 self.originalProjectSettings(self.serialize());
@@ -102,6 +103,7 @@ var ProjectSettings = oop.extend(
             self.selectedCategory(self.categoryPlaceholder);
             self.title(self.titlePlaceholder);
             self.description(self.descriptionPlaceholder);
+            self.selectedTimestampPattern(self.timestampPatternPlaceholder);
             self.resetMessage();
         },
         serialize: function() {
@@ -114,6 +116,7 @@ var ProjectSettings = oop.extend(
                         title: self.title(),
                         category: self.selectedCategory(),
                         description: self.description(),
+                        timestampPattern: self.selectedTimestampPattern(),
                     }
                 }
             };

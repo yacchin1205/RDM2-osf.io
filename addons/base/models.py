@@ -17,7 +17,6 @@ from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
 from website import settings
 from addons.base import logger, serializer
 from website.oauth.signals import oauth_complete
-from website.util import waterbutler_api_url_for
 
 lookup = TemplateLookup(
     directories=[
@@ -523,7 +522,7 @@ class BaseNodeSettings(BaseAddonSettings):
         """
         return None, None
 
-    def after_delete(self, node, user):
+    def after_delete(self, user):
         """
 
         :param Node node:
@@ -561,6 +560,7 @@ class BaseStorageAddon(object):
         return name
 
     def _get_fileobj_child_metadata(self, filenode, user, cookie=None, version=None):
+        from api.base.utils import waterbutler_api_url_for
 
         kwargs = {}
         if version:
@@ -577,6 +577,7 @@ class BaseStorageAddon(object):
             user=user,
             view_only=True,
             _internal=True,
+            base_url=self.owner.osfstorage_region.waterbutler_url,
             **kwargs
         )
 
@@ -789,9 +790,9 @@ class BaseOAuthNodeSettings(BaseNodeSettings):
             )
 
             if not auth or auth.user != removed:
-                url = node.web_url_for('node_setting')
+                url = node.web_url_for('node_addons')
                 message += (
-                    u' You can re-authenticate on the <u><a href="{url}">Settings</a></u> page.'
+                    u' You can re-authenticate on the <u><a href="{url}">add-ons</a></u> page.'
                 ).format(url=url)
             #
             return message
@@ -938,7 +939,7 @@ class BaseCitationsNodeSettings(BaseOAuthNodeSettings):
         self.clear_auth()
         self.save()
 
-    def after_delete(self, node=None, user=None):
+    def after_delete(self, user=None):
         self.deauthorize(Auth(user=user), add_log=True)
 
     def on_delete(self):

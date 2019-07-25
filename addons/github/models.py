@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 
-import itertools
 import os
 import urlparse
 
@@ -34,6 +33,13 @@ class GithubFolder(GithubFileNode, Folder):
 
 class GithubFile(GithubFileNode, File):
     version_identifier = 'ref'
+
+    @property
+    def _hashes(self):
+        try:
+            return {'fileSha': self.history[-1]['extra']['hashes']['git']}
+        except (IndexError, KeyError):
+            return None
 
     def touch(self, auth_header, revision=None, ref=None, branch=None, **kwargs):
         revision = revision or ref or branch
@@ -77,7 +83,7 @@ class UserSettings(BaseOAuthUserSettings):
     def revoke_remote_oauth_access(self, external_account):
         """Overrides default behavior during external_account deactivation.
 
-        Tells GitHub to remove the grant for the OSF associated with this account.
+        Tells GitHub to remove the grant for the GakuNin RDM associated with this account.
         """
         connection = GitHubClient(external_account=external_account)
         try:
@@ -185,6 +191,28 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
         except GitHubError:
             return
 
+    def get_folders(self, **kwargs):
+        if not self.has_auth:
+            raise exceptions.InvalidAuthError()
+        else:
+            connection = GitHubClient(external_account=self.external_account)
+            # Since /user/repos excludes organization repos to which the
+            # current user has push access, we have to make extra requests to
+            # find them
+            try:
+                repo_data = [
+                    {
+                        'addon': 'github',
+                        'kind': 'repo',
+                        'id': repo.id,
+                        'name': repo.name,
+                        'path': os.path.join(repo.owner.login, repo.name)
+                    }
+                    for repo in connection.repos()]
+            except GitHubError:
+                repo_data = []
+            return repo_data
+
     # TODO: Delete me and replace with serialize_settings / Knockout
     def to_json(self, user):
         ret = super(NodeSettings, self).to_json(user)
@@ -194,37 +222,23 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
             'is_registration': self.owner.is_registration,
         })
         if self.has_auth:
-            valid_credentials = False
             owner = self.user_settings.owner
-            connection = GitHubClient(external_account=self.external_account)
-            # TODO: Fetch repo list client-side
-            # Since /user/repos excludes organization repos to which the
-            # current user has push access, we have to make extra requests to
-            # find them
-            valid_credentials = True
-            try:
-                repos = itertools.chain.from_iterable((connection.repos(), connection.my_org_repos()))
-                repo_names = [
-                    '{0} / {1}'.format(repo.owner.login, repo.name)
-                    for repo in repos
-                ]
-            except GitHubError:
-                repo_names = []
-                valid_credentials = False
+
             if owner == user:
-                ret.update({'repo_names': repo_names})
+                ret.update({'repo_names': self.get_folders()})
+
             ret.update({
                 'node_has_auth': True,
                 'github_user': self.user or '',
                 'github_repo': self.repo or '',
-                'github_repo_full_name': '{0} / {1}'.format(self.user, self.repo) if (self.user and self.repo) else '',
+                'github_repo_full_name': '{0}/{1}'.format(self.user, self.repo) if (self.user and self.repo) else '',
                 'auth_osf_name': owner.fullname,
                 'auth_osf_url': owner.url,
                 'auth_osf_id': owner._id,
                 'github_user_name': self.external_account.display_name,
                 'github_user_url': self.external_account.profile_url,
                 'is_owner': owner == user,
-                'valid_credentials': valid_credentials,
+                'valid_credentials': GitHubClient(external_account=self.external_account).check_authorization(),
                 'addons_url': web_url_for('user_addons'),
                 'files_url': self.owner.web_url_for('collect_file_trees')
             })
@@ -418,7 +432,7 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
                 cat=node.project_or_component,
             )
 
-    def after_delete(self, node, user):
+    def after_delete(self, user):
         self.deauthorize(Auth(user=user), log=True)
 
     #########

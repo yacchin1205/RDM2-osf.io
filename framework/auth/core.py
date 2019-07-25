@@ -79,15 +79,32 @@ def get_current_user_id():
 # TODO - rename to _get_current_user_from_session /HRYBACKI
 def _get_current_user():
     from osf.models import OSFUser
+    from framework.auth import cas
     current_user_id = get_current_user_id()
+    header_token = request.headers.get('Authorization', None)
     if current_user_id:
         return OSFUser.load(current_user_id, select_for_update=check_select_for_update(request))
+    elif header_token and 'bearer' in header_token.lower():
+        # instead of querying directly here, let CAS deal with the authentication
+        client = cas.get_client()
+        auth_token = cas.parse_auth_header(header_token)
+
+        try:
+            cas_auth_response = client.profile(auth_token)
+        except cas.CasHTTPError:
+            return None
+
+        return OSFUser.load(
+            cas_auth_response.user,
+            select_for_update=check_select_for_update(request)
+        ) if cas_auth_response.authenticated else None
+
     else:
         return None
 
 
 # TODO: This should be a class method of User?
-def get_user(email=None, password=None, token=None, external_id_provider=None, external_id=None):
+def get_user(email=None, password=None, token=None, external_id_provider=None, external_id=None, eppn=None):
     """
     Get an instance of `User` matching the provided params.
 
@@ -105,7 +122,7 @@ def get_user(email=None, password=None, token=None, external_id_provider=None, e
     """
     from osf.models import OSFUser, Email
 
-    if not any([email, password, token, external_id_provider, external_id_provider]):
+    if not any([email, password, token, external_id_provider, external_id_provider, eppn]):
         return None
 
     if password and not email:
@@ -127,6 +144,9 @@ def get_user(email=None, password=None, token=None, external_id_provider=None, e
         if user and not user.check_password(password):
             return False
         return user
+
+    if eppn:
+        qs = qs.filter(eppn=eppn)
 
     if token:
         qs = qs.filter(verification_key=token)

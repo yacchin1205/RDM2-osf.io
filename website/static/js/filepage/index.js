@@ -126,7 +126,7 @@ var FileViewPage = {
             if (self.file.isPreregCheckout){
                 m.render(document.getElementById('alertBar'), m('.alert.alert-warning[role="alert"]', m('span', [
                     m('strong', 'File is checked out.'),
-                    ' This file has been checked out by a COS Preregistration Challenge Reviewer. It needs to be checked in before any changes can be made.',
+                    ' This file has been checked out by a COS Preregistration Challenge Reviewer and will become available when review is complete.',
                 ])));
             } else if ((self.file.checkoutUser) && (self.file.checkoutUser !== self.context.currentUser.id)) {
                 m.render(document.getElementById('alertBar'), m('.alert.alert-warning[role="alert"]', m('span', [
@@ -145,14 +145,14 @@ var FileViewPage = {
         }
 
         $.extend(self.file.urls, {
-            delete: waterbutler.buildDeleteUrl(self.file.path, self.file.provider, self.node.id),
-            metadata: waterbutler.buildMetadataUrl(self.file.path, self.file.provider, self.node.id),
-            revisions: waterbutler.buildRevisionsUrl(self.file.path, self.file.provider, self.node.id),
-            content: waterbutler.buildDownloadUrl(self.file.path, self.file.provider, self.node.id, {direct: true, mode: 'render'})
+            delete: waterbutler.buildDeleteUrl(self.file.path, self.file.provider, self.node.id, {waterbutlerURL: self.node.urls.waterbutler}),
+            metadata: waterbutler.buildMetadataUrl(self.file.path, self.file.provider, self.node.id, {waterbutlerURL: self.node.urls.waterbutler}),
+            revisions: waterbutler.buildRevisionsUrl(self.file.path, self.file.provider, self.node.id, {waterbutlerURL: self.node.urls.waterbutler}),
+            content: waterbutler.buildDownloadUrl(self.file.path, self.file.provider, self.node.id, {waterbutlerURL: self.node.urls.waterbutler, direct: true, mode: 'render'})
         });
 
         if ($osf.urlParams().branch) {
-            var fileWebViewUrl = waterbutler.buildMetadataUrl(self.file.path, self.file.provider, self.node.id, {branch : $osf.urlParams().branch});
+            var fileWebViewUrl = waterbutler.buildMetadataUrl(self.file.path, self.file.provider, self.node.id, {waterbutlerURL: self.node.urls.waterbutler, branch: $osf.urlParams().branch});
             $.ajax({
                 dataType: 'json',
                 async: true,
@@ -174,7 +174,7 @@ var FileViewPage = {
                     {branch: $osf.urlParams().branch}
                 );
             }
-            self.file.urls.content = waterbutler.buildDownloadUrl(self.file.path, self.file.provider, self.node.id, {direct: true, mode: 'render', branch: $osf.urlParams().branch});
+            self.file.urls.content = waterbutler.buildDownloadUrl(self.file.path, self.file.provider, self.node.id, {direct: true, mode: 'render', branch: $osf.urlParams().branch, waterbutlerURL: self.node.urls.waterbutler});
         }
 
         $(document).on('fileviewpage:delete', function() {
@@ -219,13 +219,9 @@ var FileViewPage = {
                     if (!confirm) {
                         return;
                     }
-                    $.ajax({
-                        method: 'put',
-                        url: window.contextVars.apiV2Prefix + 'files' + self.file.path + '/',
-                        beforeSend: $osf.setXHRAuthorization,
-                        contentType: 'application/json',
-                        dataType: 'json',
-                        data: JSON.stringify({
+                    var url = window.contextVars.apiV2Prefix + 'files' + self.file.path + '/';
+                    $osf.ajaxJSON('PUT', url, {
+                        data: {
                             data: {
                                 id: self.file.path.replace('/', ''),
                                 type: 'files',
@@ -233,7 +229,8 @@ var FileViewPage = {
                                     checkout: self.context.currentUser.id
                                 }
                             }
-                        })
+                        },
+                        isCors: true
                     }).done(function(resp) {
                         window.location.reload();
                     }).fail(function(resp) {
@@ -249,13 +246,9 @@ var FileViewPage = {
             });
         });
         $(document).on('fileviewpage:checkin', function() {
-            $.ajax({
-                method: 'put',
-                url: window.contextVars.apiV2Prefix + 'files' + self.file.path + '/',
-                beforeSend: $osf.setXHRAuthorization,
-                contentType: 'application/json',
-                dataType: 'json',
-                data: JSON.stringify({
+            var url = window.contextVars.apiV2Prefix + 'files' + self.file.path + '/';
+            $osf.ajaxJSON('PUT', url, {
+                data: {
                     data: {
                         id: self.file.path.replace('/', ''),
                         type: 'files',
@@ -263,7 +256,8 @@ var FileViewPage = {
                             checkout: null
                         }
                     }
-                })
+                },
+                isCors: true
             }).done(function(resp) {
                 window.location.reload();
             }).fail(function(resp) {
@@ -284,13 +278,9 @@ var FileViewPage = {
                     if (!confirm) {
                         return;
                     }
-                    $.ajax({
-                        method: 'put',
-                        url: window.contextVars.apiV2Prefix + 'files' + self.file.path + '/',
-                        beforeSend: $osf.setXHRAuthorization,
-                        contentType: 'application/json',
-                        dataType: 'json',
-                        data: JSON.stringify({
+                    var url = window.contextVars.apiV2Prefix + 'files' + self.file.path + '/';
+                    $.ajaxJSON('PUT', url, {
+                        data: {
                             data: {
                                 id: self.file.path.replace('/', ''),
                                 type: 'files',
@@ -298,7 +288,8 @@ var FileViewPage = {
                                     checkout: null
                                 }
                             }
-                        })
+                        },
+                        isCors: true
                     }).done(function(resp) {
                         window.location.reload();
                     }).fail(function(resp) {
@@ -501,7 +492,7 @@ var FileViewPage = {
         var height = $('iframe').attr('height') ? $('iframe').attr('height') : '0px';
 
         m.render(document.getElementById('toggleBar'), m('.btn-toolbar.m-t-md', [
-            ctrl.context.currentUser.canEdit && (!ctrl.canEdit()) && (ctrl.context.currentUser.isAdmin) && (ctrl.file.provider !== 'bitbucket') && (ctrl.file.provider !== 'gitlab') && (ctrl.file.provider !== 'onedrive') ? m('.btn-group.m-l-xs.m-t-xs', [
+            ctrl.context.currentUser.canEdit && (!ctrl.canEdit()) && (ctrl.context.currentUser.isAdmin) && (ctrl.file.provider !== 'bitbucket') && (ctrl.file.provider !== 'gitlab') && (ctrl.file.provider !== 'onedrive') && !ctrl.context.file.isPreregCheckout ? m('.btn-group.m-l-xs.m-t-xs', [
                 ctrl.isLatestVersion ? m('.btn.btn-sm.btn-default', {onclick: $(document).trigger.bind($(document), 'fileviewpage:force_checkin')}, 'Force check in') : null
             ]) : '',
             ctrl.canEdit() && (!ctrl.file.checkoutUser) && (ctrl.file.provider === 'osfstorage') ? m('.btn-group.m-l-xs.m-t-xs', [
@@ -514,6 +505,9 @@ var FileViewPage = {
             // Special case to not show delete if file is preprint primary file
             // Special case to not show delete for public figshare files
             // Special case to not show force check-in for read-only providers
+            (ctrl.context.currentUser.isAdmin) ? m('.btn-group.m-t-xs', [
+                ctrl.isLatestVersion ? m('a.btn.btn-sm.btn-primary.file-addtimestamp', {href: 'addtimestamp'}, 'Request Trusted Timestamp') : null
+            ]) : '',
             (
                 ctrl.canEdit() &&
                 (ctrl.node.preprintFileId !== ctrl.file.id) &&

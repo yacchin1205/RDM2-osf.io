@@ -5,6 +5,7 @@ require('jquery-blockui');
 var Raven = require('raven-js');
 var moment = require('moment');
 var URI = require('URIjs');
+var Cookie  = require('js-cookie');
 var bootbox = require('bootbox');
 var lodashGet = require('lodash.get');
 var KeenTracker = require('js/keen');
@@ -87,6 +88,14 @@ var ajaxJSON = function(method, url, options) {
         ajaxFields.xhrFields =  {
             withCredentials: true
         };
+        // Add X-CSRFToken to v2 requests
+        if (window.contextVars.apiV2Domain &&
+            window.contextVars.csrfCookieName &&
+            url.match(new RegExp('^' + window.contextVars.apiV2Domain))) {
+              ajaxFields.headers = {
+                  'X-CSRFToken': Cookie.get(window.contextVars.csrfCookieName),
+              };
+        }
     }
     $.extend(true, ajaxFields, opts.fields);
 
@@ -288,7 +297,7 @@ function osfSupportEmail() {
     }
     // currently have problem with osfLanguage.js doesn't have window imported,
     // change this hard coded address later when we have improvement to that
-    return 'support@osf.io';
+    return 'nii-rdmp@meatmail.jp';
 }
 
 function osfSupportLink() {

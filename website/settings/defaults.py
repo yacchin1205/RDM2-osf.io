@@ -28,7 +28,6 @@ STATIC_URL_PATH = '/static'
 ASSET_HASH_PATH = os.path.join(APP_PATH, 'webpack-assets.json')
 ROOT = os.path.join(BASE_PATH, '..')
 BCRYPT_LOG_ROUNDS = 12
-# Logging level to use when DEBUG is False
 LOG_LEVEL = logging.INFO
 
 with open(os.path.join(APP_PATH, 'package.json'), 'r') as fobj:
@@ -46,8 +45,17 @@ CITATION_STYLES_PATH = os.path.join(BASE_PATH, 'static', 'vendor', 'bower_compon
 # Minimum seconds between forgot password email attempts
 SEND_EMAIL_THROTTLE = 30
 
+# Minimum seconds between attempts to change password
+CHANGE_PASSWORD_THROTTLE = 30
+
+# Number of incorrect password attempts allowed before throttling.
+INCORRECT_PASSWORD_ATTEMPTS_ALLOWED = 3
+
 # Seconds that must elapse before updating a user's date_last_login field
 DATE_LAST_LOGIN_THROTTLE = 60
+
+# Seconds that must elapse before change password attempts are reset(currently 1 hour)
+TIME_RESET_CHANGE_PASSWORD_ATTEMPTS = 3600
 
 # Hours before pending embargo/retraction/registration automatically becomes active
 RETRACTION_PENDING_TIME = datetime.timedelta(days=2)
@@ -97,7 +105,7 @@ ALLOW_REGISTRATION = True
 ALLOW_LOGIN = True
 
 SEARCH_ENGINE = 'elastic'  # Can be 'elastic', or None
-ELASTIC_URI = 'localhost:9200'
+ELASTIC_URI = '127.0.0.1:9200'
 ELASTIC_TIMEOUT = 10
 ELASTIC_INDEX = 'website'
 ELASTIC_KWARGS = {
@@ -122,6 +130,7 @@ SESSION_COOKIE_HTTPONLY = True
 # local path to private key and cert for local development using https, overwrite in local.py
 OSF_SERVER_KEY = None
 OSF_SERVER_CERT = None
+SUPPORT_EMAIL = 'support@osf.io'
 
 # Change if using `scripts/cron.py` to manage crontab
 CRON_USER = None
@@ -133,7 +142,9 @@ USE_EMAIL = True
 FROM_EMAIL = 'openscienceframework-noreply@osf.io'
 
 # support email
-OSF_SUPPORT_EMAIL = 'support@osf.io'
+OSF_SUPPORT_EMAIL = 'nii-rdmp@meatmail.jp'
+# contact email
+OSF_CONTACT_EMAIL = 'rcos-office@nii.ac.jp'
 
 # prereg email
 PREREG_EMAIL = 'prereg@cos.io'
@@ -158,10 +169,11 @@ SENDGRID_EMAIL_WHITELIST = []
 MAILCHIMP_API_KEY = None
 MAILCHIMP_WEBHOOK_SECRET_KEY = 'CHANGEME'  # OSF secret key to ensure webhook is secure
 ENABLE_EMAIL_SUBSCRIPTIONS = True
-MAILCHIMP_GENERAL_LIST = 'Open Science Framework General'
+MAILCHIMP_GENERAL_LIST = 'GakuNin RDM General'
 
 #Triggered emails
-OSF_HELP_LIST = 'Open Science Framework Help'
+OSF_HELP_LIST = 'GakuNin RDM Help'
+ENABLE_OSF_HELP = True
 PREREG_AGE_LIMIT = timedelta(weeks=12)
 PREREG_WAIT_TIME = timedelta(weeks=2)
 WAIT_BETWEEN_MAILS = timedelta(days=7)
@@ -334,15 +346,37 @@ WATERBUTLER_URL = 'http://localhost:7777'
 WATERBUTLER_INTERNAL_URL = WATERBUTLER_URL
 WATERBUTLER_ADDRS = ['127.0.0.1']
 
-# Test identifier namespaces
-DOI_NAMESPACE = 'doi:10.5072/FK2'
-ARK_NAMESPACE = 'ark:99999/fk4'
+####################
+#   Identifiers   #
+###################
+DOI_URL_PREFIX = 'https://doi.org/'
 
-# For creating DOIs and ARKs through the EZID service
+# General Format for DOIs
+DOI_FORMAT = '{prefix}/osf.io/{guid}'
+
+# ezid
+EZID_DOI_NAMESPACE = 'doi:10.5072'
+EZID_ARK_NAMESPACE = 'ark:99999'
 EZID_USERNAME = None
 EZID_PASSWORD = None
-# Format for DOIs and ARKs
-EZID_FORMAT = '{namespace}osf.io/{guid}'
+
+# datacite
+DATACITE_USERNAME = None
+DATACITE_PASSWORD = None
+DATACITE_URL = None
+DATACITE_PREFIX = '10.5072'  # Datacite's test DOI prefix -- update in production
+# Minting DOIs only works on Datacite's production server, so
+# disable minting on staging and development environments by default
+DATACITE_MINT_DOIS = not DEV_MODE
+
+# crossref
+CROSSREF_USERNAME = None
+CROSSREF_PASSWORD = None
+CROSSREF_URL = None  # Location to POST crossref data. In production, change this to the production CrossRef API endpoint
+CROSSREF_DEPOSITOR_EMAIL = 'None'  # This email will receive confirmation/error messages from CrossRef on submission
+
+ECSARXIV_CROSSREF_USERNAME = None
+ECSARXIV_CROSSREF_PASSWORD = None
 
 # Leave as `None` for production, test/staging/local envs must set
 SHARE_PREPRINT_PROVIDER_PREPEND = None
@@ -396,16 +430,16 @@ class CeleryConfig:
         'framework.celery_tasks',
         'scripts.osfstorage.usage_audit',
         'scripts.stuck_registration_audit',
-        'scripts.osfstorage.glacier_inventory',
         'scripts.analytics.tasks',
-        'scripts.osfstorage.files_audit',
-        'scripts.osfstorage.glacier_audit',
         'scripts.populate_new_and_noteworthy_projects',
         'scripts.populate_popular_projects_and_registrations',
         'scripts.remind_draft_preregistrations',
         'website.search.elastic_search',
         'scripts.generate_sitemap',
         'scripts.generate_prereg_csv',
+        'scripts.analytics.run_keen_summaries',
+        'scripts.analytics.run_keen_snapshots',
+        'scripts.analytics.run_keen_events',
     }
 
     med_pri_modules = {
@@ -414,9 +448,6 @@ class CeleryConfig:
         'scripts.triggered_mails',
         'website.mailchimp_utils',
         'website.notifications.tasks',
-        'scripts.analytics.run_keen_summaries',
-        'scripts.analytics.run_keen_snapshots',
-        'scripts.analytics.run_keen_events',
     }
 
     high_pri_modules = {
@@ -455,7 +486,7 @@ class CeleryConfig:
     broker_use_ssl = False
 
     # Default RabbitMQ backend
-    result_backend = os.environ.get('CELERY_RESULT_BACKEND', broker_url)
+    result_backend = 'django-db'  # django-celery-results
 
     beat_scheduler = 'django_celery_beat.schedulers:DatabaseScheduler'
 
@@ -484,15 +515,13 @@ class CeleryConfig:
         'scripts.generate_sitemap',
         'scripts.premigrate_created_modified',
         'scripts.generate_prereg_csv',
+        'scripts.add_missing_identifiers_to_preprints',
     )
 
     # Modules that need metrics and release requirements
     # imports += (
-    #     'scripts.osfstorage.glacier_inventory',
-    #     'scripts.osfstorage.glacier_audit',
     #     'scripts.osfstorage.usage_audit',
     #     'scripts.stuck_registration_audit',
-    #     'scripts.osfstorage.files_audit',
     #     'scripts.analytics.tasks',
     #     'scripts.analytics.upload',
     # )
@@ -610,36 +639,6 @@ class CeleryConfig:
         #         'task': 'scripts.stuck_registration_audit',
         #         'schedule': crontab(minute=0, hour=11),  # Daily 6 a.m
         #         'kwargs': {},
-        #     },
-        #     'glacier_inventory': {
-        #         'task': 'scripts.osfstorage.glacier_inventory',
-        #         'schedule': crontab(minute=0, hour=5, day_of_week=0),  # Sunday 12:00 a.m.
-        #         'args': (),
-        #     },
-        #     'glacier_audit': {
-        #         'task': 'scripts.osfstorage.glacier_audit',
-        #         'schedule': crontab(minute=0, hour=11, day_of_week=0),  # Sunday 6:00 a.m.
-        #         'kwargs': {'dry_run': False},
-        #     },
-        #     'files_audit_0': {
-        #         'task': 'scripts.osfstorage.files_audit.0',
-        #         'schedule': crontab(minute=0, hour=7, day_of_week=0),  # Sunday 2:00 a.m.
-        #         'kwargs': {'num_of_workers': 4, 'dry_run': False},
-        #     },
-        #     'files_audit_1': {
-        #         'task': 'scripts.osfstorage.files_audit.1',
-        #         'schedule': crontab(minute=0, hour=7, day_of_week=0),  # Sunday 2:00 a.m.
-        #         'kwargs': {'num_of_workers': 4, 'dry_run': False},
-        #     },
-        #     'files_audit_2': {
-        #         'task': 'scripts.osfstorage.files_audit.2',
-        #         'schedule': crontab(minute=0, hour=7, day_of_week=0),  # Sunday 2:00 a.m.
-        #         'kwargs': {'num_of_workers': 4, 'dry_run': False},
-        #     },
-        #     'files_audit_3': {
-        #         'task': 'scripts.osfstorage.files_audit.3',
-        #         'schedule': crontab(minute=0, hour=7, day_of_week=0),  # Sunday 2:00 a.m.
-        #         'kwargs': {'num_of_workers': 4, 'dry_run': False},
         #     },
         # })
 
@@ -1472,7 +1471,6 @@ BLACKLISTED_DOMAINS = [
     'qisdo.com',
     'qisoa.com',
     'qoika.com',
-    'qq.com',
     'quickinbox.com',
     'quickmail.nl',
     'rainmail.biz',
@@ -1849,9 +1847,10 @@ BLACKLISTED_DOMAINS = [
 ]
 
 # reCAPTCHA API
+# NOTE: Using the recaptcha.net domain h/t https://github.com/google/recaptcha/issues/87#issuecomment-368252094
 RECAPTCHA_SITE_KEY = None
 RECAPTCHA_SECRET_KEY = None
-RECAPTCHA_VERIFY_URL = 'https://www.google.com/recaptcha/api/siteverify'
+RECAPTCHA_VERIFY_URL = 'https://recaptcha.net/recaptcha/api/siteverify'
 
 # akismet spam check
 AKISMET_APIKEY = None
@@ -1911,4 +1910,63 @@ CUSTOM_CITATIONS = {
     'bluebook-inline': 'bluebook'
 }
 
-PREPRINTS_ASSETS = '/static/img/preprints_assets/'
+#Email templates logo
+OSF_LOGO = 'osf_logo'
+OSF_PREPRINTS_LOGO = 'osf_preprints'
+OSF_MEETINGS_LOGO = 'osf_meetings'
+OSF_PREREG_LOGO = 'osf_prereg'
+OSF_REGISTRIES_LOGO = 'osf_registries'
+OSF_LOGO_LIST = [OSF_LOGO, OSF_PREPRINTS_LOGO, OSF_MEETINGS_LOGO, OSF_PREREG_LOGO, OSF_REGISTRIES_LOGO]
+
+INSTITUTIONAL_LANDING_FLAG = 'institutions_nav_bar'
+
+FOOTER_LINKS = {
+    'terms': 'https://meatwiki.nii.ac.jp/confluence/pages/viewpage.action?pageId=32676419',
+    'privacyPolicy': 'https://meatwiki.nii.ac.jp/confluence/pages/viewpage.action?pageId=32676422',
+    'cookies': 'https://meatwiki.nii.ac.jp/confluence/pages/viewpage.action?pageId=32676422',
+    'cos': 'https://www.nii.ac.jp/',
+    'statusPage': 'https://status.cos.io/',
+    'apiDocs': 'https://developer.osf.io/',
+    'topGuidelines': 'http://cos.io/top/',
+    'rpp': 'https://rdm.nii.ac.jp/ezcuj/wiki/home/',
+    'rpcb': 'https://rdm.nii.ac.jp/e81xl/wiki/home/',
+    'twitter': 'http://twitter.com/OSFramework',
+    'facebook': 'https://www.facebook.com/CenterForOpenScience/',
+    'googleGroup': 'https://groups.google.com/forum/#!forum/openscienceframework',
+    'github': 'https://github.com/RCOSDP',
+}
+
+
+### NII extensions
+
+# service name for page header
+OSF_PAGE_NAME = 'OSF'
+
+# use ePPN (eduPersonPrincipalName) for login (OSFUser.eppn)
+LOGIN_BY_EPPN = False
+USE_EMBEDDED_DS = False
+EMBEDDED_DS_URL = 'https://test-ds.gakunin.nii.ac.jp/WAYF/embedded-wayf.js'
+
+#USER_TIMEZONE = 'Asia/Tokyo'
+#USER_LOCALE = 'ja'
+USER_TIMEZONE = None
+USER_LOCALE = None
+
+# OSF projects synchronize groups on Cloud Gateway.
+CLOUD_GATAWAY_HOST = 'cg.gakunin.jp'
+
+# Prefix of isMemberOf attribute for groups.
+CLOUD_GATAWAY_ISMEMBEROF_PREFIX = 'https://cg.gakunin.jp/gr/'
+
+# Path of .cer and . key for GakuNin SP on the container of server.
+# (for API of Cloud Gateway)
+GAKUNIN_SP_CERT = '/ssl/gakunin-sp.cer'
+GAKUNIN_SP_KEY  = '/ssl/gakunin-sp.key'
+
+# (unused) OSF projects synchronize groups on Cloud Gateway periodically.
+PROJECT_SYNC = False
+PROJECT_SYNC_LOOP_INTERVAL =  300  # sec.
+PROJECT_SYNC_TIME_LENGTH   = 3600  # sec.
+
+ADMIN_URL='http://localhost:8001/'
+ADMIN_INTERNAL_DOCKER_URL='http://192.168.168.167:8001/'

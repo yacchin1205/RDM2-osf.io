@@ -22,7 +22,7 @@ from website.exceptions import (
 )
 from website.project import tasks as project_tasks
 
-from osf.models import MetaSchema
+from osf.models import RegistrationSchema
 from osf.models.base import BaseModel, ObjectIDMixin
 from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
 
@@ -301,7 +301,7 @@ class EmailApprovableSanction(TokenApprovableSanction):
         return None
 
     def _send_approval_request_email(self, user, template, context):
-        mails.send_mail(user.username, template, user=user, **context)
+        mails.send_mail(user.username, template, user=user, can_change_preferences=False, **context)
 
     def _email_template_context(self, user, node, is_authorizer=False):
         return {}
@@ -350,7 +350,7 @@ class PreregCallbackMixin(object):
         DraftRegistration = apps.get_model('osf.DraftRegistration')
 
         registration = self._get_registration()
-        prereg_schema = MetaSchema.get_prereg_schema()
+        prereg_schema = RegistrationSchema.get_prereg_schema()
         draft = DraftRegistration.objects.get(registered_node=registration)
 
         if registration.registered_schema.filter(id=prereg_schema.id).exists():
@@ -366,11 +366,11 @@ class PreregCallbackMixin(object):
                                 is_authorizer=False,
                                 urls=None):
         registration = self._get_registration()
-        prereg_schema = MetaSchema.get_prereg_schema()
+        prereg_schema = RegistrationSchema.get_prereg_schema()
         if registration.registered_schema.filter(pk=prereg_schema.pk).exists():
             return {
                 'custom_message':
-                    ' as part of the Preregistration Challenge (https://cos.io/prereg)'
+                    ' as part of the Preregistration Challenge (https://nii.ac.jp/prereg)'
             }
         else:
             return {}
@@ -394,6 +394,14 @@ class Embargo(PreregCallbackMixin, EmailApprovableSanction):
     @property
     def is_completed(self):
         return self.state == self.COMPLETED
+
+    @property
+    def is_deleted(self):
+        parent_registration = self._get_registration()
+        if parent_registration:
+            return parent_registration.is_deleted
+        else:  # Embargo is orphaned, so consider it deleted
+            return True
 
     @property
     def embargo_end_date(self):
@@ -600,7 +608,7 @@ class Retraction(EmailApprovableSanction):
             registration = Registration.objects.select_related(
                 'registered_from'
             ).get(
-                guids___id=node_id
+                guids___id=node_id, guids___id__isnull=False
             ) if node_id else self.registrations.first()
 
             return {
@@ -853,7 +861,9 @@ class DraftRegistrationApproval(Sanction):
                 user.username,
                 mails.PREREG_CHALLENGE_REJECTED,
                 user=user,
-                draft_url=draft.absolute_url
+                draft_url=draft.absolute_url,
+                can_change_preferences=False,
+                logo=osf_settings.OSF_PREREG_LOGO
             )
         else:
             raise NotImplementedError(

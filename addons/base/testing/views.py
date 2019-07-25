@@ -7,9 +7,10 @@ import mock
 from framework.auth import Auth
 from framework.exceptions import HTTPError
 from nose.tools import *  # noqa (PEP8 asserts)
-from osf_tests.factories import AuthUserFactory, ProjectFactory
+from osf_tests.factories import AuthUserFactory, ProjectFactory, InstitutionFactory
 from addons.base.testing.base import OAuthAddonTestCaseMixin
 from website.util import api_url_for, permissions, web_url_for
+from admin.rdm_addons.utils import get_rdm_addon_option
 
 
 class OAuthAddonAuthViewsTestCaseMixin(OAuthAddonTestCaseMixin):
@@ -34,6 +35,21 @@ class OAuthAddonAuthViewsTestCaseMixin(OAuthAddonTestCaseMixin):
                 continue
             assert_equal(value, provider_params[param])
 
+    def test_oauth_start_rdm_addons_denied(self):
+        institution = InstitutionFactory()
+        self.user.affiliated_institutions.add(institution)
+        self.user.save()
+        rdm_addon_option = get_rdm_addon_option(institution.id, self.ADDON_SHORT_NAME)
+        rdm_addon_option.is_allowed = False
+        rdm_addon_option.save()
+        url = api_url_for(
+            'oauth_connect',
+            service_name=self.ADDON_SHORT_NAME
+        )
+        res = self.app.get(url, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, http.FORBIDDEN)
+        assert_in('You are prohibited from using this add-on.', res.body)
+
     def test_oauth_finish(self):
         url = web_url_for(
             'oauth_callback',
@@ -45,6 +61,21 @@ class OAuthAddonAuthViewsTestCaseMixin(OAuthAddonTestCaseMixin):
         assert_equal(res.status_code, http.OK)
         name, args, kwargs = mock_callback.mock_calls[0]
         assert_equal(kwargs['user']._id, self.user._id)
+
+    def test_oauth_finish_rdm_addons_denied(self):
+        institution = InstitutionFactory()
+        self.user.affiliated_institutions.add(institution)
+        self.user.save()
+        rdm_addon_option = get_rdm_addon_option(institution.id, self.ADDON_SHORT_NAME)
+        rdm_addon_option.is_allowed = False
+        rdm_addon_option.save()
+        url = web_url_for(
+            'oauth_callback',
+            service_name=self.ADDON_SHORT_NAME
+        )
+        res = self.app.get(url, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, http.FORBIDDEN)
+        assert_in('You are prohibited from using this add-on.', res.body)
 
     def test_delete_external_account(self):
         url = api_url_for(

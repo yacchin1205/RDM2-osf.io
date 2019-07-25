@@ -9,6 +9,8 @@ from framework.celery_tasks import app as celery_app
 from framework.celery_tasks.utils import logged
 from framework.exceptions import HTTPError
 
+from api.base.utils import waterbutler_api_url_for
+
 from website.archiver import (
     ARCHIVER_SUCCESS,
     ARCHIVER_FAILURE,
@@ -31,7 +33,6 @@ from osf.models import (
     DraftRegistration,
 )
 
-from website.util import waterbutler_api_url_for
 
 def create_app_context():
     try:
@@ -204,7 +205,7 @@ def archive_addon(addon_short_name, job_pk):
     src_provider = src.get_addon(addon_short_name)
     folder_name = src_provider.archive_folder_name
     rename = '{}{}'.format(folder_name, rename_suffix)
-    url = waterbutler_api_url_for(src._id, addon_short_name, _internal=True, **params)
+    url = waterbutler_api_url_for(src._id, addon_short_name, _internal=True, base_url=src.osfstorage_region.waterbutler_url, **params)
     data = make_waterbutler_payload(dst._id, rename)
     make_copy_request.delay(job_pk=job_pk, url=url, data=data)
 

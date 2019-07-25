@@ -1,6 +1,6 @@
 import pytest
 
-from website.util import permissions
+from osf.utils import permissions
 from api.base.settings.defaults import API_BASE
 from osf_tests.factories import (
     ProjectFactory,
@@ -49,6 +49,7 @@ def view_only_link(public_project):
 
 
 @pytest.mark.django_db
+@pytest.mark.enable_quickfiles_creation
 class TestViewOnlyLinksList:
 
     @pytest.fixture()
@@ -102,6 +103,7 @@ class TestViewOnlyLinksList:
 
 
 @pytest.mark.django_db
+@pytest.mark.enable_quickfiles_creation
 class TestViewOnlyLinksCreate:
 
     @pytest.fixture()

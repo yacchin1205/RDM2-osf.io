@@ -68,7 +68,7 @@ def main(dry_run=True):
 
     active_embargoes = Embargo.objects.filter(state=Embargo.APPROVED)
     for embargo in active_embargoes:
-        if embargo.end_date < timezone.now():
+        if embargo.end_date < timezone.now() and not embargo.is_deleted:
             if dry_run:
                 logger.warn('Dry run mode')
             parent_registration = Registration.objects.get(embargo=embargo)
@@ -110,7 +110,7 @@ def main(dry_run=True):
 
 def should_be_embargoed(embargo):
     """Returns true if embargo was initiated more than 48 hours prior."""
-    return (timezone.now() - embargo.initiation_date) >= settings.EMBARGO_PENDING_TIME
+    return (timezone.now() - embargo.initiation_date) >= settings.EMBARGO_PENDING_TIME and not embargo.is_deleted
 
 
 @celery_app.task(name='scripts.embargo_registrations')
@@ -120,5 +120,5 @@ def run_main(dry_run=True):
         scripts_utils.add_file_logger(logger, __file__)
     main(dry_run=dry_run)
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     main(False)

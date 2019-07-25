@@ -38,6 +38,7 @@
                     <div class="btn-group">
                     % if not node["is_public"]:
                         <button class="btn btn-default disabled">Private</button>
+                        % if project_makepublic:
                         % if 'admin' in user['permissions'] and not (node['is_pending_registration'] or node['is_pending_embargo']) and not (node['is_embargoed'] and parent_node['exists']):
                         <a disabled data-bind="attr: {'disabled': false}, css: {'disabled': nodeIsPendingEmbargoTermination}" class="btn btn-default" href="#nodesPrivacy" data-toggle="modal">
                           Make Public
@@ -45,6 +46,7 @@
                           <span class="fa fa-info-circle hidden" data-bind="css: {'hidden': false}, tooltip: {title: makePublicTooltip, placement: 'bottom', disabled: true}"></span>
                           <!-- /ko -->
                         </a>
+                        % endif
                         % endif
                     % else:
                         % if 'admin' in user['permissions'] and not node['is_registration']:
@@ -95,31 +97,51 @@
                                     </li>
                                     %endif
                                 </ul>
-                            </div>
-                    </div>
-                    <!-- ko if: canBeOrganized -->
-                    <div class="btn-group" style="display: none;" data-bind="visible: true">
-
-                        <!-- ko ifnot: inDashboard -->
-                           <a id="addDashboardFolder" data-bind="click: addToDashboard, tooltip: {title: 'Add to bookmarks',
-                            placement: 'bottom', container : 'body'}" class="btn btn-default">
-                               <i class="fa fa-bookmark"></i>
-                               <i class="fa fa-plus"></i>
-                           </a>
-                        <!-- /ko -->
-                        <!-- ko if: inDashboard -->
-                           <a id="removeDashboardFolder" data-bind="click: removeFromDashboard, tooltip: {title: 'Remove from bookmarks',
-                            placement: 'bottom', container : 'body'}" class="btn btn-default">
-                               <i class="fa fa-bookmark"></i>
-                               <i class="fa fa-minus"></i>
-                           </a>
-                        <!-- /ko -->
-
-                    </div>
-                    <!-- /ko -->
-                    % if node["is_public"]:
-                        <div class="btn-group" id="shareButtonsPopover"></div>
-                    % endif
+                            </div> <!-- end .dropdown -->
+                        </div><!-- end .btn-group -->
+                    <div class="btn-group">
+                        <div class="generic-dropdown dropdown pull-right">
+                            <button id="otherActionsButton" class="btn btn-default dropdown-toggle disabled" type="button" data-toggle="dropdown">
+                                <i class="fa fa-ellipsis-h"></i>
+                            </button>
+                            <ul class="dropdown-menu dropdown-menu-right">
+                                <li data-bind="visible: canBeOrganized()" class="keep-open">
+                                    <a role="button" href="#" id="addDashboardFolder" data-bind="visible: !inDashboard(), click: addToDashboard">
+                                        Bookmark
+                                    </a>
+                                    <a role="button" href="#" id="removeDashboardFolder" data-bind="visible: inDashboard(), click: removeFromDashboard">
+                                        Remove from bookmarks
+                                    </a>
+                                </li>
+                                % if 'admin' in user['permissions'] and not node['is_registration']:  ## Create view-only link
+                                    <li>
+                                        <a href="${node['url']}settings/#createVolsAnchor">
+                                            Create view-only link
+                                        </a>
+                                    </li>
+                                % endif ## End create view-only link
+                                % if node['is_public']:
+                                    <li class="keep-open" id="shareButtonsPopover">
+                                        <a href="#" role="button">
+                                            Share
+                                        </a>
+                                    </li>
+                                %endif
+                                % if node['access_requests_enabled'] and not user['is_contributor'] and not node['is_registration']:
+                                    <li data-bind="css: {'keep-open': user.username}">
+                                        <a role="button" href="#" data-bind="
+                                                        visible: user.username,
+                                                        click: requestAccess.requestProjectAccess,
+                                                        text: requestAccess.requestAccessButton,
+                                                        css: {'disabled': requestAccess.accessRequestPendingOrDenied()},
+                                                        tooltip: {title: requestAccess.accessRequestTooltip(),'disabled': true, 'placement': 'left'}">
+                                        </a>
+                                        <a data-bind="visible: !user.username" role="button" class="btn btn-block" href="${login_url}" >Log in to request access</a>
+                                    </li>
+                                % endif
+                            </ul>
+                        </div><!-- end .dropdown -->
+                    </div><!-- end .btn-group -->
                 </div>
             </div>
         </div>
@@ -186,27 +208,29 @@
                         <span data-bind="text: dateModified.local, tooltip: {title: dateModified.utc}" class="date node-last-modified-date"></span>
                     % endif
                     </p>
-                <span data-bind="if: hasIdentifiers()" class="scripted">
+                <span data-bind="if: hasDoi()" class="scripted">
                   <p>
-                    Identifiers:
-                  DOI <span data-bind="text: doi"></span> |
-                  ARK <span data-bind="text: ark"></span>
+                    <span data-bind="text:identifier"></span>:
+                  DOI <span data-bind="text: doi"></span>
+                      <span data-bind="if: hasArk()" class="scripted">| ARK <span data-bind="text: ark"></span></span>
                   </p>
                 </span>
+                % if waffle.switch_is_active('ezid'):
                 <span data-bind="if: canCreateIdentifiers()" class="scripted">
                   <!-- ko if: idCreationInProgress() -->
                     <p>
                       <i class="fa fa-spinner fa-lg fa-spin"></i>
-                        <span class="text-info">Creating DOI and ARK. Please wait...</span>
+                        <span class="text-info">Creating DOI. Please wait...</span>
                     </p>
                   <!-- /ko -->
 
                   <!-- ko ifnot: idCreationInProgress() -->
                   <p>
-                  <a data-bind="click: askCreateIdentifiers, visible: !idCreationInProgress()">Create DOI / ARK</a>
+                  <a data-bind="click: askCreateIdentifiers, visible: !idCreationInProgress()">Create DOI</a>
                   </p>
                   <!-- /ko -->
                 </span>
+                % endif
                 <p>
                     Category: <span data-bind="css: icon"></span>
                     <span id="nodeCategoryEditable">${node['category']}</span>
@@ -273,7 +297,52 @@
     <%include file="include/comment_pane_template.mako"/>
 % endif
 
-% if node['is_preprint'] and (user['is_contributor'] or node['has_published_preprint']):
+% if node['is_collected']:
+    <div class="collections-container">
+    % for i, collection in enumerate(node['collections'][:5]):
+    <div class="row">
+        <div class="col-xs-12">
+            <div style="margin-top: 5px;">
+                Included in <a href="${collection['url']}" target="_blank">${collection['title']}</a>
+                <img style="margin: 0px 0px 2px 5px;" height="16", width="16" src="${collection['logo']}">
+            % if any([collection['type'], collection['status']]):
+              &nbsp;<span id="metadata${i}-toggle" class="fa bk-toggle-icon fa-angle-down" data-toggle="collapse" data-target="#metadata${i}"></span>
+            % endif
+            </div>
+            <div id="metadata${i}" class="collection-details collapse">
+                <ul style="margin-left: 30px; padding: 0; margin-bottom: 0;" class="list-unstyled">
+
+                    % if collection['type']:
+                      <li>Type:&nbsp;&nbsp;<b>${collection['type']}</b></li>
+                    % endif
+
+                    % if collection['status']:
+                      <li>Status:&nbsp;&nbsp;<b>${collection['status']}</b></li>
+                    % endif
+
+                    % if collection['subjects']:
+                      <li>
+                        <dl class="dl-horizontal dl-subjects">
+                          <dt>Subjects:&nbsp;&nbsp;</dt>
+                          <dd>
+                          % for subject in collection['subjects']:
+                            <span class='subject-preview'>
+                              <small> ${subject} </small>
+                            </span>
+                          % endfor
+                          </dd>
+                        </dl>
+                      </li>
+                    % endif
+                </ul>
+            </div>
+        </div>
+    </div>
+    % endfor
+    </div>
+% endif
+
+% if node['is_preprint'] and (user['is_contributor'] or node['has_published_preprint']) and node['preprint_state'] != 'withdrawn':
 <div class="row">
     <div class="col-xs-12">
         <div class="pp-notice m-b-md p-md clearfix">
@@ -347,7 +416,9 @@
             %endif
                     <div id="treeGrid">
                         <div class="spinner-loading-wrapper">
-                            <div class="logo-spin logo-lg"></div>
+                            <div class="ball-scale ball-scale-blue">
+                                <div></div>
+                            </div>
                              <p class="m-t-sm fg-load-message"> Loading files...  </p>
                         </div>
                     </div>
@@ -378,29 +449,80 @@
         % if not node['anonymous']:
 
          <div class="citations panel panel-default">
-            <div class="panel-heading clearfix">
+             <div class="panel-heading clearfix">
                 <h3 class="panel-title"  style="padding-top: 3px">Citation</h3>
                 <div class="pull-right">
-                    <span class="permalink">${node['display_absolute_url']}</span><button class="btn btn-link project-toggle"><i class="fa fa-angle-down"></i></button>
+                    <button class="btn btn-link project-toggle"><i class="fa fa-angle-down"></i></button>
                 </div>
-            </div>
-            <div class="panel-body" style="display:none">
-                <div id="citationList" class="m-b-md">
-                    <div class="citation-list">
-                        <div class="f-w-xl">APA</div>
-                            <span data-bind="text: apa"></span>
-                        <div class="f-w-xl m-t-md">MLA</div>
-                            <span data-bind="text: mla"></span>
-                        <div class="f-w-xl m-t-md">Chicago</div>
-                            <span data-bind="text: chicago"></span>
-                    </div>
-                </div>
-                <p><strong>Get more citations</strong></p>
-                <div id="citationStylePanel" class="citation-picker">
-                    <input id="citationStyleInput" type="hidden" />
-                </div>
-                <pre id="citationText" class="formatted-citation"></pre>
-            </div>
+             </div>
+             <div id="citationList">
+                 <div class="panel-body" style="display: none;">
+                     <div data-bind="visible: page() == 'loading'">
+                        <div class="spinner-loading-wrapper">
+                            <div class="ball-scale ball-scale-blue">
+                                <div></div>
+                            </div>
+                            <p class="m-t-sm fg-load-message"> Loading citations...  </p>
+                        </div>
+                     </div>
+                     <div data-bind="visible: page() == 'standard'" style="display: none;">
+                         % if not node['anonymous'] and 'admin' in user['permissions']:
+                             <a data-bind="click: showEditBox" class="pull-right"><i class="glyphicon glyphicon-pencil"></i> Customize</a>
+                         % endif
+                         <div class="m-b-md">
+                             <div class="citation-list">
+                                 <div class="f-w-xl">APA</div>
+                                 <span data-bind="text: apa"></span>
+                                 <div class="f-w-xl m-t-md">MLA</div>
+                                 <span data-bind="text: mla"></span>
+                                 <div class="f-w-xl m-t-md">Chicago</div>
+                                 <span data-bind="text: chicago"></span>
+                             </div>
+                         </div>
+                         <p><strong>Get more citations</strong></p>
+                         <div id="citationStylePanel" class="citation-picker">
+                             <input id="citationStyleInput" type="hidden" />
+                         </div>
+                         <pre id="citationText" class="formatted-citation"></pre>
+                     </div>
+                     <div data-bind="visible: page() == 'custom'" style="display: none;">
+                         % if not node['anonymous'] and 'admin' in user['permissions']:
+                            <a data-bind="click: showEditBox" class="pull-right"><i class="glyphicon glyphicon-pencil"></i> Edit</a>
+                         % endif
+
+                         <div class="m-b-md">
+                             <div class="citation-list">
+                                 <div class="row">
+                                     <div class="col-xs-1">
+                                         <span id="custom-citation-copy-button" type="button" data-bind="attr: {'data-clipboard-text': customCitation}" class="btn btn-sm btn-default"><i class="fa fa-copy"></i></span>
+                                     </div>
+                                     <div class="col-xs-9 m-l-sm">
+                                         <div class="f-w-xl">Cite as:</div>
+                                         <span data-bind="text: customCitation"></span>
+                                     </div>
+                                 </div>
+                             </div>
+                         </div>
+                     </div>
+                     <div data-bind="visible: page() == 'edit'" style="display: none;">
+                         <div class="row">
+                             <div class="col-md-12 form-group">
+                                 <textarea class="form-control"
+                                           placeholder="Enter custom citation"
+                                           data-bind="value: customCitation, valueUpdate: 'afterkeydown'"
+                                           type="text">
+
+                                 </textarea>
+                             </div>
+                         </div>
+                         <div class=" pull-right" role="group">
+                             <button type="button" data-bind="click: cancelCitation" class="btn btn-sm btn-default">Cancel</button>
+                             <button type="button" data-bind="click: clearCitation, disable: disableRemove" class="btn btn-sm btn-danger">Remove</button>
+                             <button type="button" data-bind="click: saveCitation, disable: disableSave" class="btn btn-sm btn-success">Save</button>
+                         </div>
+                     </div>
+                 </div>
+             </div>
          </div>
         % endif
 
@@ -428,15 +550,38 @@
         <div class="panel panel-default">
             <div class="panel-heading clearfix">
                 <h3 class="panel-title">Recent Activity</h3>
+                <div id="RefreshLog" class="btn btn-sm btn-default pull-right">Refresh</div>
             </div>
             <div class="panel-body">
+                <div class="db-poFilter m-r-xs row">
+                     <div class="db-buttonRow col-xs-10 col-sm-6 col-lg-4">
+                         <form>
+                             <input type="text" id="LogSearchName" placeholder="[optional] UserName">
+                         </form>
+                         <input type="hidden" id="LogSearchKeyUser">
+                     </div>
+                     <div class="db-buttonRow col-xs-10 col-sm-6 col-lg-4">
+                         <input type="text" id="LogSearchS" placeholder="Start Date[yyyy-mm-dd]">
+                     </div>
+                     <div class="db-buttonRow col-xs-10 col-sm-6 col-lg-4">
+                         <input type="text" id="LogSearchE" placeholder="End Date[yyyy-mm-dd]">
+                     </div>
+                </div>
                 <div id="logFeed">
                     <div class="spinner-loading-wrapper">
-                        <div class="logo-spin logo-lg"></div>
+                        <div class="ball-scale ball-scale-blue">
+                            <div></div>
+                        </div>
                          <p class="m-t-sm fg-load-message"> Loading logs...  </p>
                     </div>
                 </div>
             </div>
+            % if 'admin' in user['permissions']:
+            <div class="panel-heading clearfix">
+                <h4 class="panel-title">Download as file</h4>
+                <div id="DownloadLog" class="btn btn-sm btn-default pull-right">Download</div>
+            </div>
+            % endif
         </div>
 
     </div>
@@ -505,6 +650,8 @@ ${parent.javascript_bottom()}
             tags: ${ node['tags'] | sjson, n },
             institutions: ${node['institutions'] | sjson, n},
         },
+        storageRegions: ${ storage_regions | sjson, n },
+        storageFlagIsActive: ${ storage_flag_is_active | sjson, n },
         nodeCategories: ${ node_categories | sjson, n },
         analyticsMeta: {
             pageMeta: {
@@ -512,7 +659,8 @@ ${parent.javascript_bottom()}
                 public: true,
             },
         },
-        customCitations: ${ custom_citations | sjson, n }
+        customCitations: ${ custom_citations | sjson, n },
+        currentUserRequestState: ${ user['access_request_state'] | sjson, n }
     });
 </script>
 

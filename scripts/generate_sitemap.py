@@ -86,7 +86,7 @@ class Sitemap(object):
         zip_file_path = file_path + '.gz'
         print('Writing and gzipping `{}`: url_count = {}'.format(file_path, str(self.url_count)))
 
-        xml_str = self.doc.toprettyxml(indent="  ", encoding='utf-8')
+        xml_str = self.doc.toprettyxml(indent='  ', encoding='utf-8')
         with open(file_path, 'wb') as f:
             f.write(xml_str)
 
@@ -132,7 +132,7 @@ class Sitemap(object):
         print('Writing `sitemap_index.xml`')
         file_name = 'sitemap_index.xml'
         file_path = os.path.join(self.sitemap_dir, file_name)
-        xml_str = doc.toprettyxml(indent="  ", encoding='utf-8')
+        xml_str = doc.toprettyxml(indent='  ', encoding='utf-8')
         with open(file_path, 'wb') as f:
             f.write(xml_str)
         if settings.SITEMAP_TO_S3:
@@ -167,7 +167,7 @@ class Sitemap(object):
         progress.stop()
 
         # User urls
-        objs = OSFUser.objects.filter(is_active=True).values_list('guids___id', flat=True)
+        objs = OSFUser.objects.filter(is_active=True).exclude(date_confirmed__isnull=True).values_list('guids___id', flat=True)
         progress.start(objs.count(), 'USER: ')
         for obj in objs:
             try:
@@ -182,7 +182,7 @@ class Sitemap(object):
         # AbstractNode urls (Nodes and Registrations, no Collections)
         objs = (AbstractNode.objects
             .filter(is_public=True, is_deleted=False, retraction_id__isnull=True)
-            .exclude(type__in=["osf.collection", "osf.quickfilesnode"])
+            .exclude(type__in=['osf.collection', 'osf.quickfilesnode'])
             .values('guids___id', 'modified'))
         progress.start(objs.count(), 'NODE: ')
         for obj in objs:
@@ -219,14 +219,11 @@ class Sitemap(object):
                 try:
                     file_config = settings.SITEMAP_PREPRINT_FILE_CONFIG
                     file_config['loc'] = urlparse.urljoin(
-                        settings.DOMAIN,
+                        obj.provider.domain or settings.DOMAIN,
                         os.path.join(
-                            'project',
-                            obj.node._id,   # Parent node id
-                            'files',
-                            'osfstorage',
-                            obj.primary_file._id,  # Preprint file deep_url
-                            '?action=download'
+                            obj._id,
+                            'download',
+                            '?format=pdf'
                         )
                     )
                     file_config['lastmod'] = preprint_date

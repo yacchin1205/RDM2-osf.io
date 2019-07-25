@@ -5,7 +5,7 @@ from api.base.serializers import JSONAPISerializer, RelationshipField, IDField, 
 
 class RegistrationIdentifierSerializer(JSONAPISerializer):
 
-    category = ser.CharField(read_only=True)
+    category = ser.SerializerMethodField()
 
     filterable_fields = frozenset(['category'])
 
@@ -23,6 +23,11 @@ class RegistrationIdentifierSerializer(JSONAPISerializer):
     class Meta:
         type_ = 'identifiers'
 
+    def get_category(self, obj):
+        if obj.category == 'legacy_doi':
+            return 'doi'
+        return obj.category
+
     def get_absolute_url(self, obj):
         return obj.absolute_api_v2_url
 
@@ -33,10 +38,12 @@ class RegistrationIdentifierSerializer(JSONAPISerializer):
         return '{}/identifiers/{}'.format(obj.absolute_api_v2_url, obj._id)
 
     def self_url(self, obj):
-        return absolute_reverse('identifiers:identifier-detail', kwargs={
-            'identifier_id': obj._id,
-            'version': self.context['request'].parser_context['kwargs']['version']
-        })
+        return absolute_reverse(
+            'identifiers:identifier-detail', kwargs={
+                'identifier_id': obj._id,
+                'version': self.context['request'].parser_context['kwargs']['version'],
+            },
+        )
 
 
 class NodeIdentifierSerializer(RegistrationIdentifierSerializer):

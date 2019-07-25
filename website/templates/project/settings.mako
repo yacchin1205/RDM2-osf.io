@@ -1,5 +1,4 @@
 <%inherit file="project/project_base.mako"/>
-<%include file="project/nodes_delete.mako"/>
 <%def name="title()">${node['title']} Settings</%def>
 
 <div class="page-header visible-xs">
@@ -17,9 +16,16 @@
 
                     % if not node['is_registration']:
                         <li><a href="#configureNodeAnchor">${node['node_type'].capitalize()}</a></li>
+                    % endif
 
+                    % if storage_flag_is_active:
+                        <li><a href="#nodeStorageLocation">Storage Location</a></li>
+                    % endif
+
+                    % if not node['is_registration']:
                         % if 'admin' in user['permissions']:
                             <li><a href="#createVolsAnchor">View-only Links</a></li>
+                            <li><a href="#enableRequestAccessAnchor">Access Requests</a></li>
                         % endif
 
                         <li><a href="#configureWikiAnchor">Wiki</a></li>
@@ -98,6 +104,24 @@
                                              valueUpdate: 'afterkeydown'",
                             class="form-control resize-vertical" style="max-width: 100%"></textarea>
                         </div>
+                    % if 'admin' in user['permissions']:
+                        <div class="form-group">
+                            <label for="description">Select Timestamp Function:</label>
+                            <select id="timestamp_pattern" data-bind="value: selectedTimestampPattern">
+                            % if timestamp_pattern_division == 1:
+                                 <option value="1" selected>Timestamp only</option>
+<%doc> Only "Timestamp only" (while digital signature develop)
+                                 <option value="2">Timestamp with digital signature</option>
+</%doc>
+                            % else:
+                                 <option value="1">Timestamp only</option>
+<%doc>
+                                 <option value="2" selected>Timestamp with digital signature</option>
+</%doc>
+                            % endif
+                            </select>
+                        </div>
+                    % endif
                            <button data-bind="click: cancelAll"
                             class="btn btn-default">Cancel</button>
                             <button data-bind="click: updateAll"
@@ -107,12 +131,58 @@
                         </div>
                     % if 'admin' in user['permissions']:
                         <hr />
-                            <button id="deleteNode" class="btn btn-danger btn-delete-node" data-toggle="modal" data-target="#nodesDelete">Delete ${node['node_type']}</button>
+                        % if can_delete:
+                            <div class="help-block">
+                                A project cannot be deleted if it has any components within it.
+                                To delete a parent project, you must first delete all child components
+                                by visiting their settings pages.
+                            </div>
+                            <span data-bind="stopBinding: true">
+                                <span id="deleteNode">
+                                    <button
+                                    data-toggle="modal" data-target="#nodesDelete"
+                                    data-bind="click: $root.delete.bind($root, ${node['child_exists'] | sjson, n}, '${node['node_type']}', ${node['is_preprint'] | sjson, n}, '${node['api_url']}')"
+                                    class="btn btn-danger btn-delete-node">Delete ${node['node_type']}</button>
+                                    <%include file="project/nodes_delete.mako"/>
+                                </span>
+                            </span>
+                        % else:
+                            <div class="help-block">
+                                A project which is related to a external group (${group}) cannot be deleted.
+                            </div>
+                            <span data-bind="stopBinding: true">
+                                <span id="deleteNode">
+                                    <button disabled="disabled"
+                                    data-toggle="modal" data-target="#nodesDelete"
+                                    data-bind="click: $root.delete.bind($root, ${node['child_exists'] | sjson, n}, '${node['node_type']}', ${node['is_preprint'] | sjson, n}, '${node['api_url']}')"
+                                    class="btn btn-danger btn-delete-node">Delete ${node['node_type']}</button>
+                                    <%include file="project/nodes_delete.mako"/>
+                                </span>
+                            </span>
+                       % endif
                     % endif
                     </div>
                 </div>
 
             % endif
+
+        % if storage_flag_is_active:
+            <div class="panel panel-default">
+                <span id="nodeStorageLocation" class="anchor"></span>
+                <div class="panel-heading clearfix">
+                    <h3 id="nodeStorageLocation" class="panel-title">Storage Location</h3>
+                </div>
+                <div class="panel-body">
+                    <p>
+                        <b>Storage location:</b> ${node['storage_location']}
+                    </p>
+                    <div class="help-block">
+                        <p class="text-muted">Storage location cannot be changed after project is created.</p>
+                    </div>
+
+                </div>
+            </div>
+        % endif
 
         % endif  ## End Configure Project
 
@@ -135,6 +205,39 @@
                 </div>
             % endif
         % endif ## End create vols
+
+        % if 'admin' in user['permissions']:  ## Begin enable request access
+            % if not node['is_registration']:
+                <div class="panel panel-default">
+                    <span id="enableRequestAccessAnchor" class="anchor"></span>
+                    <div class="panel-heading clearfix">
+                        <h3 class="panel-title">Access Requests</h3>
+                    </div>
+                    <div class="panel-body">
+                        <form id="enableRequestAccessForm">
+                            <div>
+                                <label class="break-word">
+                                    <input
+                                            type="checkbox"
+                                            name="projectAccess"
+                                            class="project-access-select"
+                                            data-bind="checked: enabled"
+                                    />
+                                    Allow users to request access to this project.
+                                </label>
+                                <div data-bind="visible: enabled()" class="text-success" style="padding-left: 15px">
+                                    <p data-bind="text: requestAccessMessage"></p>
+                                </div>
+                                <div data-bind="visible: !enabled()" class="text-danger" style="padding-left: 15px">
+                                    <p data-bind="text: requestAccessMessage"></p>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            % endif
+        % endif ## End enable request access
+
         % if 'write' in user['permissions']:  ## Begin Wiki Config
             % if not node['is_registration']:
                 <div class="panel panel-default">
@@ -171,14 +274,16 @@
                                 %if node['is_public']:
                                     <p class="text">Control who can edit the wiki of <b>${node['title']}</b></p>
                                 %else:
-                                    <p class="text">Control who can edit your wiki. To allow all OSF users to edit the wiki, <b>${node['title']}</b> must be public.</p>
+                                    <p class="text">Control who can edit your wiki. To allow all GakuNin RDM users to edit the wiki, <b>${node['title']}</b> must be public.</p>
                                 %endif
                             </div>
 
                             <form id="wikiSettings" class="osf-treebeard-minimal">
                                 <div id="wgrid">
                                     <div class="spinner-loading-wrapper">
-                                        <div class="logo-spin logo-lg"></div>
+                                        <div class="ball-scale ball-scale-blue">
+                                            <div></div>
+                                        </div>
                                         <p class="m-t-sm fg-load-message"> Loading wiki settings...  </p>
                                     </div>
                                 </div>
@@ -215,7 +320,7 @@
                             <div class="radio">
                                 <label>
                                     <input type="radio" name="commentLevel" value="public" ${'checked' if comments['level'] == 'public' else ''}>
-                                    When the ${node['node_type']} is public, any OSF user can post comments
+                                    When the ${node['node_type']} is public, any GakuNin RDM user can post comments
                                 </label>
                             </div>
 
@@ -249,7 +354,9 @@
                         <form id="notificationSettings" class="osf-treebeard-minimal">
                             <div id="grid">
                                 <div class="spinner-loading-wrapper">
-                                    <div class="logo-spin logo-lg"></div>
+                                    <div class="ball-scale ball-scale-blue">
+                                        <div></div>
+                                    </div>
                                     <p class="m-t-sm fg-load-message"> Loading notification settings...  </p>
                                 </div>
                             </div>
@@ -287,46 +394,8 @@
 
                         <div data-bind="visible: enabled" style="display: none">
 
-                            <div class="forward-settings">
+                            ${ render_node_settings(addon_settings['forward']) }
 
-                                <form class="form" data-bind="submit: submitSettings">
-
-                                    <div class="form-group">
-                                        <label for="forwardUrl">URL</label>
-                                        <input
-                                            id="forwardUrl"
-                                            class="form-control"
-                                            data-bind="value: url"
-                                            placeholder="Send people who visit your OSF project page to this link instead"
-                                        />
-                                    </div>
-
-                                    <div class="form-group">
-                                        <label for="forwardLabel">Label</label>
-                                        <input
-                                            id="forwardLabel"
-                                            class="form-control"
-                                            data-bind="value: label"
-                                            placeholder="Optional"
-                                        />
-                                    </div>
-
-                                    <div class="row">
-                                        <div class="col-md-10 overflow">
-                                            <p data-bind="html: message, attr: {class: messageClass}"></p>
-                                        </div>
-                                        <div class="col-md-2">
-                                            <input
-                                                type="submit"
-                                               class="btn btn-success pull-right"
-                                               value="Save"
-                                            />
-                                        </div>
-                                    </div>
-
-                                </form>
-
-                            </div><!-- end .forward-settings -->
                         </div><!-- end #configureForward -->
 
                     </div>
@@ -359,7 +428,7 @@
                             % else:
 
                                 <div class="help-block">
-                                    Withdrawing a registration will remove its content from the OSF, but leave basic metadata
+                                    Withdrawing a registration will remove its content from the GakuNin RDM, but leave basic metadata
                                     behind. The title of a withdrawn registration and its contributor list will remain, as will
                                     justification or explanation of the withdrawal, should you wish to provide it. Withdrawn
                                     registrations will be marked with a <strong>withdrawn</strong> tag.
@@ -394,12 +463,12 @@
                              <p class="text-muted">Contributors with read-only permissions to this project cannot add or remove institutional affiliations.</p>
                          % endif:
                          <!-- ko if: affiliatedInstitutions().length == 0 -->
-                         Projects can be affiliated with institutions that have created OSF for Institutions accounts.
+                         Projects can be affiliated with institutions that have created GakuNin RDM for Institutions accounts.
                          This allows:
                          <ul>
                             <li>institutional logos to be displayed on public projects</li>
                             <li>public projects to be discoverable on specific institutional landing pages</li>
-                            <li>single sign-on to the OSF with institutional credentials</li>
+                            <li>single sign-on to the GakuNin RDM with institutional credentials</li>
                             <li><a href="http://help.osf.io/m/os4i">FAQ</a></li>
                          </ul>
                          <!-- /ko -->
@@ -411,7 +480,7 @@
                          <tbody>
                              <!-- ko foreach: {data: affiliatedInstitutions, as: 'item'} -->
                              <tr>
-                                 <td><img class="img-circle" width="50px" height="50px" data-bind="attr: {src: item.logo_path}"></td>
+                                 <td><img class="img-circle" width="50px" height="50px" data-bind="attr: {src: item.logo_path_rounded_corners}"></td>
                                  <td><span data-bind="text: item.name"></span></td>
                                  <td>
                                      % if 'admin' in user['permissions']:
@@ -433,7 +502,7 @@
                          <tbody>
                              <!-- ko foreach: {data: availableInstitutions, as: 'item'} -->
                              <tr>
-                                 <td><img class="img-circle" width="50px" height="50px" data-bind="attr: {src: item.logo_path}"></td>
+                                 <td><img class="img-circle" width="50px" height="50px" data-bind="attr: {src: item.logo_path_rounded_corners}"></td>
                                  <td><span data-bind="text: item.name"></span></td>
                                  % if 'write' in user['permissions']:
                                      <td><button
@@ -455,6 +524,14 @@
 
 </div>
 
+<%def name="render_node_settings(data)">
+    <%
+       template_name = data['node_settings_template']
+       tpl = data['template_lookup'].get_template(template_name).render(**data)
+    %>
+    ${ tpl | n }
+</%def>
+
 <%def name="stylesheets()">
     ${parent.stylesheets()}
     <link rel="stylesheet" href="/static/css/pages/project-page.css">
@@ -469,12 +546,14 @@
       window.contextVars.node.description = ${node['description'] | sjson, n };
       window.contextVars.node.nodeType = ${ node['node_type'] | sjson, n };
       window.contextVars.node.institutions = ${ node['institutions'] | sjson, n };
+      window.contextVars.node.requestProjectAccessEnabled = ${node['access_requests_enabled'] | sjson, n };
       window.contextVars.nodeCategories = ${ categories | sjson, n };
       window.contextVars.wiki = window.contextVars.wiki || {};
       window.contextVars.wiki.isEnabled = ${wiki_enabled | sjson, n };
       window.contextVars.currentUser = window.contextVars.currentUser || {};
       window.contextVars.currentUser.institutions = ${ user['institutions'] | sjson, n };
       window.contextVars.currentUser.permissions = ${ user['permissions'] | sjson, n } ;
+      window.contextVars.timestampPattern = ${ node['timestamp_pattern_division'] | sjson, n };
       window.contextVars.analyticsMeta = $.extend(true, {}, window.contextVars.analyticsMeta, {
           pageMeta: {
               title: 'Settings',

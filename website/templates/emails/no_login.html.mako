@@ -5,8 +5,8 @@
         <br>
         Hello ${fullname},
         <br><br>
-        We’ve noticed it’s been a while since you used the Open Science Framework (OSF). We are constantly adding and improving features, so we thought it might be time to check in with you.
-        Most researchers begin using the OSF by creating a project to organize their files and notes. Projects are equipped with powerful features to help you manage your research:
+        We’ve noticed it’s been a while since you used the GakuNin RDM (GRDM). We are constantly adding and improving features, so we thought it might be time to check in with you.
+        Most researchers begin using the GakuNin RDM by creating a project to organize their files and notes. Projects are equipped with powerful features to help you manage your research:
         <br>
         <ul>
             <li>You can keep your work private, or make it public and share it with others</li>
@@ -14,15 +14,15 @@
             <li>You can connect to third-party services like Dropbox or Google Drive</li>
         </ul>
         To get started now, visit your dashboard and click on “Create a project.”
-        Need help getting started with a project? Check out the <a href="http://help.osf.io">OSF Help Guides</a> or one of our recent <a href="https://www.youtube.com/channel/UCGPlVf8FsQ23BehDLFrQa-g">OSF 101 webinars</a>.
+        If you have specific questions, or would like to set up a free training session for you and your colleagues, please do not hesitate to <a href="mailto:${osf_support_email}">get in touch with us!</a>
         <br><br>
         Best,
         <br>
-        COS Support Team
+        NII Support Team
 
     </div>
 </%def>
 <%def name="footer()">
     <br>
-    The <a href="${osf_url}">Open Science Framework</a> is provided as a free, open source service from the <a href="https://cos.io/">Center for Open Science</a>.
+    The <a href="${osf_url}">GakuNin RDM</a> is provided as a free, open source service from the <a href="https://nii.ac.jp/">National Institute of Informatics</a>.
 </%def>

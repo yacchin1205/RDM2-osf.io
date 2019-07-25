@@ -14,7 +14,7 @@ from website import (
     mails,
     settings
 )
-from website.util import sanitize
+from osf.utils.sanitize import unescape_entities
 
 
 def send_archiver_size_exceeded_mails(src, user, stat_result, url):
@@ -24,6 +24,7 @@ def send_archiver_size_exceeded_mails(src, user, stat_result, url):
         user=user,
         src=src,
         stat_result=stat_result,
+        can_change_preferences=False,
         url=url,
     )
     mails.send_mail(
@@ -44,6 +45,7 @@ def send_archiver_copy_error_mails(src, user, results, url):
         src=src,
         results=results,
         url=url,
+        can_change_preferences=False,
     )
     mails.send_mail(
         to_addr=user.username,
@@ -59,6 +61,7 @@ def send_archiver_file_not_found_mails(src, user, results, url):
     mails.send_mail(
         to_addr=settings.OSF_SUPPORT_EMAIL,
         mail=mails.ARCHIVE_FILE_NOT_FOUND_DESK,
+        can_change_preferences=False,
         user=user,
         src=src,
         results=results,
@@ -81,6 +84,7 @@ def send_archiver_uncaught_error_mails(src, user, results, url):
         user=user,
         src=src,
         results=results,
+        can_change_preferences=False,
         url=url,
     )
     mails.send_mail(
@@ -191,6 +195,7 @@ def _do_get_file_map(file_tree):
 
 def _memoize_get_file_map(func):
     cache = {}
+
     @functools.wraps(func)
     def wrapper(node):
         if node._id not in cache:
@@ -216,7 +221,7 @@ def get_file_map(node, file_map):
 def find_registration_file(value, node):
     from osf.models import AbstractNode
     orig_sha256 = value['sha256']
-    orig_name = sanitize.unescape_entities(
+    orig_name = unescape_entities(
         value['selectedFileName'],
         safe={
             '&lt;': '<',

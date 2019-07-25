@@ -12,7 +12,6 @@ E = lxml.builder.ElementMaker(nsmap={
     None: NAMESPACE,
     'xsi': XSI},
 )
-DOI_URL_PREFIX = 'https://dx.doi.org/'
 
 CREATOR = E.creator
 CREATOR_NAME = E.creatorName
@@ -64,7 +63,7 @@ def datacite_metadata_for_node(node, doi, pretty_print=False):
         doi=doi,
         title=node.title,
         creators=creators,
-        publisher='Open Science Framework',
+        publisher='GakuNin RDM',
         publication_year=getattr(node.registered_date or node.created, 'year'),
         pretty_print=pretty_print
     )
@@ -90,12 +89,7 @@ def format_creators(preprint):
 
 
 def format_subjects(preprint):
-    subject_names = set()
-    for subject_list in preprint.get_subjects():
-        for subject in subject_list:
-            subject_names.add(subject['text'])
-
-    return [E.subject(subject, subjectScheme=SUBJECT_SCHEME) for subject in subject_names]
+    return [E.subject(subject, subjectScheme=SUBJECT_SCHEME) for subject in preprint.subjects.values_list('text', flat=True)]
 
 
 # This function is OSF specific.
@@ -127,7 +121,7 @@ def datacite_metadata_for_preprint(preprint, doi, pretty_print=False):
         root.append(E.rightsList(E.rights(preprint.license.name)))
 
     if preprint.article_doi:
-        root.append(E.relatedIdentifiers(E.relatedIdentifier(DOI_URL_PREFIX + preprint.article_doi, relatedIdentifierType='URL', relationType='IsPreviousVersionOf'))),
+        root.append(E.relatedIdentifiers(E.relatedIdentifier(settings.DOI_URL_PREFIX + preprint.article_doi, relatedIdentifierType='URL', relationType='IsPreviousVersionOf'))),
     # set xsi:schemaLocation
     root.attrib['{%s}schemaLocation' % XSI] = SCHEMA_LOCATION
     return lxml.etree.tostring(root, pretty_print=pretty_print)

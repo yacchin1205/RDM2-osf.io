@@ -120,6 +120,7 @@ class TestNodeSerializerAndRegistrationSerializerDifferences(ApiTestCase):
         # fields that are visible for withdrawals
         visible_on_withdrawals = [
             'contributors',
+            'implicit_contributors',
             'date_created',
             'date_modified',
             'description',
@@ -129,9 +130,11 @@ class TestNodeSerializerAndRegistrationSerializerDifferences(ApiTestCase):
             'title',
             'type',
             'current_user_can_comment',
-            'preprint']
+            'current_user_is_contributor',
+            'preprint',
+            'subjects']
         # fields that do not appear on registrations
-        non_registration_fields = ['registrations', 'draft_registrations']
+        non_registration_fields = ['registrations', 'draft_registrations', 'templated_by_count', 'settings']
 
         for field in NodeSerializer._declared_fields:
             assert_in(field, RegistrationSerializer._declared_fields)
@@ -140,7 +143,8 @@ class TestNodeSerializerAndRegistrationSerializerDifferences(ApiTestCase):
             if field not in visible_on_withdrawals and field not in non_registration_fields:
                 assert_true(
                     isinstance(reg_field, base_serializers.HideIfWithdrawal) or
-                    isinstance(reg_field, base_serializers.ShowIfVersion)
+                    isinstance(reg_field, base_serializers.ShowIfVersion) or
+                    isinstance(reg_field, base_serializers.ShowIfAdminScopeOrAnonymous)
                 )
 
     def test_hide_if_registration_fields(self):
@@ -170,7 +174,6 @@ class TestNullLinks(ApiTestCase):
         assert_not_in('null_field', rep['links'])
         assert_in('valued_field', rep['links'])
         assert_not_in('null_link_field', rep['relationships'])
-        assert_in('valued_link_field', rep['relationships'])
 
 
 class TestApiBaseSerializers(ApiTestCase):
@@ -212,10 +215,17 @@ class TestApiBaseSerializers(ApiTestCase):
         res = self.app.get(self.url)
         relationships = res.json['data']['relationships']
         for relation in relationships.values():
-            if relation == {}:
+            if relation == {'data': None}:
                 continue
-            link = relation['links'].values()[0]
-            assert_not_in('count', link['meta'])
+            if isinstance(relation, list):
+                for item in relation:
+                    link = item['links'].values()[0]
+                    link_meta = link.get('meta', {})
+                    assert_not_in('count', link_meta)
+            else:
+                link = relation['links'].values()[0]
+                link_meta = link.get('meta', {})
+                assert_not_in('count', link_meta)
 
     def test_counts_included_in_link_fields_with_related_counts_query_param(
             self):
@@ -228,7 +238,8 @@ class TestApiBaseSerializers(ApiTestCase):
             field = NodeSerializer._declared_fields[key]
             if getattr(field, 'field', None):
                 field = field.field
-            if (field.related_meta or {}).get('count'):
+            related_meta = getattr(field, 'related_meta', {})
+            if related_meta and related_meta.get('count', False):
                 link = relation['links'].values()[0]
                 assert_in('count', link['meta'], field)
 
@@ -237,10 +248,17 @@ class TestApiBaseSerializers(ApiTestCase):
         res = self.app.get(self.url, params={'related_counts': False})
         relationships = res.json['data']['relationships']
         for relation in relationships.values():
-            if relation == {}:
+            if relation == {'data': None}:
                 continue
-            link = relation['links'].values()[0]
-            assert_not_in('count', link['meta'])
+            if isinstance(relation, list):
+                for item in relation:
+                    link = item['links'].values()[0]
+                    link_meta = link.get('meta', {})
+                    assert_not_in('count', link_meta)
+            else:
+                link = relation['links'].values()[0]
+                link_meta = link.get('meta', {})
+                assert_not_in('count', link_meta)
 
     def test_invalid_related_counts_value_raises_bad_request(self):
 
@@ -260,7 +278,7 @@ class TestApiBaseSerializers(ApiTestCase):
         assert_equal(res.status_code, http.BAD_REQUEST)
         assert_equal(
             res.json['errors'][0]['detail'],
-            "The following fields are not embeddable: foo"
+            'The following fields are not embeddable: foo'
         )
 
     def test_embed_does_not_remove_relationship(self):
@@ -282,11 +300,21 @@ class TestApiBaseSerializers(ApiTestCase):
             field = NodeSerializer._declared_fields[key]
             if getattr(field, 'field', None):
                 field = field.field
-            link = relation['links'].values()[0]
-            if (field.related_meta or {}).get('count') and key == 'children':
-                assert_in('count', link['meta'])
-            else:
-                assert_not_in('count', link['meta'])
+            if isinstance(relation, list):
+                for item in relation:
+                    link = item['links'].values()[0]
+                    related_meta = getattr(field, 'related_meta', {})
+                    if related_meta and related_meta.get('count', False) and key == 'children':
+                        assert_in('count', link['meta'])
+                    else:
+                        assert_not_in('count', link.get('meta', {}))
+            elif relation != {'data': None}:
+                link = relation['links'].values()[0]
+                related_meta = getattr(field, 'related_meta', {})
+                if related_meta and related_meta.get('count', False) and key == 'children':
+                    assert_in('count', link['meta'])
+                else:
+                    assert_not_in('count', link.get('meta', {}))
 
     def test_counts_included_in_children_and_contributors_fields_with_field_csv_related_counts_query_param(
             self):
@@ -302,12 +330,21 @@ class TestApiBaseSerializers(ApiTestCase):
             field = NodeSerializer._declared_fields[key]
             if getattr(field, 'field', None):
                 field = field.field
-            link = relation['links'].values()[0]
-            if (field.related_meta or {}).get('count') and \
-                            key == 'children' or key == 'contributors':
-                assert_in('count', link['meta'])
-            else:
-                assert_not_in('count', link['meta'])
+            if isinstance(relation, list):
+                for item in relation:
+                    link = item['links'].values()[0]
+                    related_meta = getattr(field, 'related_meta', {})
+                    if related_meta and related_meta.get('count', False) and key == 'children' or key == 'contributors':
+                        assert_in('count', link['meta'])
+                    else:
+                        assert_not_in('count', link.get('meta', {}))
+            elif relation != {'data': None}:
+                link = relation['links'].values()[0]
+                related_meta = getattr(field, 'related_meta', {})
+                if related_meta and related_meta.get('count', False) and key == 'children' or key == 'contributors':
+                    assert_in('count', link['meta'])
+                else:
+                    assert_not_in('count', link.get('meta', {}))
 
     def test_error_when_requesting_related_counts_for_attribute_field(self):
 
@@ -353,12 +390,6 @@ class TestRelationshipField:
             related_view_kwargs={'node_id': '<_id>', 'node_link_id': '<_id>'},
         )
 
-        not_attribute_on_target = RelationshipField(
-            # fake url, for testing purposes
-            related_view='nodes:node-children',
-            related_view_kwargs={'node_id': '12345'}
-        )
-
         # If related_view_kwargs is a callable, this field _must_ match the property name on
         # the target record
         registered_from = RelationshipField(
@@ -395,6 +426,25 @@ class TestRelationshipField:
         assert_not_in('count', meta)
         assert_in('extra', meta)
         assert_equal(meta['extra'], 'foo')
+
+    def test_serializing_empty_to_one(self):
+        req = make_drf_request_with_version(version='2.2')
+        node = factories.NodeFactory()
+        data = self.BasicNodeSerializer(
+            node, context={'request': req}
+        ).data['data']
+        # This node is not registered_from another node hence it is an empty-to-one.
+        assert 'registered_from' not in data['relationships']
+
+        # In 2.9, API returns null for empty relationships
+        # https://openscience.atlassian.net/browse/PLAT-840
+        req = make_drf_request_with_version(version='2.9')
+        node = factories.NodeFactory()
+        data = self.BasicNodeSerializer(
+            node, context={'request': req}
+        ).data['data']
+
+        assert data['relationships']['registered_from']['data'] is None
 
     def test_self_and_related_fields(self):
         req = make_drf_request_with_version(version='2.0')
@@ -441,19 +491,6 @@ class TestRelationshipField:
         )
         assert_in(
             urllib.quote('filter[woop]=yea', safe='?='),
-            field['related']['href']
-        )
-
-    def test_field_with_non_attribute(self):
-        req = make_drf_request_with_version(version='2.0')
-        project = factories.ProjectFactory()
-        node = factories.NodeFactory(parent=project)
-        data = self.BasicNodeSerializer(
-            node, context={'request': req}
-        ).data['data']
-        field = data['relationships']['not_attribute_on_target']['links']
-        assert_in(
-            '/v2/nodes/{}/children/'.format('12345'),
             field['related']['href']
         )
 

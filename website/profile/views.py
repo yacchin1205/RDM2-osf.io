@@ -11,8 +11,11 @@ import mailchimp
 
 from framework import sentry
 from framework.auth import utils as auth_utils
+from framework.auth import cas
+from framework.auth import logout as osf_logout
 from framework.auth.decorators import collect_auth
 from framework.auth.decorators import must_be_logged_in
+from framework.auth.decorators import must_be_logged_in_without_checking_email
 from framework.auth.decorators import must_be_confirmed
 from framework.auth.exceptions import ChangePasswordError
 from framework.auth.views import send_confirm_email
@@ -20,17 +23,21 @@ from framework.auth.signals import user_merged
 from framework.exceptions import HTTPError, PermissionsError
 from framework.flask import redirect  # VOL-aware redirect
 from framework.status import push_status_message
+from framework.utils import throttle_period_expired
 
 from osf.models import ApiOAuth2Application, ApiOAuth2PersonalToken, OSFUser, QuickFilesNode
+from osf.exceptions import BlacklistedEmailError
 from website import mails
 from website import mailchimp_utils
 from website import settings
+from website import language
+from website.ember_osf_web.decorators import ember_flag_is_active, storage_i18n_flag_active
 from website.oauth.utils import get_available_scopes
 from website.profile import utils as profile_utils
-from website.util.time import throttle_period_expired
 from website.util import api_v2_url, web_url_for, paths
 from website.util.sanitize import escape_html
 from addons.base import utils as addon_utils
+from admin.rdm_addons.utils import validate_rdm_addons_allowed
 
 logger = logging.getLogger(__name__)
 
@@ -84,6 +91,20 @@ def resend_confirmation(auth):
     return _profile_view(user, is_profile=True)
 
 @must_be_logged_in
+def extend_profile_view(auth, **kwargs):
+    user = auth.user
+    user_addons = addon_utils.get_addons_by_config_type('user', user)
+
+    return {
+        'user_id': user._id,
+        'addons': user_addons,
+        'addons_js': collect_user_config_js([addon for addon in settings.ADDONS_AVAILABLE if 'user' in addon.configs]),
+        'addons_css': [],
+        'requested_deactivation': user.requested_deactivation,
+        'external_identity': user.external_identity
+    }
+
+@must_be_logged_in_without_checking_email
 def update_user(auth):
     """Update the logged-in user's profile."""
 
@@ -142,6 +163,10 @@ def update_user(auth):
                 raise HTTPError(http.BAD_REQUEST, data=dict(
                     message_long='Invalid Email')
                 )
+            except BlacklistedEmailError:
+                raise HTTPError(http.BAD_REQUEST, data=dict(
+                    message_long=language.BLACKLISTED_EMAIL)
+                )
 
             # TODO: This setting is now named incorrectly.
             if settings.CONFIRM_REGISTRATIONS_BY_EMAIL:
@@ -156,9 +181,9 @@ def update_user(auth):
             (
                 each for each in data['emails']
                 # email is primary
-                if each.get('primary') and each.get('confirmed')
+                if each.get('primary') and each.get('confirmed') and
                 # an address is specified (can't trust those sneaky users!)
-                and each.get('address')
+                each.get('address')
             )
         )
 
@@ -170,10 +195,15 @@ def update_user(auth):
 
         # make sure the new username has already been confirmed
         if username and username != user.username and user.emails.filter(address=username).exists():
-            mails.send_mail(user.username,
-                            mails.PRIMARY_EMAIL_CHANGED,
-                            user=user,
-                            new_address=username)
+
+            mails.send_mail(
+                user.username,
+                mails.PRIMARY_EMAIL_CHANGED,
+                user=user,
+                new_address=username,
+                can_change_preferences=False,
+                osf_contact_email=settings.OSF_CONTACT_EMAIL
+            )
 
             # Remove old primary email from subscribed mailing lists
             for list_name, subscription in user.mailchimp_mailing_lists.iteritems():
@@ -226,7 +256,7 @@ def _profile_view(profile, is_profile=False, include_node_counts=False):
         return ret
     raise HTTPError(http.NOT_FOUND)
 
-@must_be_logged_in
+@must_be_logged_in_without_checking_email
 def profile_view_json(auth):
     return _profile_view(auth.user, True)
 
@@ -239,7 +269,8 @@ def profile_view_id_json(uid, auth):
     # Do NOT embed nodes, they aren't necessary
     return _profile_view(user, is_profile)
 
-@must_be_logged_in
+@must_be_logged_in_without_checking_email
+@ember_flag_is_active('ember_user_profile_page')
 def profile_view(auth):
     # Embed node data, so profile node lists can be rendered
     return _profile_view(auth.user, True, include_node_counts=True)
@@ -254,6 +285,7 @@ def profile_view_id(uid, auth):
 
 
 @must_be_logged_in
+@ember_flag_is_active('ember_user_settings_page')
 def user_profile(auth, **kwargs):
     user = auth.user
     return {
@@ -266,8 +298,27 @@ def user_profile(auth, **kwargs):
 def user_account(auth, **kwargs):
     user = auth.user
     user_addons = addon_utils.get_addons_by_config_type('user', user)
+    if 'password_reset' in request.args:
+        push_status_message('Password updated successfully.', kind='success', trust=False)
 
     return {
+        'user_id': user._id,
+        'addons': user_addons,
+        'addons_js': collect_user_config_js([addon for addon in settings.ADDONS_AVAILABLE if 'user' in addon.configs]),
+        'addons_css': [],
+        'requested_deactivation': user.requested_deactivation,
+        'external_identity': user.external_identity,
+        'storage_flag_is_active': storage_i18n_flag_active(),
+    }
+
+
+@must_be_logged_in_without_checking_email
+def user_account_email(auth, **kwargs):
+    user = auth.user
+    user_addons = addon_utils.get_addons_by_config_type('user', user)
+
+    return {
+        'eppn': user.eppn,
         'user_id': user._id,
         'addons': user_addons,
         'addons_js': collect_user_config_js([addon for addon in settings.ADDONS_AVAILABLE if 'user' in addon.configs]),
@@ -284,15 +335,34 @@ def user_account_password(auth, **kwargs):
     new_password = request.form.get('new_password', None)
     confirm_password = request.form.get('confirm_password', None)
 
+    # It has been more than 1 hour since last invalid attempt to change password. Reset the counter for invalid attempts.
+    if throttle_period_expired(user.change_password_last_attempt, settings.TIME_RESET_CHANGE_PASSWORD_ATTEMPTS):
+        user.reset_old_password_invalid_attempts()
+
+    # There have been more than 3 failed attempts and throttle hasn't expired.
+    if user.old_password_invalid_attempts >= settings.INCORRECT_PASSWORD_ATTEMPTS_ALLOWED and not throttle_period_expired(user.change_password_last_attempt, settings.CHANGE_PASSWORD_THROTTLE):
+        push_status_message(
+            message='Too many failed attempts. Please wait a while before attempting to change your password.',
+            kind='warning',
+            trust=False
+        )
+        return redirect(web_url_for('user_account'))
+
     try:
         user.change_password(old_password, new_password, confirm_password)
-        user.save()
     except ChangePasswordError as error:
         for m in error.messages:
             push_status_message(m, kind='warning', trust=False)
     else:
-        push_status_message('Password updated successfully.', kind='success', trust=False)
-
+        # We have to logout the user first so all CAS sessions are invalid
+        user.save()
+        osf_logout()
+        return redirect(cas.get_logout_url(cas.get_login_url(
+            web_url_for('user_account', _absolute=True) + '?password_reset=True',
+            username=user.username,
+            verification_key=user.verification_key,
+        )))
+    user.save()
     return redirect(web_url_for('user_account'))
 
 
@@ -304,7 +374,14 @@ def user_addons(auth, **kwargs):
     ret = {
         'addon_settings': addon_utils.get_addons_by_config_type('accounts', user),
     }
-    accounts_addons = [addon for addon in settings.ADDONS_AVAILABLE if 'accounts' in addon.configs]
+    # RDM
+    from admin.rdm_addons import utils as rdm_utils
+    rdm_utils.update_with_rdm_addon_settings(ret['addon_settings'], user)
+    allowed_addon_dict = {addon['addon_short_name']: addon['is_allowed'] for addon in ret['addon_settings']}
+    ret['addon_settings'] = [addon for addon in ret['addon_settings'] if addon['is_allowed']]
+
+    accounts_addons = [addon for addon in settings.ADDONS_AVAILABLE
+            if 'accounts' in addon.configs and allowed_addon_dict[addon.short_name]]
     ret.update({
         'addon_enabled_settings': [addon.short_name for addon in accounts_addons],
         'addons_js': collect_user_config_js(accounts_addons),
@@ -427,8 +504,18 @@ def collect_user_config_js(addon_configs):
 @must_be_logged_in
 def user_choose_addons(**kwargs):
     auth = kwargs['auth']
-    json_data = escape_html(request.get_json())
-    auth.user.config_addons(json_data, auth)
+    config = escape_html(request.get_json())
+    try:
+        for addon_name, enabled in config.iteritems():
+            if enabled:
+                validate_rdm_addons_allowed(auth, addon_name)
+    except PermissionsError as e:
+        raise HTTPError(
+            http.FORBIDDEN,
+            data=dict(message_long=e.message)
+        )
+
+    auth.user.config_addons(config, auth)
 
 @must_be_logged_in
 def user_choose_mailing_lists(auth, **kwargs):
@@ -436,7 +523,7 @@ def user_choose_mailing_lists(auth, **kwargs):
 
         Example input:
         {
-            "Open Science Framework General": true,
+            "GakuNin RDM General": true,
             ...
         }
 
@@ -484,7 +571,7 @@ def update_mailchimp_subscription(user, list_name, subscription, send_goodbye=Tr
 
 
 def mailchimp_get_endpoint(**kwargs):
-    """Endpoint that the mailchimp webhook hits to check that the OSF is responding"""
+    """Endpoint that the mailchimp webhook hits to check that the GakuNin RDM is responding"""
     return {}, http.OK
 
 
@@ -516,7 +603,7 @@ def sync_data_from_mailchimp(**kwargs):
     else:
         # TODO: get tests to pass with sentry logging
         # sentry.log_exception()
-        # sentry.log_message("Unauthorized request to the OSF.")
+        # sentry.log_message("Unauthorized request to the GakuNin RDM.")
         raise HTTPError(http.UNAUTHORIZED)
 
 
@@ -741,11 +828,11 @@ def request_export(auth):
         to_addr=settings.OSF_SUPPORT_EMAIL,
         mail=mails.REQUEST_EXPORT,
         user=auth.user,
+        can_change_preferences=False,
     )
     user.email_last_sent = timezone.now()
     user.save()
     return {'message': 'Sent account export request'}
-
 
 @must_be_logged_in
 def request_deactivation(auth):
@@ -761,6 +848,7 @@ def request_deactivation(auth):
         to_addr=settings.OSF_SUPPORT_EMAIL,
         mail=mails.REQUEST_DEACTIVATION,
         user=auth.user,
+        can_change_preferences=False,
     )
     user.email_last_sent = timezone.now()
     user.requested_deactivation = True

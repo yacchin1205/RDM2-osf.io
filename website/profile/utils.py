@@ -3,9 +3,13 @@ from framework import auth
 
 from website import settings
 from osf.models import Contributor
+from addons.osfstorage.models import Region
 from website.filters import profile_image_url
 from osf.models.contributor import get_contributor_permissions
-from website.util.permissions import reduce_permissions
+from osf.utils.permissions import reduce_permissions
+
+from osf.utils import workflows
+from website.ember_osf_web.decorators import storage_i18n_flag_active
 
 
 def get_profile_image_url(user, size=settings.PROFILE_IMAGE_MEDIUM):
@@ -84,10 +88,15 @@ def serialize_user(user, node=None, admin=False, full=False, is_profile=False, i
         else:
             merged_by = None
 
+        default_region = user.get_addon('osfstorage').default_region
+        available_regions = [region for region in Region.objects.all().values('_id', 'name')]
         ret.update({
             'activity_points': user.get_activity_points(),
             'profile_image_url': user.profile_image_url(size=settings.PROFILE_IMAGE_LARGE),
             'is_merged': user.is_merged,
+            'available_regions': available_regions,
+            'storage_flag_is_active': storage_i18n_flag_active(),
+            'default_region': {'name': default_region.name, '_id': default_region._id},
             'merged_by': merged_by,
         })
         if include_node_counts:
@@ -178,3 +187,17 @@ def serialize_unregistered(fullname, email):
         serialized['fullname'] = fullname
         serialized['email'] = email
     return serialized
+
+
+def serialize_access_requests(node):
+    """Serialize access requests for a node"""
+    return [
+        {
+            'user': serialize_user(access_request.creator),
+            'comment': access_request.comment,
+            'id': access_request._id
+        } for access_request in node.requests.filter(
+            request_type=workflows.RequestTypes.ACCESS.value,
+            machine_state=workflows.DefaultStates.PENDING.value
+        ).select_related('creator')
+    ]

@@ -8,6 +8,8 @@ from api.base.settings.defaults import API_BASE
 from framework.auth.core import Auth
 from osf.models import NodeLog
 from osf.models.licenses import NodeLicense
+from osf.utils.sanitize import strip_html
+from osf.utils import permissions
 from osf_tests.factories import (
     NodeFactory,
     ProjectFactory,
@@ -19,13 +21,15 @@ from osf_tests.factories import (
     PrivateLinkFactory,
     PreprintFactory,
     IdentifierFactory,
+    InstitutionFactory,
+    SubjectFactory,
+    ForkFactory,
+    WithdrawnRegistrationFactory,
 )
 from rest_framework import exceptions
 from tests.base import fake
 from tests.utils import assert_items_equal, assert_latest_log, assert_latest_log_not
 from website.views import find_bookmark_collection
-from website.util import permissions
-from website.util.sanitize import strip_html
 
 
 @pytest.fixture()
@@ -94,6 +98,7 @@ class TestNodeDetail:
         assert res.json['data']['attributes']['title'] == project_public.title
         assert res.json['data']['attributes']['description'] == project_public.description
         assert res.json['data']['attributes']['category'] == project_public.category
+        assert res.json['data']['attributes']['current_user_is_contributor'] is False
         assert_items_equal(
             res.json['data']['attributes']['current_user_permissions'],
             permissions_read)
@@ -105,6 +110,7 @@ class TestNodeDetail:
         assert res.json['data']['attributes']['title'] == project_public.title
         assert res.json['data']['attributes']['description'] == project_public.description
         assert res.json['data']['attributes']['category'] == project_public.category
+        assert res.json['data']['attributes']['current_user_is_contributor'] is True
         assert_items_equal(
             res.json['data']['attributes']['current_user_permissions'],
             permissions_admin)
@@ -116,6 +122,7 @@ class TestNodeDetail:
         assert res.json['data']['attributes']['title'] == project_public.title
         assert res.json['data']['attributes']['description'] == project_public.description
         assert res.json['data']['attributes']['category'] == project_public.category
+        assert res.json['data']['attributes']['current_user_is_contributor'] is False
         assert_items_equal(
             res.json['data']['attributes']['current_user_permissions'],
             permissions_read)
@@ -127,6 +134,7 @@ class TestNodeDetail:
         assert res.json['data']['attributes']['title'] == project_private.title
         assert res.json['data']['attributes']['description'] == project_private.description
         assert res.json['data']['attributes']['category'] == project_private.category
+        assert res.json['data']['attributes']['current_user_is_contributor'] is True
         assert_items_equal(
             res.json['data']['attributes']['current_user_permissions'],
             permissions_admin)
@@ -151,6 +159,7 @@ class TestNodeDetail:
         assert res.json['data']['attributes']['title'] == project_private.title
         assert res.json['data']['attributes']['description'] == project_private.description
         assert res.json['data']['attributes']['category'] == project_private.category
+        assert res.json['data']['attributes']['current_user_is_contributor'] is True
         assert_items_equal(
             res.json['data']['attributes']['current_user_permissions'],
             permissions_write)
@@ -282,13 +291,139 @@ class TestNodeDetail:
             auth=user.auth, expect_errors=True)
         assert res.status_code == 404
 
+    def test_node_list_embed_identifier_link(self, app, user, project_public, url_public):
+        url = url_public + '?embed=identifiers'
+        res = app.get(url)
+        assert res.status_code == 200
+        link = res.json['data']['relationships']['identifiers']['links']['related']['href']
+        assert '{}identifiers/'.format(url_public) in link
+
+    def test_node_shows_wiki_relationship_based_on_disabled_status_and_version(self, app, user, project_public, url_public):
+        url = url_public + '?version=latest'
+        res = app.get(url, auth=user.auth)
+        assert 'wikis' in res.json['data']['relationships']
+        project_public.delete_addon('wiki', auth=Auth(user))
+        project_public.save()
+        res = app.get(url, auth=user.auth)
+        assert 'wikis' not in res.json['data']['relationships']
+        url = url_public + '?version=2.7'
+        res = app.get(url, auth=user.auth)
+        assert 'wikis' in res.json['data']['relationships']
+
+    def test_shows_access_requests_enabled_field_based_on_version(self, app, user, project_public, url_public):
+        url = url_public + '?version=latest'
+        res = app.get(url, auth=user.auth)
+        assert 'access_requests_enabled' not in res.json['data']['attributes']
+        res = app.get(url_public + '?version=2.8', auth=user.auth)
+        assert 'access_requests_enabled' in res.json['data']['attributes']
+
+    def test_node_shows_correct_templated_from_count(self, app, user, project_public, url_public):
+        url = url_public
+        res = app.get(url)
+        assert res.json['meta'].get('templated_by_count', False) is False
+        url = url + '?related_counts=true'
+        res = app.get(url)
+        assert res.json['meta']['templated_by_count'] == 0
+        ProjectFactory(title='template copy', template_node=project_public, creator=user)
+        project_public.reload()
+        res = app.get(url)
+        assert res.json['meta']['templated_by_count'] == 1
+
+    def test_node_shows_related_count_for_linked_by_relationships(self, app, user, project_public, url_public, project_private):
+        url = url_public + '?related_counts=true'
+        res = app.get(url)
+        assert 'count' in res.json['data']['relationships']['linked_by_nodes']['links']['related']['meta']
+        assert 'count' in res.json['data']['relationships']['linked_by_registrations']['links']['related']['meta']
+        assert res.json['data']['relationships']['linked_by_nodes']['links']['related']['meta']['count'] == 0
+        assert res.json['data']['relationships']['linked_by_registrations']['links']['related']['meta']['count'] == 0
+
+        project_private.add_pointer(project_public, auth=Auth(user), save=True)
+        project_public.reload()
+
+        res = app.get(url)
+        assert 'count' in res.json['data']['relationships']['linked_by_nodes']['links']['related']['meta']
+        assert 'count' in res.json['data']['relationships']['linked_by_registrations']['links']['related']['meta']
+        assert res.json['data']['relationships']['linked_by_nodes']['links']['related']['meta']['count'] == 1
+        assert res.json['data']['relationships']['linked_by_registrations']['links']['related']['meta']['count'] == 0
+
+        registration = RegistrationFactory(project=project_private, creator=user)
+        project_public.reload()
+
+        res = app.get(url)
+        assert 'count' in res.json['data']['relationships']['linked_by_nodes']['links']['related']['meta']
+        assert 'count' in res.json['data']['relationships']['linked_by_registrations']['links']['related']['meta']
+        assert res.json['data']['relationships']['linked_by_nodes']['links']['related']['meta']['count'] == 1
+        assert res.json['data']['relationships']['linked_by_registrations']['links']['related']['meta']['count'] == 1
+
+        project_private.is_deleted = True
+        project_private.save()
+        project_public.reload()
+
+        res = app.get(url)
+        assert 'count' in res.json['data']['relationships']['linked_by_nodes']['links']['related']['meta']
+        assert 'count' in res.json['data']['relationships']['linked_by_registrations']['links']['related']['meta']
+        assert res.json['data']['relationships']['linked_by_nodes']['links']['related']['meta']['count'] == 0
+        assert res.json['data']['relationships']['linked_by_registrations']['links']['related']['meta']['count'] == 1
+
+        WithdrawnRegistrationFactory(registration=registration, user=user)
+        project_public.reload()
+
+        res = app.get(url)
+        assert 'count' in res.json['data']['relationships']['linked_by_nodes']['links']['related']['meta']
+        assert 'count' in res.json['data']['relationships']['linked_by_registrations']['links']['related']['meta']
+        assert res.json['data']['relationships']['linked_by_nodes']['links']['related']['meta']['count'] == 0
+        assert res.json['data']['relationships']['linked_by_registrations']['links']['related']['meta']['count'] == 0
+
+    def test_node_shows_correct_forks_count_including_private_forks(self, app, user, project_private, url_private, user_two):
+        project_private.add_contributor(
+            user_two,
+            permissions=(permissions.READ, permissions.WRITE, permissions.ADMIN),
+            auth=Auth(user)
+        )
+        url = url_private + '?related_counts=true'
+        forks_url = url_private + 'forks/'
+        res = app.get(url, auth=user.auth)
+        assert 'count' in res.json['data']['relationships']['forks']['links']['related']['meta']
+        assert res.json['data']['relationships']['forks']['links']['related']['meta']['count'] == 0
+        res = app.get(forks_url, auth=user.auth)
+        assert len(res.json['data']) == 0
+
+        ForkFactory(project=project_private, user=user_two)
+        project_private.reload()
+
+        res = app.get(url, auth=user.auth)
+        assert 'count' in res.json['data']['relationships']['forks']['links']['related']['meta']
+        assert res.json['data']['relationships']['forks']['links']['related']['meta']['count'] == 1
+        res = app.get(forks_url, auth=user.auth)
+        assert len(res.json['data']) == 0
+
+        ForkFactory(project=project_private, user=user)
+        project_private.reload()
+
+        res = app.get(url, auth=user.auth)
+        assert 'count' in res.json['data']['relationships']['forks']['links']['related']['meta']
+        assert res.json['data']['relationships']['forks']['links']['related']['meta']['count'] == 2
+        res = app.get(forks_url, auth=user.auth)
+        assert len(res.json['data']) == 1
+
 
 @pytest.mark.django_db
 class NodeCRUDTestCase:
 
     @pytest.fixture()
-    def user_two(self):
-        return AuthUserFactory()
+    def institution_one(self):
+        return InstitutionFactory()
+
+    @pytest.fixture()
+    def institution_two(self):
+        return InstitutionFactory()
+
+    @pytest.fixture()
+    def user_two(self, institution_one, institution_two):
+        auth_user = AuthUserFactory()
+        auth_user.affiliated_institutions.add(institution_one)
+        auth_user.affiliated_institutions.add(institution_two)
+        return auth_user
 
     @pytest.fixture()
     def title(self):
@@ -348,19 +483,57 @@ class NodeCRUDTestCase:
 
     @pytest.fixture()
     def make_node_payload(self):
-        def payload(node, attributes):
-            return {
+        def payload(node, attributes, relationships=None):
+
+            payload_data = {
                 'data': {
                     'id': node._id,
                     'type': 'nodes',
                     'attributes': attributes,
                 }
             }
+
+            if relationships:
+                payload_data['data']['relationships'] = relationships
+
+            return payload_data
         return payload
 
 
 @pytest.mark.django_db
 class TestNodeUpdate(NodeCRUDTestCase):
+
+    @pytest.fixture()
+    def subject(self):
+        return SubjectFactory()
+
+    def test_node_institution_update(self, app, user_two, project_private, url_private, make_node_payload,
+                                     institution_one, institution_two):
+        project_private.add_contributor(
+            user_two,
+            permissions=(permissions.READ, permissions.WRITE, permissions.ADMIN),
+            auth=Auth(project_private.creator)
+        )
+        affiliated_institutions = {
+            'affiliated_institutions':
+                {'data': [
+                    {
+                        'type': 'institutions',
+                        'id': institution_one._id
+                    },
+                    {
+                        'type': 'institutions',
+                        'id': institution_two._id
+                    },
+                ]
+                }
+        }
+        payload = make_node_payload(project_private, {'public': False}, relationships=affiliated_institutions)
+        res = app.patch_json_api(url_private, payload, auth=user_two.auth, expect_errors=False)
+        assert res.status_code == 200
+        institutions = project_private.affiliated_institutions.all()
+        assert institution_one in institutions
+        assert institution_two in institutions
 
     def test_node_update_invalid_data(self, app, user, url_public):
         res = app.put_json_api(
@@ -850,7 +1023,7 @@ class TestNodeUpdate(NodeCRUDTestCase):
                 'title': title_new,
             }
         }, auth=user.auth, expect_errors=True)
-        assert res.status_code == 400
+        assert res.status_code == 200
 
     def test_partial_update_private_project_logged_in_contributor(
             self, app, user, title_new, description, category, project_private, url_private):
@@ -901,9 +1074,9 @@ class TestNodeUpdate(NodeCRUDTestCase):
         )
         assert res.status_code == 200
 
-    @mock.patch('website.identifiers.tasks.update_ezid_metadata_on_change.s')
-    def test_set_node_private_updates_ezid(
-            self, mock_update_ezid_metadata, app, user, project_public,
+    @mock.patch('website.identifiers.tasks.update_doi_metadata_on_change.s')
+    def test_set_node_private_updates_doi(
+            self, mock_update_doi_metadata, app, user, project_public,
             url_public, make_node_payload):
 
         IdentifierFactory(referent=project_public, category='doi')
@@ -916,12 +1089,13 @@ class TestNodeUpdate(NodeCRUDTestCase):
         assert res.status_code == 200
         project_public.reload()
         assert not project_public.is_public
-        mock_update_ezid_metadata.assert_called_with(
+        mock_update_doi_metadata.assert_called_with(
             project_public._id, status='unavailable')
 
-    @mock.patch('website.preprints.tasks.update_ezid_metadata_on_change')
-    def test_set_node_with_preprint_private_updates_ezid(
-            self, mock_update_ezid_metadata, app, user,
+    @pytest.mark.enable_enqueue_task
+    @mock.patch('website.preprints.tasks.update_or_enqueue_on_preprint_updated')
+    def test_set_node_with_preprint_private_updates_doi(
+            self, mock_update_doi_metadata, app, user,
             project_public, url_public, make_node_payload):
         target_object = PreprintFactory(project=project_public)
 
@@ -934,11 +1108,48 @@ class TestNodeUpdate(NodeCRUDTestCase):
         assert res.status_code == 200
         project_public.reload()
         assert not project_public.is_public
-        mock_update_ezid_metadata.assert_called_with(
-            target_object._id, status='unavailable')
+        mock_update_doi_metadata.assert_called_with(target_object._id)
+
+    def test_permissions_to_set_subjects(self, app, user, project_public, subject, url_public, make_node_payload):
+        # test_write_contrib_cannot_set_subjects
+        write_contrib = AuthUserFactory()
+        project_public.add_contributor(write_contrib, permissions=['read', 'write'], auth=Auth(user), save=True)
+
+        assert not project_public.subjects.filter(_id=subject._id).exists()
+        update_subjects_payload = make_node_payload(project_public, attributes={'subjects': [[subject._id]]})
+
+        res = app.patch_json_api(url_public, update_subjects_payload, auth=write_contrib.auth, expect_errors=True)
+        assert res.status_code == 403
+
+        assert not project_public.subjects.filter(_id=subject._id).exists()
+
+        # test_non_contrib_cannot_set_subjects
+        non_contrib = AuthUserFactory()
+
+        assert not project_public.subjects.filter(_id=subject._id).exists()
+
+        update_subjects_payload = make_node_payload(project_public, attributes={'subjects': [[subject._id]]})
+
+        res = app.patch_json_api(url_public, update_subjects_payload, auth=non_contrib.auth, expect_errors=True)
+        assert res.status_code == 403
+
+        assert not project_public.subjects.filter(_id=subject._id).exists()
+
+        # test_admin_can_set_subjects
+        admin_contrib = AuthUserFactory()
+        project_public.add_contributor(admin_contrib, permissions=['read', 'write', 'admin'], auth=Auth(user), save=True)
+
+        assert not project_public.subjects.filter(_id=subject._id).exists()
+        update_subjects_payload = make_node_payload(project_public, attributes={'subjects': [[subject._id]]})
+
+        res = app.patch_json_api(url_public, update_subjects_payload, auth=admin_contrib.auth, expect_errors=True)
+        assert res.status_code == 200
+
+        assert project_public.subjects.filter(_id=subject._id).exists()
 
 
 @pytest.mark.django_db
+@pytest.mark.enable_bookmark_creation
 class TestNodeDelete(NodeCRUDTestCase):
 
     def test_deletes_node_errors(
@@ -1016,25 +1227,25 @@ class TestNodeDelete(NodeCRUDTestCase):
         # Bookmark collections are collections, so a 404 is returned
         assert res.status_code == 404
 
-    @mock.patch('website.identifiers.tasks.update_ezid_metadata_on_change.s')
+    @mock.patch('website.identifiers.tasks.update_doi_metadata_on_change.s')
     def test_delete_node_with_preprint_calls_preprint_update_status(
-            self, mock_update_ezid_metadata_on_change, app, user,
+            self, mock_update_doi_metadata_on_change, app, user,
             project_public, url_public):
         PreprintFactory(project=project_public)
         app.delete_json_api(url_public, auth=user.auth, expect_errors=True)
         project_public.reload()
 
-        assert mock_update_ezid_metadata_on_change.called
+        assert mock_update_doi_metadata_on_change.called
 
-    @mock.patch('website.identifiers.tasks.update_ezid_metadata_on_change.s')
+    @mock.patch('website.identifiers.tasks.update_doi_metadata_on_change.s')
     def test_delete_node_with_identifier_calls_preprint_update_status(
-            self, mock_update_ezid_metadata_on_change, app, user,
+            self, mock_update_doi_metadata_on_change, app, user,
             project_public, url_public):
         IdentifierFactory(referent=project_public, category='doi')
         app.delete_json_api(url_public, auth=user.auth, expect_errors=True)
         project_public.reload()
 
-        assert mock_update_ezid_metadata_on_change.called
+        assert mock_update_doi_metadata_on_change.called
 
     def test_deletes_public_node_succeeds_as_owner(
             self, app, user, project_public, url_public):

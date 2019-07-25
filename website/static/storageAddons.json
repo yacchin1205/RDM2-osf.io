@@ -32,7 +32,7 @@
         "externalView": true
     },
     "osfstorage": {
-        "fullName": "OSF Storage",
+        "fullName": "NII Storage",
         "externalView": false
     },
     "owncloud": {
@@ -46,5 +46,25 @@
     "onedrive": {
         "fullName": "OneDrive",
         "externalView": true
+    },
+    "swift": {
+        "fullName": "OpenStack Swift",
+        "externalView": false
+    },
+    "azureblobstorage": {
+        "fullName": "Azure Blob Storage",
+        "externalView": false
+    },
+    "s3compat": {
+        "fullName": "S3 Compatible Storage",
+        "externalView": false
+    },
+    "weko": {
+        "fullName": "WEKO",
+        "externalView": false
+    },
+    "nextcloud": {
+        "fullName": "Nextcloud",
+        "externalView": false
     }
 }

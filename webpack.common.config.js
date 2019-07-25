@@ -18,14 +18,12 @@ var addonsPath = function(dir) {
 };
 
 /**
- * Each JS module for a page on the OSF is webpack entry point. These are built
+ * Each JS module for a page on the GakuNin RDM is webpack entry point. These are built
  * to website/static/public/
  */
 var entry = {
     // JS
     'base-page': staticPath('js/pages/base-page.js'),
-    'home-page': staticPath('js/pages/home-page.js'),
-    'landing-page': staticPath('js/pages/landing-page.js'),
     'dashboard-page': staticPath('js/pages/dashboard-page.js'),
     'profile-page': staticPath('js/pages/profile-page.js'),
     'project-dashboard': staticPath('js/pages/project-dashboard-page.js'),
@@ -38,9 +36,11 @@ var entry = {
     'register-page': staticPath('js/pages/register-page.js'),
     'wiki-edit-page': staticPath('js/pages/wiki-edit-page.js'),
     'statistics-page': staticPath('js/pages/statistics-page.js'),
+    'request-access-page': staticPath('js/pages/request-access-page.js'),
     'file-page': staticPath('js/pages/file-page.js'),
     'files-page': staticPath('js/pages/files-page.js'),
-    'prereg-landing-page': staticPath('js/pages/prereg-landing-page.js'),
+    'timestamp-page': staticPath('js/pages/timestamp-page.js'),
+    'reg-landing-page': staticPath('js/pages/reg-landing-page.js'),
     'profile-settings-page': staticPath('js/pages/profile-settings-page.js'),
     'profile-account-settings-page': staticPath('js/pages/profile-account-settings-page.js'),
     'profile-settings-applications-list-page': staticPath('js/pages/profile-settings-applications-list-page.js'),
@@ -60,6 +60,7 @@ var entry = {
     'notifications-config-page': staticPath('js/pages/notifications-config-page.js'),
     'render-nodes': staticPath('js/pages/render-nodes.js'),
     'institution-page': staticPath('js/pages/institution-page.js'),
+    'rdm-firebase': staticPath('js/rdm-firebase.js'),
     // Commons chunk
     'vendor': [
         // Vendor libraries
@@ -85,6 +86,7 @@ var entry = {
         'mithril',
         // Main CSS files that get loaded above the fold
         nodePath('select2/select2.css'),
+        nodePath('bootstrap/dist/css/bootstrap.css'),
         '@centerforopenscience/osf-style',
         staticPath('css/style.css'),
     ],
@@ -139,7 +141,7 @@ var resolve = {
         'knockout-sortable': staticPath('vendor/knockout-sortable/knockout-sortable.js'),
         'bootstrap-editable': staticPath('vendor/bootstrap-editable-custom/js/bootstrap-editable.js'),
         'jquery-blockui': staticPath('vendor/jquery-blockui/jquery.blockui.js'),
-        'bootstrap': staticPath('vendor/bower_components/bootstrap/dist/js/bootstrap.min.js'),
+        'bootstrap': nodePath('bootstrap/dist/js/bootstrap.js'),
         'Caret.js': staticPath('vendor/bower_components/Caret.js/dist/jquery.caret.min.js'),
         'osf-panel': staticPath('vendor/bower_components/osf-panel/dist/jquery-osfPanel.min.js'),
         'jquery-qrcode': staticPath('vendor/bower_components/jquery-qrcode/jquery.qrcode.min.js'),
@@ -190,7 +192,7 @@ var plugins = [
     // Slight hack to make sure that CommonJS is always used
     new webpack.DefinePlugin({
         'define.amd': false,
-        '__ENABLE_DEV_MODE_CONTROLS': fs.existsSync(staticPath(path.resolve('built', 'git_logs.json')))
+        '__ENABLE_DEV_MODE_CONTROLS': fs.existsSync(staticPath(path.join('built', 'git_logs.json')))
     }),
 ];
 
@@ -213,7 +215,7 @@ module.exports = {
             {test: /\.es6\.js$/, exclude: [/node_modules/, /bower_components/, /vendor/], loader: 'babel-loader'},
             {test: /\.css$/, use: [{loader: 'style-loader'}, {loader: 'css-loader'}]},
             // url-loader uses DataUrls; files-loader emits files
-            {test: /\.png$/, loader: 'url-loader?limit=100000&mimetype=image/ng'},
+            {test: /\.png$/, loader: 'url-loader?limit=100000&mimetype=image/png'},
             {test: /\.gif$/, loader: 'url-loader?limit=10000&mimetype=image/gif'},
             {test: /\.jpg$/, loader: 'url-loader?limit=10000&mimetype=image/jpg'},
             {test: /\.woff(2)?(\?v=[0-9]\.[0-9]\.[0-9])?$/, loader: 'url-loader?mimetype=application/font-woff'},

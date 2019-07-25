@@ -1,4 +1,4 @@
-FROM python:2.7-slim
+FROM python:2.7-slim-jessie
 
 ENV GOSU_VERSION=1.10 \
     NODE_ENV=production \
@@ -9,9 +9,11 @@ ENV GOSU_VERSION=1.10 \
 RUN set -ex \
     && mkdir -p /var/www \
     && chown www-data:www-data /var/www \
-    # GOSU
-    && gpg --keyserver pool.sks-keyservers.net --recv-keys B42F6819007F00F88E364FD4036A9C25BF357DD4 \
+    && apt-get update \
+    && apt-get install -y gnupg2 \
     && for key in \
+      # GOSU
+      B42F6819007F00F88E364FD4036A9C25BF357DD4 \
       # https://github.com/nodejs/docker-node/blob/9c25cbe93f9108fd1e506d14228afe4a3d04108f/8.2/Dockerfile
       # gpg keys listed at https://github.com/nodejs/node#release-team
       # Node
@@ -26,12 +28,12 @@ RUN set -ex \
       # Yarn
       6A010C5166006599AA17F08146C2130DFD2497F5 \
     ; do \
-      gpg --keyserver pgp.mit.edu --recv-keys "$key" || \
-      gpg --keyserver keyserver.pgp.com --recv-keys "$key" || \
-      gpg --keyserver ha.pool.sks-keyservers.net --recv-keys "$key" ; \
-    done \
+      gpg --keyserver hkp://ipv4.pool.sks-keyservers.net:80 --recv-keys "$key" || \
+      gpg --keyserver hkp://ha.pool.sks-keyservers.net:80 --recv-keys "$key" || \
+      gpg --keyserver hkp://pgp.mit.edu:80 --recv-keys "$key" || \
+      gpg --keyserver hkp://keyserver.pgp.com:80 --recv-keys "$key" \
+    ; done \
     # Install dependancies
-    && apt-get update \
     && apt-get install -y \
         git \
         libev4 \
@@ -115,6 +117,11 @@ COPY ./addons/s3/requirements.txt ./addons/s3/
 COPY ./addons/twofactor/requirements.txt ./addons/twofactor/
 #COPY ./addons/wiki/requirements.txt ./addons/wiki/
 COPY ./addons/zotero/requirements.txt ./addons/zotero/
+COPY ./addons/swift/requirements.txt ./addons/swift/
+COPY ./addons/azureblobstorage/requirements.txt ./addons/azureblobstorage/
+COPY ./addons/weko/requirements.txt ./addons/weko/
+COPY ./addons/s3compat/requirements.txt ./addons/s3compat/
+COPY ./addons/nextcloud/requirements.txt ./addons/nextcloud/
 
 RUN for reqs_file in \
         /code/requirements.txt \
@@ -166,6 +173,12 @@ COPY ./addons/s3/static/ ./addons/s3/static/
 COPY ./addons/twofactor/static/ ./addons/twofactor/static/
 COPY ./addons/wiki/static/ ./addons/wiki/static/
 COPY ./addons/zotero/static/ ./addons/zotero/static/
+COPY ./addons/swift/static/ ./addons/swift/static/
+COPY ./addons/azureblobstorage/static/ ./addons/azureblobstorage/static/
+COPY ./addons/weko/static/ ./addons/weko/static/
+COPY ./addons/jupyterhub/static/ ./addons/jupyterhub/static/
+COPY ./addons/s3compat/static/ ./addons/s3compat/static/
+COPY ./addons/nextcloud/static/ ./addons/nextcloud/static/
 RUN mkdir -p ./website/static/built/ \
     && invoke build_js_config_files \
     && yarn run webpack-prod
@@ -190,6 +203,11 @@ RUN cd ./admin \
 
 # Copy the rest of the code over
 COPY ./ ./
+
+RUN invoke requirements --all
+RUN invoke assets --dev
+
+RUN invoke admin.assets --dev
 
 ARG GIT_COMMIT=
 ENV GIT_COMMIT ${GIT_COMMIT}

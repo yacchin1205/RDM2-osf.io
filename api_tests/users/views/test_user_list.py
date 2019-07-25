@@ -15,11 +15,12 @@ from osf_tests.factories import (
     ProjectFactory,
     Auth,
 )
+from osf.utils.permissions import CREATOR_PERMISSIONS
 from website import settings
-from website.util.permissions import CREATOR_PERMISSIONS
 
 
 @pytest.mark.django_db
+@pytest.mark.enable_quickfiles_creation
 class TestUsers:
 
     @pytest.fixture()
@@ -305,7 +306,7 @@ class TestUsersCreate:
     def tearDown(self, app):
         super(TestUsersCreate, self).tearDown()
         app.reset()  # clears cookies
-        OSFUser.remove()
+        OSFUser.delete()
 
     @mock.patch('framework.auth.views.mails.send_mail')
     def test_logged_in_user_with_basic_auth_cannot_create_other_user_or_send_mail(

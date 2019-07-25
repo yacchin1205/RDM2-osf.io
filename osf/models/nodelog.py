@@ -31,6 +31,8 @@ class NodeLog(ObjectIDMixin, BaseModel):
     NODE_CREATED = 'node_created'
     NODE_FORKED = 'node_forked'
     NODE_REMOVED = 'node_removed'
+    NODE_ACCESS_REQUESTS_ENABLED = 'node_access_requests_enabled'
+    NODE_ACCESS_REQUESTS_DISABLED = 'node_access_requests_disabled'
 
     POINTER_CREATED = NODE_LINK_CREATED = 'pointer_created'
     POINTER_FORKED = NODE_LINK_FORKED = 'pointer_forked'
@@ -85,9 +87,9 @@ class NodeLog(ObjectIDMixin, BaseModel):
     COMMENT_UPDATED = 'comment_updated'
     COMMENT_RESTORED = 'comment_restored'
 
-    CITATION_ADDED = 'citation_added'
-    CITATION_EDITED = 'citation_edited'
-    CITATION_REMOVED = 'citation_removed'
+    CUSTOM_CITATION_ADDED = 'custom_citation_added'
+    CUSTOM_CITATION_EDITED = 'custom_citation_edited'
+    CUSTOM_CITATION_REMOVED = 'custom_citation_removed'
 
     MADE_CONTRIBUTOR_VISIBLE = 'made_contributor_visible'
     MADE_CONTRIBUTOR_INVISIBLE = 'made_contributor_invisible'
@@ -116,11 +118,14 @@ class NodeLog(ObjectIDMixin, BaseModel):
     PREPRINT_FILE_UPDATED = 'preprint_file_updated'
     PREPRINT_LICENSE_UPDATED = 'preprint_license_updated'
 
+    SUBJECTS_UPDATED = 'subjects_updated'
+
     VIEW_ONLY_LINK_ADDED = 'view_only_link_added'
     VIEW_ONLY_LINK_REMOVED = 'view_only_link_removed'
 
     actions = ([CHECKED_IN, CHECKED_OUT, FILE_TAG_REMOVED, FILE_TAG_ADDED, CREATED_FROM, PROJECT_CREATED,
                 PROJECT_REGISTERED, PROJECT_DELETED, NODE_CREATED, NODE_FORKED, NODE_REMOVED,
+                NODE_ACCESS_REQUESTS_ENABLED, NODE_ACCESS_REQUESTS_DISABLED,
                 NODE_LINK_CREATED, NODE_LINK_FORKED, NODE_LINK_REMOVED, WIKI_UPDATED,
                 WIKI_DELETED, WIKI_RENAMED, MADE_WIKI_PUBLIC,
                 MADE_WIKI_PRIVATE, CONTRIB_ADDED, CONTRIB_REMOVED, CONTRIB_REORDERED,
@@ -134,7 +139,6 @@ class NodeLog(ObjectIDMixin, BaseModel):
                 RETRACTION_CANCELLED, RETRACTION_INITIATED, REGISTRATION_APPROVAL_CANCELLED,
                 REGISTRATION_APPROVAL_INITIATED, REGISTRATION_APPROVAL_APPROVED,
                 PREREG_REGISTRATION_INITIATED,
-                CITATION_ADDED, CITATION_EDITED, CITATION_REMOVED,
                 AFFILIATED_INSTITUTION_ADDED, AFFILIATED_INSTITUTION_REMOVED, PREPRINT_INITIATED,
                 PREPRINT_FILE_UPDATED, PREPRINT_LICENSE_UPDATED, VIEW_ONLY_LINK_ADDED, VIEW_ONLY_LINK_REMOVED] + list(sum([
                     config.actions for config in apps.get_app_configs() if config.name.startswith('addons.')

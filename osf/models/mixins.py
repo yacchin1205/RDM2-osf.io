@@ -1,22 +1,33 @@
 import pytz
 
 from django.apps import apps
+from django.contrib.auth.models import Group
 from django.core.exceptions import ObjectDoesNotExist
-from django.utils import timezone
 from django.db import models, transaction
+from django.utils import timezone
+from django.utils.functional import cached_property
+from guardian.shortcuts import assign_perm
+from guardian.shortcuts import get_perms
+from guardian.shortcuts import remove_perm
 from include import IncludeQuerySet
 
-from api.preprint_providers.workflows import Workflows, PUBLIC_STATES
+from api.providers.workflows import Workflows, PUBLIC_STATES
 from framework.analytics import increment_user_activity_counters
+from framework.exceptions import PermissionsError
 from osf.exceptions import InvalidTriggerError
 from osf.models.node_relation import NodeRelation
 from osf.models.nodelog import NodeLog
+from osf.models.subject import Subject
+from osf.models.filelog import FileLog
 from osf.models.tag import Tag
+from osf.models.validators import validate_subject_hierarchy
 from osf.utils.fields import NonNaiveDateTimeField
-from osf.utils.machines import ReviewsMachine
-from osf.utils.workflows import DefaultStates, DefaultTriggers
+from osf.utils.machines import ReviewsMachine, NodeRequestMachine, PreprintRequestMachine
+from osf.utils.permissions import ADMIN, REVIEW_GROUPS
+from osf.utils.workflows import DefaultStates, DefaultTriggers, ReviewStates, ReviewTriggers
 from website.exceptions import NodeStateError
 from website import settings
+from api.base.rdmlogger import RdmLogger, rdmlog
 
 
 class Versioned(models.Model):
@@ -64,6 +75,7 @@ class Loggable(models.Model):
     last_logged = NonNaiveDateTimeField(db_index=True, null=True, blank=True, default=timezone.now)
 
     def add_log(self, action, params, auth, foreign_user=None, log_date=None, save=True, request=None):
+        global filelog
         AbstractNode = apps.get_model('osf.AbstractNode')
         user = None
         if auth:
@@ -72,11 +84,46 @@ class Loggable(models.Model):
             user = request.user
 
         params['node'] = params.get('node') or params.get('project') or self._id
-        original_node = AbstractNode.load(params.get('node'))
+        original_node = self if self._id == params['node'] else AbstractNode.load(params.get('node'))
+
         log = NodeLog(
             action=action, user=user, foreign_user=foreign_user,
             params=params, node=self, original_node=original_node
         )
+
+        if user:
+            try:
+                if (('file' in action) or ('check' in action) or ('osf_storage' in action)) and user._id:
+                    if action not in 'rename':
+                        filelog = FileLog(
+                            action=action, user=user, path=params['path'],
+                            project_id=self._id
+                        )
+                        if log_date:
+                            filelog.date = log_date
+                        filelog.save()
+                        ## RDM Logger ##
+                        if user._id and original_node.title and params['path']:
+                            rdmlogger = RdmLogger(rdmlog, {})
+                            rdmlogger.info('RDM Project', RDMINFO='FileLog', action=action, user=user._id, project=original_node.title, file_path=params['path'])
+                    else:
+                        if 'osfstorage' in params['source']['provider']:
+                            source_path = params['source']['materialized']
+                        else:
+                            source_path = params['source']['path']
+                        filelog = FileLog(
+                            action=action, user=user, path=source_path,
+                            project_id=self._id
+                        )
+                        if log_date:
+                            filelog.date = log_date
+                        filelog.save()
+                        ## RDM Logger ##
+                        if user._id and original_node.title and source_path:
+                            rdmlogger = RdmLogger(rdmlog, {})
+                            rdmlogger.info('RDM Project', RDMINFO='FileLog', action=action, user=user._id, project=original_node.title, file_path=source_path)
+            except KeyError:
+                print('KeyError')
 
         if log_date:
             log.date = log_date
@@ -104,10 +151,29 @@ class Taggable(models.Model):
 
     def update_tags(self, new_tags, auth=None, save=True, log=True, system=False):
         old_tags = set(self.tags.values_list('name', flat=True))
-        for tag in (set(new_tags) - old_tags):
-            self.add_tag(tag, auth=auth, save=save, log=log, system=system)
-        for tag in (old_tags - set(new_tags)):
-            self.remove_tag(tag, auth, save=save)
+        to_add = (set(new_tags) - old_tags)
+        to_remove = (old_tags - set(new_tags))
+        if to_add:
+            self.add_tags(to_add, auth=auth, save=save, log=log, system=system)
+        if to_remove:
+            self.remove_tags(to_remove, auth=auth, save=save)
+
+    def add_tags(self, tags, auth=None, save=True, log=True, system=False):
+        """
+        Optimization method for use with update_tags. Unlike add_tag, already assumes tag is
+        not on the object.
+        """
+        if not system and not auth:
+            raise ValueError('Must provide auth if adding a non-system tag')
+        for tag in tags:
+            tag_instance, created = Tag.all_tags.get_or_create(name=tag, system=system)
+            self.tags.add(tag_instance)
+            # TODO: Logging belongs in on_tag_added hook
+            if log:
+                self.add_tag_log(tag_instance, auth)
+            self.on_tag_added(tag_instance)
+        if save:
+            self.save()
 
     def add_tag(self, tag, auth=None, save=True, log=True, system=False):
         if not system and not auth:
@@ -234,7 +300,7 @@ class AddonModelMixin(models.Model):
         model = self._settings_model(addon_name, config=config)
         ret = model(owner=self)
         ret.on_add()
-        ret.save()  # TODO This doesn't feel right
+        ret.save(clean=False)  # TODO This doesn't feel right
         return ret
 
     def config_addons(self, config, auth=None, save=True):
@@ -300,18 +366,6 @@ class NodeLinkMixin(models.Model):
 
         if self.is_registration:
             raise NodeStateError('Cannot add a node link to a registration')
-
-        # If a folder, prevent more than one pointer to that folder.
-        # This will prevent infinite loops on the project organizer.
-        if node.is_collection and node.linked_from.exists():
-            raise ValueError(
-                'Node link to folder {0} already exists. '
-                'Only one node link to any given folder allowed'.format(node._id)
-            )
-        if node.is_collection and node.is_bookmark_collection:
-            raise ValueError(
-                'Node link to bookmark collection ({0}) not allowed.'.format(node._id)
-            )
 
         # Append node link
         node_relation, created = NodeRelation.objects.get_or_create(
@@ -394,17 +448,6 @@ class NodeLinkMixin(models.Model):
         """For v1 compat"""
         return self.linked_nodes
 
-    def get_points(self, folders=False, deleted=False):
-        query = self.linked_from
-
-        if not folders:
-            query = query.exclude(type='osf.collection')
-
-        if not deleted:
-            query = query.exclude(is_deleted=True)
-
-        return list(query.all())
-
     def fork_node_link(self, node_relation, auth, save=True):
         """Replace a linked node with a fork.
 
@@ -423,6 +466,14 @@ class NodeLinkMixin(models.Model):
         forked = node.fork_node(auth)
         if forked is None:
             raise ValueError('Could not fork node')
+
+        relation = NodeRelation.objects.get(
+            parent=self,
+            child=node,
+            is_node_link=True
+        )
+        relation.child = forked
+        relation.save()
 
         if hasattr(self, 'add_log'):
             # Add log
@@ -457,13 +508,13 @@ class CommentableMixin(object):
 
     @property
     def target_type(self):
-        """ The object "type" used in the OSF v2 API. E.g. Comment objects have the type 'comments'."""
+        """ The object "type" used in the GakuNin RDM v2 API. E.g. Comment objects have the type 'comments'."""
         raise NotImplementedError
 
     @property
     def root_target_page(self):
         """The page type associated with the object/Comment.root_target.
-        E.g. For a NodeWikiPage, the page name is 'wiki'."""
+        E.g. For a WikiPage, the page name is 'wiki'."""
         raise NotImplementedError
 
     is_deleted = False
@@ -479,6 +530,8 @@ class CommentableMixin(object):
 
 
 class MachineableMixin(models.Model):
+    TriggersClass = DefaultTriggers
+
     class Meta:
         abstract = True
 
@@ -497,16 +550,16 @@ class MachineableMixin(models.Model):
         Params:
             user: The user triggering this transition.
         """
-        return self.__run_transition(DefaultTriggers.SUBMIT.value, user=user)
+        return self._run_transition(self.TriggersClass.SUBMIT.value, user=user)
 
-    def run_accept(self, user, comment):
+    def run_accept(self, user, comment, **kwargs):
         """Run the 'accept' state transition and create a corresponding Action.
 
         Params:
             user: The user triggering this transition.
             comment: Text describing why.
         """
-        return self.__run_transition(DefaultTriggers.ACCEPT.value, user=user, comment=comment)
+        return self._run_transition(self.TriggersClass.ACCEPT.value, user=user, comment=comment, **kwargs)
 
     def run_reject(self, user, comment):
         """Run the 'reject' state transition and create a corresponding Action.
@@ -515,7 +568,7 @@ class MachineableMixin(models.Model):
             user: The user triggering this transition.
             comment: Text describing why.
         """
-        return self.__run_transition(DefaultTriggers.REJECT.value, user=user, comment=comment)
+        return self._run_transition(self.TriggersClass.REJECT.value, user=user, comment=comment)
 
     def run_edit_comment(self, user, comment):
         """Run the 'edit_comment' state transition and create a corresponding Action.
@@ -524,9 +577,9 @@ class MachineableMixin(models.Model):
             user: The user triggering this transition.
             comment: New comment text.
         """
-        return self.__run_transition(DefaultTriggers.EDIT_COMMENT.value, user=user, comment=comment)
+        return self._run_transition(self.TriggersClass.EDIT_COMMENT.value, user=user, comment=comment)
 
-    def __run_transition(self, trigger, **kwargs):
+    def _run_transition(self, trigger, **kwargs):
         machine = self.MachineClass(self, 'machine_state')
         trigger_fn = getattr(machine, trigger)
         with transaction.atomic():
@@ -538,9 +591,34 @@ class MachineableMixin(models.Model):
             return action
 
 
+class NodeRequestableMixin(MachineableMixin):
+    """
+    Inherited by NodeRequest. Defines the MachineClass.
+    """
+
+    class Meta:
+        abstract = True
+
+    MachineClass = NodeRequestMachine
+
+
+class PreprintRequestableMixin(MachineableMixin):
+    """
+    Inherited by PreprintRequest. Defines the MachineClass
+    """
+
+    class Meta:
+        abstract = True
+
+    MachineClass = PreprintRequestMachine
+
+
 class ReviewableMixin(MachineableMixin):
     """Something that may be included in a reviewed collection and is subject to a reviews workflow.
     """
+    TriggersClass = ReviewTriggers
+
+    machine_state = models.CharField(max_length=15, db_index=True, choices=ReviewStates.choices(), default=ReviewStates.INITIAL.value)
 
     class Meta:
         abstract = True
@@ -554,12 +632,78 @@ class ReviewableMixin(MachineableMixin):
             return False
         return self.machine_state in public_states
 
+    def run_withdraw(self, user, comment):
+        """Run the 'withdraw' state transition and create a corresponding Action.
 
-class ReviewProviderMixin(models.Model):
+        Params:
+            user: The user triggering this transition.
+            comment: Text describing why.
+        """
+        return self._run_transition(self.TriggersClass.WITHDRAW.value, user=user, comment=comment)
+
+
+class GuardianMixin(models.Model):
+    """ Helper for managing object-level permissions with django-guardian
+    Expects:
+      - Permissions to be defined in class Meta->permissions
+      - Groups to be defined in self.groups
+      - Group naming scheme to:
+        * Be defined in self.group_format
+        * Use `self` and `group` as format params. E.g: model_{self.id}_{group}
+    """
+    class Meta:
+        abstract = True
+
+    @property
+    def groups(self):
+        raise NotImplementedError()
+
+    @property
+    def group_format(self):
+        raise NotImplementedError()
+
+    @property
+    def perms_list(self):
+        # Django expects permissions to be specified in an N-ple of 2-ples
+        return [p[0] for p in self._meta.permissions]
+
+    @property
+    def group_names(self):
+        return [self.format_group(name) for name in self.groups]
+
+    @property
+    def group_objects(self):
+        # TODO: consider subclassing Group if this becomes inefficient
+        return Group.objects.filter(name__in=self.group_names)
+
+    def format_group(self, name):
+        if name not in self.groups:
+            raise ValueError('Invalid group: "{}"'.format(name))
+        return self.group_format.format(self=self, group=name)
+
+    def get_group(self, name):
+        return Group.objects.get(name=self.format_group(name))
+
+    def update_group_permissions(self):
+        for group_name, group_permissions in self.groups.items():
+            group, created = Group.objects.get_or_create(name=self.format_group(group_name))
+            to_remove = set(get_perms(group, self)).difference(group_permissions)
+            for p in to_remove:
+                remove_perm(p, group, self)
+            for p in group_permissions:
+                assign_perm(p, group, self)
+
+    def get_permissions(self, user):
+        return list(set(get_perms(user, self)) & set(self.perms_list))
+
+
+class ReviewProviderMixin(GuardianMixin):
     """A reviewed/moderated collection of objects.
     """
 
     REVIEWABLE_RELATION_NAME = None
+    groups = REVIEW_GROUPS
+    group_format = 'reviews_{self.readable_type}_{self.id}_{group}'
 
     class Meta:
         abstract = True
@@ -578,14 +722,103 @@ class ReviewProviderMixin(models.Model):
         if isinstance(qs, IncludeQuerySet):
             qs = qs.include(None)
         qs = qs.filter(node__isnull=False, node__is_deleted=False, node__is_public=True).values('machine_state').annotate(count=models.Count('*'))
+        counts = {state.value: 0 for state in ReviewStates}
+        counts.update({row['machine_state']: row['count'] for row in qs if row['machine_state'] in counts})
+        return counts
+
+    def get_request_state_counts(self):
+        # import stuff here to get around circular imports
+        from osf.models import PreprintRequest
+        qs = PreprintRequest.objects.filter(target__provider__id=self.id,
+                                            target__node__isnull=False,
+                                            target__node__is_deleted=False,
+                                            target__node__is_public=True)
+        qs = qs.values('machine_state').annotate(count=models.Count('*'))
         counts = {state.value: 0 for state in DefaultStates}
         counts.update({row['machine_state']: row['count'] for row in qs if row['machine_state'] in counts})
         return counts
 
-    def add_admin(self, user):
-        from api.preprint_providers.permissions import GroupHelper
-        return GroupHelper(self).get_group('admin').user_set.add(user)
+    def add_to_group(self, user, group):
+        # Add default notification subscription
+        notification = self.notification_subscriptions.get(_id='{}_new_pending_submissions'.format(self._id))
+        user_id = user.id
+        is_subscriber = notification.none.filter(id=user_id).exists() \
+                        or notification.email_digest.filter(id=user_id).exists() \
+                        or notification.email_transactional.filter(id=user_id).exists()
+        if not is_subscriber:
+            notification.add_user_to_subscription(user, 'email_transactional', save=True)
+        return self.get_group(group).user_set.add(user)
 
-    def add_moderator(self, user):
-        from api.preprint_providers.permissions import GroupHelper
-        return GroupHelper(self).get_group('moderator').user_set.add(user)
+    def remove_from_group(self, user, group, unsubscribe=True):
+        _group = self.get_group(group)
+        if group == 'admin':
+            if _group.user_set.filter(id=user.id).exists() and not _group.user_set.exclude(id=user.id).exists():
+                raise ValueError('Cannot remove last admin.')
+        if unsubscribe:
+            # remove notification subscription
+            notification = self.notification_subscriptions.get(_id='{}_new_pending_submissions'.format(self._id))
+            notification.remove_user_from_subscription(user, save=True)
+
+        return _group.user_set.remove(user)
+
+
+class TaxonomizableMixin(models.Model):
+
+    class Meta:
+        abstract = True
+
+    subjects = models.ManyToManyField(blank=True, to='osf.Subject', related_name='%(class)ss')
+
+    @cached_property
+    def subject_hierarchy(self):
+        if self.subjects.exists():
+            return [
+                s.object_hierarchy for s in self.subjects.exclude(children__in=self.subjects.all()).select_related('parent')
+            ]
+        return []
+
+    def set_subjects(self, new_subjects, auth, add_log=True):
+        """ Helper for setting M2M subjects field from list of hierarchies received from UI.
+        Only authorized admins may set subjects.
+
+        :param list[list[Subject._id]] new_subjects: List of subject hierarchies to be validated and flattened
+        :param Auth auth: Auth object for requesting user
+        :param bool add_log: Whether or not to add a log (if called on a Loggable object)
+
+        :return: None
+        """
+        AbstractNode = apps.get_model('osf.AbstractNode')
+        PreprintService = apps.get_model('osf.PreprintService')
+        CollectionSubmission = apps.get_model('osf.CollectionSubmission')
+        if getattr(self, 'is_registration', False):
+            raise PermissionsError('Registrations may not be modified.')
+        if isinstance(self, (AbstractNode, PreprintService)):
+            if not self.has_permission(auth.user, ADMIN):
+                raise PermissionsError('Only admins can change subjects.')
+        elif isinstance(self, CollectionSubmission):
+            if not self.guid.referent.has_permission(auth.user, ADMIN) and not auth.user.has_perms(self.collection.groups[ADMIN], self.collection):
+                raise PermissionsError('Only admins can change subjects.')
+
+        old_subjects = list(self.subjects.values_list('id', flat=True))
+        self.subjects.clear()
+        for subj_list in new_subjects:
+            subj_hierarchy = []
+            for s in subj_list:
+                subj_hierarchy.append(s)
+            if subj_hierarchy:
+                validate_subject_hierarchy(subj_hierarchy)
+                for s_id in subj_hierarchy:
+                    self.subjects.add(Subject.load(s_id))
+
+        if add_log and hasattr(self, 'add_log'):
+            self.add_log(
+                action=NodeLog.SUBJECTS_UPDATED,
+                params={
+                    'subjects': list(self.subjects.values('_id', 'text')),
+                    'old_subjects': list(Subject.objects.filter(id__in=old_subjects).values('_id', 'text'))
+                },
+                auth=auth,
+                save=False,
+            )
+
+        self.save(old_subjects=old_subjects)

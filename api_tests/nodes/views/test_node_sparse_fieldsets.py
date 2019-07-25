@@ -6,7 +6,7 @@ from osf_tests.factories import (
     AuthUserFactory,
     PrivateLinkFactory,
 )
-from website.util import permissions
+from osf.utils import permissions
 
 
 @pytest.fixture()
@@ -15,6 +15,7 @@ def user():
 
 
 @pytest.mark.django_db
+@pytest.mark.enable_quickfiles_creation
 class TestNodeSparseFieldsList:
 
     @pytest.fixture()
@@ -118,6 +119,7 @@ class TestNodeSparseFieldsList:
 
 
 @pytest.mark.django_db
+@pytest.mark.enable_quickfiles_creation
 class TestNodeSparseFieldsDetail:
 
     @pytest.fixture()

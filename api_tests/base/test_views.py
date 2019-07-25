@@ -13,6 +13,10 @@ from osf_tests import factories
 from framework.auth.oauth_scopes import CoreScopes
 
 from api.base.settings.defaults import API_BASE
+from api.search.permissions import IsAuthenticatedOrReadOnlyForSearch
+from api.crossref.views import ParseCrossRefConfirmation
+from api.users.views import ClaimUser
+from api.wb.views import MoveFileMetadataView, CopyFileMetadataView
 from rest_framework.permissions import IsAuthenticatedOrReadOnly, IsAuthenticated
 from api.base.permissions import TokenHasScope
 from website.settings import DEBUG_MODE
@@ -34,10 +38,18 @@ VIEW_CLASSES = []
 for mod in URLS_MODULES:
     urlpatterns = mod.urlpatterns
     for patt in urlpatterns:
-        VIEW_CLASSES.append(patt.callback.cls)
+        if hasattr(patt, 'url_patterns'):
+            # Namespaced list of patterns
+            for subpatt in patt.url_patterns:
+                VIEW_CLASSES.append(subpatt.callback.cls)
+        else:
+            VIEW_CLASSES.append(patt.callback.cls)
 
 
 class TestApiBaseViews(ApiTestCase):
+    def setUp(self):
+        super(TestApiBaseViews, self).setUp()
+        self.EXCLUDED_VIEWS = [ClaimUser, MoveFileMetadataView, CopyFileMetadataView, ParseCrossRefConfirmation]
 
     def test_root_returns_200(self):
         res = self.app.get('/{}'.format(API_BASE))
@@ -45,7 +57,7 @@ class TestApiBaseViews(ApiTestCase):
 
     def test_does_not_exist_returns_404(self):
         res = self.app.get(
-            '/{}{}'.format(API_BASE, "notapage"),
+            '/{}{}'.format(API_BASE, 'notapage'),
             expect_errors=True
         )
         assert_equal(res.status_code, 404)
@@ -63,21 +75,23 @@ class TestApiBaseViews(ApiTestCase):
     def test_view_classes_have_minimal_set_of_permissions_classes(self):
         base_permissions = [
             TokenHasScope,
-            (IsAuthenticated, IsAuthenticatedOrReadOnly)
+            (IsAuthenticated, IsAuthenticatedOrReadOnly, IsAuthenticatedOrReadOnlyForSearch)
         ]
         for view in VIEW_CLASSES:
+            if view in self.EXCLUDED_VIEWS:
+                continue
             for cls in base_permissions:
                 if isinstance(cls, tuple):
                     has_cls = any([c in view.permission_classes for c in cls])
                     assert_true(
                         has_cls,
-                        "{0} lacks the appropriate permission classes".format(view)
+                        '{0} lacks the appropriate permission classes'.format(view)
                     )
                 else:
                     assert_in(
                         cls,
                         view.permission_classes,
-                        "{0} lacks the appropriate permission classes".format(view)
+                        '{0} lacks the appropriate permission classes'.format(view)
                     )
             for key in ['read', 'write']:
                 scopes = getattr(view, 'required_{}_scopes'.format(key), None)
@@ -89,9 +103,11 @@ class TestApiBaseViews(ApiTestCase):
 
     def test_view_classes_support_embeds(self):
         for view in VIEW_CLASSES:
+            if view in self.EXCLUDED_VIEWS:
+                continue
             assert_true(
                 hasattr(view, '_get_embed_partial'),
-                "{0} lacks embed support".format(view)
+                '{0} lacks embed support'.format(view)
             )
 
     def test_view_classes_define_or_override_serializer_class(self):
@@ -100,7 +116,7 @@ class TestApiBaseViews(ApiTestCase):
                                    getattr(view, 'get_serializer_class', None)
             assert_true(
                 has_serializer_class,
-                "{0} should include serializer class or override get_serializer_class()".format(view)
+                '{0} should include serializer class or override get_serializer_class()'.format(view)
             )
 
     @mock.patch(

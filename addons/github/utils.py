@@ -10,7 +10,7 @@ from addons.base.exceptions import HookError
 
 from addons.github.api import GitHubClient
 
-MESSAGE_BASE = 'via the Open Science Framework'
+MESSAGE_BASE = 'via the GakuNin RDM'
 MESSAGES = {
     'add': 'Added {0}'.format(MESSAGE_BASE),
     'move': 'Moved {0}'.format(MESSAGE_BASE),
@@ -111,8 +111,7 @@ def check_permissions(node_settings, auth, connection, branch, sha=None, repo=No
 
         has_access = (
             repo is not None and (
-                'permissions' not in repo.to_json() or
-                repo.to_json()['permissions']['push']
+                repo.permissions and repo.permissions['push']
             )
         )
 

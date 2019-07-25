@@ -103,6 +103,7 @@ function findByTempID(parent, tmpID) {
     return item;
 }
 
+var WIKI_IMAGES_FOLDER_PATH = '/Wiki images/';
 
 /**
  * Cancel a pending upload
@@ -387,6 +388,8 @@ function inheritFromParent(item, parent, fields) {
         item.data[field] = item.data[field] || parent.data[field];
     });
 
+    item.data.waterbutlerURL = parent.data.waterbutlerURL;
+
     if(item.data.provider === 'github' || item.data.provider === 'bitbucket' || item.data.provider === 'gitlab'){
         item.data.branch = parent.data.branch;
     }
@@ -480,6 +483,12 @@ function handleCancel(tb, provider, mode, item){
 }
 
 function displayConflict(tb, item, folder, cb) {
+
+    if('/' + item.data.name + '/'  === WIKI_IMAGES_FOLDER_PATH) {
+        $osf.growl('Error', 'You cannot replace the Wiki images folder');
+        return;
+    }
+
     var mithrilContent = m('', [
         m('p', 'An item named "' + item.data.name + '" already exists in this location.'),
         m('h5.replace-file',
@@ -504,6 +513,12 @@ function displayConflict(tb, item, folder, cb) {
 function checkConflictsRename(tb, item, name, cb) {
     var messageArray = [];
     var parent = item.parent();
+
+    if(item.data.kind === 'folder' && parent.data.name === 'OSF Storage' && '/' + name + '/'  === WIKI_IMAGES_FOLDER_PATH){
+        $osf.growl('Error', 'You cannot replace the Wiki images folder');
+        return;
+    }
+
     for(var i = 0; i < parent.children.length; i++) {
         var child = parent.children[i];
         if (child.data.name === name && child.id !== item.id) {
@@ -1107,7 +1122,7 @@ function _createFolder(event, dismissCallback, helpText) {
 
     var extra = {};
     var path = parent.data.path || '/';
-    var options = {name: val, kind: 'folder'};
+    var options = {name: val, kind: 'folder', waterbutlerURL: parent.data.waterbutlerURL};
 
     if ((parent.data.provider === 'github') || (parent.data.provider === 'gitlab')) {
         extra.branch = parent.data.branch;
@@ -1187,16 +1202,24 @@ function _removeEvent (event, items, col) {
 
     function doDelete() {
         var folder = items[0];
+        var deleteMessage;
         if (folder.data.permissions.edit) {
-                var mithrilContent = m('div', [
+            if(folder.data.materialized === WIKI_IMAGES_FOLDER_PATH){
+                deleteMessage = m('p.text-danger',
+                    'This folder and all of its contents will be deleted. This folder is linked to ' +
+                    'your wiki(s). Deleting it will remove images embedded in your wiki(s). ' +
+                    'This action is irreversible.');
+            } else {
+                deleteMessage = m('p.text-danger',
+                    'This folder and ALL its contents will be deleted. This action is irreversible.');
+            }
 
-                        m('p.text-danger', 'This folder and ALL its contents will be deleted. This action is irreversible.')
-                    ]);
-                var mithrilButtons = m('div', [
-                        m('span.btn.btn-default', { onclick : function() { cancelDelete.call(tb); } }, 'Cancel'),
-                        m('span.btn.btn-danger', { onclick : function() { runDelete(folder); } }, 'Delete')
-                    ]);
-                tb.modal.update(mithrilContent, mithrilButtons, m('h3.break-word.modal-title', 'Delete "' + folder.data.name+ '"?'));
+            var mithrilContent = m('div', [deleteMessage]);
+            var mithrilButtons = m('div', [
+                m('span.btn.btn-default', { onclick : function() { cancelDelete.call(tb); } }, 'Cancel'),
+                m('span.btn.btn-danger', { onclick : function() { runDelete(folder); } }, 'Delete')
+            ]);
+            tb.modal.update(mithrilContent, mithrilButtons, m('h3.break-word.modal-title', 'Delete "' + folder.data.name+ '"?'));
         } else {
             folder.notify.update('You don\'t have permission to delete this file.', 'info', undefined, 3000);
         }
@@ -1204,10 +1227,16 @@ function _removeEvent (event, items, col) {
 
     // If there is only one item being deleted, don't complicate the issue:
     if(items.length === 1) {
-        var detail = 'This action is irreversible.';
+        var detail;
+        if(items[0].data.materialized.substring(0, WIKI_IMAGES_FOLDER_PATH.length) === WIKI_IMAGES_FOLDER_PATH) {
+            detail = m('span', 'This file may be linked to your wiki(s). Deleting it will remove the' +
+                ' image embedded in your wiki(s). ');
+        } else {
+            detail = '';
+        }
         if(items[0].kind !== 'folder'){
             var mithrilContentSingle = m('div', [
-                m('p', detail)
+                m('p.text-danger', detail, 'This action is irreversible.')
             ]);
             var mithrilButtonsSingle = m('div', [
                 m('span.btn.btn-default', { onclick : function() { cancelDelete(); } }, 'Cancel'),
@@ -1254,7 +1283,12 @@ function _removeEvent (event, items, col) {
                                 m('i.fa.fa-folder'), m('b', ' ' + n.data.name)
                                 ]);
                         }
-                        return m('.fangorn-canDelete.text-success.break-word', n.data.name);
+                        if(n.data.materialized.substring(0, WIKI_IMAGES_FOLDER_PATH.length) === WIKI_IMAGES_FOLDER_PATH) {
+                            return m('p.text-danger', m('b', n.data.name), ' may be linked to' +
+                                ' your wiki(s). Deleting them will remove images embedded in your wiki(s). ');
+                        } else {
+                            return m('.fangorn-canDelete.text-success.break-word', n.data.name);
+                        }
                     })
                 ]);
             mithrilButtonsMultiple = m('div', [
@@ -1461,7 +1495,14 @@ function _fangornTitleColumnHelper(tb, item, col, nameTitle, toUrl, classNameOpt
                 }
             };
         }
-        return m('span', attrs, nameTitle);
+
+        var titleRow = m('span', attrs, nameTitle);
+
+        if  (item.data.extra.latestVersionSeen && item.data.extra.latestVersionSeen.seen === false && col.data === 'name') {
+            titleRow = m('strong', [titleRow]);
+        }
+
+        return titleRow;
     }
     if ((item.data.nodeType === 'project' || item.data.nodeType ==='component') && item.data.permissions.view) {
         return m('a.' + classNameOption, {href: '/' + item.data.nodeID.toString() + toUrl}, nameTitle);
@@ -1471,6 +1512,9 @@ function _fangornTitleColumnHelper(tb, item, col, nameTitle, toUrl, classNameOpt
 
 function _fangornTitleColumn(item, col) {
     var tb = this;
+    if(item.data.nodeRegion && item.data.provider !== 'osfstorage'){
+        return _fangornTitleColumnHelper(tb, item, col, item.data.name + ' (' + item.data.nodeRegion + ')', '/', 'fg-file-links');
+    }
     return _fangornTitleColumnHelper(tb, item, col, item.data.name, '/', 'fg-file-links');
 }
 
@@ -1662,7 +1706,7 @@ function _loadTopLevelChildren() {
  * @this Treebeard.controller
  * @private
  */
-var NO_AUTO_EXPAND_PROJECTS = ['ezcuj', 'ecmz4', 'w4wvg', 'sn64d'];
+var NO_AUTO_EXPAND_PROJECTS = ['ezcuj', 'ecmz4', 'w4wvg', 'sn64d', 'pfdyw'];
 function expandStateLoad(item) {
     var tb = this,
         icon = $('.tb-row[data-id="' + item.id + '"]').find('.tb-toggle-icon'),
@@ -1671,7 +1715,7 @@ function expandStateLoad(item) {
         i;
 
     if (item.children.length > 0 && item.depth === 1) {
-        // NOTE: On the RPP and a few select projects *only*: Load the top-level project's OSF Storage
+        // NOTE: On the RPP *only*: Load the top-level project's NII Storage
         // but do NOT lazy-load children in order to save hundreds of requests.
         // TODO: We might want to do this for every project, but that's TBD.
         // /sloria
@@ -1690,7 +1734,7 @@ function expandStateLoad(item) {
 
     if (item.children.length > 0 && item.depth === 2) {
         for (i = 0; i < item.children.length; i++) {
-            if (item.children[i].data.isAddonRoot || item.children[i].data.addonFullName === 'OSF Storage' ) {
+            if (item.children[i].data.isAddonRoot || item.children[i].data.addonFullName === 'NII Storage' ) {
                 tb.updateFolder(null, item.children[i]);
             }
         }
@@ -1793,6 +1837,11 @@ function _renameEvent () {
     if  (val === item.name) {
         return;
     }
+    if(item.data.materialized === WIKI_IMAGES_FOLDER_PATH){
+        $osf.growl('Error', 'You cannot rename your Wiki images folder.');
+        return;
+    }
+
     checkConflictsRename(tb, item, val, doItemOp.bind(tb, OPERATIONS.RENAME, folder, item, val));
     tb.toolbarMode(toolbarModes.DEFAULT);
 }
@@ -2227,7 +2276,7 @@ var FGToolbar = {
                     onclick: function(event){
                         var mithrilContent = m('div', [
                             m('p', [ m('b', 'Select rows:'), m('span', ' Click on a row (outside the add-on, file, or folder name) to show further actions in the toolbar. Use Command or Shift keys to select multiple files.')]),
-                            m('p', [ m('b', 'Open files:'), m('span', ' Click a file name to go to view the file in the OSF.')]),
+                            m('p', [ m('b', 'Open files:'), m('span', ' Click a file name to go to view the file in the GakuNin RDM.')]),
                             m('p', [ m('b', 'Open files in new tab:'), m('span', ' Press Command (Ctrl in Windows) and click a file name to open it in a new tab.')]),
                             m('p', [ m('b', 'Download as zip:'), m('span', ' Click on the row of an add-on or folder and click the Download as Zip button in the toolbar.'), m('i', ' Not available for all storage add-ons.')]),
                             m('p', [ m('b', 'Copy files:'), m('span', ' Press Option (Alt in Windows) while dragging a file to a new folder or component.'), m('i', ' Only for contributors with write access.')])
@@ -3036,7 +3085,8 @@ Fangorn.Components = {
     input : FGInput,
     toolbar : FGToolbar,
     dropdown : FGDropdown,
-    toolbarModes : toolbarModes
+    toolbarModes : toolbarModes,
+    defaultItemButtons : FGItemButtons
 };
 
 Fangorn.ButtonEvents = {

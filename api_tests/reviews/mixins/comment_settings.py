@@ -1,13 +1,12 @@
 import pytest
 
-from api.preprint_providers.permissions import GroupHelper
 from osf_tests.factories import (
     ReviewActionFactory,
     AuthUserFactory,
     PreprintFactory,
     PreprintProviderFactory,
 )
-from website.util import permissions as osf_permissions
+from osf.utils import permissions as osf_permissions
 
 
 @pytest.mark.django_db
@@ -32,13 +31,13 @@ class ReviewActionCommentSettingsMixin(object):
     @pytest.fixture()
     def provider_admin(self, provider):
         user = AuthUserFactory()
-        user.groups.add(GroupHelper(provider).get_group('admin'))
+        user.groups.add(provider.get_group('admin'))
         return user
 
     @pytest.fixture()
     def provider_moderator(self, provider):
         user = AuthUserFactory()
-        user.groups.add(GroupHelper(provider).get_group('moderator'))
+        user.groups.add(provider.get_group('moderator'))
         return user
 
     @pytest.fixture()

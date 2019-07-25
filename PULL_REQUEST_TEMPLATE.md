@@ -18,8 +18,14 @@
 <!-- Does this change need QA? If so, this section is required.
      - Is cross-browser testing required/recommended?
      - Is API testing required/recommended?
-     - What pages on the OSF should be tested?
+     - What pages on the GakuNin RDM should be tested?
      - What edge cases should QA be aware of?
+-->
+
+## Documentation
+
+<!-- Does any internal or external documentation need to be updated?
+     - Developer documentation? If so, link developer.osf.io PR here.
 -->
 
 ## Side Effects

@@ -2,6 +2,8 @@ import mock
 from nose.tools import *  # flake8: noqa
 import pytest
 
+from django.utils import timezone
+
 from addons.github.models import GithubFile
 from api.base.settings.defaults import API_BASE
 from api_tests import utils as test_utils
@@ -14,6 +16,7 @@ from api_tests.preprints.views.test_preprint_list_mixin import (
 from api_tests.reviews.mixins.filter_mixins import ReviewableFilterMixin
 from osf.models import PreprintService, Node
 from osf.utils.workflows import DefaultStates
+from osf.utils import permissions
 from osf_tests.factories import (
     ProjectFactory,
     PreprintFactory,
@@ -23,7 +26,6 @@ from osf_tests.factories import (
 )
 from tests.base import ApiTestCase, capture_signals
 from website.project import signals as project_signals
-from website.util import permissions
 
 
 def build_preprint_create_payload(
@@ -36,31 +38,31 @@ def build_preprint_create_payload(
         attrs = {}
 
     payload = {
-        "data": {
-            "attributes": attrs,
-            "relationships": {},
-            "type": "preprints"
+        'data': {
+            'attributes': attrs,
+            'relationships': {},
+            'type': 'preprints'
         }
     }
     if node_id:
-        payload['data']['relationships']["node"] = {
-            "data": {
-                "type": "node",
-                "id": node_id
+        payload['data']['relationships']['node'] = {
+            'data': {
+                'type': 'node',
+                'id': node_id
             }
         }
     if provider_id:
-        payload['data']['relationships']["provider"] = {
-            "data": {
-                "type": "provider",
-                "id": provider_id
+        payload['data']['relationships']['provider'] = {
+            'data': {
+                'type': 'provider',
+                'id': provider_id
             }
         }
     if file_id:
-        payload['data']['relationships']["primary_file"] = {
-            "data": {
-                "type": "primary_file",
-                "id": file_id
+        payload['data']['relationships']['primary_file'] = {
+            'data': {
+                'type': 'primary_file',
+                'id': file_id
             }
         }
     return payload
@@ -106,11 +108,11 @@ class TestPreprintCreateWithoutNode:
                     'category': 'data',
                     'public': False,
                 },
-                "relationships": {
-                    "provider": {
-                        "data": {
-                            "id": provider._id,
-                            "type": "providers"}}}}}
+                'relationships': {
+                    'provider': {
+                        'data': {
+                            'id': provider._id,
+                            'type': 'providers'}}}}}
 
     def test_create_preprint_logged_in(
             self, app, user_one, url, preprint_payload):
@@ -162,6 +164,27 @@ class TestPreprintList(ApiTestCase):
         assert_in(self.preprint._id, ids)
         assert_not_in(self.project._id, ids)
 
+    def test_withdrawn_preprints_list(self):
+        pp = PreprintFactory(provider__reviews_workflow='pre-moderation', is_published=False, creator=self.user)
+        pp.node.is_public = True
+        pp.node.save()
+        mod = AuthUserFactory()
+        pp.provider.get_group('moderator').user_set.add(mod)
+        pp.date_withdrawn = timezone.now()
+        pp.save()
+
+        assert not pp.ever_public # Sanity check
+
+        unauth_res = self.app.get(self.url)
+        user_res = self.app.get(self.url, auth=self.user.auth)
+        mod_res = self.app.get(self.url, auth=mod.auth)
+        unauth_res_ids = [each['id'] for each in unauth_res.json['data']]
+        user_res_ids = [each['id'] for each in user_res.json['data']]
+        mod_res_ids = [each['id'] for each in mod_res.json['data']]
+        assert pp._id not in unauth_res_ids
+        assert pp._id not in user_res_ids
+        assert pp._id in mod_res_ids
+
 
 class TestPreprintsListFiltering(PreprintsListFilteringMixin):
 
@@ -197,7 +220,7 @@ class TestPreprintsListFiltering(PreprintsListFilteringMixin):
     def url(self):
         return '/{}preprints/?version=2.2&'.format(API_BASE)
 
-    @mock.patch('website.identifiers.client.EzidClient.change_status_identifier')
+    @mock.patch('website.identifiers.clients.crossref.CrossRefClient.update_identifier')
     def test_provider_filter_equals_returns_one(
             self,
             mock_change_identifier,
@@ -223,20 +246,21 @@ class TestPreprintListFilteringByReviewableFields(ReviewableFilterMixin):
 
     @pytest.fixture()
     def expected_reviewables(self, user):
-        preprints = [
-            PreprintFactory(
-                is_published=False, project=ProjectFactory(
-                    is_public=True)), PreprintFactory(
-                is_published=False, project=ProjectFactory(
-                    is_public=True)), PreprintFactory(
-                        is_published=False, project=ProjectFactory(
-                            is_public=True)), ]
-        preprints[0].run_submit(user)
-        preprints[0].run_accept(user, 'comment')
-        preprints[1].run_submit(user)
-        preprints[1].run_reject(user, 'comment')
-        preprints[2].run_submit(user)
-        return preprints
+        with mock.patch('website.identifiers.utils.request_identifiers'):
+            preprints = [
+                PreprintFactory(
+                    is_published=False, project=ProjectFactory(
+                        is_public=True)), PreprintFactory(
+                    is_published=False, project=ProjectFactory(
+                        is_public=True)), PreprintFactory(
+                            is_published=False, project=ProjectFactory(
+                                is_public=True)), ]
+            preprints[0].run_submit(user)
+            preprints[0].run_accept(user, 'comment')
+            preprints[1].run_submit(user)
+            preprints[1].run_reject(user, 'comment')
+            preprints[2].run_submit(user)
+            return preprints
 
     @pytest.fixture
     def user(self):
@@ -277,9 +301,7 @@ class TestPreprintCreate(ApiTestCase):
 
         assert_equal(res.status_code, 201)
 
-    @mock.patch('website.preprints.tasks.get_and_set_preprint_identifiers.si')
-    def test_create_preprint_from_private_project(
-            self, mock_create_identifiers):
+    def test_create_preprint_from_private_project(self):
         private_project_payload = build_preprint_create_payload(
             self.private_project._id,
             self.provider._id,
@@ -375,9 +397,7 @@ class TestPreprintCreate(ApiTestCase):
 
         assert_equal(res.status_code, 403)
 
-    @mock.patch('website.preprints.tasks.get_and_set_preprint_identifiers.si')
-    def test_publish_preprint_fails_with_no_primary_file(
-            self, mock_get_identifiers):
+    def test_publish_preprint_fails_with_no_primary_file(self):
         no_file_payload = build_preprint_create_payload(
             node_id=self.public_project._id,
             provider_id=self.provider._id,
@@ -398,9 +418,7 @@ class TestPreprintCreate(ApiTestCase):
             res.json['errors'][0]['detail'],
             'A valid primary_file must be set before publishing a preprint.')
 
-    @mock.patch('website.preprints.tasks.get_and_set_preprint_identifiers.si')
-    def test_publish_preprint_fails_with_invalid_primary_file(
-            self, mock_get_identifiers):
+    def test_publish_preprint_fails_with_invalid_primary_file(self):
         no_file_payload = build_preprint_create_payload(
             node_id=self.public_project._id,
             provider_id=self.provider._id,
@@ -508,8 +526,7 @@ class TestPreprintCreate(ApiTestCase):
         assert_equal(res.json['errors'][0]['detail'],
                      'Cannot create a preprint from a deleted node.')
 
-    @mock.patch('website.preprints.tasks.get_and_set_preprint_identifiers.si')
-    def test_create_preprint_adds_log_if_published(self, mock_get_identifiers):
+    def test_create_preprint_adds_log_if_published(self):
         public_project_payload = build_preprint_create_payload(
             self.public_project._id,
             self.provider._id,
@@ -530,10 +547,9 @@ class TestPreprintCreate(ApiTestCase):
         assert_equal(log.action, 'preprint_initiated')
         assert_equal(log.params.get('preprint'), preprint_id)
 
-    @mock.patch('website.preprints.tasks.get_and_set_preprint_identifiers.si')
     @mock.patch('website.preprints.tasks.on_preprint_updated.si')
     def test_create_preprint_from_project_published_hits_update(
-            self, mock_on_preprint_updated, mock_get_identifiers):
+            self, mock_on_preprint_updated):
         private_project_payload = build_preprint_create_payload(
             self.private_project._id,
             self.provider._id,
@@ -567,10 +583,9 @@ class TestPreprintCreate(ApiTestCase):
             auth=self.user.auth)
         assert not mock_on_preprint_updated.called
 
-    @mock.patch('website.preprints.tasks.get_and_set_preprint_identifiers.si')
     @mock.patch('website.preprints.tasks.on_preprint_updated.si')
     def test_setting_is_published_with_moderated_provider_fails(
-            self, mock_get_identifiers, mock_on_preprint_updated):
+            self, mock_on_preprint_updated):
         self.provider.reviews_workflow = 'pre-moderation'
         self.provider.save()
         public_project_payload = build_preprint_create_payload(
@@ -588,7 +603,6 @@ class TestPreprintCreate(ApiTestCase):
             auth=self.user.auth,
             expect_errors=True)
         assert res.status_code == 409
-        assert not mock_get_identifiers.called
         assert not mock_on_preprint_updated.called
 
 

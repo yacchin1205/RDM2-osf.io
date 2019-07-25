@@ -4,7 +4,6 @@ formatted hgrid list/folders.
 """
 import logging
 
-import hurry.filesize
 from django.utils import timezone
 
 from framework import sentry
@@ -15,8 +14,8 @@ from django.db.models import Exists, OuterRef
 
 from website import settings
 from website.util import paths
-from website.util import sanitize
 from website.settings import DISK_SAVING_MODE
+from osf.utils import sanitize
 
 
 logger = logging.getLogger(__name__)
@@ -31,10 +30,6 @@ DEFAULT_PERMISSIONS = {
     'view': True,
     'edit': False,
 }
-
-def format_filesize(size):
-    return hurry.filesize.size(size, system=hurry.filesize.alternative)
-
 
 def default_urls(node_api, short_name):
     return {
@@ -74,7 +69,7 @@ def build_addon_root(node_settings, name, permissions=None,
     :return dict: Hgrid formatted dictionary for the addon root folder
 
     """
-    from website.util import check_private_key_for_anonymized_link
+    from osf.utils.permissions import check_private_key_for_anonymized_link
 
     permissions = permissions or DEFAULT_PERMISSIONS
     if name and not check_private_key_for_anonymized_link(private_key):
@@ -121,6 +116,11 @@ def build_addon_root(node_settings, name, permissions=None,
         'nodeApiUrl': node_settings.owner.api_url,
     }
     ret.update(kwargs)
+
+    if hasattr(node_settings, 'region'):
+        ret.update({'nodeRegion': node_settings.region.name})
+        ret.update({'waterbutlerURL': node_settings.region.waterbutler_url})
+
     return ret
 
 

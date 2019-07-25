@@ -7,6 +7,7 @@ import ssl
 from pymongo import MongoClient
 import requests
 from bs4 import BeautifulSoup
+from django.apps import apps
 
 from addons.wiki import settings as wiki_settings
 from addons.wiki.exceptions import InvalidVersionError
@@ -26,7 +27,6 @@ def to_mongo(item):
 
 def to_mongo_key(item):
     return to_mongo(item).strip().lower()
-
 
 def generate_private_uuid(node, wname):
     """
@@ -177,6 +177,8 @@ def serialize_wiki_settings(user, nodes):
     :param nodes: list of parent project nodes
     :return: treebeard-formatted data
     """
+    WikiPage = apps.get_model('addons_wiki.WikiPage')
+
     items = []
 
     for node in nodes:
@@ -184,7 +186,7 @@ def serialize_wiki_settings(user, nodes):
 
         can_read = node.has_permission(user, 'read')
         is_admin = node.has_permission(user, 'admin')
-        include_wiki_settings = node.include_wiki_settings(user)
+        include_wiki_settings = WikiPage.objects.include_wiki_settings(node)
 
         if not include_wiki_settings:
             continue
@@ -228,20 +230,22 @@ def serialize_wiki_settings(user, nodes):
 
 
 def serialize_wiki_widget(node):
+    from addons.wiki.models import WikiVersion
+
     wiki = node.get_addon('wiki')
-    wiki_page = node.get_wiki_page('home')
+    wiki_version = WikiVersion.objects.get_for_node(node, 'home')
 
     # Show "Read more" link if there are multiple pages or has > 400 characters
-    more = len(node.wiki_pages_current.keys()) >= 2
+    more = node.wikis.filter(deleted__isnull=True).count() >= 2
     MAX_DISPLAY_LENGTH = 400
     rendered_before_update = False
-    if wiki_page and wiki_page.html(node):
-        wiki_html = BeautifulSoup(wiki_page.html(node)).text
+    if wiki_version and wiki_version.html(node):
+        wiki_html = BeautifulSoup(wiki_version.html(node)).text
         if len(wiki_html) > MAX_DISPLAY_LENGTH:
             wiki_html = BeautifulSoup(wiki_html[:MAX_DISPLAY_LENGTH] + '...', 'html.parser')
             more = True
 
-        rendered_before_update = wiki_page.rendered_before_update
+        rendered_before_update = wiki_version.rendered_before_update
     else:
         wiki_html = None
 

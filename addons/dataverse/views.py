@@ -23,7 +23,8 @@ from website.project.decorators import (
     must_be_contributor_or_public
 )
 from website.util import rubeus, api_url_for
-from website.util.sanitize import assert_clean
+
+from admin.rdm_addons.decorators import must_be_rdm_addons_allowed
 
 SHORT_NAME = 'dataverse'
 FULL_NAME = 'Dataverse'
@@ -75,6 +76,7 @@ def dataverse_user_config_get(auth, **kwargs):
 ## Config ##
 
 @must_be_logged_in
+@must_be_rdm_addons_allowed(SHORT_NAME)
 def dataverse_add_user_account(auth, **kwargs):
     """Verifies new external account credentials and adds to user's list"""
     user = auth.user
@@ -130,12 +132,6 @@ def dataverse_set_config(node_addon, auth, **kwargs):
 
     if user_settings and user_settings.owner != user:
         raise HTTPError(http.FORBIDDEN)
-
-    try:
-        assert_clean(request.json)
-    except AssertionError:
-        # TODO: Test me!
-        raise HTTPError(http.NOT_ACCEPTABLE)
 
     alias = request.json.get('dataverse', {}).get('alias')
     doi = request.json.get('dataset', {}).get('doi')

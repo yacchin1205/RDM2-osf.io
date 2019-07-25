@@ -9,7 +9,8 @@ from osf_tests.factories import (
 )
 from rest_framework import exceptions
 from tests.utils import assert_latest_log, assert_latest_log_not
-from website.util import permissions, disconnected_from_listeners
+from osf.utils import permissions
+from api_tests.utils import disconnected_from_listeners
 from website.project.signals import contributor_removed
 
 
@@ -19,6 +20,8 @@ def user():
 
 
 @pytest.mark.django_db
+@pytest.mark.enable_quickfiles_creation
+@pytest.mark.enable_implicit_clean
 class TestContributorDetail:
 
     @pytest.fixture()
@@ -168,6 +171,7 @@ class TestContributorDetail:
 
 
 @pytest.mark.django_db
+@pytest.mark.enable_quickfiles_creation
 class TestNodeContributorOrdering:
 
     @pytest.fixture()
@@ -456,6 +460,7 @@ class TestNodeContributorOrdering:
 
 
 @pytest.mark.django_db
+@pytest.mark.enable_quickfiles_creation
 class TestNodeContributorUpdate:
 
     @pytest.fixture()
@@ -877,6 +882,7 @@ class TestNodeContributorUpdate:
 
 
 @pytest.mark.django_db
+@pytest.mark.enable_quickfiles_creation
 class TestNodeContributorPartialUpdate:
 
     @pytest.fixture()

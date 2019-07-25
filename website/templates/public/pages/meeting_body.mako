@@ -33,7 +33,7 @@
         <h3>${('Add your ' + meeting['field_names']['add_submission']) if meeting['poster'] and meeting['talk'] else ('Add your ' + meeting['field_names']['submission1_plural']) if meeting['poster'] else ('Add your ' + meeting['field_names']['submission2_plural'])}</h3>
         <p>
             Send an email to the following address(es) from the email
-            account you would like used on the OSF:
+            account you would like used on the GakuNin RDM:
         </p>
         <ul>
             % if meeting['poster']:
@@ -58,16 +58,23 @@
             Once sent, we will follow-up by sending you the permanent identifier
             that others can use to cite your work; you can also login and make changes,
             such as uploading additional files, to your project at that URL. If you
-            didn't have an OSF account, one will be created automatically and a link
+            didn't have an GakuNin RDM account, one will be created automatically and a link
             to set your password will be emailed to you; if you do, we will simply create
             a new project in your account. By creating an account you agree to our
-            <a href="https://github.com/CenterForOpenScience/centerforopenscience.org/blob/master/TERMS_OF_USE.md">Terms</a>
+            <a href="https://meatwiki.nii.ac.jp/confluence/pages/viewpage.action?pageId=32676419">Terms</a>
             and that you have read our
-            <a href="https://github.com/CenterForOpenScience/centerforopenscience.org/blob/master/PRIVACY_POLICY.md">Privacy Policy</a>,
+            <a href="https://meatwiki.nii.ac.jp/confluence/pages/viewpage.action?pageId=32676422">Privacy Policy</a>,
             including our information on
-            <a href="https://github.com/CenterForOpenScience/centerforopenscience.org/blob/master/PRIVACY_POLICY.md#f-cookies">Cookie Use</a>.
+            <a href="https://meatwiki.nii.ac.jp/confluence/pages/viewpage.action?pageId=32676422">Cookie Use</a>.
         </p>
     </div>
 % endif
 
-<div id="grid" style="width: 100%;"></div>
+<div id="grid" style="width: 100%;">
+    <div class="spinner-loading-wrapper">
+       <div class="ball-scale ball-scale-blue">
+           <div></div>
+       </div>
+       <p class="m-t-sm fg-load-message"> Loading submissions... </p>
+    </div>
+</div>

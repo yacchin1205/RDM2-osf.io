@@ -2,18 +2,19 @@ import mock
 import pytest
 import datetime
 
+from addons.wiki.models import WikiVersion
 from django.utils import timezone
 from framework.auth.core import Auth
-from osf.models import Node, Registration, Sanction, MetaSchema, NodeLog
-from addons.wiki.models import NodeWikiPage
+from osf.models import Node, Registration, Sanction, RegistrationSchema, NodeLog
+from addons.wiki.models import WikiPage
+from osf.utils.permissions import READ, WRITE, ADMIN
 
 from website import settings
-from website.util.permissions import READ, WRITE, ADMIN
 
 from . import factories
 from .utils import assert_datetime_equal, mock_archive
 from .factories import get_default_metaschema
-from addons.wiki.tests.factories import NodeWikiFactory
+from addons.wiki.tests.factories import WikiFactory, WikiVersionFactory
 
 pytestmark = pytest.mark.django_db
 
@@ -62,6 +63,20 @@ def test_factory(user, project):
         registration2.registered_meta[get_default_metaschema()._id] ==
         {'some': 'data'}
     )
+
+
+class TestRegistration:
+
+    def test_registered_schema_id(self):
+        reg = factories.RegistrationFactory()
+        assert reg.registered_schema_id == reg.registered_schema.get()._id
+
+    # Regression test for https://openscience.atlassian.net/browse/PLAT-776
+    # Some very old registrations on prod don't have a schema
+    def test_registered_schema_id_with_no_schema(self):
+        reg = factories.RegistrationFactory()
+        reg.registered_schema.clear()
+        assert reg.registered_schema_id is None
 
 
 # copied from tests/test_models.py
@@ -273,25 +288,36 @@ class TestRegisterNode:
         )
 
     def test_registration_of_project_with_no_wiki_pages(self, registration):
-        assert registration.wiki_pages_versions == {}
-        assert registration.wiki_pages_current == {}
+        assert WikiPage.objects.get_wiki_pages_latest(registration).exists() is False
+        assert registration.wikis.all().exists() is False
         assert registration.wiki_private_uuids == {}
 
     @mock.patch('website.project.signals.after_create_registration')
     def test_registration_clones_project_wiki_pages(self, mock_signal, project, user):
         project = factories.ProjectFactory(creator=user, is_public=True)
-        wiki = NodeWikiFactory(node=project)
-        current_wiki = NodeWikiFactory(node=project, version=2)
+        wiki_page = WikiFactory(
+            user=user,
+            node=project,
+        )
+        wiki = WikiVersionFactory(
+            wiki_page=wiki_page,
+        )
+        current_wiki = WikiVersionFactory(
+            wiki_page=wiki_page,
+            identifier=2
+        )
         registration = project.register_node(get_default_metaschema(), Auth(user), '', None)
         assert registration.wiki_private_uuids == {}
 
-        registration_wiki_current = NodeWikiPage.load(registration.wiki_pages_current[current_wiki.page_name])
-        assert registration_wiki_current.node == registration
+        registration_wiki_current = WikiVersion.objects.get_for_node(registration, current_wiki.wiki_page.page_name)
+        assert registration_wiki_current.wiki_page.node == registration
         assert registration_wiki_current._id != current_wiki._id
+        assert registration_wiki_current.identifier == 2
 
-        registration_wiki_version = NodeWikiPage.load(registration.wiki_pages_versions[wiki.page_name][0])
-        assert registration_wiki_version.node == registration
+        registration_wiki_version = WikiVersion.objects.get_for_node(registration, wiki.wiki_page.page_name, version=1)
+        assert registration_wiki_version.wiki_page.node == registration
         assert registration_wiki_version._id != wiki._id
+        assert registration_wiki_version.identifier == 1
 
     def test_legacy_private_registrations_can_be_made_public(self, registration, auth):
         registration.is_public = False
@@ -506,7 +532,7 @@ class TestDraftRegistrations:
         assert draft.initiator == node.creator
 
         # Pick an arbitrary v2 schema
-        schema = MetaSchema.objects.filter(schema_version=2).first()
+        schema = RegistrationSchema.objects.filter(schema_version=2).first()
         data = {'some': 'data'}
         draft = factories.DraftRegistrationFactory(registration_schema=schema, registration_metadata=data)
         assert draft.registration_schema == schema

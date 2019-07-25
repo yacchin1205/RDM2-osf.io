@@ -3,13 +3,13 @@ class Commentable(object):
 
     @property
     def target_type(self):
-        """ The object "type" used in the OSF v2 API. E.g. Comment objects have the type 'comments'."""
+        """ The object "type" used in the GakuNin RDM v2 API. E.g. Comment objects have the type 'comments'."""
         raise NotImplementedError
 
     @property
     def root_target_page(self):
         """The page type associated with the object/Comment.root_target.
-        E.g. For a NodeWikiPage, the page name is 'wiki'."""
+        E.g. For a WikiPage, the page name is 'wiki'."""
         raise NotImplementedError
 
     @property

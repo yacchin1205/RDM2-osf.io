@@ -20,6 +20,7 @@ from osf_tests.factories import (
 from osf.models.registrations import DraftRegistration
 from addons.osfstorage.models import OsfStorageFile, OsfStorageFileNode
 
+from website.files import exceptions as file_exceptions
 from website.prereg.utils import get_prereg_schema
 
 from admin_tests.utilities import setup_view, setup_form_view, setup_user_view
@@ -36,6 +37,7 @@ from admin.pre_reg.views import (
 )
 from admin.pre_reg.forms import DraftRegistrationForm
 from osf.models.admin_log_entry import AdminLogEntry
+
 
 class TestDraftListView(AdminTestCase):
     @mock.patch('website.archiver.tasks.archive')
@@ -328,13 +330,13 @@ class TestPreregFiles(AdminTestCase):
 
         prereg_schema = get_prereg_schema()
         self.d_of_qs = {
-            'q7': OsfStorageFileNode(node=self.node, name='7'),
-            'q11': OsfStorageFileNode(node=self.node, name='11'),
-            'q16': OsfStorageFileNode(node=self.node, name='16'),
-            'q12': OsfStorageFileNode(node=self.node, name='12'),
-            'q13': OsfStorageFileNode(node=self.node, name='13'),
-            'q19': OsfStorageFileNode(node=self.node, name='19'),
-            'q26': OsfStorageFileNode(node=self.node, name='26')
+            'q7': OsfStorageFile(target=self.node, name='7'),
+            'q11': OsfStorageFile(target=self.node, name='11'),
+            'q16': OsfStorageFile(target=self.node, name='16'),
+            'q12': OsfStorageFile(target=self.node, name='12'),
+            'q13': OsfStorageFile(target=self.node, name='13'),
+            'q19': OsfStorageFile(target=self.node, name='19'),
+            'q26': OsfStorageFile(target=self.node, name='26')
         }
         data = {}
         for q, f in self.d_of_qs.iteritems():
@@ -396,6 +398,13 @@ class TestPreregFiles(AdminTestCase):
         for q, f in self.d_of_qs.iteritems():
             f.refresh_from_db()
             nt.assert_equal(self.admin_user, f.checkout)
+
+        # test user attempt force checkin
+        with nt.assert_raises(file_exceptions.FileNodeCheckedOutError):
+            self.d_of_qs['q7'].check_in_or_out(self.user, self.admin_user)
+
+        # test delete draft returns files
+        utils.checkin_files(self.draft)
 
         view2 = DraftFormView()
         view2 = setup_view(view2, request, draft_pk=self.draft._id)
@@ -546,3 +555,11 @@ class TestPreregFiles(AdminTestCase):
         with nt.assert_raises(Http404):
             for item in get_metadata_files(self.draft):
                 pass
+
+    def test_delete_pre_submit_draft_does_not_change_checkouts(self):
+        file_q7 = self.d_of_qs['q7']
+        file_q7.checkout = self.user
+        file_q7.save()
+        utils.checkin_files(self.draft)
+        file_q7.refresh_from_db()
+        nt.assert_equal(file_q7.checkout, self.user)

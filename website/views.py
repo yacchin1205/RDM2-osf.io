@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+from __future__ import unicode_literals
 import itertools
 import httplib as http
 import logging
@@ -6,31 +7,37 @@ import math
 import os
 import requests
 import urllib
+import waffle
 
 from django.apps import apps
-from django.db.models import Count
 from flask import request, send_from_directory, Response, stream_with_context
 
 from framework import sentry
 from framework.auth import Auth
 from framework.auth.decorators import must_be_logged_in
+from framework.auth.decorators import email_required
 from framework.auth.forms import SignInForm, ForgotPasswordForm
 from framework.exceptions import HTTPError
 from framework.flask import redirect  # VOL-aware redirect
 from framework.forms import utils as form_utils
 from framework.routing import proxy_url
-from framework.auth.core import get_current_user_id
+from framework.auth.core import _get_current_user
 from website import settings
-from website.institutions.views import serialize_institution
+from website.util.timestamp import userkey_generation_check, userkey_generation
 
-from osf.models import BaseFileNode, Guid, Institution, PreprintService, AbstractNode, Node
-from website.settings import EXTERNAL_EMBER_APPS, PROXY_EMBER_APPS, EXTERNAL_EMBER_SERVER_TIMEOUT, INSTITUTION_DISPLAY_NODE_THRESHOLD, DOMAIN
+from addons.osfstorage.models import Region
+from osf.models import BaseFileNode, Guid, Institution, PreprintService, AbstractNode, Node, Registration
+from website.settings import EXTERNAL_EMBER_APPS, PROXY_EMBER_APPS, EXTERNAL_EMBER_SERVER_TIMEOUT, DOMAIN
+from website.ember_osf_web.decorators import ember_flag_is_active, MockUser, storage_i18n_flag_active
+from website.ember_osf_web.views import use_ember_app
 from website.project.model import has_anonymous_link
-from website.util import permissions
+from osf.utils import permissions
 
 logger = logging.getLogger(__name__)
 preprints_dir = os.path.abspath(os.path.join(os.getcwd(), EXTERNAL_EMBER_APPS['preprints']['path']))
+registries_dir = os.path.abspath(os.path.join(os.getcwd(), EXTERNAL_EMBER_APPS['registries']['path']))
 ember_osf_web_dir = os.path.abspath(os.path.join(os.getcwd(), EXTERNAL_EMBER_APPS['ember_osf_web']['path']))
+
 
 def serialize_contributors_for_summary(node, max_count=3):
     # # TODO: Use .filter(visible=True) when chaining is fixed in django-include
@@ -125,65 +132,50 @@ def serialize_node_summary(node, auth, primary=True, show_path=False):
     return summary
 
 
+@email_required
 def index():
-    try:  # Check if we're on an institution landing page
-        #TODO : make this way more robust
-        institution = Institution.objects.get(domains__contains=[request.host.lower()], is_deleted=False)
-        inst_dict = serialize_institution(institution)
-        inst_dict.update({
-            'home': False,
-            'institution': True,
-            'redirect_url': '{}institutions/{}/'.format(DOMAIN, institution._id),
-        })
+    # Check if we're on an institution landing page
+    institution = Institution.objects.filter(domains__icontains=request.host, is_deleted=False)
+    if institution.exists() and request.host_url != DOMAIN:
+        return redirect('{}institutions/{}/'.format(DOMAIN, institution.get()._id))
+    else:
+        from framework.auth.core import get_current_user_id
 
-        return inst_dict
-    except Institution.DoesNotExist:
-        pass
+        user_id = get_current_user_id()
+        if user_id:
+            # generation key check
+            key_exists_check = userkey_generation_check(user_id)
 
-    user_id = get_current_user_id()
-    if user_id:  # Logged in: return either landing page or user home page
-        all_institutions = (
-            Institution.objects.filter(
-                is_deleted=False,
-                nodes__is_public=True,
-                nodes__is_deleted=False,
-                nodes__type='osf.node'
-            )
-            .annotate(Count('nodes'))
-            .filter(nodes__count__gte=INSTITUTION_DISPLAY_NODE_THRESHOLD)
-            .order_by('name').only('_id', 'name', 'logo_name')
-        )
-        dashboard_institutions = [
-            {'id': inst._id, 'name': inst.name, 'logo_path': inst.logo_path_rounded_corners}
-            for inst in all_institutions
-        ]
+            if not key_exists_check:
+                userkey_generation(user_id)
 
-        return {
-            'home': True,
-            'dashboard_institutions': dashboard_institutions,
-        }
-    else:  # Logged out: return landing page
-        return {
-            'home': True,
-        }
-
+        return use_ember_app()
 
 def find_bookmark_collection(user):
     Collection = apps.get_model('osf.Collection')
-    return Collection.objects.get(creator=user, is_deleted=False, is_bookmark_collection=True)
+    try:
+        return Collection.objects.get(creator=user, deleted__isnull=True, is_bookmark_collection=True)
+    except Exception:
+        return None
 
 @must_be_logged_in
 def dashboard(auth):
-    return redirect('/')
+    return use_ember_app()
 
 
 @must_be_logged_in
+@ember_flag_is_active('ember_my_projects_page')
 def my_projects(auth):
     user = auth.user
+
+    region_list = get_storage_region_list(user)
+
     bookmark_collection = find_bookmark_collection(user)
     my_projects_id = bookmark_collection._id
     return {'addons_enabled': user.get_addon_names(),
             'dashboard_id': my_projects_id,
+            'storage_regions': region_list,
+            'storage_flag_is_active': storage_i18n_flag_active(),
             }
 
 
@@ -220,7 +212,7 @@ def forgot_password_form():
 
 def _build_guid_url(base, suffix=None):
     url = '/'.join([
-        each.strip('/') for each in [base, suffix]
+        each.strip('/') for each in [unicode(base, 'utf-8'), suffix]
         if each
     ])
     if not isinstance(url, unicode):
@@ -275,10 +267,13 @@ def resolve_guid(guid, suffix=None):
                     # TODO: Ideally, permissions wouldn't be checked here.
                     # This is necessary to prevent a logical inconsistency with
                     # the routing scheme - if a preprint is not published, only
-                    # admins should be able to know it exists.
+                    # admins and moderators should be able to know it exists.
                     auth = Auth.from_kwargs(request.args.to_dict(), {})
-                    if not referent.node.has_permission(auth.user, permissions.ADMIN):
+                    # Check if user isn't a nonetype or that the user has admin/moderator/superuser permissions
+                    if auth.user is None or not (auth.user.has_perm('view_submissions', referent.provider)
+                            or referent.node.has_permission(auth.user, permissions.ADMIN)):
                         raise HTTPError(http.NOT_FOUND)
+
                 file_referent = referent.primary_file
             elif isinstance(referent, BaseFileNode) and referent.is_file:
                 file_referent = referent
@@ -291,7 +286,38 @@ def resolve_guid(guid, suffix=None):
                 url = _build_guid_url(urllib.unquote(file_referent.deep_url))
                 return proxy_url(url)
 
-        # Handle Ember Applications
+        if suffix and suffix.rstrip('/').lower() == 'addtimestamp':
+            file_referent = None
+            if isinstance(referent, PreprintService) and referent.primary_file:
+                if not referent.is_published:
+                    # TODO: Ideally, permissions wouldn't be checked here.
+                    # This is necessary to prevent a logical inconsistency with
+                    # the routing scheme - if a preprint is not published, only
+                    # admins should be able to know it exists.
+                    auth = Auth.from_kwargs(request.args.to_dict(), {})
+                    if not referent.node.has_permission(auth.user, permissions.ADMIN):
+                        raise HTTPError(http.NOT_FOUND)
+                file_referent = referent.primary_file
+            elif isinstance(referent, BaseFileNode) and referent.is_file:
+                file_referent = referent
+
+            if file_referent:
+                # Extend `request.args` adding `action=addtimestamp`.
+                request.args = request.args.copy()
+                request.args.update({'action': 'addtimestamp'})
+                # Do not include the `addtimestamp` suffix in the url rebuild.
+                # Do not include the `addtimestamp` suffix in the url rebuild.
+                url = _build_guid_url(urllib.unquote(file_referent.deep_url))
+                return proxy_url(url)
+        elif suffix and suffix.rstrip('/').split('/')[-1].lower() == 'addtimestamp':
+            # Extend `request.args` adding `action=addtimestamp`.
+            request.args = request.args.copy()
+            request.args.update({'action': 'addtimestamp'})
+            # Do not include the `addtimestamp` suffix in the url rebuild.
+            # Do not include the `addtimestamp` suffix in the url rebuild.
+            url = _build_guid_url(urllib.unquote(referent.deep_url), suffix.split('/')[0])
+            return proxy_url(url)
+
         if isinstance(referent, PreprintService):
             if referent.provider.domain_redirect_enabled:
                 # This route should always be intercepted by nginx for the branded domain,
@@ -304,7 +330,7 @@ def resolve_guid(guid, suffix=None):
 
             return send_from_directory(preprints_dir, 'index.html')
 
-        if isinstance(referent, BaseFileNode) and referent.is_file and referent.node.is_quickfiles:
+        if isinstance(referent, BaseFileNode) and referent.is_file and referent.target.is_quickfiles:
             if referent.is_deleted:
                 raise HTTPError(http.GONE)
             if PROXY_EMBER_APPS:
@@ -312,6 +338,23 @@ def resolve_guid(guid, suffix=None):
                 return Response(stream_with_context(resp.iter_content()), resp.status_code)
 
             return send_from_directory(ember_osf_web_dir, 'index.html')
+
+        if isinstance(referent, Registration) and not suffix:
+            if waffle.flag_is_active(request, 'ember_registries_detail_page'):
+                # Route only the base detail view to ember
+                if PROXY_EMBER_APPS:
+                    resp = requests.get(EXTERNAL_EMBER_APPS['registries']['server'], stream=True, timeout=EXTERNAL_EMBER_SERVER_TIMEOUT)
+                    return Response(stream_with_context(resp.iter_content()), resp.status_code)
+
+                return send_from_directory(registries_dir, 'index.html')
+
+        if isinstance(referent, Node) and not referent.is_registration and suffix:
+            page = suffix.strip('/').split('/')[0]
+            flag_name = 'ember_project_{}_page'.format(page)
+            request.user = _get_current_user() or MockUser()
+
+            if waffle.flag_is_active(request, flag_name):
+                use_ember_app()
 
         url = _build_guid_url(urllib.unquote(referent.deep_url), suffix)
         return proxy_url(url)
@@ -331,7 +374,7 @@ def resolve_guid(guid, suffix=None):
 
 # redirect osf.io/about/ to OSF wiki page osf.io/4znzp/wiki/home/
 def redirect_about(**kwargs):
-    return redirect('https://osf.io/4znzp/wiki/home/')
+    return redirect('https://rdm.nii.ac.jp/4znzp/wiki/home/')
 
 def redirect_help(**kwargs):
     return redirect('/faq/')
@@ -356,7 +399,7 @@ def redirect_to_home():
 
 def redirect_to_cos_news(**kwargs):
     # Redirect to COS News page
-    return redirect('https://cos.io/news/')
+    return redirect('https://nii.ac.jp/news/')
 
 
 # Return error for legacy SHARE v1 search route
@@ -367,3 +410,19 @@ def legacy_share_v1_search(**kwargs):
             message_long='Please use v2 of the SHARE search API available at {}api/v2/share/search/creativeworks/_search.'.format(settings.SHARE_URL)
         )
     )
+
+
+def get_storage_region_list(user, node=False):
+    if not user:  # Preserves legacy frontend test behavior
+        return []
+
+    if node:
+        default_region = node.osfstorage_region
+    else:
+        default_region = user.get_addon('osfstorage').default_region
+
+    available_regions = list(Region.objects.order_by('name').values('_id', 'name'))
+    default_region = {'name': default_region.name, '_id': default_region._id}
+    available_regions.insert(0, available_regions.pop(available_regions.index(default_region)))  # default should be at top of list for UI.
+
+    return available_regions

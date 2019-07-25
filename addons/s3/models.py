@@ -25,6 +25,13 @@ class S3Folder(S3FileNode, Folder):
 class S3File(S3FileNode, File):
     version_identifier = 'version'
 
+    @property
+    def _hashes(self):
+        try:
+            return self._history[-1]['extra']['hashes']
+        except (IndexError, KeyError):
+            return None
+
 
 class UserSettings(BaseOAuthUserSettings):
     oauth_provider = S3Provider
@@ -78,7 +85,7 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
         # as that's all we want to be linkable on a node.
         try:
             buckets = get_bucket_names(self)
-        except:
+        except Exception:
             raise exceptions.InvalidAuthError()
 
         return [
@@ -153,5 +160,5 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
             },
         )
 
-    def after_delete(self, node, user):
+    def after_delete(self, user):
         self.deauthorize(Auth(user=user), log=True)

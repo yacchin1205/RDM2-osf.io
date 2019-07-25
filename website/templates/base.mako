@@ -4,7 +4,7 @@
 <html lang="en">
 <head>
     <meta charset="utf-8">
-    <title>OSF | ${self.title()}</title>
+    <title>${osf_page_name} | ${self.title()}</title>
     % if settings.GOOGLE_SITE_VERIFICATION:
         <meta name="google-site-verification" content="${settings.GOOGLE_SITE_VERIFICATION}" />
     % endif
@@ -43,7 +43,7 @@
         <meta name="dc.identifier" content="${self.identifier_meta()['doi']}" />
         <meta name="dc.identifier" content="${self.identifier_meta()['ark']}" />
     %endif
-    <meta name="citation_publisher" content="Open Science Framework" />
+    <meta name="citation_publisher" content="GakuNin RDM" />
     %for institution in self.institutions_meta()[:10]:
         <meta name="citation_author_institution" content="${institution}" />
     %endfor
@@ -56,7 +56,7 @@
     <meta name="dc.license" content="${self.license_meta()}" />
     <meta name="dc.datemodified" content="${self.datemodified_meta()}" />
     <meta name="dc.datesubmitted" content="${self.datecreated_meta()}" />
-    <meta name="dc.publisher" content="Open Science Framework" />
+    <meta name="dc.publisher" content="GakuNin RDM" />
     <meta name="dc.language" content="en" />
     <meta name="dc.identifier" content="${self.url_meta()}" />
     <meta name="citation_description" content="${self.description_meta()}" />
@@ -65,7 +65,7 @@
 
     <!-- Facebook display -->
     <meta property="og:ttl" content="3" />
-    <meta property="og:site_name" content="Open Science Framework" />
+    <meta property="og:site_name" content="GakuNin RDM" />
     <meta property="og:url" content="${self.url_meta()}" />
     <meta property="og:title" content="${self.title_meta()}" />
     <meta property="og:description" content="${self.description_meta()}" />
@@ -73,7 +73,7 @@
     <meta property="og:image:type" content="image/png" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
-    <meta property="og:image:alt" content="Open Science Framework" />
+    <meta property="og:image:alt" content="GakuNin RDM" />
 
     %for author in self.authors_meta()[:10]:
         <meta name="dc.creator" content="${author}" />
@@ -94,9 +94,8 @@
     <script src="${"/static/public/js/base-page.js" | webpack_asset}"></script>
     ${self.javascript()}
 
-    <link href='//fonts.googleapis.com/css?family=Carrois+Gothic|Inika|Patua+One' rel='stylesheet' type='text/css'>
     <link href='https://fonts.googleapis.com/css?family=Open+Sans:400,600,300' rel='stylesheet' type='text/css'>
-
+    <link rel="manifest" href="/static/public/js/manifest.json">
 </head>
 <body data-spy="scroll" data-target=".scrollspy">
 
@@ -141,6 +140,16 @@
     ${self.content_wrap()}
 
 % if not user_id:
+<div id="cookieBanner" class="alert">
+    <div id="cookieText">
+        This website relies on cookies to help provide a better user experience. By clicking Accept or continuing to use the site, you agree. For more information,
+        see our <a href='https://meatwiki.nii.ac.jp/confluence/pages/viewpage.action?pageId=32676422'>Privacy Policy</a>
+        and information on <a href='https://meatwiki.nii.ac.jp/confluence/pages/viewpage.action?pageId=32676422'>cookie use</a>.
+    </div>
+    <div id="cookieAccept">
+        <div class="btn btn-default" data-dismiss="alert" data-bind="click: accept" aria-label="Accept">Accept</div>
+    </div>
+</div>
 <div id="footerSlideIn">
     <div class="container">
         <div class="row">
@@ -149,12 +158,12 @@
             </div>
             <div class='col-sm-10 col-xs-12'>
                 <a data-bind="click: dismiss" class="close" href="#">&times;</a>
-                <h1>Start managing your projects on the OSF today.</h1>
-                <p>Free and easy to use, the Open Science Framework supports the entire research lifecycle: planning, execution, reporting, archiving, and discovery.</p>
+                <h1>Start managing your projects on the GakuNin RDM today.</h1>
+                <p>Free and easy to use, the GakuNin RDM supports the entire research lifecycle: planning, execution, reporting, archiving, and discovery.</p>
                 <div>
                     <a data-bind="click: trackClick.bind($data, 'Create Account')" class="btn btn-primary" href="${web_url_for('index')}#signUp">Create an Account</a>
 
-                    <a data-bind="click: trackClick.bind($data, 'Learn More')" class="btn btn-primary" href="http://help.osf.io" target="_blank" rel="noreferrer">Learn More</a>
+                    <a data-bind="click: trackClick.bind($data, 'Learn More')" class="btn btn-primary" href="https://meatwiki.nii.ac.jp/confluence/display/gakuninrdmusers" target="_blank" rel="noreferrer">Learn More</a>
                     <a data-bind="click: dismiss">Hide this message</a>
                 </div>
             </div>
@@ -164,8 +173,9 @@
 % endif
 
 
+    % if pages_footer:
     ${self.footer()}
-    <%include file="copyright.mako"/>
+    % endif
         <%!
             import hashlib
 
@@ -191,8 +201,10 @@
             ga('create', ${ settings.GOOGLE_ANALYTICS_ID | sjson, n }, 'auto', {'allowLinker': true});
             ga('require', 'linker');
             ga('linker:autoLink', ['centerforopenscience.org', 'cos.io'] );
-            ga('set', 'dimension1', ${user_hash(user_id) | sjson, n});
-            ga('set', 'dimension2', ${create_timestamp() | sjson, n});
+            ga('set', 'dimension1', (${ user_id | sjson, n} != "") ? 'Logged in': 'Logged out');
+            ga('set', 'dimension2', '${self.resource()}');
+            ga('set', 'dimension3', '${self.public()}');
+            ga('set', 'anonymizeIp', true);
             ga('send', 'pageview');
             </script>
 
@@ -205,10 +217,12 @@
         <script>
             // Mako variables accessible globally
             window.contextVars = $.extend(true, {}, window.contextVars, {
+                osfURL: ${ osf_url if osf_url.endswith('/') else osf_url + '/' | sjson, n },
                 waterbutlerURL: ${ waterbutler_url if waterbutler_url.endswith('/') else waterbutler_url + '/' | sjson, n },
                 // Whether or not this page is loaded under osf.io or another domain IE: institutions
                 isOnRootDomain: ${domain | sjson, n } === window.location.origin + '/',
                 cookieName: ${ cookie_name | sjson, n },
+                apiV2Domain: ${ api_v2_domain | sjson, n },
                 apiV2Prefix: ${ api_v2_base | sjson, n },
                 registerUrl: ${ api_url_for('register_user') | sjson, n },
                 currentUser: {
@@ -220,11 +234,10 @@
                     emailsToAdd: ${ user_email_verifications | sjson, n },
                     anon: ${ anon | sjson, n },
                 },
-                popular: ${ popular_links_node | sjson, n },
-                newAndNoteworthy: ${ noteworthy_links_node | sjson, n },
                 maintenance: ${ maintenance | sjson, n},
                 analyticsMeta: {},
                 osfSupportEmail: ${osf_support_email | sjson, n },
+                csrfCookieName: ${ csrf_cookie_name | sjson, n },
             });
         </script>
 
@@ -247,6 +260,8 @@
 
 
         ${self.javascript_bottom()}
+        <!-- <script src="https://www.gstatic.com/firebasejs/4.8.0/firebase.js"></script>
+        <script src="/static/public/js/rdm-firebase.js"></script> -->
     </body>
 </html>
 
@@ -262,6 +277,16 @@
     ### The page title ###
 </%def>
 
+<%def name="resource()"><%
+    return 'n/a'
+%> ### What resource is displayed on page ###
+</%def>
+
+<%def name="public()"><%
+    return 'n/a'
+%> ### What the public/private status of the resource displayed on page ###
+</%def>
+
 <%def name="container_class()">
     ### CSS classes to apply to the "content" div ###
 </%def>
@@ -272,7 +297,7 @@
 
 <!-- Metadata tags-->
 <%def name="description_meta()">
-    Hosted on the Open Science Framework
+    Hosted on the GakuNin RDM
 </%def>
 
 <%def name="title_meta()">
@@ -379,12 +404,14 @@
 
     % if settings.USE_CDN_FOR_CLIENT_LIBS:
         <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
-        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
-        <script>window.jQuery || document.write('<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.2.1/jquery.min.js">\x3C/script>')</script>
-        <script src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.12.1/jquery-ui.min.js"></script>
-        <script>window.jQuery.ui || document.write('<script src="https://cdnjs.cloudflare.com/ajax/libs/jqueryui/1.12.1/jquery-ui.min.js">\x3C/script>')</script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+        <script>window.jQuery || document.write('<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js">\x3C/script>')</script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/jqueryui/1.12.1/jquery-ui.min.js"></script>
+        <script>window.jQuery.ui || document.write('<script src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.12.1/jquery-ui.min.js">\x3C/script>')</script>
+        <link rel="stylesheet" href="http://code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
+        <script src="https://code.jquery.com/jquery-1.12.4.js"></script>
+        <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
     % else:
-        <link rel="stylesheet" href="/static/vendor/bower_components/bootstrap/dist/css/bootstrap.min.css">
         <script src="/static/vendor/bower_components/jquery/dist/jquery.min.js"></script>
         <script src="/static/vendor/bower_components/jquery-ui/jquery-ui.min.js"></script>
     % endif

@@ -11,6 +11,7 @@
     </div>
 
     <div class="col-sm-9 col-md-7">
+        <div style="display: none;">
         <div class="panel panel-default scripted" id="selectLists">
             <div class="panel-heading clearfix"><h3 class="panel-title">Configure Email Preferences</h3></div>
             <div class="panel-body">
@@ -22,7 +23,7 @@
                                 data-bind="checked: subscribed"
                                 value="${settings.MAILCHIMP_GENERAL_LIST}"/>
                               <label>${settings.MAILCHIMP_GENERAL_LIST}</label>
-                            <p class="text-muted" style="padding-left: 15px">Receive general notifications about the OSF every 2-3 weeks.</p>
+                            <p class="text-muted" style="padding-left: 15px">Receive general notifications about the GakuNin RDM every 2-3 weeks.</p>
                         </div>
                     </form>
                     <form>
@@ -31,7 +32,7 @@
                                 data-bind="checked: subscribed"
                                 value="${settings.OSF_HELP_LIST}"/>
                               <label>${settings.OSF_HELP_LIST}</label>
-                            <p class="text-muted" style="padding-left: 15px">Receive helpful tips on how to make the most of the OSF, up to once per week.</p>
+                            <p class="text-muted" style="padding-left: 15px">Receive helpful tips on how to make the most of the GakuNin RDM, up to once per week.</p>
                         </div>
                         <div class="p-t-md p-b-md">
                         <button
@@ -47,16 +48,19 @@
                     <div data-bind="html: message, attr: {class: messageClass}"></div>
             </div><!--view model scope ends -->
         </div>
+        </div>
         <div class="panel panel-default">
             <div class="panel-heading clearfix"><h3 class="panel-title">Configure Notification Preferences</h3></div>
             <div class="panel-body">
                 <div class="help-block">
-                     <p class="text-muted"> NOTE: Regardless of your selected preferences, OSF will continue to provide transactional and administrative service emails.</p>
+                     <p class="text-muted"> NOTE: Regardless of your selected preferences, GakuNin RDM will continue to provide transactional and administrative service emails.</p>
                 </div>
                 <form id="selectNotifications" class="osf-treebeard-minimal">
                     <div id="grid">
                         <div class="spinner-loading-wrapper">
-                            <div class="logo-spin logo-lg"></div>
+                            <div class="ball-scale ball-scale-blue">
+                                <div></div>
+                            </div>
                             <p class="m-t-sm fg-load-message"> Loading notification settings... </p>
                         </div>
                     </div>

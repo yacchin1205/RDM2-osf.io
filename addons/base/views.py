@@ -13,6 +13,7 @@ import furl
 import jwe
 import jwt
 from django.db import transaction
+from django.contrib.contenttypes.models import ContentType
 
 from addons.base.models import BaseStorageAddon
 from addons.osfstorage.models import OsfStorageFile
@@ -31,53 +32,56 @@ from website import mails
 from website import settings
 from addons.base import exceptions
 from addons.base import signals as file_signals
+from addons.base.utils import format_last_known_metadata, get_mfr_url
 from osf.models import (BaseFileNode, TrashedFileNode,
                         OSFUser, AbstractNode,
-                        NodeLog, DraftRegistration, MetaSchema)
+                        NodeLog, DraftRegistration, RegistrationSchema,
+                        Guid, FileVersionUserMetadata, FileVersion)
 from website.profile.utils import get_profile_image_url
 from website.project import decorators
-from website.project.decorators import must_be_contributor_or_public, must_be_valid_project
+from website.project.decorators import must_be_contributor_or_public, must_be_valid_project, check_contributor_auth
+from website.ember_osf_web.decorators import ember_flag_is_active
 from website.project.utils import serialize_node
-from website.settings import MFR_SERVER_URL
-from website.util import rubeus
+from website.util import rubeus, timestamp
 
 # import so that associated listener is instantiated and gets emails
 from website.notifications.events.files import FileEvent  # noqa
 
-ERROR_MESSAGES = {'FILE_GONE': u'''
+from framework.logging import logging
+
+logger = logging.getLogger(__name__)
+
+ERROR_MESSAGES = {'FILE_GONE': u"""
 <style>
 #toggleBar{{display: none;}}
 </style>
 <div class="alert alert-info" role="alert">
 <p>
-The file "{file_name}" stored on {provider} was deleted via the OSF.
+The file "{file_name}" stored on {provider} was deleted via the GakuNin RDM.
 </p>
 <p>
 It was deleted by <a href="/{deleted_by_guid}">{deleted_by}</a> on {deleted_on}.
-</p>
-</div>''',
-                  'FILE_GONE_ACTOR_UNKNOWN': u'''
+</p>""",
+                  'FILE_GONE_ACTOR_UNKNOWN': u"""
 <style>
 #toggleBar{{display: none;}}
 </style>
 <div class="alert alert-info" role="alert">
 <p>
-The file "{file_name}" stored on {provider} was deleted via the OSF.
+The file "{file_name}" stored on {provider} was deleted via the GakuNin RDM.
 </p>
 <p>
 It was deleted on {deleted_on}.
-</p>
-</div>''',
-                  'DONT_KNOW': u'''
+</p>""",
+                  'DONT_KNOW': u"""
 <style>
 #toggleBar{{display: none;}}
 </style>
 <div class="alert alert-info" role="alert">
 <p>
 File not found at {provider}.
-</p>
-</div>''',
-                  'BLAME_PROVIDER': u'''
+</p>""",
+                  'BLAME_PROVIDER': u"""
 <style>
 #toggleBar{{display: none;}}
 </style>
@@ -88,15 +92,13 @@ The provider ({provider}) may currently be unavailable or "{file_name}" may have
 </p>
 <p>
 You may wish to verify this through {provider}'s website.
-</p>
-</div>''',
-                  'FILE_SUSPENDED': u'''
+</p>""",
+                  'FILE_SUSPENDED': u"""
 <style>
 #toggleBar{{display: none;}}
 </style>
 <div class="alert alert-info" role="alert">
-This content has been removed.
-</div>'''}
+This content has been removed."""}
 
 WATERBUTLER_JWE_KEY = jwe.kdf(settings.WATERBUTLER_JWE_SECRET.encode('utf-8'), settings.WATERBUTLER_JWE_SALT.encode('utf-8'))
 
@@ -136,6 +138,8 @@ permission_map = {
     'revisions': 'read',
     'metadata': 'read',
     'download': 'read',
+    'render': 'read',
+    'export': 'read',
     'upload': 'write',
     'delete': 'write',
     'copy': 'write',
@@ -178,16 +182,16 @@ def check_access(node, auth, action, cas_resp):
 
     # Users attempting to register projects with components might not have
     # `write` permissions for all components. This will result in a 403 for
-    # all `copyto` actions as well as `copyfrom` actions if the component
+    # all `upload` actions as well as `copyfrom` actions if the component
     # in question is not public. To get around this, we have to recursively
     # check the node's parent node to determine if they have `write`
     # permissions up the stack.
     # TODO(hrybacki): is there a way to tell if this is for a registration?
-    # All nodes being registered that receive the `copyto` action will have
+    # All nodes being registered that receive the `upload` action will have
     # `node.is_registration` == True. However, we have no way of telling if
     # `copyfrom` actions are originating from a node being registered.
     # TODO This is raise UNAUTHORIZED for registrations that have not been archived yet
-    if action == 'copyfrom' or (action == 'copyto' and node.is_registration):
+    if action == 'copyfrom' or (action == 'upload' and node.is_registration):
         parent = node.parent_node
         while parent:
             if parent.can_edit(auth):
@@ -197,7 +201,7 @@ def check_access(node, auth, action, cas_resp):
     # Users with the prereg admin permission should be allowed to download files
     # from prereg challenge draft registrations.
     try:
-        prereg_schema = MetaSchema.objects.get(name='Prereg Challenge', schema_version=2)
+        prereg_schema = RegistrationSchema.objects.get(name='Prereg Challenge', schema_version=2)
         allowed_nodes = [node] + node.parents
         prereg_draft_registration = DraftRegistration.objects.filter(
             branched_from__in=allowed_nodes,
@@ -208,7 +212,7 @@ def check_access(node, auth, action, cas_resp):
                     prereg_draft_registration.count() > 0 and \
                     auth.user.has_perm('osf.administer_prereg'):
             return True
-    except MetaSchema.DoesNotExist:
+    except RegistrationSchema.DoesNotExist:
         pass
 
     raise HTTPError(httplib.FORBIDDEN if auth.user else httplib.UNAUTHORIZED)
@@ -274,8 +278,41 @@ def get_auth(auth, **kwargs):
         raise HTTPError(httplib.BAD_REQUEST)
 
     try:
-        credentials = provider_settings.serialize_waterbutler_credentials()
-        waterbutler_settings = provider_settings.serialize_waterbutler_settings()
+        path = data.get('path')
+        version = data.get('version')
+        credentials = None
+        waterbutler_settings = None
+        fileversion = None
+        if provider_name == 'osfstorage':
+            if path and version:
+                # check to see if this is a file or a folder
+                filenode = OsfStorageFileNode.load(path.strip('/'))
+                if filenode and filenode.is_file:
+                    try:
+                        fileversion = FileVersion.objects.filter(
+                            basefilenode___id=path.strip('/'),
+                            identifier=version
+                        ).select_related('region').get()
+                    except FileVersion.DoesNotExist:
+                        raise HTTPError(httplib.BAD_REQUEST)
+            # path and no version, use most recent version
+            elif path:
+                filenode = OsfStorageFileNode.load(path.strip('/'))
+                if filenode and filenode.is_file:
+                    fileversion = FileVersion.objects.filter(
+                        basefilenode=filenode
+                    ).select_related('region').order_by('-created').first()
+            if fileversion:
+                region = fileversion.region
+                credentials = region.waterbutler_credentials
+                waterbutler_settings = fileversion.serialize_waterbutler_settings(
+                    node_id=provider_settings.owner._id,
+                    root_id=provider_settings.root_node._id,
+                )
+        # If they haven't been set by version region, use the NodeSettings region
+        if not (credentials and waterbutler_settings):
+            credentials = provider_settings.serialize_waterbutler_credentials()
+            waterbutler_settings = provider_settings.serialize_waterbutler_settings()
     except exceptions.AddonError:
         log_exception()
         raise HTTPError(httplib.BAD_REQUEST)
@@ -305,23 +342,45 @@ LOG_ACTION_MAP = {
     'create_folder': NodeLog.FOLDER_CREATED,
 }
 
+DOWNLOAD_ACTIONS = set([
+    'download_file',
+    'download_zip',
+])
+
+
+# TODO: Use this to mark file versions as seen when
+# MFR callback endpoint is implemented
+def mark_file_version_as_seen(user, path, version):
+    """
+    Mark a file version as seen by the given user.
+    If no version is included, default to the most recent version.
+    """
+    file_to_update = OsfStorageFile.objects.get(_id=path)
+    if version:
+        file_version = file_to_update.versions.get(identifier=version)
+    else:
+        file_version = file_to_update.versions.order_by('-created').first()
+    FileVersionUserMetadata.objects.get_or_create(user=user, file_version=file_version)
+
 
 @must_be_signed
 @no_auto_transaction
-@must_be_valid_project
+@must_be_valid_project(quickfiles_valid=True)
 def create_waterbutler_log(payload, **kwargs):
     with transaction.atomic():
         try:
             auth = payload['auth']
-            # Don't log download actions
-            if payload['action'] in ('download_file', 'download_zip'):
+            # Don't log download actions, but do update analytics
+            if payload['action'] in DOWNLOAD_ACTIONS:
+                node = AbstractNode.load(payload['metadata']['nid'])
                 return {'status': 'success'}
+
+            user = OSFUser.load(auth['id'])
+            if user is None:
+                raise HTTPError(httplib.BAD_REQUEST)
+
             action = LOG_ACTION_MAP[payload['action']]
         except KeyError:
-            raise HTTPError(httplib.BAD_REQUEST)
-
-        user = OSFUser.load(auth['id'])
-        if user is None:
             raise HTTPError(httplib.BAD_REQUEST)
 
         auth = Auth(user=user)
@@ -344,10 +403,10 @@ def create_waterbutler_log(payload, **kwargs):
                     dest_path = os.path.dirname(dest_path)
                     src_path = os.path.dirname(src_path)
                 if (
-                    os.path.split(dest_path)[0] == os.path.split(src_path)[0] and
-                    dest['provider'] == src['provider'] and
-                    dest['nid'] == src['nid'] and
-                    dest['name'] != src['name']
+                    os.path.split(dest_path)[0] == os.path.split(src_path)[0]
+                    and dest['provider'] == src['provider']
+                    and dest['nid'] == src['nid']
+                    and dest['name'] != src['name']
                 ):
                     action = LOG_ACTION_MAP['rename']
 
@@ -408,7 +467,6 @@ def create_waterbutler_log(payload, **kwargs):
                     source_node=source_node,
                     destination_node=destination_node,
                     source_path=payload['source']['materialized'],
-                    destination_path=payload['source']['materialized'],
                     source_addon=payload['source']['addon'],
                     destination_addon=payload['destination']['addon'],
                     osf_support_email=settings.OSF_SUPPORT_EMAIL
@@ -431,16 +489,23 @@ def create_waterbutler_log(payload, **kwargs):
 
             metadata['path'] = metadata['path'].lstrip('/')
 
+            # Create/update timestamp record
+            if action in (NodeLog.FILE_ADDED, NodeLog.FILE_UPDATED):
+                metadata = payload.get('metadata') or payload.get('destination')
+                if metadata['kind'] == 'file':
+                    created_flag = action == NodeLog.FILE_ADDED
+                    timestamp.file_created_or_updated(node, metadata, user.id, created_flag)
+
             node_addon.create_waterbutler_log(auth, action, metadata)
 
     with transaction.atomic():
-        file_signals.file_updated.send(node=node, user=user, event_type=action, payload=payload)
+        file_signals.file_updated.send(target=node, user=user, event_type=action, payload=payload)
 
     return {'status': 'success'}
 
 
 @file_signals.file_updated.connect
-def addon_delete_file_node(self, node, user, event_type, payload):
+def addon_delete_file_node(self, target, user, event_type, payload):
     """ Get addon BaseFileNode(s), move it into the TrashedFileNode collection
     and remove it from StoredFileNode.
 
@@ -451,10 +516,12 @@ def addon_delete_file_node(self, node, user, event_type, payload):
         provider = payload['provider']
         path = payload['metadata']['path']
         materialized_path = payload['metadata']['materialized']
+        content_type = ContentType.objects.get_for_model(target)
         if path.endswith('/'):
             folder_children = BaseFileNode.resolve_class(provider, BaseFileNode.ANY).objects.filter(
                 provider=provider,
-                node=node,
+                target_object_id=target.id,
+                target_content_type=content_type,
                 _materialized_path__startswith=materialized_path
             )
             for item in folder_children:
@@ -465,7 +532,8 @@ def addon_delete_file_node(self, node, user, event_type, payload):
         else:
             try:
                 file_node = BaseFileNode.resolve_class(provider, BaseFileNode.FILE).objects.get(
-                    node=node,
+                    target_object_id=target.id,
+                    target_content_type=content_type,
                     _materialized_path=materialized_path
                 )
             except BaseFileNode.DoesNotExist:
@@ -520,9 +588,8 @@ def addon_view_or_download_file_legacy(**kwargs):
         code=httplib.MOVED_PERMANENTLY
     )
 
-@must_be_valid_project
 @must_be_contributor_or_public
-def addon_deleted_file(auth, node, error_type='BLAME_PROVIDER', **kwargs):
+def addon_deleted_file(auth, target, error_type='BLAME_PROVIDER', **kwargs):
     """Shows a nice error message to users when they try to view a deleted file
     """
     # Allow file_node to be passed in so other views can delegate to this one
@@ -533,9 +600,9 @@ def addon_deleted_file(auth, node, error_type='BLAME_PROVIDER', **kwargs):
         deleted_by = file_node.deleted_by
         deleted_by_guid = file_node.deleted_by._id if deleted_by else None
         deleted_on = file_node.deleted_on.strftime('%c') + ' UTC'
-        if file_node.suspended:
+        if getattr(file_node, 'suspended', False):
             error_type = 'FILE_SUSPENDED'
-        elif file_node.deleted_by is None:
+        elif file_node.deleted_by is None or (auth.private_key and auth.private_key.anonymous):
             if file_node.provider == 'osfstorage':
                 error_type = 'FILE_GONE_ACTOR_UNKNOWN'
             else:
@@ -563,58 +630,66 @@ def addon_deleted_file(auth, node, error_type='BLAME_PROVIDER', **kwargs):
     if deleted_by:
         format_params['deleted_by_guid'] = markupsafe.escape(deleted_by_guid)
 
-    ret = serialize_node(node, auth, primary=True)
-    ret.update(rubeus.collect_addon_assets(node))
-    ret.update({
-        'error': ERROR_MESSAGES[error_type].format(**format_params),
-        'urls': {
-            'render': None,
-            'sharejs': None,
-            'mfr': settings.MFR_SERVER_URL,
-            'profile_image': get_profile_image_url(auth.user, 25),
-            'files': node.web_url_for('collect_file_trees'),
-        },
-        'extra': {},
-        'size': 9966699,  # Prevent file from being edited, just in case
-        'sharejs_uuid': None,
-        'file_name': file_name,
-        'file_path': file_path,
-        'file_name_title': file_name_title,
-        'file_name_ext': file_name_ext,
-        'version_id': None,
-        'file_guid': file_guid,
-        'file_id': file_node._id,
-        'provider': file_node.provider,
-        'materialized_path': file_node.materialized_path or file_path,
-        'private': getattr(node.get_addon(file_node.provider), 'is_private', False),
-        'file_tags': list(file_node.tags.filter(system=False).values_list('name', flat=True)) if not file_node._state.adding else [],  # Only access ManyRelatedManager if saved
-        'allow_comments': file_node.provider in settings.ADDONS_COMMENTABLE,
-    })
+    error_msg = ERROR_MESSAGES[error_type].format(**format_params)
+    if isinstance(target, AbstractNode):
+        error_msg += format_last_known_metadata(auth, target, file_node, error_type)
+        ret = serialize_node(target, auth, primary=True)
+        ret.update(rubeus.collect_addon_assets(target))
+        ret.update({
+            'error': error_msg,
+            'urls': {
+                'render': None,
+                'sharejs': None,
+                'mfr': get_mfr_url(target, file_node.provider),
+                'profile_image': get_profile_image_url(auth.user, 25),
+                'files': target.web_url_for('collect_file_trees'),
+            },
+            'extra': {},
+            'size': 9966699,  # Prevent file from being edited, just in case
+            'sharejs_uuid': None,
+            'file_name': file_name,
+            'file_path': file_path,
+            'file_name_title': file_name_title,
+            'file_name_ext': file_name_ext,
+            'version_id': None,
+            'file_guid': file_guid,
+            'file_id': file_node._id,
+            'provider': file_node.provider,
+            'materialized_path': file_node.materialized_path or file_path,
+            'private': getattr(target.get_addon(file_node.provider), 'is_private', False),
+            'file_tags': list(file_node.tags.filter(system=False).values_list('name', flat=True)) if not file_node._state.adding else [],  # Only access ManyRelatedManager if saved
+            'allow_comments': file_node.provider in settings.ADDONS_COMMENTABLE,
+        })
+    else:
+        # TODO - serialize deleted metadata for future types of deleted file targets
+        ret = {'error': error_msg}
 
     return ret, httplib.GONE
 
 
-@must_be_valid_project(quickfiles_valid=True)
 @must_be_contributor_or_public
+@ember_flag_is_active('ember_file_detail_page')
 def addon_view_or_download_file(auth, path, provider, **kwargs):
     extras = request.args.to_dict()
     extras.pop('_', None)  # Clean up our url params a bit
     action = extras.get('action', 'view')
-    node = kwargs.get('node') or kwargs['project']
-
-    node_addon = node.get_addon(provider)
+    guid = kwargs.get('guid')
+    guid_target = getattr(Guid.load(guid), 'referent', None)
+    target = guid_target or kwargs.get('node') or kwargs['project']
 
     provider_safe = markupsafe.escape(provider)
     path_safe = markupsafe.escape(path)
-    project_safe = markupsafe.escape(node.project_or_component)
 
     if not path:
         raise HTTPError(httplib.BAD_REQUEST)
 
+    node_addon = target.get_addon(provider)
+
     if not isinstance(node_addon, BaseStorageAddon):
+        object_text = markupsafe.escape(getattr(target, 'project_or_component', 'this object'))
         raise HTTPError(httplib.BAD_REQUEST, data={
             'message_short': 'Bad Request',
-            'message_long': 'The {} add-on containing {} is no longer connected to {}.'.format(provider_safe, path_safe, project_safe)
+            'message_long': 'The {} add-on containing {} is no longer connected to {}.'.format(provider_safe, path_safe, object_text)
         })
 
     if not node_addon.has_auth:
@@ -630,7 +705,7 @@ def addon_view_or_download_file(auth, path, provider, **kwargs):
         })
 
     savepoint_id = transaction.savepoint()
-    file_node = BaseFileNode.resolve_class(provider, BaseFileNode.FILE).get_or_create(node, path)
+    file_node = BaseFileNode.resolve_class(provider, BaseFileNode.FILE).get_or_create(target, path)
 
     # Note: Cookie is provided for authentication to waterbutler
     # it is overriden to force authentication as the current user
@@ -647,17 +722,13 @@ def addon_view_or_download_file(auth, path, provider, **kwargs):
         # Rollback the insertion of the file_node
         transaction.savepoint_rollback(savepoint_id)
         if not file_node.pk:
-            redirect_file_node = BaseFileNode.load(path)
+            file_node = BaseFileNode.load(path)
             # Allow osfstorage to redirect if the deep url can be used to find a valid file_node
-            if redirect_file_node and redirect_file_node.provider == 'osfstorage' and not redirect_file_node.is_deleted:
+            if file_node and file_node.provider == 'osfstorage' and not file_node.is_deleted:
                 return redirect(
-                    redirect_file_node.node.web_url_for('addon_view_or_download_file', path=redirect_file_node._id, provider=redirect_file_node.provider)
+                    file_node.target.web_url_for('addon_view_or_download_file', path=file_node._id, provider=file_node.provider)
                 )
-            raise HTTPError(httplib.NOT_FOUND, data={
-                'message_short': 'File Not Found',
-                'message_long': 'The requested file could not be found.'
-            })
-        return addon_deleted_file(file_node=file_node, path=path, **kwargs)
+        return addon_deleted_file(target=target, file_node=file_node, path=path, **kwargs)
     else:
         transaction.savepoint_commit(savepoint_id)
 
@@ -671,8 +742,8 @@ def addon_view_or_download_file(auth, path, provider, **kwargs):
         format = extras.get('format')
         _, extension = os.path.splitext(file_node.name)
         # avoid rendering files with the same format type.
-        if format and '.{}'.format(format) != extension:
-            return redirect('{}/export?format={}&url={}'.format(MFR_SERVER_URL, format, urllib.quote(file_node.generate_waterbutler_url(
+        if format and '.{}'.format(format.lower()) != extension.lower():
+            return redirect('{}/export?format={}&url={}'.format(get_mfr_url(target, provider), format, urllib.quote(file_node.generate_waterbutler_url(
                 **dict(extras, direct=None, version=version.identifier, _internal=extras.get('mode') == 'render')
             ))))
         return redirect(file_node.generate_waterbutler_url(**dict(extras, direct=None, version=version.identifier, _internal=extras.get('mode') == 'render')))
@@ -689,10 +760,54 @@ def addon_view_or_download_file(auth, path, provider, **kwargs):
         guid.referent.save()
         return dict(guid=guid._id)
 
+    if action == 'addtimestamp':
+        cookie = auth.user.get_or_create_cookie()
+        file_info = timestamp.get_file_info(cookie, file_node, version)
+        if file_info is not None:
+            timestamp.add_token(auth.user.id, target, file_info)
+        else:
+            raise HTTPError(httplib.BAD_REQUEST, data={
+                'message_short': 'Add TimestampError',
+                'message_long': 'AddTimestamp setting error.'
+            })
+
     if len(request.path.strip('/').split('/')) > 1:
         guid = file_node.get_guid(create=True)
         return redirect(furl.furl('/{}/'.format(guid._id)).set(args=extras).url)
-    return addon_view_file(auth, node, file_node, version)
+    return addon_view_file(auth, target, file_node, version)
+
+
+@collect_auth
+def persistent_file_download(auth, **kwargs):
+    id_or_guid = kwargs.get('fid_or_guid')
+    file = BaseFileNode.active.filter(_id=id_or_guid).first()
+    if not file:
+        guid = Guid.load(id_or_guid)
+        if guid:
+            file = guid.referent
+        else:
+            raise HTTPError(httplib.NOT_FOUND, data={
+                'message_short': 'File Not Found',
+                'message_long': 'The requested file could not be found.'
+            })
+    if not file.is_file:
+        raise HTTPError(httplib.BAD_REQUEST, data={
+            'message_long': 'Downloading folders is not permitted.'
+        })
+
+    auth_redirect = check_contributor_auth(file.target, auth,
+                                           include_public=True,
+                                           include_view_only_anon=True)
+    if auth_redirect:
+        return auth_redirect
+
+    query_params = request.args.to_dict()
+
+    return redirect(
+        file.generate_waterbutler_url(**query_params),
+        code=httplib.FOUND
+    )
+
 
 def addon_view_or_download_quickfile(**kwargs):
     fid = kwargs.get('fid', 'NOT_AN_FID')
@@ -702,7 +817,7 @@ def addon_view_or_download_quickfile(**kwargs):
             'message_short': 'File Not Found',
             'message_long': 'The requested file could not be found.'
         })
-    return proxy_url('/project/{}/files/osfstorage/{}/'.format(file_.node._id, fid))
+    return proxy_url('/project/{}/files/osfstorage/{}/'.format(file_.target._id, fid))
 
 def addon_view_file(auth, node, file_node, version):
     # TODO: resolve circular import issue
@@ -736,15 +851,27 @@ def addon_view_file(auth, node, file_node, version):
         })
     )
 
-    render_url = furl.furl(settings.MFR_SERVER_URL).set(
+    # Verify file
+    verify_result = None
+    cookie = auth.user.get_or_create_cookie()
+    file_info = timestamp.get_file_info(cookie, file_node, version)
+    if file_info is not None:
+        verify_result = timestamp.check_file_timestamp(auth.user.id, node, file_info)
+    else:
+        verify_result = {
+            'verify_result': '',
+            'verify_result_title': ''
+        }
+
+    mfr_url = get_mfr_url(node, file_node.provider)
+    render_url = furl.furl(mfr_url).set(
         path=['render'],
         args={'url': download_url.url}
     )
-
     ret.update({
         'urls': {
             'render': render_url.url,
-            'mfr': settings.MFR_SERVER_URL,
+            'mfr': mfr_url,
             'sharejs': wiki_settings.SHAREJS_URL,
             'profile_image': get_profile_image_url(auth.user, 25),
             'files': node.web_url_for('collect_file_trees'),
@@ -768,6 +895,8 @@ def addon_view_file(auth, node, file_node, version):
         'allow_comments': file_node.provider in settings.ADDONS_COMMENTABLE,
         'checkout_user': file_node.checkout._id if file_node.checkout else None,
         'pre_reg_checkout': is_pre_reg_checkout(node, file_node),
+        'timestamp_verify_result': verify_result['verify_result'],
+        'timestamp_verify_result_title': verify_result['verify_result_title']
     })
 
     ret.update(rubeus.collect_addon_assets(node))
@@ -779,7 +908,7 @@ def is_pre_reg_checkout(node, file_node):
         return False
     if checkout_user in node.contributors:
         return False
-    if checkout_user.has_perm('osf.prereg_view'):
+    if checkout_user.has_perm('osf.view_prereg'):
         return node.draft_registrations_active.filter(registration_schema__name='Prereg Challenge').exists()
     return False
 

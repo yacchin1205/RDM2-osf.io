@@ -4,6 +4,8 @@ These settings override what's in website/settings/defaults.py
 
 NOTE: local.py will not be added to source control.
 '''
+import logging
+from os import environ
 
 from . import defaults
 
@@ -22,40 +24,36 @@ API_DOMAIN = PROTOCOL + 'localhost:8000/'
 #WATERBUTLER_URL = 'http://localhost:7777'
 #WATERBUTLER_INTERNAL_URL = WATERBUTLER_URL
 
-LIVE_RELOAD_DOMAIN = 'http://localhost:4200'
 PREPRINT_PROVIDER_DOMAINS = {
     'enabled': False,
     'prefix': 'http://local.',
     'suffix': ':4201/'
 }
 USE_EXTERNAL_EMBER = True
-PROXY_EMBER_APPS = False
+PROXY_EMBER_APPS = True
+EMBER_DOMAIN = environ.get('EMBER_DOMAIN', 'localhost')
+LIVE_RELOAD_DOMAIN = 'http://{}:4200'.format(EMBER_DOMAIN)  # Change port for the current app
 EXTERNAL_EMBER_APPS = {
     'ember_osf_web': {
-        'url': '/ember_osf_web/',
-        'server': 'http://localhost:4200',
-        'path': '/ember_osf_web/'
+        'server': 'http://{}:4200/'.format(EMBER_DOMAIN),
+        'path': '/ember_osf_web/',
+        'routes': [
+            'collections',
+            'handbook',
+        ],
     },
     'preprints': {
-        'url': '/preprints/',
-        'server': 'http://192.168.168.167:4201/',
+        'server': 'http://{}:4201/'.format(EMBER_DOMAIN),
         'path': '/preprints/'
     },
     'registries': {
-        'url': '/registries/',
-        'server': 'http://192.168.168.167:4202',
+        'server': 'http://{}:4202/'.format(EMBER_DOMAIN),
         'path': '/registries/'
     },
     'reviews': {
-        'url': '/reviews/',
-        'server': 'http://localhost:4203',
+        'server': 'http://{}:4203/'.format(EMBER_DOMAIN),
         'path': '/reviews/'
-    }
-    # 'meetings': {
-    #     'url': '/meetings/',
-    #     'server': 'http://localhost:4201',
-    #     'path': '../osf-meetings/dist/'
-    # },
+    },
 }
 
 SEARCH_ENGINE = 'elastic'
@@ -77,9 +75,6 @@ SECRET_KEY = 'CHANGEME'
 SESSION_COOKIE_SECURE = SECURE_MODE
 OSF_SERVER_KEY = None
 OSF_SERVER_CERT = None
-
-# Comment out to use celery in development
-USE_CELERY = False
 
 class CeleryConfig(defaults.CeleryConfig):
     """
@@ -115,3 +110,29 @@ SENDGRID_EMAIL_WHITELIST = []
 
 # support email
 OSF_SUPPORT_EMAIL = 'fake-support@osf.io'
+# contact email
+OSF_CONTACT_EMAIL = 'fake-rcos-office@nii.ac.jp'
+
+#Email templates logo
+OSF_LOGO = 'osf_logo'
+OSF_PREPRINTS_LOGO = 'osf_preprints'
+OSF_MEETINGS_LOGO = 'osf_meetings'
+OSF_PREREG_LOGO = 'osf_prereg'
+OSF_REGISTRIES_LOGO = 'osf_registries'
+
+DOI_FORMAT = '{prefix}/FK2osf.io/{guid}'
+
+# Uncomment for local DOI creation testing
+# datacite
+# DATACITE_USERNAME = 'changeme'
+# DATACITE_PASSWORD = 'changeme'
+# DATACITE_URL = 'https://mds.test.datacite.org'
+
+# crossref
+# CROSSREF_USERNAME = 'changeme'
+# CROSSREF_PASSWORD = 'changeme'
+# CROSSREF_URL = https://test.crossref.org/servlet/deposit
+# CROSSREF_DEPOSITOR_EMAIL = 'changeme'  # This email will receive confirmation/error messages from CrossRef on submission
+
+# Show sent emails in console
+logging.getLogger('website.mails.mails').setLevel(logging.DEBUG)

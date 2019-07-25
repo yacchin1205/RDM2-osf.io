@@ -7,7 +7,7 @@ from contextlib import contextmanager
 from django.apps import apps
 
 from website import settings
-from osf.models import NodeLicense, MetaSchema
+from osf.models import NodeLicense, RegistrationSchema
 from website.project.metadata.schemas import OSF_META_SCHEMAS
 
 logger = logging.getLogger(__file__)
@@ -47,6 +47,29 @@ def disable_auto_now_fields(models=None):
             if hasattr(field, 'auto_now') and not field.auto_now:
                 field.auto_now = True
 
+@contextmanager
+def disable_auto_now_add_fields(models=None):
+    """
+    Context manager to disable auto_now_add field updates.
+    If models=None, updates for all auto_now_add fields on *all* models will be disabled.
+
+    :param list models: Optional list of models for which auto_now_add field updates should be disabled.
+    """
+    if not models:
+        models = apps.get_models()
+
+    changed = []
+    for model in models:
+        for field in model._meta.get_fields():
+            if hasattr(field, 'auto_now_add') and field.auto_now_add:
+                field.auto_now_add = False
+                changed.append(field)
+    try:
+        yield
+    finally:
+        for field in changed:
+            if hasattr(field, 'auto_now_add') and not field.auto_now_add:
+                field.auto_now_add = True
 
 def ensure_licenses(*args, **kwargs):
     """Upsert the licenses in our database based on a JSON file.
@@ -59,7 +82,7 @@ def ensure_licenses(*args, **kwargs):
     nupdated = 0
     try:
         NodeLicense = args[0].get_model('osf', 'nodelicense')
-    except:
+    except Exception:
         # Working outside a migration
         from osf.models import NodeLicense
     with open(
@@ -73,12 +96,14 @@ def ensure_licenses(*args, **kwargs):
             name = info['name']
             text = info['text']
             properties = info.get('properties', [])
+            url = info.get('url', '')
 
             node_license, created = NodeLicense.objects.get_or_create(license_id=id)
 
             node_license.name = name
             node_license.text = text
             node_license.properties = properties
+            node_license.url = url
             node_license.save()
 
             if created:
@@ -107,12 +132,12 @@ def ensure_schemas(*args):
     """
     schema_count = 0
     try:
-        MetaSchema = args[0].get_model('osf', 'metaschema')
-    except:
+        RegistrationSchema = args[0].get_model('osf', 'metaschema')
+    except Exception:
         # Working outside a migration
-        from osf.models import MetaSchema
+        from osf.models import RegistrationSchema
     for schema in OSF_META_SCHEMAS:
-        schema_obj, created = MetaSchema.objects.update_or_create(
+        schema_obj, created = RegistrationSchema.objects.update_or_create(
             name=schema['name'],
             schema_version=schema.get('version', 1),
             defaults={
@@ -129,7 +154,7 @@ def ensure_schemas(*args):
 
 
 def remove_schemas(*args):
-    pre_count = MetaSchema.objects.all().count()
-    MetaSchema.objects.all().delete()
+    pre_count = RegistrationSchema.objects.all().count()
+    RegistrationSchema.objects.all().delete()
 
     logger.info('Removed {} schemas from the database'.format(pre_count))

@@ -15,6 +15,7 @@ from django.apps import apps
 from framework.addons.utils import render_addon_capabilities
 from framework.celery_tasks import handlers as celery_task_handlers
 from framework.django import handlers as django_handlers
+from framework.csrf import handlers as csrf_handlers
 from framework.flask import add_handlers, app
 # Import necessary to initialize the root logger
 from framework.logging import logger as root_logger  # noqa
@@ -58,6 +59,7 @@ def attach_handlers(app, settings):
     add_handlers(app, celery_task_handlers.handlers)
     add_handlers(app, transaction_handlers.handlers)
     add_handlers(app, postcommit_handlers.handlers)
+    add_handlers(app, csrf_handlers.handlers)
 
     # Attach handler for checking view-only link keys.
     # NOTE: This must be attached AFTER the TokuMX to avoid calling
@@ -80,7 +82,7 @@ def setup_django():
 
 def init_app(settings_module='website.settings', set_backends=True, routes=True,
              attach_request_handlers=True):
-    """Initializes the OSF. A sort of pseudo-app factory that allows you to
+    """Initializes the GakuNin RDM. A sort of pseudo-app factory that allows you to
     bind settings, set up routing, and set storage backends, but only acts on
     a single app instance (rather than creating multiple instances).
 

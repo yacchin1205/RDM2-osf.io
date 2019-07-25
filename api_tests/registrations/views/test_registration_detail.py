@@ -3,7 +3,7 @@ from urlparse import urlparse
 
 from rest_framework import exceptions
 from api.base.settings.defaults import API_BASE
-from website.util import permissions
+from osf.utils import permissions
 from osf.models import Registration, NodeLog
 from framework.auth import Auth
 from api.registrations.serializers import RegistrationSerializer, RegistrationDetailSerializer
@@ -127,6 +127,14 @@ class TestRegistrationDetail:
         res = app.get(url, auth=user.auth, expect_errors=True)
         assert res.status_code == 404
         assert res.json['errors'][0]['detail'] == exceptions.NotFound.default_detail
+
+    #   test_registration_shows_related_counts
+        url = '/{}registrations/{}/?related_counts=True'.format(
+            API_BASE, private_registration._id)
+        res = app.get(url, auth=user.auth)
+        assert res.status_code == 200
+        assert res.json['data']['relationships']['children']['links']['related']['meta']['count'] == 0
+        assert res.json['data']['relationships']['contributors']['links']['related']['meta']['count'] == 1
 
     #   test_registration_shows_specific_related_counts
         url = '/{}registrations/{}/?related_counts=children'.format(
@@ -373,7 +381,8 @@ class TestRegistrationUpdate:
             'draft_registration',
             'registration_choice',
             'lift_embargo',
-            'tags']
+            'tags',
+            'custom_citation']
         for field in RegistrationSerializer._declared_fields:
             reg_field = RegistrationSerializer._declared_fields[field]
             if field not in writeable_fields:
@@ -386,8 +395,8 @@ class TestRegistrationUpdate:
             'draft_registration',
             'registration_choice',
             'lift_embargo',
-            'tags']
-
+            'tags',
+            'custom_citation']
         for field in RegistrationDetailSerializer._declared_fields:
             reg_field = RegistrationSerializer._declared_fields[field]
             if field not in writeable_fields:

@@ -6,9 +6,9 @@ import httplib as http
 import logging
 import unittest
 
-import httpretty
 import markupsafe
 import mock
+import pytest
 from nose.tools import *  # flake8: noqa (PEP8 asserts)
 import re
 
@@ -31,15 +31,16 @@ from osf_tests.factories import (
     UnconfirmedUserFactory,
     UnregUserFactory,
 )
-from addons.wiki.tests.factories import NodeWikiFactory
+from addons.wiki.models import WikiPage, WikiVersion
+from addons.wiki.tests.factories import WikiFactory, WikiVersionFactory
 from website import settings, language
 from addons.osfstorage.models import OsfStorageFile
-from website.util import web_url_for, api_url_for, permissions
+from website.util import web_url_for, api_url_for
 
 from api_tests import utils as test_utils
 
 logging.getLogger('website.project.model').setLevel(logging.ERROR)
-
+logger = logging.getLogger(__name__)
 
 def assert_in_html(member, container, **kwargs):
     """Looks for the specified member in markupsafe-escaped HTML output"""
@@ -77,6 +78,8 @@ class TestAnUnregisteredUser(OsfTestCase):
         assert_in('/login/', res.headers['Location'])
 
 
+@pytest.mark.enable_bookmark_creation
+@pytest.mark.enable_quickfiles_creation
 class TestAUser(OsfTestCase):
 
     def setUp(self):
@@ -87,11 +90,6 @@ class TestAUser(OsfTestCase):
     def test_can_see_profile_url(self):
         res = self.app.get(self.user.url).maybe_follow()
         assert_in(self.user.url, res)
-
-    def test_can_see_homepage(self):
-        # Goes to homepage
-        res = self.app.get('/').maybe_follow()  # Redirects
-        assert_equal(res.status_code, 200)
 
     # `GET /login/` without parameters is redirected to `/dashboard/` page which has `@must_be_logged_in` decorator
     # if user is not logged in, she/he is further redirected to CAS login page
@@ -104,8 +102,7 @@ class TestAUser(OsfTestCase):
     def test_is_redirected_to_dashboard_if_already_logged_in_at_login_page(self):
         res = self.app.get('/login/', auth=self.user.auth)
         assert_equal(res.status_code, 302)
-        res = res.follow(auth=self.user.auth)
-        assert_equal(res.request.path, '/dashboard/')
+        assert 'dashboard' in res.headers.get('Location')
 
     def test_register_page(self):
         res = self.app.get('/register/')
@@ -114,8 +111,7 @@ class TestAUser(OsfTestCase):
     def test_is_redirected_to_dashboard_if_already_logged_in_at_register_page(self):
         res = self.app.get('/register/', auth=self.user.auth)
         assert_equal(res.status_code, 302)
-        res = res.follow(auth=self.user.auth)
-        assert_equal(res.request.path, '/dashboard/')
+        assert 'dashboard' in res.headers.get('Location')
 
     def test_sees_projects_in_her_dashboard(self):
         # the user already has a project
@@ -125,18 +121,9 @@ class TestAUser(OsfTestCase):
         res = self.app.get('/myprojects/', auth=self.user.auth)
         assert_in('Projects', res)  # Projects heading
 
-    def test_logged_in_index_route_renders_home_template(self):
-        res = self.app.get('/', auth=self.user.auth)
-        assert_equal(res.status_code, 200)
-        assert_in('My Projects', res)  # Will change once home page populated
-
-    def test_logged_out_index_route_renders_landing_page(self):
-        res = self.app.get('/')
-        assert_in('Simplified Scholarly Collaboration', res)
-
     def test_does_not_see_osffiles_in_user_addon_settings(self):
         res = self.app.get('/settings/addons/', auth=self.auth, auto_follow=True)
-        assert_not_in('OSF Storage', res)
+        assert_not_in('NII Storage', res)
 
     def test_sees_osffiles_in_project_addon_settings(self):
         project = ProjectFactory(creator=self.user)
@@ -145,14 +132,7 @@ class TestAUser(OsfTestCase):
             permissions=['read', 'write', 'admin'],
             save=True)
         res = self.app.get('/{0}/addons/'.format(project._primary_key), auth=self.auth, auto_follow=True)
-        assert_in('OSF Storage', res)
-
-    def test_sees_correct_title_home_page(self):
-        # User goes to homepage
-        res = self.app.get('/', auto_follow=True)
-        title = res.html.title.string
-        # page title is correct
-        assert_equal('OSF | Home', title)
+        assert_in('NII Storage', res)
 
     def test_sees_correct_title_on_dashboard(self):
         # User goes to dashboard
@@ -222,12 +202,19 @@ class TestAUser(OsfTestCase):
 
     def test_wiki_content(self):
         project = ProjectFactory(creator=self.user)
-        wiki_page = 'home'
+        wiki_page_name = 'home'
         wiki_content = 'Kittens'
-        NodeWikiFactory(user=self.user, node=project, content=wiki_content, page_name=wiki_page)
+        wiki_page = WikiFactory(
+            user=self.user,
+            node=project,
+        )
+        wiki = WikiVersionFactory(
+            wiki_page=wiki_page,
+            content=wiki_content
+        )
         res = self.app.get('/{0}/wiki/{1}/'.format(
             project._primary_key,
-            wiki_page,
+            wiki_page_name,
         ), auth=self.auth)
         assert_not_in('Add important information, links, or images here to describe your project.', res)
         assert_in(wiki_content, res)
@@ -236,12 +223,9 @@ class TestAUser(OsfTestCase):
     def test_wiki_page_name_non_ascii(self):
         project = ProjectFactory(creator=self.user)
         non_ascii = to_mongo_key('WöRlÐé')
-        self.app.get('/{0}/wiki/{1}/'.format(
-            project._primary_key,
-            non_ascii
-        ), auth=self.auth, expect_errors=True)
-        project.update_node_wiki(non_ascii, 'new content', Auth(self.user))
-        assert_in(non_ascii, project.wiki_pages_current)
+        WikiPage.objects.create_for_node(project, 'WöRlÐé', 'new content', Auth(self.user))
+        wv = WikiVersion.objects.get_for_node(project, non_ascii)
+        assert wv.wiki_page.page_name.upper() == non_ascii.decode('utf-8').upper()
 
     def test_noncontributor_cannot_see_wiki_if_no_content(self):
         user2 = UserFactory()
@@ -274,6 +258,7 @@ class TestAUser(OsfTestCase):
         assert_equal(td2.text, user2.display_absolute_url)
 
 
+@pytest.mark.enable_bookmark_creation
 class TestComponents(OsfTestCase):
 
     def setUp(self):
@@ -353,6 +338,7 @@ class TestComponents(OsfTestCase):
         assert_in('Components', res)
 
 
+@pytest.mark.enable_bookmark_creation
 class TestPrivateLinkView(OsfTestCase):
 
     def setUp(self):
@@ -366,7 +352,7 @@ class TestPrivateLinkView(OsfTestCase):
 
     def test_anonymous_link_hide_contributor(self):
         res = self.app.get(self.project_url, {'view_only': self.link.key})
-        assert_in("Anonymous Contributors", res.body)
+        assert_in('Anonymous Contributors', res.body)
         assert_not_in(self.user.fullname, res)
 
     def test_anonymous_link_hides_citations(self):
@@ -385,9 +371,9 @@ class TestPrivateLinkView(OsfTestCase):
         res = self.app.get(self.project_url, {'view_only': link2.key},
                            auth=self.user.auth)
         assert_not_in(
-            "is being viewed through a private, view-only link. "
-            "Anyone with the link can view this project. Keep "
-            "the link safe.",
+            'is being viewed through a private, view-only link. '
+            'Anyone with the link can view this project. Keep '
+            'the link safe.',
             res.body
         )
 
@@ -397,16 +383,18 @@ class TestPrivateLinkView(OsfTestCase):
             permissions=['read'],
             save=True,
         )
-        res = self.app.get(self.project_url, {'view_only': "not_valid"},
+        res = self.app.get(self.project_url, {'view_only': 'not_valid'},
                            auth=self.user.auth)
         assert_not_in(
-            "is being viewed through a private, view-only link. "
-            "Anyone with the link can view this project. Keep "
-            "the link safe.",
+            'is being viewed through a private, view-only link. '
+            'Anyone with the link can view this project. Keep '
+            'the link safe.',
             res.body
         )
 
 
+@pytest.mark.enable_bookmark_creation
+@pytest.mark.enable_quickfiles_creation
 class TestMergingAccounts(OsfTestCase):
 
     def setUp(self):
@@ -448,58 +436,7 @@ class TestMergingAccounts(OsfTestCase):
         assert_in('This account has been merged', res)
 
 
-# FIXME: These affect search in development environment. So need to migrate solr after running.
-# # Remove this side effect.
-@unittest.skipIf(not settings.SEARCH_ENGINE, 'Skipping because search is disabled')
-class TestSearching(OsfTestCase):
-    '''Test searching using the search bar. NOTE: These may affect the
-    Solr database. May need to migrate after running these.
-    '''
-
-    def setUp(self):
-        super(TestSearching, self).setUp()
-        import website.search.search as search
-        search.delete_all()
-        self.user = AuthUserFactory()
-        self.auth = self.user.auth
-
-    @unittest.skip(reason='¯\_(ツ)_/¯ knockout.')
-    def test_a_user_from_home_page(self):
-        user = UserFactory()
-        # Goes to home page
-        res = self.app.get('/').maybe_follow()
-        # Fills search form
-        form = res.forms['searchBar']
-        form['q'] = user.fullname
-        res = form.submit().maybe_follow()
-        # The username shows as a search result
-        assert_in(user.fullname, res)
-
-    @unittest.skip(reason='¯\_(ツ)_/¯ knockout.')
-    def test_a_public_project_from_home_page(self):
-        project = ProjectFactory(title='Foobar Project', is_public=True)
-        # Searches a part of the name
-        res = self.app.get('/').maybe_follow()
-        project.reload()
-        form = res.forms['searchBar']
-        form['q'] = 'Foobar'
-        res = form.submit().maybe_follow()
-        # A link to the project is shown as a result
-        assert_in('Foobar Project', res)
-
-    @unittest.skip(reason='¯\_(ツ)_/¯ knockout.')
-    def test_a_public_component_from_home_page(self):
-        component = NodeFactory(title='Foobar Component', is_public=True)
-        # Searches a part of the name
-        res = self.app.get('/').maybe_follow()
-        component.reload()
-        form = res.forms['searchBar']
-        form['q'] = 'Foobar'
-        res = form.submit().maybe_follow()
-        # A link to the component is shown as a result
-        assert_in('Foobar Component', res)
-
-
+@pytest.mark.enable_bookmark_creation
 class TestShortUrls(OsfTestCase):
 
     def setUp(self):
@@ -514,7 +451,10 @@ class TestShortUrls(OsfTestCase):
         # improvements to factories from @rliebz
         self.component.set_privacy('public', auth=self.consolidate_auth)
         self.component.set_privacy('private', auth=self.consolidate_auth)
-        self.wiki = NodeWikiFactory(user=self.user, node=self.component)
+        self.wiki = WikiFactory(
+            user=self.user,
+            node=self.component,
+        )
 
     def _url_to_body(self, url):
         return self.app.get(
@@ -543,6 +483,8 @@ class TestShortUrls(OsfTestCase):
         )
 
 
+@pytest.mark.enable_bookmark_creation
+@pytest.mark.enable_implicit_clean
 class TestClaiming(OsfTestCase):
 
     def setUp(self):
@@ -622,7 +564,7 @@ class TestClaiming(OsfTestCase):
         res2 = self.app.get(project2.url)
         assert_in_html(name2, res2)
 
-    @unittest.skip("as long as E-mails cannot be changed")
+    @unittest.skip('as long as E-mails cannot be changed')
     def test_cannot_set_email_to_a_user_that_already_exists(self):
         reg_user = UserFactory()
         name, email = fake.name(), fake_email()
@@ -721,6 +663,8 @@ class TestConfirmingEmail(OsfTestCase):
         assert_equal(res.status_code, http.BAD_REQUEST)
 
 
+@pytest.mark.enable_implicit_clean
+@pytest.mark.enable_bookmark_creation
 class TestClaimingAsARegisteredUser(OsfTestCase):
 
     def setUp(self):
@@ -761,13 +705,14 @@ class TestClaimingAsARegisteredUser(OsfTestCase):
         assert_not_in(self.project, self.user.unclaimed_records)
 
 
+@pytest.mark.enable_implicit_clean
 class TestExplorePublicActivity(OsfTestCase):
 
     def setUp(self):
         super(TestExplorePublicActivity, self).setUp()
         self.project = ProjectFactory(is_public=True)
         self.registration = RegistrationFactory(project=self.project)
-        self.private_project = ProjectFactory(title="Test private project")
+        self.private_project = ProjectFactory(title='Test private project')
         self.popular_project = ProjectFactory(is_public=True)
         self.popular_registration = RegistrationFactory(project=self.project, is_public=True)
 
@@ -1091,6 +1036,7 @@ class TestAUserProfile(OsfTestCase):
         assert_not_in(reg.nodes[0].title, res)
 
 
+@pytest.mark.enable_bookmark_creation
 class TestPreprintBannerView(OsfTestCase):
     def setUp(self):
         super(TestPreprintBannerView, self).setUp()

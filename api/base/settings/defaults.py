@@ -28,7 +28,10 @@ DATABASES = {
         'HOST': os.environ.get('OSF_DB_HOST', '127.0.0.1'),
         'PORT': os.environ.get('OSF_DB_PORT', '5432'),
         'ATOMIC_REQUESTS': True,
-    }
+        'TEST': {
+            'SERIALIZE': False,
+        },
+    },
 }
 
 DATABASE_ROUTERS = ['osf.db.router.PostgreSQLFailoverRouter', ]
@@ -63,7 +66,7 @@ CSRF_COOKIE_SECURE = osf_settings.SECURE_MODE
 CSRF_COOKIE_HTTPONLY = osf_settings.SECURE_MODE
 
 ALLOWED_HOSTS = [
-    '.osf.io'
+    '.osf.io',
 ]
 
 
@@ -79,11 +82,13 @@ INSTALLED_APPS = (
 
     # 3rd party
     'django_celery_beat',
+    'django_celery_results',
     'rest_framework',
     'corsheaders',
     'raven.contrib.django.raven_compat',
     'django_extensions',
     'guardian',
+    'storages',
     'waffle',
 
     # OSF
@@ -107,6 +112,10 @@ INSTALLED_APPS = (
     'addons.twofactor',
     'addons.wiki',
     'addons.zotero',
+    'addons.swift',
+    'addons.azureblobstorage',
+    'addons.weko',
+    'addons.jupyterhub',
 )
 
 # local development using https
@@ -121,7 +130,7 @@ RAVEN_CONFIG = {
 }
 
 BULK_SETTINGS = {
-    'DEFAULT_BULK_LIMIT': 100
+    'DEFAULT_BULK_LIMIT': 100,
 }
 
 MAX_PAGE_SIZE = 100
@@ -137,7 +146,7 @@ REST_FRAMEWORK = {
         'api.base.parsers.JSONAPIParser',
         'api.base.parsers.JSONAPIParserForRegularJSON',
         'rest_framework.parsers.FormParser',
-        'rest_framework.parsers.MultiPartParser'
+        'rest_framework.parsers.MultiPartParser',
     ),
     'EXCEPTION_HANDLER': 'api.base.exceptions.json_api_exception_handler',
     'DEFAULT_CONTENT_NEGOTIATION_CLASS': 'api.base.content_negotiation.JSONAPIContentNegotiation',
@@ -151,6 +160,10 @@ REST_FRAMEWORK = {
         '2.4',
         '2.5',
         '2.6',
+        '2.7',
+        '2.8',
+        '2.9',
+        '2.10',
     ),
     'DEFAULT_FILTER_BACKENDS': ('api.base.filters.OSFOrderingFilter',),
     'DEFAULT_PAGINATION_CLASS': 'api.base.pagination.JSONAPIPagination',
@@ -159,7 +172,7 @@ REST_FRAMEWORK = {
         # Custom auth classes
         'api.base.authentication.drf.OSFBasicAuthentication',
         'api.base.authentication.drf.OSFSessionAuthentication',
-        'api.base.authentication.drf.OSFCASAuthentication'
+        'api.base.authentication.drf.OSFCASAuthentication',
     ),
     'DEFAULT_THROTTLE_CLASSES': (
         'rest_framework.throttling.UserRateThrottle',
@@ -173,22 +186,24 @@ REST_FRAMEWORK = {
         'root-anon-throttle': '1000/hour',
         'test-user': '2/hour',
         'test-anon': '1/hour',
-    }
+        'send-email': '2/minute',
+    },
 }
 
 # Settings related to CORS Headers addon: allow API to receive authenticated requests from OSF
 # CORS plugin only matches based on "netloc" part of URL, so as workaround we add that to the list
 CORS_ORIGIN_ALLOW_ALL = False
-CORS_ORIGIN_WHITELIST = (urlparse(osf_settings.DOMAIN).netloc,
-                         osf_settings.DOMAIN,
-                         )
+CORS_ORIGIN_WHITELIST = (
+    urlparse(osf_settings.DOMAIN).netloc,
+    osf_settings.DOMAIN,
+)
 # This needs to remain True to allow cross origin requests that are in CORS_ORIGIN_WHITELIST to
 # use cookies.
 CORS_ALLOW_CREDENTIALS = True
 # Set dynamically on app init
 ORIGINS_WHITELIST = ()
 
-MIDDLEWARE_CLASSES = (
+MIDDLEWARE = (
     'api.base.middleware.DjangoGlobalMiddleware',
     'api.base.middleware.CeleryTaskMiddleware',
     'api.base.middleware.PostcommitTaskMiddleware',
@@ -212,8 +227,9 @@ TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
         'DIRS': [os.path.join(BASE_DIR, 'templates')],
-        'APP_DIRS': True
-    }]
+        'APP_DIRS': True,
+    },
+]
 
 
 ROOT_URLCONF = 'api.base.urls'
@@ -222,9 +238,7 @@ WSGI_APPLICATION = 'api.base.wsgi.application'
 
 LANGUAGE_CODE = 'en-us'
 
-# Disabled to make a test work (TestNodeLog.test_formatted_date)
-# TODO Try to understand what's happening to cause the test to break when that line is active.
-# TIME_ZONE = 'UTC'
+TIME_ZONE = 'UTC'
 
 USE_I18N = True
 
@@ -232,6 +246,14 @@ USE_L10N = True
 
 USE_TZ = True
 
+# https://django-storages.readthedocs.io/en/latest/backends/gcloud.html
+if os.environ.get('GOOGLE_APPLICATION_CREDENTIALS', False):
+    # Required to interact with Google Cloud Storage
+    DEFAULT_FILE_STORAGE = 'api.base.storage.RequestlessURLGoogleCloudStorage'
+    GS_BUCKET_NAME = os.environ.get('GS_BUCKET_NAME', 'cos-osf-stage-cdn-us')
+    GS_FILE_OVERWRITE = os.environ.get('GS_FILE_OVERWRITE', False)
+elif osf_settings.DEV_MODE or osf_settings.DEBUG_MODE:
+    DEFAULT_FILE_STORAGE = 'api.base.storage.DevFileSystemStorage'
 
 # https://docs.djangoproject.com/en/1.8/howto/static-files/
 
@@ -252,7 +274,7 @@ ENABLE_ESI = osf_settings.ENABLE_ESI
 VARNISH_SERVERS = osf_settings.VARNISH_SERVERS
 ESI_MEDIA_TYPES = osf_settings.ESI_MEDIA_TYPES
 
-ADDONS_FOLDER_CONFIGURABLE = ['box', 'dropbox', 's3', 'googledrive', 'figshare', 'owncloud', 'onedrive']
+ADDONS_FOLDER_CONFIGURABLE = ['box', 'dropbox', 's3', 'googledrive', 'figshare', 'owncloud', 'onedrive', 'swift', 'azureblobstorage', 'weko']
 ADDONS_OAUTH = ADDONS_FOLDER_CONFIGURABLE + ['dataverse', 'github', 'bitbucket', 'gitlab', 'mendeley', 'zotero', 'forward']
 
 BYPASS_THROTTLE_TOKEN = 'test-token'
@@ -269,3 +291,77 @@ ANONYMOUS_USER_NAME = None
 
 # If set to True, automated tests with extra queries will fail.
 NPLUSONE_RAISE = False
+
+# salt used for generating hashids
+HASHIDS_SALT = 'pinkhimalayan'
+
+### NII extensions
+LOGIN_BY_EPPN = osf_settings.to_bool('LOGIN_BY_EPPN', False)
+USER_TIMEZONE = osf_settings.USER_TIMEZONE
+USER_LOCALE = osf_settings.USER_LOCALE
+CLOUD_GATAWAY_ISMEMBEROF_PREFIX = osf_settings.CLOUD_GATAWAY_ISMEMBEROF_PREFIX
+# install-addons.py
+INSTALLED_APPS += ('addons.s3compat',)
+ADDONS_FOLDER_CONFIGURABLE.append('s3compat')
+ADDONS_OAUTH.append('s3compat')
+INSTALLED_APPS += ('addons.nextcloud',)
+ADDONS_FOLDER_CONFIGURABLE.append('nextcloud')
+ADDONS_OAUTH.append('nextcloud')
+
+TST_COMMAND_DELIMITER = ' '
+# RSA key generation settings
+SSL_GENERATE_KEY = 'openssl genrsa -des3 -out {0}.key {1}'
+SSL_GENERATE_KEY_NOPASS = 'openssl rsa -in {0}.key -out {0}.key.nopass'
+SSL_GENERATE_CSR = 'openssl req -new -key {0}.key.nopass -out {0}.csr'
+SSL_GENERATE_SELF_SIGNED = 'openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout {0}.key -out {0}.crt'
+SSL_PRIVATE_KEY_GENERATION = 'openssl genrsa -out {0} {1}'
+SSL_PUBLIC_KEY_GENERATION = 'openssl rsa -in {0} -pubout -out {1}'
+
+# UserKey Placement destination
+KEY_NAME_PRIVATE = 'pvt'
+KEY_NAME_PUBLIC = 'pub'
+KEY_BIT_VALUE = '3072'
+KEY_EXTENSION = '.pem'
+KEY_SAVE_PATH = '/user_key_info/'
+KEY_NAME_FORMAT = '{0}_{1}_{2}{3}'
+PRIVATE_KEY_VALUE = 1
+PUBLIC_KEY_VALUE = 2
+# FreeTSA openation commands
+SSL_CREATE_TIMESTAMP_REQUEST = 'openssl ts -query -data {0} -cert -sha512'
+SSL_GET_TIMESTAMP_RESPONSE = 'openssl ts -verify -data {0} -in {1} -CAfile {2}'
+# openssl ts verify check value
+OPENSSL_VERIFY_RESULT_OK = 'OK'
+# timestamp verify rootKey
+VERIFY_ROOT_CERTIFICATE = 'root_cert_verifycate.pem'
+# timestamp request const
+REQUEST_HEADER = {'Content-Type': 'application/timestamp-query'}
+TIME_STAMP_AUTHORITY_URL = 'http://eswg.jnsa.org/freetsa'
+ERROR_HTTP_STATUS = [400, 401, 402, 403, 500, 502, 503, 504]
+REQUEST_TIME_OUT = 5
+RETRY_COUNT = 3
+
+# UPKI flag
+USE_UPKI = False
+
+#uPKI operation commands
+UPKI_TIMESTAMP_URL = ''
+UPKI_CREATE_TIMESTAMP = ''
+UPKI_VERIFY_TIMESTAMP = ''
+UPKI_VERIFY_INVALID_MSG = 'LPC_ERR_VERIFY_INVALID'
+
+# TimeStamp Inspection Status
+TIME_STAMP_TOKEN_UNCHECKED = 0
+TIME_STAMP_TOKEN_CHECK_SUCCESS = 1
+TIME_STAMP_TOKEN_CHECK_SUCCESS_MSG = 'OK'
+TIME_STAMP_TOKEN_CHECK_NG = 2
+TIME_STAMP_TOKEN_CHECK_NG_MSG = 'NG: file modified.'
+TIME_STAMP_TOKEN_CHECK_FILE_NOT_FOUND = 3
+TIME_STAMP_TOKEN_CHECK_FILE_NOT_FOUND_MSG = 'NG: not inspected.'
+TIME_STAMP_TOKEN_NO_DATA = 4
+TIME_STAMP_TOKEN_NO_DATA_MSG = 'Error: some errors has occurred in processing.'
+FILE_NOT_EXISTS = 5
+FILE_NOT_EXISTS_MSG = 'NG: deleted file.'
+FILE_NOT_FOUND = 6
+FILE_NOT_FOUND_MSG = 'NG: file was gone.'
+TIME_STAMP_VERIFICATION_ERR = 7
+TIME_STAMP_VERIFICATION_ERR_MSG = 'Error: some errors has occurred in verification.'

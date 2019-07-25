@@ -1,16 +1,16 @@
 import pytest
 
 from api.base.settings.defaults import API_BASE
-from api.preprint_providers.permissions import GroupHelper
 from osf_tests.factories import (
     AuthUserFactory,
 )
-from website.util import permissions as osf_permissions
+from osf.utils import permissions as osf_permissions
 
 from api_tests.reviews.mixins.filter_mixins import ReviewActionFilterMixin
 from api_tests.reviews.mixins.comment_settings import ReviewActionCommentSettingsMixin
 
 
+@pytest.mark.enable_quickfiles_creation
 class TestPreprintActionFilters(ReviewActionFilterMixin):
 
     @pytest.fixture()
@@ -21,10 +21,7 @@ class TestPreprintActionFilters(ReviewActionFilterMixin):
     def user(self, request, preprint):
         user = AuthUserFactory()
         if request.param:
-            user.groups.add(
-                GroupHelper(
-                    preprint.provider
-                ).get_group('moderator'))
+            user.groups.add(preprint.provider.get_group('moderator'))
         else:
             preprint.node.add_contributor(
                 user,
@@ -51,6 +48,7 @@ class TestPreprintActionFilters(ReviewActionFilterMixin):
         assert res.status_code == 403
 
 
+@pytest.mark.enable_quickfiles_creation
 class TestReviewActionSettings(ReviewActionCommentSettingsMixin):
     @pytest.fixture()
     def url(self, preprint):

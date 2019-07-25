@@ -9,15 +9,17 @@ from mock import patch, Mock
 
 import factory
 import pytz
+import factory.django
 from factory.django import DjangoModelFactory
+from django.apps import apps
 from django.utils import timezone
+from django.contrib.contenttypes.models import ContentType
 from django.db.utils import IntegrityError
 from faker import Factory
 from waffle.models import Flag, Sample, Switch
 
-from website import settings
 from website.notifications.constants import NOTIFICATION_TYPES
-from website.util import permissions
+from osf.utils import permissions
 from website.archiver import ARCHIVER_SUCCESS
 from website.identifiers.utils import parse_identifiers
 from website.settings import FAKE_EMAIL_NAME, FAKE_EMAIL_DOMAIN
@@ -25,22 +27,27 @@ from framework.auth.core import Auth
 
 from osf import models
 from osf.models.sanctions import Sanction
+from osf.models.storage import PROVIDER_ASSET_NAME_CHOICES
 from osf.utils.names import impute_names_model
 from osf.utils.workflows import DefaultStates, DefaultTriggers
-from addons.osfstorage.models import OsfStorageFile
+from addons.osfstorage.models import OsfStorageFile, Region
 
 fake = Factory.create()
 
 # If tests are run on really old processors without high precision this might fail. Unlikely to occur.
 fake_email = lambda: '{}+{}@{}'.format(FAKE_EMAIL_NAME, int(time.clock() * 1000000), FAKE_EMAIL_DOMAIN)
 
+# Do this out of a cls context to avoid setting "t" as a local
+PROVIDER_ASSET_NAME_CHOICES = tuple([t[0] for t in PROVIDER_ASSET_NAME_CHOICES])
+
 def get_default_metaschema():
     """This needs to be a method so it gets called after the test database is set up"""
-    return models.MetaSchema.objects.first()
+    return models.RegistrationSchema.objects.first()
 
 def FakeList(provider, n, *args, **kwargs):
     func = getattr(fake, provider)
     return [func(*args, **kwargs) for _ in range(n)]
+
 
 class UserFactory(DjangoModelFactory):
     # TODO: Change this to only generate long names and see what breaks
@@ -83,12 +90,16 @@ class UserFactory(DjangoModelFactory):
         return instance
 
     @factory.post_generation
+    def set_have_email(self, create, extracted):
+        self.have_email = True
+        if create:
+            self.save()
+
+    @factory.post_generation
     def set_names(self, create, extracted):
         parsed = impute_names_model(self.fullname)
         for key, value in parsed.items():
             setattr(self, key, value)
-        if create:
-            self.save()
 
     @factory.post_generation
     def set_emails(self, create, extracted):
@@ -96,7 +107,7 @@ class UserFactory(DjangoModelFactory):
             if not self.id:
                 if create:
                     # Perform implicit save to populate M2M
-                    self.save()
+                    self.save(clean=False)
                 else:
                     # This might lead to strange behavior
                     return
@@ -124,12 +135,15 @@ class UnregUserFactory(DjangoModelFactory):
     fullname = factory.Sequence(lambda n: 'Freddie Mercury{0}'.format(n))
     date_registered = factory.Faker('date_time', tzinfo=pytz.utc)
 
+    # Add user parameter "have_email" for testing RDM repair part.(#656,#2593)
+    have_email = True
+
     class Meta:
         model = models.OSFUser
 
     @classmethod
     def _build(cls, target_class, *args, **kwargs):
-        '''Build an object without saving it.'''
+        """Build an object without saving it."""
         ret = target_class.create_unregistered(email=kwargs.pop('email'), fullname=kwargs.pop('fullname'))
         for key, val in kwargs.items():
             setattr(ret, key, val)
@@ -156,7 +170,7 @@ class UnconfirmedUserFactory(DjangoModelFactory):
 
     @classmethod
     def _build(cls, target_class, username, password, fullname):
-        '''Build an object without saving it.'''
+        """Build an object without saving it."""
         instance = target_class.create_unconfirmed(
             username=username, password=password, fullname=fullname
         )
@@ -201,7 +215,7 @@ class ProjectWithAddonFactory(ProjectFactory):
     # TODO: Should use mock addon objects
     @classmethod
     def _build(cls, target_class, addon='s3', *args, **kwargs):
-        '''Build an object without saving it.'''
+        """Build an object without saving it."""
         instance = ProjectFactory._build(target_class, *args, **kwargs)
         auth = Auth(user=instance.creator)
         instance.add_addon(addon, auth)
@@ -276,8 +290,51 @@ class CollectionFactory(DjangoModelFactory):
     title = factory.Faker('catch_phrase')
     creator = factory.SubFactory(UserFactory)
 
+    @classmethod
+    def _create(cls, *args, **kwargs):
+        collected_types = kwargs.pop('collected_types', ContentType.objects.filter(app_label='osf', model__in=['abstractnode', 'basefilenode', 'collection', 'preprintservice']))
+        obj = cls._build(*args, **kwargs)
+        obj.save()
+        # M2M, requires initial save
+        obj.collected_types = collected_types
+        return obj
+
 class BookmarkCollectionFactory(CollectionFactory):
     is_bookmark_collection = True
+
+
+class CollectionProviderFactory(DjangoModelFactory):
+    name = factory.Faker('company')
+    description = factory.Faker('bs')
+    external_url = factory.Faker('url')
+
+    class Meta:
+        model = models.CollectionProvider
+
+    @classmethod
+    def _create(cls, *args, **kwargs):
+        user = kwargs.pop('creator', None)
+        obj = cls._build(*args, **kwargs)
+        obj._creator = user or UserFactory()  # Generates primary_collection
+        obj.save()
+        return obj
+
+class RegistrationProviderFactory(DjangoModelFactory):
+    name = factory.Faker('company')
+    description = factory.Faker('bs')
+    external_url = factory.Faker('url')
+
+    class Meta:
+        model = models.RegistrationProvider
+
+    @classmethod
+    def _create(cls, *args, **kwargs):
+        user = kwargs.pop('creator', None)
+        obj = cls._build(*args, **kwargs)
+        obj._creator = user or UserFactory()  # Generates primary_collection
+        obj.save()
+        return obj
+
 
 class RegistrationFactory(BaseNodeFactory):
 
@@ -403,8 +460,6 @@ class RegistrationApprovalFactory(SanctionFactory):
 
 class EmbargoTerminationApprovalFactory(DjangoModelFactory):
 
-    FACTORY_STRATEGY = factory.base.CREATE_STRATEGY
-
     @classmethod
     def create(cls, registration=None, user=None, embargo=None, *args, **kwargs):
         if registration:
@@ -438,7 +493,7 @@ class DraftRegistrationFactory(DjangoModelFactory):
                 project_params['creator'] = initiator
             branched_from = ProjectFactory(**project_params)
         initiator = branched_from.creator
-        registration_schema = registration_schema or models.MetaSchema.objects.first()
+        registration_schema = registration_schema or models.RegistrationSchema.objects.first()
         registration_metadata = registration_metadata or {}
         draft = models.DraftRegistration.create_from_node(
             branched_from,
@@ -540,16 +595,23 @@ class PreprintProviderFactory(DjangoModelFactory):
 
 
 def sync_set_identifiers(preprint):
-    ezid_return_value = {
-        'response': {
-            'success': '{doi}osf.io/{guid} | {ark}osf.io/{guid}'.format(
-                doi=settings.DOI_NAMESPACE, ark=settings.ARK_NAMESPACE, guid=preprint._id
-            )
-        },
+    from website.identifiers.clients import EzidClient
+    from website import settings
+    client = preprint.get_doi_client()
+
+    if isinstance(client, EzidClient):
+        doi_value = settings.DOI_FORMAT.format(prefix=settings.EZID_DOI_NAMESPACE, guid=preprint._id)
+        ark_value = '{ark}osf.io/{guid}'.format(ark=settings.EZID_ARK_NAMESPACE, guid=preprint._id)
+        return_value = {'success': '{} | {}'.format(doi_value, ark_value)}
+    else:
+        return_value = {'doi': settings.DOI_FORMAT.format(prefix=preprint.provider.doi_prefix, guid=preprint._id)}
+
+    doi_client_return_value = {
+        'response': return_value,
         'already_exists': False
     }
-    id_dict = parse_identifiers(ezid_return_value)
-    preprint.set_identifier_values(doi=id_dict['doi'], ark=id_dict['ark'])
+    id_dict = parse_identifiers(doi_client_return_value)
+    preprint.set_identifier_values(doi=id_dict['doi'])
 
 
 class PreprintFactory(DjangoModelFactory):
@@ -574,6 +636,7 @@ class PreprintFactory(DjangoModelFactory):
         update_task_patcher.start()
 
         finish = kwargs.pop('finish', True)
+        set_doi = kwargs.pop('set_doi', True)
         is_published = kwargs.pop('is_published', True)
         instance = cls._build(target_class, *args, **kwargs)
 
@@ -595,7 +658,7 @@ class PreprintFactory(DjangoModelFactory):
             )
 
         preprint_file = OsfStorageFile.create(
-            node=instance.node,
+            target=instance.node,
             path='/{}'.format(filename),
             name=filename,
             materialized_path='/{}'.format(filename))
@@ -611,6 +674,7 @@ class PreprintFactory(DjangoModelFactory):
             'size': 1337,
             'contentType': 'img/png'
         }).save()
+        update_task_patcher.stop()
 
         if finish:
             auth = Auth(user)
@@ -620,9 +684,9 @@ class PreprintFactory(DjangoModelFactory):
             if license_details:
                 instance.set_preprint_license(license_details, auth=auth)
 
-            create_task_patcher = mock.patch('website.preprints.tasks.get_and_set_preprint_identifiers.si')
+            create_task_patcher = mock.patch('website.identifiers.utils.request_identifiers')
             mock_create_identifier = create_task_patcher.start()
-            if is_published:
+            if is_published and set_doi:
                 mock_create_identifier.side_effect = sync_set_identifiers(instance)
 
             instance.set_published(is_published, auth=auth)
@@ -642,6 +706,17 @@ class TagFactory(DjangoModelFactory):
     name = factory.Faker('word')
     system = False
 
+class DismissedAlertFactory(DjangoModelFactory):
+    class Meta:
+        model = models.DismissedAlert
+
+    @classmethod
+    def _create(cls, *args, **kwargs):
+        kwargs['_id'] = kwargs.get('_id', 'adblock')
+        kwargs['user'] = kwargs.get('user', UserFactory())
+        kwargs['location'] = kwargs.get('location', 'iver/settings')
+
+        return super(DismissedAlertFactory, cls)._create(*args, **kwargs)
 
 class ApiOAuth2PersonalTokenFactory(DjangoModelFactory):
     class Meta:
@@ -817,6 +892,20 @@ class ReviewActionFactory(DjangoModelFactory):
 
     is_deleted = False
 
+class ScheduledBannerFactory(DjangoModelFactory):
+    # Banners are set for 24 hours from start_date if no end date is given
+    class Meta:
+        model = models.ScheduledBanner
+
+    name = factory.Faker('name')
+    default_alt_text = factory.Faker('text')
+    mobile_alt_text = factory.Faker('text')
+    default_photo = factory.Faker('file_name')
+    mobile_photo = factory.Faker('file_name')
+    license = factory.Faker('name')
+    color = 'white'
+    start_date = timezone.now()
+    end_date = factory.LazyAttribute(lambda o: o.start_date)
 
 class FlagFactory(DjangoModelFactory):
     name = factory.Faker('catch_phrase')
@@ -843,3 +932,68 @@ class SwitchFactory(DjangoModelFactory):
 
     class Meta:
         model = Switch
+
+
+class NodeRequestFactory(DjangoModelFactory):
+    class Meta:
+        model = models.NodeRequest
+
+    comment = factory.Faker('text')
+
+class PreprintRequestFactory(DjangoModelFactory):
+    class Meta:
+        model = models.PreprintRequest
+
+    comment = factory.Faker('text')
+
+osfstorage_settings = apps.get_app_config('addons_osfstorage')
+
+
+generic_location = {
+    'service': 'cloud',
+    osfstorage_settings.WATERBUTLER_RESOURCE: 'resource',
+    'object': '1615307',
+}
+
+generic_waterbutler_settings = {
+    'storage': {
+        'provider': 'glowcloud',
+        'container': 'osf_storage',
+        'use_public': True,
+    }
+}
+
+generic_waterbutler_credentials = {
+    'storage': {
+        'region': 'PartsUnknown',
+        'username': 'mankind',
+        'token': 'heresmrsocko'
+    }
+}
+
+
+class RegionFactory(DjangoModelFactory):
+    class Meta:
+        model = Region
+
+    name = factory.Sequence(lambda n: 'Region {0}'.format(n))
+    _id = factory.Sequence(lambda n: 'us_east_{0}'.format(n))
+    waterbutler_credentials = generic_waterbutler_credentials
+    waterbutler_settings = generic_waterbutler_settings
+    waterbutler_url = 'http://123.456.test.woo'
+
+
+class ProviderAssetFileFactory(DjangoModelFactory):
+    class Meta:
+        model = models.ProviderAssetFile
+
+    name = FuzzyChoice(choices=PROVIDER_ASSET_NAME_CHOICES)
+    file = factory.django.FileField(filename=factory.Faker('text'))
+
+    @classmethod
+    def _create(cls, target_class, *args, **kwargs):
+        providers = kwargs.pop('providers', [])
+        instance = super(ProviderAssetFileFactory, cls)._create(target_class, *args, **kwargs)
+        instance.providers = providers
+        instance.save()
+        return instance

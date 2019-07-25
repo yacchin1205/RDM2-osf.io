@@ -34,6 +34,7 @@
     <script src="{% static 'vendor/bower_components/raven-js/dist/raven.min.js' %}"></script>
     <script src="{% static 'vendor/bower_components/jquery/dist/jquery.js' %}"></script>
     <script src="{% static 'vendor/bower_components/jquery-ui/ui/minified/jquery-ui.min.js' %}"></script>
+    {% render_bundle 'vendor' %}
 
     {% block top_includes %}
 
@@ -116,9 +117,24 @@
                 </div>
             </li>
             {% endif %}
-            {% if perms.osf.view_preprintservice %}
-            <li><a href="{% url 'preprints:search' %}"><i class='fa fa-link'></i><span>Preprints</span> </a></li>
-            {% endif %}
+          {% if perms.osf.view_preprintservice %}
+              <li>
+                  <a role="button" data-toggle="collapse" href="#collapsePreprints">
+                      <i class='fa fa-caret-down'></i> Preprints
+                  </a>
+              </li>
+              <li>
+                  <div class="collapse" id="collapsePreprints">
+                      <ul class="sidebar-menu sidebar-menu-inner">
+                          <li><a href="{% url 'preprints:search' %}"><i class='fa fa-link'></i><span>Preprints</span> </a></li>
+                          <li><a href="{% url 'preprints:flagged-spam' %}"><i class="fa fa-exclamation-triangle"></i><span> Flagged Spam</span> </a></li>
+                          <li><a href="{% url 'preprints:known-spam' %}"><i class="fa fa-cutlery"></i><span> Known Spam</span> </a></li>
+                          <li><a href="{% url 'preprints:known-ham' %}"><i class="fa fa-star"></i><span> Known Ham</span> </a></li>
+                          <li><a href="{% url 'preprints:withdrawal-requests' %}"><i class="fa fa-check-square-o"></i><span> Withdrawal Requests</span> </a></li>
+                      </ul>
+                  </div>
+              </li>
+          {% endif %}
           {% if perms.osf.view_osfuser %}
               <li><a role="button" data-toggle="collapse" href="#collapseUsers">
                   <i class='fa fa-caret-down'></i> OSF Users
@@ -136,7 +152,15 @@
             <li><a href="{% url 'spam:spam' %}"><i class='fa fa-link'></i> <span>OSF Spam</span></a></li>
           {% endif %}
           {% if perms.osf.view_registration %}
-            <li><a href="{% url 'nodes:registrations' %}"><i class='fa fa-link'></i> <span>OSF Registrations</span></a></li>
+              <li><a role="button" data-toggle="collapse" href="#collapseRegistrations">
+                  <i class='fa fa-caret-down'></i> OSF Registrations
+              </a></li>
+              <div class="collapse" id="collapseRegistrations">
+                  <ul class="sidebar-menu sidebar-menu-inner">
+                      <li><a href="{% url 'nodes:registrations' %}"><i class='fa fa-link'></i> <span>All Registrations</span></a></li>
+                      <li><a href="{% url 'nodes:stuck-registrations' %}"><i class='fa fa-link'></i> <span>Stuck Registrations</span></a></li>
+                  </ul>
+              </div>
           {% endif %}
           {% if perms.osf.view_institution %}
               <li><a role="button" data-toggle="collapse" href="#collapseInstitutions">
@@ -158,8 +182,48 @@
               <div class="collapse" id="collapsePreprintProviders">
                   <ul class="sidebar-menu sidebar-menu-inner">
                       <li><a href="{% url 'preprint_providers:list' %}"><i class='fa fa-link'></i><span> List</span> </a></li>
+                      <li><a href="{% url 'preprint_providers:whitelist' %}"><i class='fa fa-link'></i><span> Whitelist</span> </a></li>
                       {% if perms.osf.change_preprintprovider %}
                       <li><a href="{% url 'preprint_providers:create' %}"><i class='fa fa-link'></i><span> Create</span> </a></li>
+                      {% endif %}
+                  </ul>
+              </div>
+          {% endif %}
+          {% if perms.osf.view_providerassetfile %}
+              <li><a role="button" data-toggle="collapse" href="#collapseAssetFiles">
+                  <i class='fa fa-caret-down'></i> Provider Assets
+              </a></li>
+              <div class="collapse" id="collapseAssetFiles">
+                  <ul class="sidebar-menu sidebar-menu-inner">
+                      <li><a href="{% url 'asset_files:list' %}"><i class='fa fa-link'></i><span> List</span> </a></li>
+                      {% if perms.osf.change_providerassetfile %}
+                      <li><a href="{% url 'asset_files:create' %}"><i class='fa fa-link'></i><span> Create</span> </a></li>
+                      {% endif %}
+                  </ul>
+              </div>
+          {% endif %}
+          {% if perms.osf.view_collectionprovider %}
+              <li><a role="button" data-toggle="collapse" href="#collapseCollectionProviders">
+                  <i class='fa fa-caret-down'></i> Collection Providers
+              </a></li>
+              <div class="collapse" id="collapseCollectionProviders">
+                  <ul class="sidebar-menu sidebar-menu-inner">
+                      <li><a href="{% url 'collection_providers:list' %}"><i class='fa fa-link'></i><span> List</span> </a></li>
+                      {% if perms.osf.change_collectionprovider %}
+                      <li><a href="{% url 'collection_providers:create' %}"><i class='fa fa-link'></i><span> Create</span> </a></li>
+                      {% endif %}
+                  </ul>
+              </div>
+          {% endif %}
+          {% if perms.osf.view_registrationprovider %}
+              <li><a role="button" data-toggle="collapse" href="#collapseRegistrationProviders">
+                  <i class='fa fa-caret-down'></i> Registration Providers
+              </a></li>
+              <div class="collapse" id="collapseRegistrationProviders">
+                  <ul class="sidebar-menu sidebar-menu-inner">
+                      <li><a href="{% url 'registration_providers:list' %}"><i class='fa fa-link'></i><span> List</span> </a></li>
+                      {% if perms.osf.change_registrationprovider %}
+                      <li><a href="{% url 'registration_providers:create' %}"><i class='fa fa-link'></i><span> Create</span> </a></li>
                       {% endif %}
                   </ul>
               </div>
@@ -176,8 +240,32 @@
           {% if perms.osf.view_subject%}
             <li><a href="{% url 'subjects:list' %}"><i class='fa fa-link'></i> <span>OSF Subjects</span></a></li>
           {% endif %}
+          {% if perms.osf.view_scheduledbanner %}
+              <li><a role="button" data-toggle="collapse" href="#collapseBanners">
+                  <i class='fa fa-caret-down'></i> Banners
+              </a></li>
+              <div class="collapse" id="collapseBanners">
+                  <ul class="sidebar-menu sidebar-menu-inner">
+                      <li><a href="{% url 'banners:list' %}"><i class='fa fa-link'></i><span> List</span> </a></li>
+                      {% if perms.osf.change_scheduledbanner %}
+                      <li><a href="{% url 'banners:create' %}"><i class='fa fa-link'></i><span> Create</span> </a></li>
+                      {% endif %}
+                  </ul>
+              </div>
+          {% endif %}
+
           {% if perms.osf.change_maintenancestate %}
             <li><a href="{% url 'maintenance:display' %}"><i class='fa fa-link'></i> <span>Maintenance Alerts</span></a></li>
+          {% endif %}
+          {% if user.is_superuser or user.is_staff %}
+            <li><a href="{% url 'addons:institutions' %}"><i class='fa fa-link'></i> <span>RDM Addons</span></a></li>
+            <li><a href="{% url 'statistics:institutions' %}"><i class='fa fa-link'></i> <span>RDM Statistics</span></a></li>
+            <li><a href="{% url 'announcement:index' %}"><i class='fa fa-link'></i> <span>RDM Announcement</span></a></li>
+             <li><a href="{% url 'timestampadd:institutions' %}"><i class='fa fa-link'></i> <span>Timestamp Control</span></a></li>
+{% comment GRDM 7117 disable some timestamp features %}
+             <li><a href="{% url 'keymanagement:institutions' %}"><i class='fa fa-link'></i> <span>User Keys Management</span></a></li>
+             <li><a href="{% url 'timestampsettings:institutions' %}"><i class='fa fa-link'></i> <span>RDM Timestamp Environment</span></a></li>
+{% endcomment %}
           {% endif %}
           </ul><!-- /.sidebar-menu -->
         </section>
@@ -192,7 +280,7 @@
         <section class="content">
           {% block content %}
           <h1>
-           Welcome to the OSF Admin Home Page
+           Welcome to the GakuNin RDM Admin Home Page
           </h1>
           <!-- Your Page Content Here -->
           {% endblock %}
@@ -208,7 +296,6 @@
     </div><!-- ./wrapper -->
 
     <!-- Included JS -->
-    {% render_bundle 'vendor' %}
     {% render_bundle 'admin-base-page' %}
 
     {% block bottom_js %}

@@ -82,14 +82,46 @@
                         </table>
                     </div>
                 </div>
+                % if storage_flag_is_active:
+                    <div id="updateDefaultStorageLocation" class="panel panel-default">
+                        <div class="panel-heading clearfix"><h3 class="panel-title">Default Storage Location</h3></div>
+                        <div class="panel-body">
+                            <form id="updateDefaultStorageLocation" role="form">
+                                <div class="form-group">
+                                    <label for="default_storage_location">Default storage location:</label>
+                                    <span class="p-l-sm dropdown generic-dropdown category-list">
+                                        <button class="btn btn-default dropdown-toggle" type="button" data-toggle="dropdown">
+                                            <span data-bind="text: locationSelectedName" class="text-capitalize"></span>
+                                            <i class="fa fa-sort"></i>
+                                        </button>
+                                        <ul class="dropdown-menu" data-bind="foreach: {data: profile().availableRegions, as: 'location'}">
+                                            <li>
+                                                  <a href="#" data-bind="click: $root.setLocation.bind($root, location)">
+                                                      <span data-bind="text: location.name"></span>
+                                                  </a>
+                                            </li>
+                                        </ul>
+                                        <div class="help-block">
+                                                <p>
+                                                    This location will be applied to new projects and components. It will not affect existing projects and components.
+                                                </p>
+                                        </div>
+                                    </span>
+                                </div>
+                                <button class="btn btn-primary" data-bind="click: $root.updateDefaultStorageLocation.bind($root)">Update location</button>
+                                <p class="text-muted"></p>
+                            </form>
+                        </div>
+                    </div>
+                % endif
                 <div id="externalIdentity" class="panel panel-default">
                     <div class="panel-heading clearfix"><h3 class="panel-title">Connected Identities</h3></div>
                     <div class="panel-body">
-                        <p> Connected identities allow you to log in to the OSF via a third-party service. <br/>
+                        <p> Connected identities allow you to log in to the GakuNin RDM via a third-party service. <br/>
                         You can revoke these authorizations here.</p>
                         <hr />
                         % if not external_identity:
-                        <p >You have not authorized any external services to log in to the OSF.</p>
+                        <p >You have not authorized any external services to log in to the GakuNin RDM.</p>
                         % endif
                         <tbody>
                         % for identity in external_identity:
@@ -108,7 +140,7 @@
                                 <td>
                                     <a data-bind="click: $root.removeIdentity.bind($root, '${id}')"><i class="fa fa-times text-danger pull-right"></i></a>
                                 </td>
-                            </tr></div>                    
+                            </tr></div>
                             % if not loop.last:
                             <hr />
                             % endif
@@ -195,6 +227,7 @@
                         </form>
                     </div>
                 </div>
+                %if use_tfa:
                 <div class="panel panel-default">
                   <div class="panel-heading clearfix"><h3 class="panel-title">Security Settings</h3></div>
                   <div class="panel-body">
@@ -206,6 +239,7 @@
                     % endfor
                   </div>
                 </div>
+                %endif
                 <div id="exportAccount" class="panel panel-default">
                     <div class="panel-heading clearfix"><h3 class="panel-title">Export Account Data</h3></div>
                     <div class="panel-body">
@@ -217,7 +251,7 @@
                     <div class="panel-heading clearfix"><h3 class="panel-title">Deactivate Account</h3></div>
                     <div class="panel-body">
                         <p class="alert alert-warning"><strong>Warning:</strong> Once your deactivation has been approved the effects are irreversible.</p>
-                        <p>Deactivating your account will remove you from all public projects to which you are a contributor. Your account will no longer be associated with OSF projects, and your work on the OSF will be inaccessible.</p>
+                        <p>Deactivating your account will remove you from all public projects to which you are a contributor. Your account will no longer be associated with GakuNin RDM projects, and your work on the GakuNin RDM will be inaccessible.</p>
                         <p data-bind="click: cancel, visible: requestPending()"><b>Your account is currently pending deactivation.</b></p>
                         <a class="btn btn-danger" data-bind="click: submit, visible: !requestPending()">Request deactivation</a>
                         <a class="btn btn-success" data-bind="click: cancel, visible: requestPending()">Cancel deactivation request</a>

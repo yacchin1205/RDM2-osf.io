@@ -4,12 +4,13 @@ import re
 from django.core.validators import URLValidator, validate_email as django_validate_email
 from django.core.exceptions import ValidationError as DjangoValidationError
 from django.utils.deconstruct import deconstructible
+from django.utils.six import string_types
 
 from website.notifications.constants import NOTIFICATION_TYPES
-from website.util.sanitize import strip_html
 from website import settings
 
-from osf.exceptions import ValidationError, ValidationValueError, reraise_django_validation_errors
+from osf.utils.sanitize import strip_html
+from osf.exceptions import ValidationError, ValidationValueError, reraise_django_validation_errors, BlacklistedEmailError
 
 
 def validate_history_item(items):
@@ -38,7 +39,7 @@ def validate_year(item):
         except ValueError:
             raise ValidationValueError('Please enter a valid year.')
         else:
-            if len(item) != 4:
+            if isinstance(item, string_types) and len(item) != 4:
                 raise ValidationValueError('Please enter a valid year.')
 
 
@@ -92,7 +93,8 @@ def validate_email(value):
     with reraise_django_validation_errors():
         django_validate_email(value)
     if value.split('@')[1].lower() in settings.BLACKLISTED_DOMAINS:
-        raise ValidationError('Invalid Email')
+        raise BlacklistedEmailError('Invalid Email')
+
 
 def validate_subject_highlighted_count(provider, is_highlighted_addition):
     if is_highlighted_addition and provider.subjects.filter(highlighted=True).count() >= 10:

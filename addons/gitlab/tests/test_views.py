@@ -5,10 +5,11 @@ import mock
 import datetime
 import pytest
 import unittest
+from json import dumps
 
 from nose.tools import *  # noqa (PEP8 asserts)
 from tests.base import OsfTestCase, get_default_metaschema
-from osf_tests.factories import ProjectFactory, UserFactory, AuthUserFactory
+from osf_tests.factories import ProjectFactory, UserFactory, AuthUserFactory, InstitutionFactory
 
 from github3.repos.branch import Branch
 
@@ -24,6 +25,7 @@ from addons.gitlab.serializer import GitLabSerializer
 from addons.gitlab.utils import check_permissions
 from addons.gitlab.tests.utils import create_mock_gitlab, GitLabAddonTestCase
 from addons.gitlab.tests.factories import GitLabAccountFactory
+from admin.rdm_addons.utils import get_rdm_addon_option
 
 pytestmark = pytest.mark.django_db
 
@@ -83,6 +85,21 @@ class TestGitLabConfigViews(GitLabAddonTestCase, OAuthAddonConfigViewsTestCaseMi
         )
         mock_add_hook.assert_called_once()
 
+    def test_add_user_account_rdm_addons_denied(self):
+        institution = InstitutionFactory()
+        self.user.affiliated_institutions.add(institution)
+        self.user.save()
+        rdm_addon_option = get_rdm_addon_option(institution.id, self.ADDON_SHORT_NAME)
+        rdm_addon_option.is_allowed = False
+        rdm_addon_option.save()
+        url = self.project.api_url_for('gitlab_add_user_account')
+        rv = self.app.post_json(url,{
+            'access_key': 'aldkjf',
+            'secret_key': 'las'
+        }, auth=self.user.auth, expect_errors=True)
+        assert_equal(rv.status_int, http.FORBIDDEN)
+        assert_in('You are prohibited from using this add-on.', rv.body)
+
 
 # TODO: Test remaining CRUD methods
 # TODO: Test exception handling
@@ -128,9 +145,9 @@ class TestGitLabViews(OsfTestCase):
         self.node_settings = self.project.get_addon('gitlab')
         self.node_settings.user_settings = self.project.creator.get_addon('gitlab')
         # Set the node addon settings to correspond to the values of the mock repo
-        self.node_settings.user = self.gitlab.repo.return_value['owner']['name']
-        self.node_settings.repo = self.gitlab.repo.return_value['name']
-        self.node_settings.repo_id = self.gitlab.repo.return_value['id']
+        self.node_settings.user = 'fred'
+        self.node_settings.repo = 'mock-repo'
+        self.node_settings.repo_id = 1748448
         self.node_settings.save()
 
     def _get_sha_for_branch(self, branch=None, mock_branches=None):
@@ -138,10 +155,10 @@ class TestGitLabViews(OsfTestCase):
         if mock_branches is None:
             mock_branches = gitlab_mock.branches
         if branch is None:  # Get default branch name
-            branch = self.gitlab.repo.return_value['default_branch']
-        for each in mock_branches.return_value:
-            if each['name'] == branch:
-                branch_sha = each['commit']['id']
+            branch = self.gitlab.repo.default_branch
+        for each in mock_branches:
+            if each.name == branch:
+                branch_sha = each.commit['id']
         return branch_sha
 
     # Tests for _get_refs
@@ -149,14 +166,14 @@ class TestGitLabViews(OsfTestCase):
     @mock.patch('addons.gitlab.api.GitLabClient.repo')
     def test_get_refs_defaults(self, mock_repo, mock_branches):
         gitlab_mock = self.gitlab
-        mock_repo.return_value = gitlab_mock.repo.return_value
+        mock_repo.return_value = gitlab_mock.repo
         mock_branches.return_value = gitlab_mock.branches.return_value
         branch, sha, branches = utils.get_refs(self.node_settings)
         assert_equal(
             branch,
-            gitlab_mock.repo.return_value['default_branch']
+            gitlab_mock.repo.default_branch
         )
-        assert_equal(sha, self._get_sha_for_branch(branch=None))  # Get refs for default branch
+        assert_equal(sha, branches[0].commit['id'])  # Get refs for default branch
         assert_equal(
             branches,
             gitlab_mock.branches.return_value
@@ -170,8 +187,7 @@ class TestGitLabViews(OsfTestCase):
         mock_branches.return_value = gitlab_mock.branches.return_value
         branch, sha, branches = utils.get_refs(self.node_settings, 'master')
         assert_equal(branch, 'master')
-        branch_sha = self._get_sha_for_branch('master')
-        assert_equal(sha, branch_sha)
+        assert_equal(sha, branches[0].commit['id'])
         assert_equal(
             branches,
             gitlab_mock.branches.return_value
@@ -213,25 +229,26 @@ class TestGitLabViews(OsfTestCase):
         mock_has_auth.return_value = True
         connection = gitlab_mock
         branch = 'master'
-        mock_repository = {
+        mock_repository = mock.Mock(**{
             'user': 'fred',
             'repo': 'mock-repo',
             'permissions': {
                 'project_access': {'access_level': 20, 'notification_level': 3}
             },
-        }
-        mock_repo.return_value = mock_repository
+        })
+        mock_repo.attributes.return_value = mock_repository
         assert_false(check_permissions(self.node_settings, self.consolidated_auth, connection, branch, repo=mock_repository))
 
     # make a branch with a different commit than the commit being passed into check_permissions
     @mock.patch('addons.gitlab.models.UserSettings.has_auth')
-    def test_permissions_not_head(self, mock_has_auth):
+    @mock.patch('addons.gitlab.api.GitLabClient.repo')
+    def test_permissions_not_head(self, mock_repo, mock_has_auth):
         gitlab_mock = self.gitlab
         mock_has_auth.return_value = True
         connection = gitlab_mock
-        mock_branch = {
+        mock_branch = mock.Mock(**{
             'commit': {'id': '67890'}
-        }
+        })
         connection.branches.return_value = mock_branch
         sha = '12345'
         assert_false(check_permissions(self.node_settings, self.consolidated_auth, connection, mock_branch, sha=sha))
@@ -257,7 +274,10 @@ class TestGitLabViews(OsfTestCase):
         assert_equal(urls['download'], expected_urls['download'])
 
     @mock.patch('addons.gitlab.views.verify_hook_signature')
-    def test_hook_callback_add_file_not_thro_osf(self, mock_verify):
+    @mock.patch('addons.gitlab.api.GitLabClient.repo')
+    def test_hook_callback_add_file_not_thro_osf(self, mock_repo, mock_verify):
+        gitlab_mock = self.gitlab
+        gitlab_mock.repo = mock_repo
         url = '/api/v1/project/{0}/gitlab/hook/'.format(self.project._id)
         timestamp = str(datetime.datetime.utcnow())
         self.app.post_json(
@@ -345,7 +365,7 @@ class TestGitLabViews(OsfTestCase):
             {'test': True,
              'commits': [{'id': 'b08dbb5b6fcd74a592e5281c9d28e2020a1db4ce',
                           'distinct': True,
-                          'message': 'Added via the Open Science Framework',
+                          'message': 'Added via the GakuNin RDM',
                           'timestamp': '2014-01-08T14:15:51-08:00',
                           'url': 'https://gitlab.com/tester/addontesting/commit/b08dbb5b6fcd74a592e5281c9d28e2020a1db4ce',
                           'author': {'name': 'Illidan', 'email': 'njqpw@osf.io'},
@@ -363,7 +383,7 @@ class TestGitLabViews(OsfTestCase):
             {'test': True,
              'commits': [{'id': 'b08dbb5b6fcd74a592e5281c9d28e2020a1db4ce',
                           'distinct': True,
-                          'message': 'Updated via the Open Science Framework',
+                          'message': 'Updated via the GakuNin RDM',
                           'timestamp': '2014-01-08T14:15:51-08:00',
                           'url': 'https://gitlab.com/tester/addontesting/commit/b08dbb5b6fcd74a592e5281c9d28e2020a1db4ce',
                           'author': {'name': 'Illidan', 'email': 'njqpw@osf.io'},
@@ -381,7 +401,7 @@ class TestGitLabViews(OsfTestCase):
             {'test': True,
              'commits': [{'id': 'b08dbb5b6fcd74a592e5281c9d28e2020a1db4ce',
                           'distinct': True,
-                          'message': 'Deleted via the Open Science Framework',
+                          'message': 'Deleted via the GakuNin RDM',
                           'timestamp': '2014-01-08T14:15:51-08:00',
                           'url': 'https://gitlab.com/tester/addontesting/commit/b08dbb5b6fcd74a592e5281c9d28e2020a1db4ce',
                           'author': {'name': 'Illidan', 'email': 'njqpw@osf.io'},
@@ -503,20 +523,20 @@ class TestGitLabSettings(OsfTestCase):
     def test_link_repo_registration(self, mock_branches):
 
         mock_branches.return_value = [
-            Branch.from_json({
+            Branch.from_json(dumps({
                 'name': 'master',
                 'commit': {
                     'sha': '6dcb09b5b57875f334f61aebed695e2e4193db5e',
                     'url': 'https://api.gitlab.com/repos/octocat/Hello-World/commits/c5b97d5ae6c19d5c5df71a34c7fbeeda2479ccbc',
                 }
-            }),
-            Branch.from_json({
+            })),
+            Branch.from_json(dumps({
                 'name': 'develop',
                 'commit': {
                     'sha': '6dcb09b5b57875asdasedawedawedwedaewdwdass',
                     'url': 'https://api.gitlab.com/repos/octocat/Hello-World/commits/cdcb09b5b57875asdasedawedawedwedaewdwdass',
                 }
-            })
+            }))
         ]
 
         registration = self.project.register_node(

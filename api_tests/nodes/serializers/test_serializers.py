@@ -41,23 +41,23 @@ class TestNodeSerializer:
         assert attributes['title'] == node.title
         assert attributes['description'] == node.description
         assert attributes['public'] == node.is_public
-        assert attributes['tags'] == [str(each.name)
-                                      for each in node.tags.all()]
+        assert set(attributes['tags']) == set(node.tags.values_list('name', flat=True))
         assert not attributes['current_user_can_comment']
         assert attributes['category'] == node.category
         assert attributes['registration'] == node.is_registration
         assert attributes['fork'] == node.is_fork
         assert attributes['collection'] == node.is_collection
+        assert attributes['analytics_key'] == node.keenio_read_key
 
         # Relationships
         relationships = data['relationships']
+        assert 'region' in relationships
         assert 'children' in relationships
         assert 'contributors' in relationships
         assert 'files' in relationships
         assert 'parent' in relationships
         assert 'affiliated_institutions' in relationships
         assert 'registrations' in relationships
-        # Not a fork, so forked_from is removed entirely
         assert 'forked_from' not in relationships
         parent_link = relationships['parent']['links']['related']['href']
         assert urlparse(
@@ -106,7 +106,8 @@ class TestNodeRegistrationSerializer:
         should_not_relate_to_registrations = [
             'registered_from',
             'registered_by',
-            'registration_schema'
+            'registration_schema',
+            'region'
         ]
 
         # Attributes
@@ -119,9 +120,12 @@ class TestNodeRegistrationSerializer:
 
         # Relationships
         relationships = data['relationships']
+
+        # Relationships with data
         relationship_urls = {
-            k: v['links']['related']['href'] for k,
-            v in relationships.items()}
+            k: v['links']['related']['href'] for k, v
+            in relationships.items()}
+
         assert 'registered_by' in relationships
         registered_by = relationships['registered_by']['links']['related']['href']
         assert urlparse(

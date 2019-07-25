@@ -7,27 +7,28 @@
     %if campaign == "prereg":
         <div class="text-center m-t-lg">
             <h3>Preregistration Challenge</h3><hr>
-            <p>Please login to the Open Science Framework or create a free account to continue.</p>
+            <p>Please login to the GakuNin RDM or create a free account to continue.</p>
         </div>
     %endif
 
     %if campaign == "erpc":
         <div class="text-center m-t-lg">
             <h3>Election Research Preacceptance Competition</h3><hr>
-            <p>Please login to the Open Science Framework or create a free account to continue.</p>
+            <p>Please login to the GakuNin RDM or create a free account to continue.</p>
         </div>
     %endif
 
     %if campaign == "osf-registries":
         <div class="text-center m-t-lg">
-            <h3>OSF Registries</h3><hr>
-            <p>Please login to the Open Science Framework or create a free account to continue.</p>
+            <h3>GakuNin RDM Registries</h3><hr>
+            <p>Please login to the GakuNin RDM or create a free account to continue.</p>
+        </div>
     %endif
 
     %if campaign == "osf-preprints":
         <div class="text-center m-t-lg">
-            <h3>OSF Preprints</h3><hr>
-            <p>Please login to the Open Science Framework or create a free account to contribute to OSF Preprints.</p>
+            <h3>GakuNin RDM Preprints</h3><hr>
+            <p>Please login to the GakuNin RDM or create a free account to contribute to GakuNin RDM Preprints.</p>
         </div>
     %endif
 
@@ -48,21 +49,28 @@
                      <table style="border-collapse: separate; border-spacing: 30px 0; margin-top: 20px;  margin-bottom: 10px;">
                         <tr>
                             <td><img src="/static/img/registries/osf-prereg-black.png" style="width: 200px; margin-top: 15px" /></td>
-                            <td><h3>Create a free OSF account</h3></td>
+                            <td><h3>Create a free GakuNin RDM account</h3></td>
                         </tr>
                     </table>
                 %elif campaign == "osf-registries":
                      <table style="border-collapse: separate; border-spacing: 30px 0; margin-top: 20px;  margin-bottom: 10px;">
                         <tr>
                             <td><img src="/static/img/registries/osf-registries-black.png" style="width: 200px; margin-top: 15px" /></td>
+                            <td><h3>Create a free GakuNin RDM account</h3></td>
+                        </tr>
+                    </table>
+                %elif campaign == "osf-registered-reports":
+                     <table style="border-collapse: separate; border-spacing: 30px 0; margin-top: 20px;  margin-bottom: 10px;">
+                        <tr>
+                            <td><img src="/static/img/registries/osf-registries-black.png" style="width: 200px; margin-top: 15px" /></td>
                             <td><h3>Create a free OSF account</h3></td>
                         </tr>
                     </table>
-                %elif campaign == "osf-preprints":
+                %elif campaign == "GakuNin RDM-preprints":
                      <table style="border-collapse: separate; border-spacing: 30px 0; margin-top: 20px;  margin-bottom: 10px;">
                         <tr>
                             <td><img src="/static/img/preprint_providers/osf-preprints-login.png" style="width: 200px; margin-top: 15px" /></td>
-                            <td><h3>Create a free OSF account</h3></td>
+                            <td><h3>Create a free GakuNin RDM account</h3></td>
                         </tr>
                     </table>
                 %elif campaign not in preprint_campaigns.keys():
@@ -73,7 +81,7 @@
                             <table style="border-collapse: separate; border-spacing: 30px 0; margin-top: 20px;  margin-bottom: 10px;">
                                 <tr>
                                     <td><img src="${preprint_campaigns[provider]['logo_path']}" style="width: 100px; height: 100px" /></td>
-                                    <td><h3>Create a free OSF account to contribute to ${preprint_campaigns[provider]['name'] | n}</h3></td>
+                                    <td><h3>Create a free GakuNin RDM account to contribute to ${preprint_campaigns[provider]['name'] | n}</h3></td>
                                 </tr>
                             </table>
                         %endif
@@ -133,6 +141,14 @@
                         </div>
                     </div>
                 </div>
+                <!-- Terms of Service and Privacy Policy agreement -->
+                <div class="form-group">
+                    <div class="pull-right">
+                        <input type="checkbox" data-bind="checked: acceptedTermsOfService, disable: submitted()">
+                        <label style="margin-right: 15px">I have read and agree to the <a target="_blank" href="https://meatwiki.nii.ac.jp/confluence/pages/viewpage.action?pageId=32676419">Terms of Use</a> and <a target="_blank" href="https://meatwiki.nii.ac.jp/confluence/pages/viewpage.action?pageId=32676422">Privacy Policy</a>.</label>
+                        <p class="help-block" data-bind="validationMessage: acceptedTermsOfService" style="display: none;"></p>
+                    </div>
+                </div>
                 </br>
                 <div class="form-group m-t-md">
                     <div class="col-md-5 col-sm-12" style="padding-left: 25px">
@@ -147,16 +163,11 @@
                             </div>
                         %endif
                             <div class="col-xs-12">
-                                <span class="pull-right p-t-sm"><button type="submit" class="btn btn-success" data-bind="disable: submitted()">Create account</button></span>
+                                <span class="pull-right p-t-sm"><button type="submit" class="btn btn-success" data-bind="disable: submitted() || !acceptedTermsOfService()">Create account</button></span>
                             </div>
                     </div>
                 </div>
             </form>
-        </div>
-        <div class="row">
-            <div id="termsAndConditions" class="m-t-md col-sm-6 col-sm-offset-3">
-                <p> By clicking "Create account", you agree to our <a href="https://github.com/CenterForOpenScience/centerforopenscience.org/blob/master/TERMS_OF_USE.md">Terms</a> and that you have read our <a href="https://github.com/CenterForOpenScience/centerforopenscience.org/blob/master/PRIVACY_POLICY.md">Privacy Policy</a>, including our information on <a href="https://github.com/CenterForOpenScience/centerforopenscience.org/blob/master/PRIVACY_POLICY.md#f-cookies">Cookie Use</a>.</p>
-            </div>
         </div>
     </div>
     %endif
@@ -171,7 +182,7 @@
     </script>
     <script src=${"/static/public/js/login-page.js" | webpack_asset}></script>
     %if recaptcha_site_key:
-        <script src="https://www.google.com/recaptcha/api.js" async defer></script>
+        <script src="https://recaptcha.net/recaptcha/api.js" async defer></script>
     %endif
 </%def>
 

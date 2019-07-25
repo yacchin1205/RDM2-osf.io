@@ -35,6 +35,8 @@ class BaseVersioning(drf_versioning.BaseVersioning):
     def get_url_path_version(self, kwargs):
         invalid_version_message = 'Invalid version in URL path.'
         version = kwargs.get(self.version_param)
+        if version is None:
+            return self.default_version
         version = url_path_version_to_decimal(version)
         if not self.is_allowed_version(version):
             raise drf_exceptions.NotFound(invalid_version_message)
@@ -80,22 +82,22 @@ class BaseVersioning(drf_versioning.BaseVersioning):
             raise exceptions.Conflict(
                 detail='Version {} specified in "Accept" header does not fall within URL path version {}'.format(
                     header_version,
-                    url_path_version
-                )
+                    url_path_version,
+                ),
             )
         if query_parameter_version and query_major_version != url_path_major_version:
             raise exceptions.Conflict(
                 detail='Version {} specified in query parameter does not fall within URL path version {}'.format(
                     query_parameter_version,
-                    url_path_version
-                )
+                    url_path_version,
+                ),
             )
         if header_version and query_parameter_version and (header_version != query_parameter_version):
             raise exceptions.Conflict(
                 detail='Version {} specified in "Accept" header does not match version {} specified in query parameter'.format(
                     header_version,
-                    query_parameter_version
-                )
+                    query_parameter_version,
+                ),
             )
 
     def determine_version(self, request, *args, **kwargs):
@@ -123,20 +125,5 @@ class BaseVersioning(drf_versioning.BaseVersioning):
         query_kwargs = {'version': query_parameter_version} if query_parameter_version else None
 
         return utils.absolute_reverse(
-            viewname, query_kwargs=query_kwargs, args=args, kwargs=kwargs
+            viewname, query_kwargs=query_kwargs, args=args, kwargs=kwargs,
         )
-
-class DeprecatedEndpointMixin(object):
-    @property
-    def min_version(self):
-        return '2.0'
-
-    @property
-    def max_version(self):
-        raise NotImplementedError('Deprecated endpoints must define `max_version`')
-
-    def determine_version(self, request, *args, **kwargs):
-        version, scheme = super(DeprecatedEndpointMixin, self).determine_version(request, *args, **kwargs)
-        if utils.is_deprecated(version, self.min_version, self.max_version):
-            raise drf_exceptions.NotFound()
-        return version, scheme

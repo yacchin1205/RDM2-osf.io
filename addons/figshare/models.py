@@ -25,6 +25,11 @@ class FigshareFolder(FigshareFileNode, Folder):
 class FigshareFile(FigshareFileNode, File):
     version_identifier = 'ref'
 
+    @property
+    def _hashes(self):
+        # figshare API doesn't provide this metadata
+        return None
+
     def update(self, revision, data, user=None, save=True):
         """Figshare does not support versioning.
         Always pass revision as None to avoid conflict.
@@ -34,18 +39,18 @@ class FigshareFile(FigshareFileNode, File):
 
         # Draft files are not renderable
         if data['extra']['status'] == 'drafts':
-            return (version, u'''
+            return (version, u"""
             <style>
             .file-download{{display: none;}}
             .file-share{{display: none;}}
             </style>
             <div class="alert alert-info" role="alert">
             The file "{name}" is still a draft on figshare. <br>
-            To view it  on the OSF
+            To view it  on the GakuNin RDM
             <a href="https://support.figshare.com/support/solutions">publish</a>
             it on figshare.
             </div>
-            '''.format(name=markupsafe.escape(self.name)))
+            """.format(name=markupsafe.escape(self.name)))
 
         return version
 
@@ -194,7 +199,7 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
     # Callbacks #
     #############
 
-    def after_delete(self, node=None, user=None):
+    def after_delete(self, user=None):
         self.deauthorize(Auth(user=user), add_log=True)
         self.save()
 

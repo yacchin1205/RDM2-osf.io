@@ -30,25 +30,25 @@ class PreprintSummary(SummaryAnalytics):
         query_datetime = timestamp_datetime + timedelta(days=1)
 
         elastic_query = {
-            "query": {
-                "bool": {
-                    "must": [
+            'query': {
+                'bool': {
+                    'must': [
                         {
-                            "match": {
-                                "type": "preprint"
+                            'match': {
+                                'type': 'preprint'
                             }
                         },
                         {
-                            "match": {
-                                "sources": None
+                            'match': {
+                                'sources': None
                             }
                         }
                     ],
                     'filter': [
                         {
-                            "range": {
-                                "date": {
-                                    "lte": "{}||/d".format(query_datetime.strftime('%Y-%m-%d'))
+                            'range': {
+                                'date': {
+                                    'lte': '{}||/d'.format(query_datetime.strftime('%Y-%m-%d'))
                                 }
                             }
                         }
@@ -59,7 +59,7 @@ class PreprintSummary(SummaryAnalytics):
 
         counts = []
         for preprint_provider in PreprintProvider.objects.all():
-            name = preprint_provider.name if preprint_provider.name != 'Open Science Framework' else 'OSF'
+            name = preprint_provider.name if preprint_provider.name != 'GakuNin RDM' else 'OSF'
             elastic_query['query']['bool']['must'][1]['match']['sources'] = name
             resp = requests.post('https://share.osf.io/api/v2/search/creativeworks/_search', json=elastic_query).json()
             counts.append({
@@ -71,6 +71,7 @@ class PreprintSummary(SummaryAnalytics):
                     'total': resp['hits']['total'],
                 },
             })
+            logger.info('{} Preprints counted for the provider {}'.format(resp['hits']['total'], preprint_provider.name))
 
         return counts
 

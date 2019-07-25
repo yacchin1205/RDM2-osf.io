@@ -26,9 +26,9 @@ def osf_storage_root(addon_config, node_settings, auth, **kwargs):
 class OSFStorageAddonAppConfig(BaseAddonAppConfig):
     name = 'addons.osfstorage'
     label = 'addons_osfstorage'
-    full_name = 'OSF Storage'
+    full_name = 'NII Storage'
     short_name = 'osfstorage'
-    added_default = ['node']
+    added_default = ['node', 'user']
     added_mandatory = ['node']
 
     categories = ['storage']
@@ -37,8 +37,8 @@ class OSFStorageAddonAppConfig(BaseAddonAppConfig):
 
     get_hgrid_data = osf_storage_root
 
-    max_file_size = 5 * 1024  # 5 GB
-    high_max_file_size = 5 * 1024  # 5 GB
+    max_file_size = addon_settings.MAX_UPLOAD_SIZE
+    high_max_file_size = addon_settings.HIGH_MAX_UPLOAD_SIZE
 
     owners = ['node']
 
@@ -64,3 +64,7 @@ class OSFStorageAddonAppConfig(BaseAddonAppConfig):
     @property
     def node_settings(self):
         return self.get_model('NodeSettings')
+
+    @property
+    def user_settings(self):
+        return self.get_model('UserSettings')

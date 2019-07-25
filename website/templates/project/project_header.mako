@@ -56,12 +56,16 @@
                             % endif
                         % endfor
 
+                        % if project_analytics:
                         % if node['is_public'] or user['is_contributor']:
                             <li><a href="${node['url']}analytics/">Analytics</a></li>
                         % endif
+                        % endif
 
+                        % if project_registrations:
                         % if not node['is_registration'] and not node['anonymous']:
                             <li><a href="${node['url']}registrations/">Registrations</a></li>
+                        % endif
                         % endif
 
                         % if user['is_contributor']:
@@ -86,7 +90,13 @@
                            </a>
                        </li>
                     % endif
-
+                    % if 'admin' in user['permissions']:
+                       <li id="projectNavTimestamp">
+                           <a href="${node['url']}timestamp/">
+                              Timestamp
+                           </a>
+                       </li>
+                    % endif
                     </ul>
                 </div>
             </div>
@@ -187,7 +197,7 @@
     % endif
 
     % if disk_saving_mode:
-        <div class="alert alert-info"><strong>NOTICE: </strong>Forks, registrations, and uploads will be temporarily disabled while the OSF undergoes a hardware upgrade. These features will return shortly. Thank you for your patience.</div>
+        <div class="alert alert-info"><strong>NOTICE: </strong>Forks, registrations, and uploads will be temporarily disabled while the GakuNin RDM undergoes a hardware upgrade. These features will return shortly. Thank you for your patience.</div>
     % endif
 
 </div>

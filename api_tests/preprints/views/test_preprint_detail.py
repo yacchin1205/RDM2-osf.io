@@ -2,6 +2,7 @@ import mock
 import pytest
 
 from rest_framework import exceptions
+from django.utils import timezone
 
 from api.base.settings.defaults import API_BASE
 from api_tests import utils as test_utils
@@ -15,16 +16,15 @@ from osf_tests.factories import (
     SubjectFactory,
     PreprintProviderFactory,
 )
-from website.settings import EZID_FORMAT, DOI_NAMESPACE
-
+from website.settings import DOI_FORMAT
 
 def build_preprint_update_payload(
-        node_id,
-        attributes=None,
-        relationships=None):
+        node_id, attributes=None, relationships=None,
+        jsonapi_type='preprints'):
     payload = {
         'data': {
             'id': node_id,
+            'type': jsonapi_type,
             'attributes': attributes,
             'relationships': relationships
         }
@@ -43,6 +43,19 @@ class TestPreprintDetail:
     @pytest.fixture()
     def preprint(self, user):
         return PreprintFactory(creator=user)
+
+    @pytest.fixture()
+    def preprint_pre_mod(self, user):
+        pp = PreprintFactory(provider__reviews_workflow='pre-moderation', is_published=False, creator=user)
+        pp.node.is_public = True
+        pp.node.save()
+        return pp
+
+    @pytest.fixture()
+    def moderator(self, preprint_pre_mod):
+        mod = AuthUserFactory()
+        preprint_pre_mod.provider.get_group('moderator').user_set.add(mod)
+        return mod
 
     @pytest.fixture()
     def unpublished_preprint(self, user):
@@ -98,6 +111,40 @@ class TestPreprintDetail:
         assert deleted_preprint_res.status_code == 404
         assert res.content_type == 'application/vnd.api+json'
 
+    def test_withdrawn_preprint(self, app, user, moderator, preprint_pre_mod):
+        # test_retracted_fields
+        url = '/{}preprints/{}/'.format(API_BASE, preprint_pre_mod._id)
+        res = app.get(url, auth=user.auth)
+        data = res.json['data']
+
+        assert not data['attributes']['date_withdrawn']
+        assert 'withdrawal_justification' not in data['attributes']
+        assert 'ever_public' not in data['attributes']
+
+        ## retracted and not ever_public
+        assert not preprint_pre_mod.ever_public
+        preprint_pre_mod.date_withdrawn = timezone.now()
+        preprint_pre_mod.withdrawal_justification = 'assumptions no longer apply'
+        preprint_pre_mod.save()
+        assert preprint_pre_mod.is_retracted
+        res = app.get(url, expect_errors=True)
+        assert res.status_code == 404
+        res = app.get(url, auth=user.auth, expect_errors=True)
+        assert res.status_code == 404
+        res = app.get(url, auth=moderator.auth)
+        assert res.status_code == 200
+
+        ## retracted and ever_public (True)
+        preprint_pre_mod.ever_public = True
+        preprint_pre_mod.save()
+        res = app.get(url, auth=user.auth)
+        data = res.json['data']
+        assert data['attributes']['date_withdrawn']
+        assert 'withdrawal_justification' in data['attributes']
+        assert 'assumptions no longer apply' == data['attributes']['withdrawal_justification']
+        assert 'date_withdrawn' in data['attributes']
+
+    @pytest.mark.enable_quickfiles_creation
     def test_embed_contributors(self, app, user, preprint):
         url = '/{}preprints/{}/?embed=contributors'.format(
             API_BASE, preprint._id)
@@ -117,38 +164,36 @@ class TestPreprintDetail:
         assert 'preprint_doi' not in res.json['data']['links'].keys()
         assert res.json['data']['attributes']['preprint_doi_created'] is None
 
-    def test_published_preprint_doi_link_returned_before_datacite_request(
+    def test_published_preprint_doi_link_not_returned_before_doi_request(
             self, app, user, unpublished_preprint, unpublished_url):
         unpublished_preprint.is_published = True
         unpublished_preprint.save()
         res = app.get(unpublished_url, auth=user.auth)
         assert res.json['data']['id'] == unpublished_preprint._id
         assert res.json['data']['attributes']['is_published'] is True
-        assert 'preprint_doi' in res.json['data']['links'].keys()
-        expected_doi = EZID_FORMAT.format(
-            namespace=DOI_NAMESPACE,
-            guid=unpublished_preprint._id).replace(
-            'doi:',
-            '').upper()
-        assert res.json['data']['links']['preprint_doi'] == 'https://dx.doi.org/{}'.format(
-            expected_doi)
-        assert res.json['data']['attributes']['preprint_doi_created'] is None
+        assert 'preprint_doi' not in res.json['data']['links'].keys()
 
-    def test_published_preprint_doi_link_returned_after_datacite_request(
+    def test_published_preprint_doi_link_returned_after_doi_request(
             self, app, user, preprint, url):
-        expected_doi = EZID_FORMAT.format(
-            namespace=DOI_NAMESPACE,
-            guid=preprint._id).replace(
-            'doi:',
-            '')
-        preprint.set_identifier_values(doi=expected_doi, ark='testark')
+        expected_doi = DOI_FORMAT.format(
+            prefix=preprint.provider.doi_prefix,
+            guid=preprint._id
+        )
+        preprint.set_identifier_values(doi=expected_doi)
         res = app.get(url, auth=user.auth)
         assert res.json['data']['id'] == preprint._id
         assert res.json['data']['attributes']['is_published'] is True
         assert 'preprint_doi' in res.json['data']['links'].keys()
-        assert res.json['data']['links']['preprint_doi'] == 'https://dx.doi.org/{}'.format(
+        assert res.json['data']['links']['preprint_doi'] == 'https://doi.org/{}'.format(
             expected_doi)
-        assert res.json['data']['attributes']['preprint_doi_created'] is not None
+        assert res.json['data']['attributes']['preprint_doi_created']
+
+    def test_preprint_embed_identifiers(self, app, user, preprint, url):
+        embed_url = url + '?embed=identifiers'
+        res = app.get(embed_url)
+        assert res.status_code == 200
+        link = res.json['data']['relationships']['identifiers']['links']['related']['href']
+        assert '{}identifiers/'.format(url) in link
 
 
 @pytest.mark.django_db
@@ -214,6 +259,7 @@ class TestPreprintDelete:
 
 
 @pytest.mark.django_db
+@pytest.mark.enable_enqueue_task
 class TestPreprintUpdate:
 
     @pytest.fixture()
@@ -293,6 +339,39 @@ class TestPreprintUpdate:
         assert log.action == 'preprint_file_updated'
         assert log.params.get('preprint') == preprint._id
 
+    def test_update_preprints_with_none_type(self, app, user, preprint, url):
+        payload = {
+            'data': {
+                'id': preprint._id,
+                'type': None,
+                'attributes': None,
+                'relationship': None
+            }
+        }
+
+        res = app.patch_json_api(url, payload, auth=user.auth, expect_errors=True)
+        assert res.status_code == 400
+        assert res.json['errors'][0]['source']['pointer'] == '/data/type'
+
+    def test_update_preprints_with_no_type(self, app, user, preprint, url):
+        payload = {
+            'data': {
+                'id': preprint._id,
+                'attributes': None,
+                'relationship': None
+            }
+        }
+
+        res = app.patch_json_api(url, payload, auth=user.auth, expect_errors=True)
+        assert res.status_code == 400
+        assert res.json['errors'][0]['source']['pointer'] == '/data/type'
+
+    def test_update_preprints_with_wrong_type(self, app, user, preprint, url):
+        update_file_payload = build_preprint_update_payload(preprint._id, jsonapi_type='Nonsense')
+
+        res = app.patch_json_api(url, update_file_payload, auth=user.auth, expect_errors=True)
+        assert res.status_code == 409
+
     def test_new_primary_not_in_node(self, app, user, preprint, url):
         project = ProjectFactory()
         file_for_project = test_utils.create_test_file(
@@ -331,10 +410,10 @@ class TestPreprintUpdate:
         assert preprint.article_doi == new_doi
 
         preprint_detail = app.get(url, auth=user.auth).json['data']
-        assert preprint_detail['links']['doi'] == 'https://dx.doi.org/{}'.format(
+        assert preprint_detail['links']['doi'] == 'https://doi.org/{}'.format(
             new_doi)
 
-    @mock.patch('website.preprints.tasks.on_preprint_updated.s')
+    @mock.patch('website.preprints.tasks.update_or_enqueue_on_preprint_updated')
     def test_update_description_and_title(
             self, mock_preprint_updated, app, user, preprint, url):
         new_title = 'Brother Nero'
@@ -360,8 +439,8 @@ class TestPreprintUpdate:
         assert preprint.node.title == new_title
         assert mock_preprint_updated.called
 
-    @mock.patch('website.preprints.tasks.update_ezid_metadata_on_change')
-    def test_update_tags(self, mock_update_ezid, app, user, preprint, url):
+    @mock.patch('website.preprints.tasks.update_or_enqueue_on_preprint_updated')
+    def test_update_tags(self, mock_update_doi_metadata, app, user, preprint, url):
         new_tags = ['hey', 'sup']
 
         for tag in new_tags:
@@ -384,11 +463,12 @@ class TestPreprintUpdate:
                     'name',
                     flat=True))
         ) == new_tags
-        assert mock_update_ezid.called
+        assert mock_update_doi_metadata.called
 
-    @mock.patch('website.preprints.tasks.update_ezid_metadata_on_change')
+    @pytest.mark.enable_quickfiles_creation
+    @mock.patch('website.preprints.tasks.update_or_enqueue_on_preprint_updated')
     def test_update_contributors(
-            self, mock_update_ezid, app, user, preprint, url):
+            self, mock_update_doi_metadata, app, user, preprint, url):
         new_user = AuthUserFactory()
         contributor_payload = {
             'data': {
@@ -418,7 +498,7 @@ class TestPreprintUpdate:
 
         assert res.status_code == 201
         assert new_user in preprint.node.contributors
-        assert mock_update_ezid.called
+        assert mock_update_doi_metadata.called
 
     def test_cannot_set_primary_file(self, app, user, preprint, url):
 
@@ -520,8 +600,7 @@ class TestPreprintUpdate:
 
         assert not preprint.subjects.filter(_id=subject._id).exists()
 
-    @mock.patch('website.preprints.tasks.get_and_set_preprint_identifiers.si')
-    def test_update_published(self, mock_get_identifiers, app, user):
+    def test_update_published(self, app, user):
         unpublished = PreprintFactory(creator=user, is_published=False)
         url = '/{}preprints/{}/'.format(API_BASE, unpublished._id)
         payload = build_preprint_update_payload(
@@ -529,11 +608,9 @@ class TestPreprintUpdate:
         app.patch_json_api(url, payload, auth=user.auth)
         unpublished.reload()
         assert unpublished.is_published
-        assert mock_get_identifiers.called
 
-    @mock.patch('website.preprints.tasks.get_and_set_preprint_identifiers.si')
     def test_update_published_makes_node_public(
-            self, mock_get_identifiers, app, user):
+            self, app, user):
         unpublished = PreprintFactory(creator=user, is_published=False)
         assert not unpublished.node.is_public
         url = '/{}preprints/{}/'.format(API_BASE, unpublished._id)
@@ -544,7 +621,7 @@ class TestPreprintUpdate:
 
         assert unpublished.node.is_public
 
-    @mock.patch('website.preprints.tasks.on_preprint_updated.s')
+    @mock.patch('website.preprints.tasks.update_or_enqueue_on_preprint_updated')
     def test_update_preprint_task_called_on_api_update(
             self, mock_on_preprint_updated, app, user, preprint, url):
         update_doi_payload = build_preprint_update_payload(
@@ -617,7 +694,8 @@ class TestPreprintUpdateLicense:
     def make_payload(self):
         def payload(
                 node_id, license_id=None, license_year=None,
-                copyright_holders=None):
+                copyright_holders=None, jsonapi_type='preprints'
+        ):
             attributes = {}
 
             if license_year and copyright_holders:
@@ -643,6 +721,7 @@ class TestPreprintUpdateLicense:
             return {
                 'data': {
                     'id': node_id,
+                    'type': jsonapi_type,
                     'attributes': attributes,
                     'relationships': {
                         'license': {
@@ -656,6 +735,7 @@ class TestPreprintUpdateLicense:
             } if license_id else {
                 'data': {
                     'id': node_id,
+                    'type': jsonapi_type,
                     'attributes': attributes
                 }
             }
