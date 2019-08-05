@@ -19,6 +19,7 @@ from addons.owncloud.tests.factories import OwnCloudAccountFactory, OwnCloudNode
 from addons.s3.tests.factories import S3AccountFactory, S3NodeSettingsFactory
 from addons.figshare.tests.factories import FigshareAccountFactory, FigshareNodeSettingsFactory
 from addons.iqbrims.tests.factories import IQBRIMSAccountFactory, IQBRIMSNodeSettingsFactory
+from addons.iqbrims.client import IQBRIMSClient
 from api.base.settings.defaults import API_BASE
 from osf_tests.factories import AuthUserFactory
 from tests.base import ApiAddonTestCase
@@ -1337,6 +1338,25 @@ class TestNodeIQBRIMSAddon(
     short_name = 'iqbrims'
     AccountFactory = IQBRIMSAccountFactory
     NodeSettingsFactory = IQBRIMSNodeSettingsFactory
+
+    def setUp(self):
+        super(TestNodeIQBRIMSAddon, self).setUp()
+        self.mock_get_folder_info = mock.patch.object(
+            IQBRIMSClient,
+            'get_folder_info'
+        )
+        self.mock_get_folder_info.return_value = {'title': 'Test-xxxxx'}
+        self.mock_get_folder_info.start()
+        self.mock_rename_folder = mock.patch.object(
+            IQBRIMSClient,
+            'rename_folder'
+        )
+        self.mock_rename_folder.start()
+
+    def tearDown(self):
+        self.mock_get_folder_info.stop()
+        self.mock_rename_folder.stop()
+        super(TestNodeIQBRIMSAddon, self).tearDown()
 
     def _settings_kwargs(self, node, user_settings):
         return {

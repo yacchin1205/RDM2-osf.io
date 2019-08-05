@@ -104,6 +104,16 @@ class IQBRIMSClient(BaseClient):
             )
         return permissions
 
+    def get_folder_info(self, folder_id):
+        res = self._make_request(
+            'GET',
+            self._build_url(settings.API_BASE_URL, 'drive', 'v2', 'files',
+            folder_id),
+            expects=(200, ),
+            throws=HTTPError(401)
+        )
+        return res.json()
+
     def get_content(self, file_id):
         res = self._make_request(
             'GET',
@@ -553,6 +563,8 @@ class IQBRIMSFlowableClient(object):
         is_directly_submit_data = status['is_directly_submit_data'] \
                                   if 'is_directly_submit_data' in status \
                                   else False
+        register_type = status['state']
+        labo_name = status['labo_id']
         payload = {'processDefinitionId': self.app_id,
                    'variables': [{'name': 'projectId',
                                   'type': 'string',
@@ -560,6 +572,11 @@ class IQBRIMSFlowableClient(object):
                                  {'name': 'paperTitle',
                                   'type': 'string',
                                   'value': project_title},
+                                 {'name': 'paperFolderPattern',
+                                  'type': 'string',
+                                  'value': '{}/{}/%-{}/'.format(register_type,
+                                                                labo_name,
+                                                                project_id)},
                                  {'name': 'isDirectlySubmitData',
                                   'type': 'boolean',
                                   'value': is_directly_submit_data},

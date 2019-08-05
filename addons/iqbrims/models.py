@@ -3,25 +3,32 @@
 """
 import os
 import json
+import logging
 import random
 import string
 
 from addons.base.models import (BaseOAuthNodeSettings, BaseOAuthUserSettings,
                                 BaseStorageAddon)
 from django.db import models
+from django.db.models.signals import post_save
+from django.dispatch import receiver
 from framework.auth import Auth
 from framework.exceptions import HTTPError
+from osf.models.node import Node
 from osf.models.external import ExternalProvider
 from osf.models.files import File, Folder, BaseFileNode
 from addons.base import exceptions
+from addons.iqbrims.apps import IQBRIMSAddonConfig
 from addons.iqbrims import settings as drive_settings
 from addons.iqbrims.client import (IQBRIMSAuthClient,
                                                IQBRIMSClient)
 from addons.iqbrims.serializer import IQBRIMSSerializer
-from addons.iqbrims.utils import to_hgrid
+from addons.iqbrims.utils import to_hgrid, get_folder_title
 from website.util import api_v2_url
 
 # from website.files.models.ext import PathFollowingFileNode
+
+logger = logging.getLogger(__name__)
 
 REVIEW_FOLDERS = {'paper': u'最終原稿・組図',
                   'raw': u'生データ',
@@ -292,3 +299,27 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
         self.secret = ''.join(secret)
         self.save()
         return self.secret
+
+
+@receiver(post_save, sender=Node)
+def update_folder_name(sender, instance, created, **kwargs):
+    node = instance
+    if not node.has_addon(IQBRIMSAddonConfig.short_name):
+        return
+    iqbrims = node.get_addon(IQBRIMSAddonConfig.short_name)
+    if not iqbrims.has_auth:
+        return
+    try:
+        access_token = iqbrims.fetch_access_token()
+        client = IQBRIMSClient(access_token)
+        folder_info = client.get_folder_info(folder_id=iqbrims.folder_id)
+        new_title = get_folder_title(node)
+        current_title = folder_info['title']
+        if current_title != new_title:
+            logger.info('Update: title={}, current={}'.format(new_title, current_title))
+            client.rename_folder(iqbrims.folder_id, new_title)
+        else:
+            logger.info('No changes: title={}, current={}'.format(new_title, current_title))
+    except exceptions.InvalidAuthError:
+        logger.warning('Failed to check description of google drive',
+                       exc_info=True)
