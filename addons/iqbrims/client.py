@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 import json
-import requests
 import logging
 import os
 import string
@@ -543,7 +542,7 @@ class SpreadsheetClient(BaseClient):
         return ret
 
 
-class IQBRIMSFlowableClient(object):
+class IQBRIMSFlowableClient(BaseClient):
 
     def __init__(self, app_id):
         self.app_id = app_id
@@ -553,6 +552,13 @@ class IQBRIMSFlowableClient(object):
         is_directly_submit_data = status['is_directly_submit_data'] \
                                   if 'is_directly_submit_data' in status \
                                   else False
+        labos = [l['text'] for l in settings.LABO_LIST
+                 if l['id'] == status['labo_id']] if 'labo_id' in status \
+                else []
+        labo_name = labos[0] if len(labos) > 0 \
+                    else 'LaboID:{}'.format(status.get('labo_id', 'unknown'))
+        accepted_date = status['accepted_date'].split('T')[0] \
+                        if 'accepted_date' in status else ''
         payload = {'processDefinitionId': self.app_id,
                    'variables': [{'name': 'projectId',
                                   'type': 'string',
@@ -560,9 +566,15 @@ class IQBRIMSFlowableClient(object):
                                  {'name': 'paperTitle',
                                   'type': 'string',
                                   'value': project_title},
+                                 {'name': 'laboName',
+                                  'type': 'string',
+                                  'value': labo_name},
                                  {'name': 'isDirectlySubmitData',
                                   'type': 'boolean',
                                   'value': is_directly_submit_data},
+                                 {'name': 'acceptedDate',
+                                  'type': 'string',
+                                  'value': accepted_date},
                                  {'name': 'flowableWorkflowUrl',
                                   'type': 'string',
                                   'value': settings.FLOWABLE_TASK_URL},
@@ -571,9 +583,16 @@ class IQBRIMSFlowableClient(object):
                                   'value': secret}]}
         headers = {'Content-Type': 'application/json',
                    'Accept': 'application/json'}
-        response = requests.post(url, data=json.dumps(payload),
-                                 headers=headers,
-                                 auth=(settings.FLOWABLE_USER,
-                                       settings.FLOWABLE_PASSWORD))
-        logger.info('flowable-rest: response={}'.format(response.content))
-        response.raise_for_status()
+        response = self._make_request(
+            'POST',
+            url,
+            headers=headers,
+            data=json.dumps(payload),
+            expects=(200, ),
+            throws=HTTPError(401)
+        )
+        logger.info('flowable-rest: response={}'.format(response.json()))
+
+    @property
+    def _auth(self):
+        return (settings.FLOWABLE_USER, settings.FLOWABLE_PASSWORD)
