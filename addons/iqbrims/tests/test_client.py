@@ -55,7 +55,7 @@ class TestIQBRIMSFlowableClient(OsfTestCase):
         with mock.patch.object(client, '_make_request',
                                return_value=MockResponse('{"test": true}',
                                                          200)) as mkreq:
-            status = {'labo_id': settings.LABO_LIST[0]['id']}
+            status = {'labo_id': 'rna'}
             client.start_workflow('abc01', 'Sample Test', status, 'hash123')
             name, args, kwargs = mkreq.mock_calls[0]
             #
@@ -91,7 +91,7 @@ class TestIQBRIMSFlowableClient(OsfTestCase):
         with mock.patch.object(client, '_make_request',
                                return_value=MockResponse('{"test": true}',
                                                          200)) as mkreq:
-            status = {'labo_id': settings.LABO_LIST[0]['id'],
+            status = {'labo_id': 'rna',
                       'accepted_date': '2019-08-29T15:00:00.000Z',
                       'is_directly_submit_data': True}
             client.start_workflow('abc01', 'Sample Paper', status, 'hash123')
