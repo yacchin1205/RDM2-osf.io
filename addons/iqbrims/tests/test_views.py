@@ -7,6 +7,7 @@ import pytest
 from addons.base.tests.views import OAuthAddonAuthViewsTestCaseMixin, OAuthAddonConfigViewsTestCaseMixin
 from addons.iqbrims.tests.utils import mock_folders as sample_folder_data
 from addons.iqbrims.tests.utils import IQBRIMSAddonTestCase
+from osf.models import Comment
 from osf_tests.factories import ProjectFactory
 from tests.base import OsfTestCase
 from addons.iqbrims.client import IQBRIMSClient, IQBRIMSFlowableClient
@@ -364,9 +365,7 @@ class TestNotificationViews(IQBRIMSAddonTestCase, OsfTestCase):
 
     @mock.patch.object(iqbrims_views, '_get_management_node')
     def test_post_notify_has_without_mail(self, mock_get_management_node):
-        mock_add_log = mock.MagicMock()
-        management_project = mock.MagicMock(_id='fake_management_node_id',
-                                            add_log=mock_add_log)
+        management_project = ProjectFactory()
         mock_get_management_node.return_value = management_project
 
         node_settings = self.project.get_addon('iqbrims')
@@ -377,6 +376,7 @@ class TestNotificationViews(IQBRIMSAddonTestCase, OsfTestCase):
                                 self.project._id).encode('utf8')).hexdigest()
 
         assert_equal(self.project.logs.count(), 2)
+        assert_equal(management_project.logs.count(), 1)
         url = self.project.api_url_for('iqbrims_post_notify')
         res = self.app.post_json(url, {
           'notify_type': 'test_notify',
@@ -386,13 +386,17 @@ class TestNotificationViews(IQBRIMSAddonTestCase, OsfTestCase):
         assert_equal(res.status_code, 200)
         assert_items_equal(res.json, {'status': 'complete'})
         assert_equal(self.project.logs.count(), 3)
-        mock_add_log.assert_called_once()
+        assert_equal(management_project.logs.count(), 2)
+        user_comments = Comment.objects.filter(node=self.project,
+                                               root_target__isnull=True)
+        assert_equal(user_comments.count(), 1)
+        admin_comments = Comment.objects.filter(node=management_project,
+                                                root_target__isnull=True)
+        assert_equal(admin_comments.count(), 1)
 
     @mock.patch.object(iqbrims_views, '_get_management_node')
     def test_post_notify_user_has_without_mail(self, mock_get_management_node):
-        mock_add_log = mock.MagicMock()
-        management_project = mock.MagicMock(_id='fake_management_node_id',
-                                            add_log=mock_add_log)
+        management_project = ProjectFactory()
         mock_get_management_node.return_value = management_project
 
         node_settings = self.project.get_addon('iqbrims')
@@ -403,6 +407,7 @@ class TestNotificationViews(IQBRIMSAddonTestCase, OsfTestCase):
                                 self.project._id).encode('utf8')).hexdigest()
 
         assert_equal(self.project.logs.count(), 2)
+        assert_equal(management_project.logs.count(), 1)
         url = self.project.api_url_for('iqbrims_post_notify')
         res = self.app.post_json(url, {
           'notify_type': 'test_notify',
@@ -412,13 +417,17 @@ class TestNotificationViews(IQBRIMSAddonTestCase, OsfTestCase):
         assert_equal(res.status_code, 200)
         assert_items_equal(res.json, {'status': 'complete'})
         assert_equal(self.project.logs.count(), 3)
-        mock_add_log.assert_not_called()
+        assert_equal(management_project.logs.count(), 1)
+        user_comments = Comment.objects.filter(node=self.project,
+                                               root_target__isnull=True)
+        assert_equal(user_comments.count(), 1)
+        admin_comments = Comment.objects.filter(node=management_project,
+                                                root_target__isnull=True)
+        assert_equal(admin_comments.count(), 0)
 
     @mock.patch.object(iqbrims_views, '_get_management_node')
     def test_post_notify_adm_has_without_mail(self, mock_get_management_node):
-        mock_add_log = mock.MagicMock()
-        management_project = mock.MagicMock(_id='fake_management_node_id',
-                                            add_log=mock_add_log)
+        management_project = ProjectFactory()
         mock_get_management_node.return_value = management_project
 
         node_settings = self.project.get_addon('iqbrims')
@@ -429,6 +438,7 @@ class TestNotificationViews(IQBRIMSAddonTestCase, OsfTestCase):
                                 self.project._id).encode('utf8')).hexdigest()
 
         assert_equal(self.project.logs.count(), 2)
+        assert_equal(management_project.logs.count(), 1)
         url = self.project.api_url_for('iqbrims_post_notify')
         res = self.app.post_json(url, {
           'notify_type': 'test_notify',
@@ -438,4 +448,10 @@ class TestNotificationViews(IQBRIMSAddonTestCase, OsfTestCase):
         assert_equal(res.status_code, 200)
         assert_items_equal(res.json, {'status': 'complete'})
         assert_equal(self.project.logs.count(), 2)
-        mock_add_log.assert_called_once()
+        assert_equal(management_project.logs.count(), 2)
+        user_comments = Comment.objects.filter(node=self.project,
+                                               root_target__isnull=True)
+        assert_equal(user_comments.count(), 0)
+        admin_comments = Comment.objects.filter(node=management_project,
+                                                root_target__isnull=True)
+        assert_equal(admin_comments.count(), 1)
