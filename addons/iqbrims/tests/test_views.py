@@ -387,11 +387,9 @@ class TestNotificationViews(IQBRIMSAddonTestCase, OsfTestCase):
         assert_items_equal(res.json, {'status': 'complete'})
         assert_equal(self.project.logs.count(), 3)
         assert_equal(management_project.logs.count(), 2)
-        user_comments = Comment.objects.filter(node=self.project,
-                                               root_target__isnull=True)
+        user_comments = Comment.objects.filter(node=self.project)
         assert_equal(user_comments.count(), 1)
-        admin_comments = Comment.objects.filter(node=management_project,
-                                                root_target__isnull=True)
+        admin_comments = Comment.objects.filter(node=management_project)
         assert_equal(admin_comments.count(), 1)
 
     @mock.patch.object(iqbrims_views, '_get_management_node')
@@ -418,11 +416,9 @@ class TestNotificationViews(IQBRIMSAddonTestCase, OsfTestCase):
         assert_items_equal(res.json, {'status': 'complete'})
         assert_equal(self.project.logs.count(), 3)
         assert_equal(management_project.logs.count(), 1)
-        user_comments = Comment.objects.filter(node=self.project,
-                                               root_target__isnull=True)
+        user_comments = Comment.objects.filter(node=self.project)
         assert_equal(user_comments.count(), 1)
-        admin_comments = Comment.objects.filter(node=management_project,
-                                                root_target__isnull=True)
+        admin_comments = Comment.objects.filter(node=management_project)
         assert_equal(admin_comments.count(), 0)
 
     @mock.patch.object(iqbrims_views, '_get_management_node')
@@ -449,9 +445,7 @@ class TestNotificationViews(IQBRIMSAddonTestCase, OsfTestCase):
         assert_items_equal(res.json, {'status': 'complete'})
         assert_equal(self.project.logs.count(), 2)
         assert_equal(management_project.logs.count(), 2)
-        user_comments = Comment.objects.filter(node=self.project,
-                                               root_target__isnull=True)
+        user_comments = Comment.objects.filter(node=self.project)
         assert_equal(user_comments.count(), 0)
-        admin_comments = Comment.objects.filter(node=management_project,
-                                                root_target__isnull=True)
+        admin_comments = Comment.objects.filter(node=management_project)
         assert_equal(admin_comments.count(), 1)
