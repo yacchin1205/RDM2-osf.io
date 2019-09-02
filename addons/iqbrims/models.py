@@ -14,6 +14,7 @@ from django.db.models.signals import post_save
 from django.dispatch import receiver
 from framework.auth import Auth
 from framework.exceptions import HTTPError
+from osf.models import RdmAddonOption
 from osf.models.node import Node
 from osf.models.external import ExternalProvider
 from osf.models.files import File, Folder, BaseFileNode
@@ -308,6 +309,11 @@ def update_folder_name(sender, instance, created, **kwargs):
         return
     iqbrims = node.get_addon(IQBRIMSAddonConfig.short_name)
     if not iqbrims.has_auth:
+        return
+    if RdmAddonOption.objects.filter(
+        provider=IQBRIMSAddonConfig.short_name,
+        management_node=node
+    ).exists():
         return
     try:
         access_token = iqbrims.fetch_access_token()
