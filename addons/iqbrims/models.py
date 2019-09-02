@@ -14,6 +14,7 @@ from django.db.models.signals import post_save
 from django.dispatch import receiver
 from framework.auth import Auth
 from framework.exceptions import HTTPError
+from osf.models import RdmAddonOption
 from osf.models.node import Node
 from osf.models.external import ExternalProvider
 from osf.models.files import File, Folder, BaseFileNode
