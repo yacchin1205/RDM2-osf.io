@@ -122,7 +122,7 @@ class IQBRIMSClient(BaseClient):
             expects=(200, ),
             throws=HTTPError(401)
         )
-        return res.text
+        return res.content
 
     def folders(self, folder_id='root'):
         query = ' and '.join([
@@ -466,6 +466,8 @@ class SpreadsheetClient(BaseClient):
             throws=HTTPError(401)
         )
         logger.info('Inserted: {}'.format(res.json()))
+        ext_col_index = max_depth + 2 + len(fcolumns)
+        col_count = ext_col_index + 1 + len(fcolumns)
         res = self._make_request(
             'POST',
             self._build_url(settings.SHEETS_API_BASE_URL, 'v4', 'spreadsheets',
@@ -485,6 +487,50 @@ class SpreadsheetClient(BaseClient):
                             'condition': {
                                 'type': 'BOOLEAN'
                             }
+                        }
+                    }
+                }, {
+                    'addProtectedRange': {
+                        'protectedRange': {
+                            'range': {'sheetId': sheet_idx,
+                                      'startColumnIndex': 0,
+                                      'endColumnIndex': 1,
+                                      'startRowIndex': 0,
+                                      'endRowIndex': 1},
+                            'warningOnly': True
+                        }
+                    }
+                }, {
+                    'addProtectedRange': {
+                        'protectedRange': {
+                            'range': {'sheetId': sheet_idx,
+                                      'startColumnIndex': 0,
+                                      'endColumnIndex': col_count,
+                                      'startRowIndex': 2,
+                                      'endRowIndex': 3},
+                            'warningOnly': True
+                        }
+                    }
+                }, {
+                    'addProtectedRange': {
+                        'protectedRange': {
+                            'range': {'sheetId': sheet_idx,
+                                      'startColumnIndex': 0,
+                                      'endColumnIndex': max_depth + 2,
+                                      'startRowIndex': 3,
+                                      'endRowIndex': 3 + len(values)},
+                            'warningOnly': True
+                        }
+                    }
+                }, {
+                    'addProtectedRange': {
+                        'protectedRange': {
+                            'range': {'sheetId': sheet_idx,
+                                      'startColumnIndex': ext_col_index,
+                                      'endColumnIndex': ext_col_index + 1,
+                                      'startRowIndex': 3,
+                                      'endRowIndex': 3 + len(values)},
+                            'warningOnly': True
                         }
                     }
                 }]
@@ -577,7 +623,7 @@ class IQBRIMSFlowableClient(BaseClient):
         labos = [l['text'] for l in settings.LABO_LIST
                  if l['id'] == labo_name]
         labo_display_name = labos[0] if len(labos) > 0 \
-                            else 'LaboID:{}'.format(labo_name)
+                            else u'LaboID:{}'.format(labo_name)
         accepted_date = status['accepted_date'].split('T')[0] \
                         if 'accepted_date' in status else ''
         payload = {'processDefinitionId': self.app_id,
@@ -589,9 +635,9 @@ class IQBRIMSFlowableClient(BaseClient):
                                   'value': project_title},
                                  {'name': 'paperFolderPattern',
                                   'type': 'string',
-                                  'value': '{}/{}/%-{}/'.format(register_type,
-                                                                labo_name,
-                                                                project_id)},
+                                  'value': u'{}/{}/%-{}/'.format(register_type,
+                                                                 labo_name,
+                                                                 project_id)},
                                  {'name': 'laboName',
                                   'type': 'string',
                                   'value': labo_display_name},

@@ -106,7 +106,7 @@ def iqbrims_get_status(**kwargs):
     node = kwargs['node'] or kwargs['project']
     iqbrims = node.get_addon('iqbrims')
     status = iqbrims.get_status()
-    status['labo_list'] = ['{}:{}'.format(l['id'], l['text'])
+    status['labo_list'] = [u'{}:{}'.format(l['id'], l['text'])
                            for l in settings.LABO_LIST]
     status['review_folders'] = REVIEW_FOLDERS
     is_admin = _get_management_node(node)._id == node._id
@@ -353,7 +353,7 @@ def iqbrims_create_index(**kwargs):
     logger.debug(u'Result files: {}'.format([f['title'] for f in files]))
     if len(files) == 0:
         return {'status': 'processing'}
-    files = client.get_content(files[0]['id']).split('\n')
+    files = client.get_content(files[0]['id']).decode('utf8').split('\n')
     _, r = client.create_spreadsheet_if_not_exists(folders[0]['id'],
                                                    settings.INDEXSHEET_FILENAME)
     sclient = SpreadsheetClient(r['id'], access_token)
