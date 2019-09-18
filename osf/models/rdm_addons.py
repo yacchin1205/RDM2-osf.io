@@ -5,7 +5,6 @@ from django.db.models.signals import post_save
 from django.dispatch import receiver
 
 from addons.googledrive.apps import GoogleDriveAddonConfig
-from addons.iqbrims.utils import copy_node_auth
 from website import settings as website_settings
 from addons.iqbrims.apps import IQBRIMSAddonConfig
 from osf.models.base import BaseModel
@@ -61,6 +60,7 @@ def change_iqbrims_addon_enabled(sender, instance, created, **kwargs):
 
 @receiver(post_save, sender=RdmAddonOption)
 def setup_iqbrims_addon_auth_of_management_node(sender, instance, created, **kwargs):
+    from addons.iqbrims.utils import copy_node_auth
     if IQBRIMSAddonConfig.short_name not in website_settings.ADDONS_AVAILABLE_DICT:
         return
     if GoogleDriveAddonConfig.short_name not in website_settings.ADDONS_AVAILABLE_DICT:
