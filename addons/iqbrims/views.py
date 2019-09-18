@@ -8,7 +8,6 @@ import urllib
 import re
 
 from django.db import transaction
-from django.db.models import Subquery
 from flask import request
 
 from addons.iqbrims.client import (
@@ -20,7 +19,6 @@ from framework.auth import Auth
 from website.mails import Mail, send_mail
 from framework.exceptions import HTTPError
 
-from osf.models import RdmAddonOption
 from website.project.decorators import (
     must_have_addon,
     must_be_valid_project,
@@ -39,7 +37,10 @@ from addons.iqbrims.utils import (
     get_log_actions,
     must_have_valid_hash,
     get_folder_title,
-    add_comment
+    add_comment,
+    iqbrims_update_spreadsheet,
+    iqbrims_filled_index,
+    get_management_node
 )
 
 logger = logging.getLogger(__name__)
@@ -223,7 +224,7 @@ def iqbrims_get_storage(**kwargs):
     if folder == 'index':
         folder_name = REVIEW_FOLDERS['raw']
         file_name = settings.INDEXSHEET_FILENAME
-        validate = _iqbrims_filled_index
+        validate = iqbrims_filled_index
     else:
         folder_name = REVIEW_FOLDERS[folder]
     try:
@@ -425,17 +426,10 @@ def _iqbrims_import_auth_from_management_node(node, node_addon, management_node)
     node_addon.save()
 
 def _get_management_node(node):
-    inst_ids = node.affiliated_institutions.values('id')
-    try:
-        opt = RdmAddonOption.objects.filter(
-            provider=SHORT_NAME,
-            institution_id__in=Subquery(inst_ids),
-            management_node__isnull=False,
-            is_allowed=True
-        ).first()
-    except RdmAddonOption.DoesNotExist:
+    management_node = get_management_node(node)
+    if management_node is None:
         raise HTTPError(http.FORBIDDEN)
-    return opt.management_node
+    return management_node
 
 def _iqbrims_set_status(node, status, auth=None):
     iqbrims = node.get_addon('iqbrims')
@@ -465,7 +459,7 @@ def _iqbrims_set_status(node, status, auth=None):
             # mount container
             iqbrims.set_folder(root_folder, auth=auth)
             iqbrims.save()
-            _iqbrims_update_spreadsheet(node, management_node, register_type, all_status)
+            iqbrims_update_spreadsheet(node, management_node, register_type, all_status)
 
         iqbrims.set_status(all_status)
     return all_status
@@ -502,108 +496,3 @@ def _iqbrims_init_folders(node, management_node, register_type, labo_name):
             root_folder_title
         ]) + '/',
     }
-
-def _iqbrims_update_spreadsheet(node, management_node, register_type, status):
-    management_node_addon = IQBRIMSNodeSettings.objects.get(owner=management_node)
-    if management_node_addon is None:
-        raise HTTPError(http.BAD_REQUEST, 'IQB-RIMS addon disabled in management node')
-    folder_id = management_node_addon.folder_id
-    try:
-        access_token = management_node_addon.fetch_access_token()
-    except exceptions.InvalidAuthError:
-        raise HTTPError(403)
-    client = IQBRIMSClient(access_token)
-    _, rootr = client.create_folder_if_not_exists(folder_id, register_type)
-    _, r = client.create_spreadsheet_if_not_exists(rootr['id'],
-                                                   settings.APPSHEET_FILENAME)
-    sclient = SpreadsheetClient(r['id'], access_token)
-    sheets = [s
-              for s in sclient.sheets()
-              if s['properties']['title'] == settings.APPSHEET_SHEET_NAME]
-    logger.info('Spreadsheet: id={}, sheet={}'.format(r['id'], sheets))
-    if len(sheets) == 0:
-        sclient.add_sheet(settings.APPSHEET_SHEET_NAME)
-        sheets = [s
-                  for s in sclient.sheets()
-                  if s['properties']['title'] == settings.APPSHEET_SHEET_NAME]
-    assert len(sheets) == 1
-    sheet_id = sheets[0]['properties']['title']
-    acolumns = settings.APPSHEET_DEPOSIT_COLUMNS \
-               if register_type == 'deposit' \
-               else settings.APPSHEET_CHECK_COLUMNS
-    columns = sclient.ensure_columns(sheet_id,
-                                     [c for c, __ in acolumns])
-    column_index = columns.index([c for c, cid in acolumns
-                                  if cid == '_node_id'][0])
-    row_max = sheets[0]['properties']['gridProperties']['rowCount']
-    values = sclient.get_row_values(sheet_id, column_index, row_max)
-    logger.info('IDs: {}'.format(values))
-    iqbrims = node.get_addon('iqbrims')
-    folder_link = client.get_folder_link(iqbrims.folder_id)
-    logger.info('Link: {}'.format(folder_link))
-    if node._id not in values:
-        logger.info('Inserting: {}'.format(node._id))
-        v = _iqbrims_fill_spreadsheet_values(node, status, folder_link,
-                                             columns, ['' for c in columns])
-        sclient.add_row(sheet_id, v)
-    else:
-        logger.info('Updating: {}'.format(node._id))
-        row_index = values.index(node._id)
-        v = sclient.get_row(sheet_id, row_index, len(columns))
-        v += ['' for __ in range(len(v), len(columns))]
-        v = _iqbrims_fill_spreadsheet_values(node, status, folder_link,
-                                             columns, v)
-        sclient.update_row(sheet_id, v, row_index)
-
-def _iqbrims_filled_index(access_token, f):
-    sclient = SpreadsheetClient(f['id'], access_token)
-    sheets = [s
-              for s in sclient.sheets()
-              if s['properties']['title'] == settings.INDEXSHEET_SHEET_NAME]
-    assert len(sheets) == 1
-    sheet_props = sheets[0]['properties']
-    sheet_id = sheet_props['title']
-    col_count = sheet_props['gridProperties']['columnCount']
-    row_count = sheet_props['gridProperties']['rowCount']
-    logger.info('Grid: {}, {}'.format(col_count, row_count))
-    columns = sclient.get_column_values(sheet_id, 1, col_count)
-    fills = sclient.get_row_values(sheet_id, columns.index('Filled'), 2)
-    procs = [fill for fill in fills if fill != 'TRUE']
-    return len(procs) == 0
-
-def _iqbrims_fill_spreadsheet_values(node, status, folder_link, columns,
-                                     values):
-    assert len(columns) == len(values), values
-    acolumns = settings.APPSHEET_DEPOSIT_COLUMNS \
-               if status['state'] == 'deposit' \
-               else settings.APPSHEET_CHECK_COLUMNS
-    values = list(values)
-    for i, col in enumerate(columns):
-        tcols = [cid for c, cid in acolumns if c == col]
-        if len(tcols) == 0:
-            continue
-        tcol = tcols[0]
-        if tcol is None:
-            pass
-        elif tcol == '_updated':
-            values[i] = datetime.now().strftime('%Y/%m/%d %H:%M:%S')
-        elif tcol == '_node_id':
-            values[i] = node._id
-        elif tcol == '_node_owner':
-            values[i] = node.creator.fullname
-        elif tcol == '_node_mail':
-            values[i] = node.creator.username
-        elif tcol == '_node_title':
-            values[i] = node.title
-        elif tcol == '_labo_name':
-            labos = [l['text']
-                     for l in settings.LABO_LIST
-                     if l['id'] == status['labo_id']]
-            values[i] = labos[0] if len(labos) > 0 \
-                        else 'Unknown ID: {}'.format(status['labo_id'])
-        elif tcol == '_drive_url':
-            values[i] = folder_link
-        else:
-            assert not tcol.startswith('_')
-            values[i] = status[tcol] if tcol in status else ''
-    return values

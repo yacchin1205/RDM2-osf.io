@@ -8,13 +8,18 @@ from framework.auth import Auth
 from addons.base.tests.models import (OAuthAddonNodeSettingsTestSuiteMixin,
                                       OAuthAddonUserSettingTestSuiteMixin)
 
+from addons.iqbrims import settings
 from addons.iqbrims.models import NodeSettings, IQBRIMSProvider
-from addons.iqbrims.client import IQBRIMSClient, IQBRIMSAuthClient
+from addons.iqbrims.client import IQBRIMSClient, IQBRIMSAuthClient, SpreadsheetClient
 from addons.iqbrims.tests.factories import (
     IQBRIMSAccountFactory,
     IQBRIMSNodeSettingsFactory,
     IQBRIMSUserSettingsFactory
 )
+import addons.iqbrims.models as iqbrims_models
+from addons.iqbrims.utils import get_folder_title
+from osf.models import RdmAddonOption
+from osf_tests.factories import ProjectFactory, InstitutionFactory
 
 pytestmark = pytest.mark.django_db
 
@@ -160,3 +165,274 @@ class TestNodeSettings(OAuthAddonNodeSettingsTestSuiteMixin, unittest.TestCase):
             }
         }
         assert_equal(settings, expected)
+
+
+class TestIQBRIMSNodeReceiverUpdateFolderName(unittest.TestCase):
+
+    short_name = 'iqbrims'
+    full_name = 'IQB-RIMS'
+    folder_id = '1234567890'
+
+    def setUp(self):
+        super(TestIQBRIMSNodeReceiverUpdateFolderName, self).setUp()
+        self.node = ProjectFactory()
+        self.user = self.node.creator
+        self.external_account = IQBRIMSAccountFactory()
+
+        self.user.external_accounts.add(self.external_account)
+        self.user.save()
+
+        self.user_settings = self.user.add_addon(self.short_name)
+        self.user_settings.grant_oauth_access(
+            node=self.node,
+            external_account=self.external_account,
+            metadata={'folder': self.folder_id}
+        )
+        self.user_settings.save()
+
+        self.node_settings = IQBRIMSNodeSettingsFactory(
+            external_account=self.external_account,
+            user_settings=self.user_settings,
+            folder_id=self.folder_id,
+            owner=self.node
+        )
+
+        self.institution = InstitutionFactory()
+
+    @mock.patch.object(NodeSettings, 'fetch_access_token')
+    @mock.patch.object(IQBRIMSClient, 'rename_folder')
+    @mock.patch.object(IQBRIMSClient, 'get_folder_info')
+    def test_update_folder_name(self, mock_get_folder_info, mock_rename_folder, mock_fetch_access_token):
+        mock_get_folder_info.return_value = {'title': 'dummy_folder_title'}
+        mock_fetch_access_token.return_value = 'dummy_token'
+        mock_rename_folder.return_value = None
+        new_folder_title = get_folder_title(self.node)
+
+        self.node.save(force_update=True)
+
+        assert_equal(mock_get_folder_info.call_count, 1)
+        assert_items_equal(mock_get_folder_info.call_args, ((), {'folder_id': self.folder_id}))
+
+        assert_equal(mock_rename_folder.call_count, 1)
+        assert_items_equal(mock_rename_folder.call_args[0], (self.folder_id, new_folder_title))
+
+
+class TestIQBRIMSNodeReceiverUpdateSpreadsheet(unittest.TestCase):
+
+    short_name = 'iqbrims'
+    full_name = 'IQB-RIMS'
+    folder_id = '1234567890'
+    management_folder_id = 'management_1234567890'
+
+    def setUp(self):
+        super(TestIQBRIMSNodeReceiverUpdateSpreadsheet, self).setUp()
+        self.institution = InstitutionFactory()
+
+        self.node = ProjectFactory()
+        self.user = self.node.creator
+        self.external_account = IQBRIMSAccountFactory()
+        self.user.external_accounts.add(self.external_account)
+        self.user.save()
+        self.user.affiliated_institutions.add(self.institution)
+        self.node.affiliated_institutions.add(self.institution)
+        self.user_settings = self.user.add_addon(self.short_name)
+        self.user_settings.grant_oauth_access(
+            node=self.node,
+            external_account=self.external_account,
+            metadata={'folder': self.folder_id}
+        )
+        self.user_settings.save()
+        self.node_settings = IQBRIMSNodeSettingsFactory(
+            external_account=self.external_account,
+            user_settings=self.user_settings,
+            folder_id=self.folder_id,
+            owner=self.node
+        )
+
+        self.management_node = ProjectFactory()
+        self.management_user = self.management_node.creator
+        self.management_external_account = IQBRIMSAccountFactory()
+        self.management_user.affiliated_institutions.add(self.institution)
+        self.management_node.affiliated_institutions.add(self.institution)
+        self.management_user.external_accounts.add(self.management_external_account)
+        self.management_user.save()
+        self.management_user_settings = self.management_user.add_addon(self.short_name)
+        self.management_user_settings.grant_oauth_access(
+            node=self.management_node,
+            external_account=self.management_external_account,
+            metadata={'folder': self.management_folder_id}
+        )
+        self.management_user_settings.save()
+        self.management_node_settings = IQBRIMSNodeSettingsFactory(
+            external_account=self.management_external_account,
+            user_settings=self.management_user_settings,
+            folder_id=self.management_folder_id,
+            owner=self.management_node
+        )
+
+        self.rdm_addon_option = RdmAddonOption(
+            provider=self.short_name,
+            institution=self.institution,
+            management_node=self.management_node
+        ).save()
+
+        # disable update_folder_name receiver
+        self.mock_get_folder_info = mock.patch.object(
+            IQBRIMSClient,
+            'get_folder_info',
+            return_value={'title': 'dummy_folder_name'}
+        )
+        self.mock_get_folder_info.start()
+        self.mock_rename_folder = mock.patch.object(
+            IQBRIMSClient,
+            'rename_folder'
+        )
+        self.mock_rename_folder.start()
+
+        self.mock_fetch_access_token = mock.patch.object(
+            NodeSettings,
+            'fetch_access_token',
+            return_value='fake_token'
+        )
+        self.mock_fetch_access_token.start()
+
+        mock_rootr = {'id': 'fake_rootr_id'}
+        self.mock_create_folder_if_not_exists = mock.patch.object(
+            IQBRIMSClient,
+            'create_folder_if_not_exists',
+            return_value=(False, mock_rootr)
+        )
+        self.mock_create_folder_if_not_exists.start()
+
+        mock_r = {'id': 'fake_r_id'}
+        self.mock_create_spreadsheet_if_not_exists = mock.patch.object(
+            IQBRIMSClient,
+            'create_spreadsheet_if_not_exists',
+            return_value=(False, mock_r)
+        )
+        self.mock_create_spreadsheet_if_not_exists.start()
+
+        self.mock_add_sheet = mock.patch.object(
+            SpreadsheetClient,
+            'add_sheet'
+        )
+        self.mock_add_sheet.start()
+
+        mock_sheet = {
+            'properties': {
+                'title': settings.APPSHEET_SHEET_NAME,
+                'gridProperties': {
+                    'rowCount': 100
+                }
+            }
+        }
+        self.mock_sheets = mock.patch.object(
+            SpreadsheetClient,
+            'sheets',
+            return_value=[mock_sheet])
+        self.mock_sheets.start()
+
+        self.mock_get_folder_link = mock.patch.object(
+            IQBRIMSClient,
+            'get_folder_link',
+            return_value='fake_link')
+        self.mock_get_folder_link.start()
+
+        self.mock_get_row = mock.patch.object(
+            SpreadsheetClient,
+            'get_row',
+            return_value=[])
+        self.mock_get_row.start()
+
+    def tearDown(self):
+        super(TestIQBRIMSNodeReceiverUpdateSpreadsheet, self).tearDown()
+        self.mock_get_folder_info.stop()
+        self.mock_rename_folder.stop()
+        self.mock_fetch_access_token.stop()
+        self.mock_create_folder_if_not_exists.stop()
+        self.mock_create_spreadsheet_if_not_exists.stop()
+        self.mock_add_sheet.stop()
+        self.mock_sheets.stop()
+        self.mock_get_folder_link.stop()
+
+    @mock.patch.object(SpreadsheetClient, 'ensure_columns')
+    @mock.patch.object(SpreadsheetClient, 'get_row_values')
+    @mock.patch.object(SpreadsheetClient, 'update_row')
+    def test_update_node_check(self, mock_update_row, mock_get_row_values, mock_ensure_columns):
+        mock_get_row_values.return_value = [
+            'dummy_node_id1',
+            'dummy_node_id2',
+            self.node._id,
+            'dummy_node_id3',
+        ]
+        mock_ensure_columns.return_value = [
+            u'Project ID',
+            'Title',
+            'Current Status',
+        ]
+        self.node_settings.set_status({
+            'state': 'check',
+            'labo_id': settings.LABO_LIST[0]['id'],
+            'workflow_overall_state': 'fake_workflow_state',
+        })
+
+        self.node.save(force_update=True)
+
+        mock_update_row.assert_called_once()
+        cargs, _ = mock_update_row.call_args
+        sheet_id, values, update_at = cargs
+        self.assertEqual(sheet_id, settings.APPSHEET_SHEET_NAME)
+        self.assertEqual(values, [
+            self.node._id,
+            self.node.title,
+            'fake_workflow_state'
+        ])
+        self.assertEqual(update_at, 2)
+
+    @mock.patch.object(SpreadsheetClient, 'ensure_columns')
+    @mock.patch.object(SpreadsheetClient, 'get_row_values')
+    @mock.patch.object(SpreadsheetClient, 'update_row')
+    def test_update_node_deposit(self, mock_update_row, mock_get_row_values, mock_ensure_columns):
+        mock_get_row_values.return_value = [
+            'dummy_node_id1',
+            self.node._id,
+            'dummy_node_id2',
+            'dummy_node_id3',
+        ]
+        mock_ensure_columns.return_value = [
+            u'Project ID',
+            'Title',
+            'Current Status',
+        ]
+        self.node_settings.set_status({
+            'state': 'deposit',
+            'labo_id': settings.LABO_LIST[0]['id'],
+            'workflow_overall_state': 'fake_workflow_state',
+        })
+
+        self.node.save(force_update=True)
+
+        mock_update_row.assert_called_once()
+        cargs, _ = mock_update_row.call_args
+        sheet_id, values, update_at = cargs
+        self.assertEqual(sheet_id, settings.APPSHEET_SHEET_NAME)
+        self.assertEqual(values, [
+            self.node._id,
+            self.node.title,
+            'fake_workflow_state'
+        ])
+        self.assertEqual(update_at, 1)
+
+    @mock.patch.object(iqbrims_models, 'get_management_node')
+    @mock.patch.object(iqbrims_models, 'iqbrims_update_spreadsheet')
+    def test_update_no_state_node(self, mock_update_spreadsheet, mock_get_management_node):
+        mock_get_management_node.return_value = mock.MagicMock(_id='management_id')
+        self.node.save(force_update=True)
+        assert_equal(mock_update_spreadsheet.call_count, 0)
+
+    @mock.patch.object(iqbrims_models, 'get_management_node')
+    @mock.patch.object(iqbrims_models, 'iqbrims_update_spreadsheet')
+    def test_update_management_node(self, mock_update_spreadsheet, mock_get_management_node):
+        mock_get_management_node.return_value = self.node
+        self.node.save(force_update=True)
+        assert_equal(mock_update_spreadsheet.call_count, 0)

@@ -224,7 +224,7 @@ class TestStatusViews(IQBRIMSAddonTestCase, OsfTestCase):
         })
 
     @mock.patch.object(IQBRIMSFlowableClient, 'start_workflow')
-    @mock.patch.object(iqbrims_views, '_iqbrims_update_spreadsheet')
+    @mock.patch.object(iqbrims_views, 'iqbrims_update_spreadsheet')
     @mock.patch.object(iqbrims_views, '_iqbrims_init_folders')
     @mock.patch.object(iqbrims_views, '_iqbrims_import_auth_from_management_node')
     @mock.patch.object(iqbrims_views, '_get_management_node')
@@ -302,7 +302,7 @@ class TestStatusViews(IQBRIMSAddonTestCase, OsfTestCase):
         ])
 
     @mock.patch.object(IQBRIMSFlowableClient, 'start_workflow')
-    @mock.patch.object(iqbrims_views, '_iqbrims_update_spreadsheet')
+    @mock.patch.object(iqbrims_views, 'iqbrims_update_spreadsheet')
     @mock.patch.object(iqbrims_views, '_iqbrims_init_folders')
     @mock.patch.object(iqbrims_views, '_iqbrims_import_auth_from_management_node')
     @mock.patch.object(iqbrims_views, '_get_management_node')
@@ -584,6 +584,53 @@ class TestStorageViews(IQBRIMSAddonTestCase, OsfTestCase):
                                 'root_folder': 'iqb123/'})
         mock_delete_file.assert_called_once()
         assert_equal(mock_delete_file.call_args, (('rmfileid123',),))
+
+    @mock.patch.object(iqbrims_views, '_get_management_node')
+    @mock.patch.object(IQBRIMSClient, 'folders')
+    @mock.patch.object(IQBRIMSClient, 'files')
+    @mock.patch.object(SpreadsheetClient, 'sheets')
+    @mock.patch.object(SpreadsheetClient, 'get_column_values')
+    @mock.patch.object(SpreadsheetClient, 'get_row_values')
+    def test_get_index_storage(self, mock_get_row_values,
+                               mock_get_column_values, mock_sheets, mock_files,
+                               mock_folders, mock_get_management_node):
+        management_project = ProjectFactory()
+        management_project.add_addon('googledrive', auth=None)
+        gdsettings = management_project.get_addon('googledrive')
+        gdsettings.folder_path = 'testgdpath/'
+        gdsettings.save()
+        mock_get_management_node.return_value = management_project
+        mock_folders.return_value = [{'id': 'folderid123',
+                                      'title': u'生データ'}]
+        mock_files.return_value = [{'id': 'fileid123',
+                                    'title': 'Raw Files'}]
+        gridp = {'columnCount': 100, 'rowCount': 100}
+        mock_sheets.return_value = [{'properties': {'title': 'Files',
+                                                    'sheetId': 'ss123',
+                                                    'gridProperties': gridp}}]
+        mock_get_column_values.return_value = ['Filled']
+        mock_get_row_values.return_value = ['FALSE']
+
+        node_settings = self.project.get_addon('iqbrims')
+        node_settings.secret = 'secret123'
+        node_settings.process_definition_id = 'process456'
+        node_settings.folder_path = 'testgdpath/iqb123/'
+        node_settings.save()
+        token = hashlib.sha256(('secret123' + 'process456' +
+                                self.project._id).encode('utf8')).hexdigest()
+
+        url = self.project.api_url_for('iqbrims_get_storage',
+                                       folder='index')
+        res = self.app.get(url, headers={'X-RDM-Token': token})
+
+        assert_equal(res.status_code, 200)
+        assert_equal(res.json['status'], 'processing')
+
+        mock_get_row_values.return_value = ['TRUE']
+        res = self.app.get(url, headers={'X-RDM-Token': token})
+
+        assert_equal(res.status_code, 200)
+        assert_equal(res.json['status'], 'complete')
 
     @mock.patch.object(iqbrims_views, '_get_management_node')
     @mock.patch.object(IQBRIMSClient, 'folders')
