@@ -24,7 +24,8 @@ from addons.iqbrims import settings as drive_settings
 from addons.iqbrims.client import (IQBRIMSAuthClient,
                                                IQBRIMSClient)
 from addons.iqbrims.serializer import IQBRIMSSerializer
-from addons.iqbrims.utils import to_hgrid, get_folder_title
+from addons.iqbrims.utils import (to_hgrid, get_folder_title,
+                                  iqbrims_update_spreadsheet, get_management_node)
 from website.util import api_v2_url
 
 # from website.files.models.ext import PathFollowingFileNode
@@ -329,3 +330,19 @@ def update_folder_name(sender, instance, created, **kwargs):
     except exceptions.InvalidAuthError:
         logger.warning('Failed to check description of google drive',
                        exc_info=True)
+
+@receiver(post_save, sender=Node)
+def update_spreadsheet(sender, instance, created, **kwargs):
+    node = instance
+    if not node.has_addon(IQBRIMSAddonConfig.short_name):
+        return
+    iqbrims = node.get_addon(IQBRIMSAddonConfig.short_name)
+    if not iqbrims.has_auth:
+        return
+    management_node = get_management_node(node)
+    if management_node is None or management_node._id == node._id:
+        return
+    all_status = iqbrims.get_status()
+    if all_status['state'] not in ['deposit', 'check']:
+        return
+    iqbrims_update_spreadsheet(node, management_node, all_status['state'], all_status)
