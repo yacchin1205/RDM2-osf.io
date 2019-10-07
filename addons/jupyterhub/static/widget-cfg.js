@@ -100,7 +100,7 @@ function JupyterWidget() {
                     },
                     icon: 'fa fa-external-link',
                     className : 'text-primary'
-                }, 'JupyterHub');
+                }, 'GRDM Workflow');
                 return {
                   view : function(ctrl, args, children) {
                     var tb = args.treebeard;
