@@ -48,7 +48,7 @@ from website.project import decorators
 from website.project.decorators import must_be_contributor_or_public, must_be_valid_project, check_contributor_auth
 from website.ember_osf_web.decorators import ember_flag_is_active
 from website.project.utils import serialize_node
-from website.util import rubeus, timestamp
+from website.util import rubeus #, timestamp
 
 
 # import so that associated listener is instantiated and gets emails
@@ -694,8 +694,10 @@ def addon_deleted_file(auth, target, error_type='BLAME_PROVIDER', **kwargs):
             'allow_comments': file_node.provider in settings.ADDONS_COMMENTABLE,
         })
 
+        # DEBUG -- Disabled
         # timestampVerifyResult Update(file was gone)
-        timestamp.file_node_gone(file_node.target._id, file_node.provider, file_node.materialized_path)
+        #timestamp.file_node_gone(file_node.target._id, file_node.provider, file_node.materialized_path)
+        # /DEBUG -- Disabled
 
     else:
         # TODO - serialize deleted metadata for future types of deleted file targets
@@ -807,16 +809,18 @@ def addon_view_or_download_file(auth, path, provider, **kwargs):
         guid.referent.save()
         return dict(guid=guid._id)
 
-    if action == 'addtimestamp':
-        cookie = auth.user.get_or_create_cookie()
-        file_info = timestamp.get_file_info(cookie, file_node, version)
-        if file_info is not None:
-            timestamp.add_token(auth.user.id, target, file_info)
-        else:
-            raise HTTPError(httplib.BAD_REQUEST, data={
-                'message_short': 'Add TimestampError',
-                'message_long': 'AddTimestamp setting error.'
-            })
+    # DEBUG -- Disabled
+    #if action == 'addtimestamp':
+    #    cookie = auth.user.get_or_create_cookie()
+    #    file_info = timestamp.get_file_info(cookie, file_node, version)
+    #    if file_info is not None:
+    #        timestamp.add_token(auth.user.id, target, file_info)
+    #    else:
+    #        raise HTTPError(httplib.BAD_REQUEST, data={
+    #            'message_short': 'Add TimestampError',
+    #            'message_long': 'AddTimestamp setting error.'
+    #        })
+    # /DEBUG -- Disabled
 
     if len(request.path.strip('/').split('/')) > 1:
         guid = file_node.get_guid(create=True)
@@ -903,16 +907,18 @@ def addon_view_file(auth, node, file_node, version):
     )
 
     # Verify file
-    verify_result = None
-    cookie = auth.user.get_or_create_cookie()
-    file_info = timestamp.get_file_info(cookie, file_node, version)
-    if file_info is not None:
-        verify_result = timestamp.check_file_timestamp(auth.user.id, node, file_info)
-    else:
-        verify_result = {
-            'verify_result': '',
-            'verify_result_title': ''
-        }
+    # DEBUG -- Disabled
+    #verify_result = None
+    #cookie = auth.user.get_or_create_cookie()
+    #file_info = timestamp.get_file_info(cookie, file_node, version)
+    #if file_info is not None:
+    #    verify_result = timestamp.check_file_timestamp(auth.user.id, node, file_info)
+    #else:
+    # /DEBUG -- Disabled
+    verify_result = {
+        'verify_result': '',
+        'verify_result_title': ''
+    }
 
     mfr_url = get_mfr_url(node, file_node.provider)
     render_url = furl.furl(mfr_url).set(
