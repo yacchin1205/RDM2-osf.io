@@ -739,64 +739,6 @@ def file_node_gone(project_id, addon_name, src_path):
         inspection_result_status=api_settings.FILE_NOT_EXISTS
     ).update(inspection_result_status=tst_status)
 
-def waterbutler_folder_file_info(pid, provider, path, node, cookies, headers):
-    # get waterbutler folder file
-    if provider == 'osfstorage':
-        waterbutler_meta_url = waterbutler_api_url_for(
-            pid, provider,
-            '/' + path,
-            meta=int(time.mktime(datetime.datetime.now().timetuple()))
-        )
-    else:
-        waterbutler_meta_url = waterbutler_api_url_for(
-            pid, provider,
-            path,
-            meta=int(time.mktime(datetime.datetime.now().timetuple()))
-        )
-
-    waterbutler_res = requests.get(waterbutler_meta_url, headers=headers, cookies=cookies)
-    waterbutler_json_res = waterbutler_res.json()
-    waterbutler_res.close()
-    file_list = []
-    child_file_list = []
-    for file_data in waterbutler_json_res['data']:
-        if file_data['attributes']['kind'] == 'folder':
-            child_file_list.extend(waterbutler_folder_file_info(
-                pid, provider, file_data['attributes']['path'],
-                node, cookies, headers))
-        else:
-            basefile_node = BaseFileNode.resolve_class(
-                provider,
-                BaseFileNode.FILE
-            ).get_or_create(
-                node,
-                file_data['attributes']['path']
-            )
-            basefile_node.materialized_path = file_data['attributes']['materialized']
-            basefile_node.name = os.path.basename(file_data['attributes']['materialized'])
-            basefile_node.save()
-            if provider == 'osfstorage':
-                file_info = {
-                    'file_name': file_data['attributes']['name'],
-                    'file_path': file_data['attributes']['materialized'],
-                    'file_kind': file_data['attributes']['kind'],
-                    'file_id': basefile_node._id,
-                    'version': file_data['attributes']['extra']['version']
-                }
-            else:
-                file_info = {
-                    'file_name': file_data['attributes']['name'],
-                    'file_path': file_data['attributes']['materialized'],
-                    'file_kind': file_data['attributes']['kind'],
-                    'file_id': basefile_node._id,
-                    'version': ''
-                }
-
-            file_list.append(file_info)
-
-    file_list.extend(child_file_list)
-    return file_list
-
 def userkey_generation_check(guid):
     return RdmUserKey.objects.filter(guid=Guid.objects.get(_id=guid, content_type_id=ContentType.objects.get_for_model(OSFUser).id).object_id).exists()
 
