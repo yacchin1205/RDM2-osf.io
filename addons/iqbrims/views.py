@@ -276,7 +276,7 @@ def iqbrims_get_storage(**kwargs):
     logger.debug(u'Folder path: {}'.format(root_folder_path))
     node_urls = []
     management_urls = []
-    url_files = all_files if urls_for_all_files else files
+    url_files = all_files if urls_for_all_files and len(files) > 0 else files
     for f in url_files:
         if sub_folder_name is not None:
             url_folder_path = u'{}/{}'.format(main_folders[0]['title'], sub_folders[0]['title'])
