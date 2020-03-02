@@ -69,6 +69,6 @@
     },
     "iqbrims": {
         "fullName": "IQB-RIMS",
-        "externalView": true
+        "externalView": false
     }
 }
