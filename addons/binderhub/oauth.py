@@ -88,9 +88,14 @@ def update_jupyterhub_data(client_settings, token, token_resp):
     admin_auth_headers = {
         'Authorization': 'token {}'.format(client_settings['admin_api_token']),
     }
+    token_req = {
+        'expires_in': settings.JUPYTERHUB_TOKEN_EXPIRES_IN_SEC,
+        'note': 'RDM BinderHub Addon',
+    }
     token_resp = requests.post(urljoin(client_settings['api_url'],
                                       'users/{}/tokens'.format(user_name)),
-                               headers=admin_auth_headers)
+                               headers=admin_auth_headers,
+                               json=token_req)
     if not token_resp.ok:
         logger.error('Retrieve Token status_code={}, body={}'.format(
             token_resp.status_code,

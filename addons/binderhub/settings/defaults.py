@@ -9,6 +9,8 @@ BINDERHUB_OAUTH_CLIENT = dict(
     scope=['identity'],
 )
 
+JUPYTERHUB_TOKEN_EXPIRES_IN_SEC = 3600
+
 JUPYTERHUB_OAUTH_CLIENTS = {
     'http://localhost:8585/': dict(
         admin_api_token='d43ab6030a1b46b39d3233d7fe1843ad',
@@ -20,3 +22,16 @@ JUPYTERHUB_OAUTH_CLIENTS = {
         scope=['identity'],
     )
 }
+
+BINDERHUB_DEPLOYMENT_IMAGES = [
+    {
+        'url': 'registry.codeocean.com/codeocean/miniconda3:4.8.2-python3.8-ubuntu18.04',
+        'name': 'Python (3.8.1, miniconda 4.8.2)',
+        'description': 'conda makes this environment a great starting point for installing other languages.',
+    },
+    {
+        'url': 'registry.codeocean.com/codeocean/r-studio:1.2.5019-r4.0.3-ubuntu18.04',
+        'name': 'R (4.0.3, RStudio 1.2.5019)',
+        'description': 'R is a language and environment for statistical computing and graphics. RStudio is an integrated development environment for R.',
+    },
+]

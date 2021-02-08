@@ -20,6 +20,11 @@ from . import settings
 
 logger = logging.getLogger(__name__)
 
+def get_deployment():
+    return {
+        'images': settings.BINDERHUB_DEPLOYMENT_IMAGES,
+    }
+
 @must_be_valid_project
 @must_have_permission('admin')
 @must_have_addon(SHORT_NAME, 'node')
@@ -86,4 +91,5 @@ def binderhub_get_config_ember(**kwargs):
                             'token': binderhub_token,
                          },
                          'jupyterhub': jupyterhub,
+                         'deployment': get_deployment(),
                      }}}
