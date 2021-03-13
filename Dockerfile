@@ -80,6 +80,7 @@ RUN set -ex \
         libpng-dev \
         freetype-dev \
         jpeg-dev \
+        openssl \
     && pip3 install Cython \
     && for reqs_file in \
         /code/requirements.txt \
