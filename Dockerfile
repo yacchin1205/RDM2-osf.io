@@ -27,6 +27,7 @@ RUN apk add --no-cache --virtual .run-deps \
     xvfb \
     jq \
     python3-tkinter \
+    openssl \
     && yarn global add bower
 
 WORKDIR /code
@@ -83,7 +84,6 @@ RUN set -ex \
         libpng-dev \
         freetype-dev \
         jpeg-dev \
-        openssl \
     && pip3 install Cython \
     && pip3 install numpy==1.14.5 \
     && for reqs_file in \
