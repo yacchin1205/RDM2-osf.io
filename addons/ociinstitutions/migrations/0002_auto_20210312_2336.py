@@ -13,12 +13,12 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.AddField(
+        migrations.RenameField(
             model_name='nodesettings',
-            name='is_deleted',
-            field=models.BooleanField(default=False),
+            new_name='is_deleted',
+            old_name='deleted',
         ),
-        migrations.AlterField(
+        migrations.AddField(
             model_name='nodesettings',
             name='deleted',
             field=osf.utils.fields.NonNaiveDateTimeField(blank=True, null=True),
