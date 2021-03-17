@@ -25,6 +25,11 @@ def get_deployment():
         'images': settings.BINDERHUB_DEPLOYMENT_IMAGES,
     }
 
+def get_launcher():
+    return {
+        'endpoints': settings.JUPYTERHUB_LAUNCHERS,
+    }
+
 @must_be_valid_project
 @must_have_permission('admin')
 @must_have_addon(SHORT_NAME, 'node')
@@ -92,4 +97,5 @@ def binderhub_get_config_ember(**kwargs):
                          },
                          'jupyterhub': jupyterhub,
                          'deployment': get_deployment(),
+                         'launcher': get_launcher(),
                      }}}

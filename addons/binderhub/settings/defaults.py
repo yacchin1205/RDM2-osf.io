@@ -35,3 +35,16 @@ BINDERHUB_DEPLOYMENT_IMAGES = [
         'description': 'R is a language and environment for statistical computing and graphics. RStudio is an integrated development environment for R.',
     },
 ]
+
+JUPYTERHUB_LAUNCHERS = [
+    {
+        'id': 'default',
+        'name': 'Jupyter Notebook',
+        'path': None,
+    },
+    {
+        'id': 'lab',
+        'name': 'JupyterLab',
+        'path': 'lab/',
+    },
+]
