@@ -123,6 +123,7 @@ INSTALLED_APPS = (
     'addons.nextcloudinstitutions',
     'addons.s3compatinstitutions',
     'addons.ociinstitutions',
+    'addons.onedrivebusiness',
 )
 
 # local development using https

@@ -90,5 +90,9 @@
     "dropboxbusiness": {
         "fullName": "Dropbox Business",
         "externalView": false
+    },
+    "onedrivebusiness": {
+        "fullName": "OneDrive for Business",
+        "externalView": false
     }
 }
