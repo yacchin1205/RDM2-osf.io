@@ -31,6 +31,7 @@ from addons.s3compatinstitutions.models import S3CompatInstitutionsProvider
 from addons.s3compatinstitutions import settings as s3compatinstitutions_settings
 from addons.ociinstitutions.models import OCIInstitutionsProvider
 from addons.ociinstitutions import settings as ociinstitutions_settings
+from addons.onedrive.client import OneDriveClient
 from addons.base.institutions_utils import (KEYNAME_BASE_FOLDER,
                                             KEYNAME_USERMAP,
                                             KEYNAME_USERMAP_TMP,
@@ -49,6 +50,7 @@ enabled_providers_forinstitutions_list = [
     'nextcloudinstitutions',
     's3compatinstitutions',
     'ociinstitutions',
+    'onedrivebusiness',
 ]
 
 enabled_providers_list = [
@@ -523,6 +525,27 @@ def test_dropboxbusiness_connection(institution):
             'message': 'Invalid tokens.'
         }, http_status.HTTP_400_BAD_REQUEST)
 
+def test_onedrivebusiness_connection(institution_id, folder_id):
+    validation_result = oauth_validation('onedrivebusiness', institution_id, folder_id)
+    if isinstance(validation_result, tuple):
+        return validation_result
+
+    access_token = ExternalAccountTemporary.objects.get(
+        _id=institution_id, provider='onedrivebusiness'
+    ).oauth_key
+    client = OneDriveClient(access_token)
+
+    try:
+        client.folders(folder_id)
+    except HTTPError:
+        return ({
+            'message': 'Invalid folder ID.'
+        }, http_status.HTTP_400_BAD_REQUEST)
+
+    return ({
+        'message': 'Credentials are valid'
+    }, http_status.HTTP_200_OK)
+
 def save_s3_credentials(institution_id, storage_name, access_key, secret_key, bucket):
     test_connection_result = test_s3_connection(access_key, secret_key, bucket)
     if test_connection_result[1] != http_status.HTTP_200_OK:
@@ -785,6 +808,23 @@ def save_owncloud_credentials(institution_id, storage_name, host_url, username, 
 
     return ({
         'message': 'Saved credentials successfully!!'
+    }, http_status.HTTP_200_OK)
+
+def save_onedrivebusiness_credentials(user, storage_name, provider_name, folder_id):
+    institution_id = user.affiliated_institutions.first()._id
+
+    test_connection_result = test_onedrivebusiness_connection(institution_id, folder_id)
+    if test_connection_result[1] != http_status.HTTP_200_OK:
+        return test_connection_result
+
+    account = transfer_to_external_account(user, institution_id, 'onedrivebusiness')
+    wb_credentials, wb_settings = wd_info_for_institutions(provider_name)
+    wb_settings['root_folder_id'] = folder_id
+    region = update_storage(institution_id, storage_name, wb_credentials, wb_settings)
+    external_util.set_region_external_account(region, account)
+
+    return ({
+        'message': 'OAuth was set successfully'
     }, http_status.HTTP_200_OK)
 
 def wd_info_for_institutions(provider_name):

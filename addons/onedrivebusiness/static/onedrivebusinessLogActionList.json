@@ -1,11 +1,9 @@
 {
-  "onedrivebusiness_bucket_linked" : "${user} linked the My MinIO bucket ${bucket} to ${node}",
-  "onedrivebusiness_bucket_unlinked" : "${user} unselected the My MinIO bucket ${bucket} in ${node}",
-  "onedrivebusiness_file_added" : "${user} added file ${path} to My MinIO bucket ${bucket} in ${node}",
-  "onedrivebusiness_file_removed" : "${user} removed ${path} in My MinIO bucket ${bucket} in ${node}",
-  "onedrivebusiness_file_updated" : "${user} updated file ${path} in My MinIO bucket ${bucket} in ${node}",
-  "onedrivebusiness_folder_created" : "${user} created folder ${path} in My MinIO bucket ${bucket} in ${node}",
-  "onedrivebusiness_node_authorized" : "${user} authorized the My MinIO addon for ${node}",
-  "onedrivebusiness_node_deauthorized" : "${user} deauthorized the My MinIO addon for ${node}",
-  "onedrivebusiness_node_deauthorized_no_user" : "My MinIO addon for ${node} deauthorized"
+  "onedrivebusiness_file_added" : "${user} added file ${path} to the OneDrive team folder ${folder} in ${node}",
+  "onedrivebusiness_file_removed" : "${user} removed ${path} in the OneDrive team folder ${folder} in ${node}",
+  "onedrivebusiness_file_updated" : "${user} updated file ${path} in the OneDrive team folder ${folder} in ${node}",
+  "onedrivebusiness_folder_created" : "${user} created folder ${path} in the OneDrive team folder ${folder} in ${node}",
+  "onedrivebusiness_node_authorized" : "${user} authorized the OneDrive for Business addon for ${node}",
+  "onedrivebusiness_node_deauthorized" : "${user} deauthorized the OneDrive for Business addon for ${node}",
+  "onedrivebusiness_node_deauthorized_no_user" : "OneDrive for Business addon for ${node} deauthorized"
 }

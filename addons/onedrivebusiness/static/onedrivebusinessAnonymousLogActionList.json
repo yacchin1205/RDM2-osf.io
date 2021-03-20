@@ -1,11 +1,9 @@
 {
-    "onedrivebusiness_bucket_linked" : "A user linked an My MinIO bucket to a project",
-    "onedrivebusiness_bucket_unlinked" : "A user unselected an My MinIO bucket in a project",
-    "onedrivebusiness_file_added" : "A user added a file to an My MinIO bucket in a project",
-    "onedrivebusiness_file_removed" : "A user removed a file in an My MinIO bucket in a project",
-    "onedrivebusiness_file_updated" : "A user updated a file in an My MinIO bucket in a project",
-    "onedrivebusiness_folder_created" : "A user created a folder in an My MinIO in a project",
-    "onedrivebusiness_node_authorized" : "A user authorized the My MinIO addon for a project",
-    "onedrivebusiness_node_deauthorized" : "A user deauthorized the My MinIO addon for a project",
-    "onedrivebusiness_node_deauthorized_no_user" : "My MinIO addon for a project deauthorized"
+    "onedrivebusiness_file_added" : "A user added a file to an OneDrive team folder in a project",
+    "onedrivebusiness_file_removed" : "A user removed a file in an OneDrive team folder in a project",
+    "onedrivebusiness_file_updated" : "A user updated a file in an OneDrive team folder in a project",
+    "onedrivebusiness_folder_created" : "A user created a folder in an OneDrive team folder in a project",
+    "onedrivebusiness_node_authorized" : "A user authorized the OneDrive for Business addon for a project",
+    "onedrivebusiness_node_deauthorized" : "A user deauthorized the OneDrive for Business addon for a project",
+    "onedrivebusiness_node_deauthorized_no_user" : "OneDrive for Business addon for a project deauthorized"
 }

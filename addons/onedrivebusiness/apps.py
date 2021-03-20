@@ -26,7 +26,7 @@ class OneDriveBusinessAddonAppConfig(BaseAddonAppConfig):
 
     has_hgrid_files = True
 
-    max_file_size = settings.MAX_FILE_SIZE
+    max_file_size = settings.MAX_UPLOAD_SIZE
 
     # No node setting views for Institution Storage
     user_settings_template = os.path.join(TEMPLATE_PATH, 'user_settings.mako')

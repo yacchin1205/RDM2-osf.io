@@ -1,15 +1,29 @@
+import logging
+
 from django.db import models
+from django.db.models.signals import pre_save, post_save, post_delete
+from django.dispatch import receiver
+
+from osf.models.node import Node
+from osf.models.contributor import Contributor
+from website import settings as website_settings
 
 import addons.onedrivebusiness.settings as settings
 from addons.base import exceptions
 from addons.base.models import (BaseOAuthNodeSettings, BaseOAuthUserSettings,
                                 BaseStorageAddon)
 from addons.onedrivebusiness import SHORT_NAME, FULL_NAME
-from addons.onedrivebusiness.provider import OneDriveBusinessProvider
 from addons.onedrivebusiness.serializer import OneDriveBusinessSerializer
-from addons.onedrivebusiness.utils import bucket_exists, get_bucket_names
+from addons.onedrivebusiness.utils import get_region_external_account
+from addons.onedrivebusiness.client import OneDriveBusinessClient
+from addons.onedrive.models import OneDriveProvider
 from framework.auth.core import Auth
 from osf.models.files import File, Folder, BaseFileNode
+from addons.onedrivebusiness import settings
+from addons.dropboxbusiness.models import SyncInfo
+
+
+logger = logging.getLogger(__name__)
 
 
 class OneDriveBusinessFileNode(BaseFileNode):
@@ -22,6 +36,21 @@ class OneDriveBusinessFolder(OneDriveBusinessFileNode, Folder):
 
 class OneDriveBusinessFile(OneDriveBusinessFileNode, File):
     version_identifier = 'version'
+
+
+class OneDriveBusinessProvider(OneDriveProvider):
+    name = FULL_NAME
+    short_name = SHORT_NAME
+
+    client_id = settings.ONEDRIVE_KEY
+    client_secret = settings.ONEDRIVE_SECRET
+
+    auth_url_base = settings.ONEDRIVE_OAUTH_AUTH_ENDPOINT
+    callback_url = settings.ONEDRIVE_OAUTH_TOKEN_ENDPOINT
+    auto_refresh_url = settings.ONEDRIVE_OAUTH_TOKEN_ENDPOINT
+    default_scopes = ['openid profile offline_access user.read files.readwrite.all']
+
+    refresh_time = settings.REFRESH_TIME
 
 
 class UserSettings(BaseOAuthUserSettings):
@@ -39,6 +68,13 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
     user_settings = models.ForeignKey(UserSettings, null=True, blank=True, on_delete=models.CASCADE)
 
     @property
+    def api(self):
+        """authenticated ExternalProvider instance"""
+        if self._api is None:
+            self._api = OneDriveBusinessProvider(self.external_account)
+        return self._api
+
+    @property
     def folder_path(self):
         return self.folder_name
 
@@ -46,61 +82,45 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
     def display_name(self):
         return u'{0}: {1}'.format(self.config.full_name, self.folder_id)
 
-    def set_folder(self, folder_id, auth):
-        host = settings.HOST
-        if not bucket_exists(host,
-                             self.external_account.oauth_key,
-                             self.external_account.oauth_secret, folder_id):
-            error_message = ('We are having trouble connecting to that bucket. '
-                             'Try a different one.')
-            raise exceptions.InvalidFolderError(error_message)
-
-        self.folder_id = str(folder_id)
-        self.folder_name = folder_id
-        self.save()
-
-        self.nodelogger.log(action='bucket_linked', extra={'bucket': str(folder_id)}, save=True)
-
-    def get_folders(self, **kwargs):
-        # This really gets only buckets, not subfolders,
-        # as that's all we want to be linkable on a node.
+    def ensure_team_folder(self, region_external_account):
+        region_provider = self.oauth_provider(region_external_account.external_account)
         try:
-            buckets = get_bucket_names(self)
-        except Exception:
-            raise exceptions.InvalidAuthError()
-
-        return [
-            {
-                'addon': SHORT_NAME,
-                'kind': 'folder',
-                'id': bucket,
-                'name': bucket,
-                'path': bucket,
-                'urls': {
-                    'folders': ''
-                }
-            }
-            for bucket in buckets
-        ]
+            access_token = region_provider.fetch_access_token()
+        except exceptions.InvalidAuthError:
+            raise HTTPError(403)
+        region_client = OneDriveBusinessClient(access_token)
+        node = self.owner
+        folder_name = settings.TEAM_FOLDER_NAME_FORMAT.format(
+            title=node.title, guid=node._id
+        )
+        region = region_external_account.region
+        root_folder_id = region.waterbutler_settings['root_folder_id']
+        folders = region_client.folders(folder_id=root_folder_id)
+        folders = [f for f in folders if f['name'] == folder_name]
+        if len(folders) > 0:
+            folder = folders[0]
+        else:
+            folder = region_client.create_folder(root_folder_id, folder_name)
+        logger.info('Folder: {}'.format(folder))
+        self.folder_name = folder_name
+        self.folder_id = folder['id']
+        self.save()
 
     @property
     def complete(self):
         return self.has_auth and self.folder_id is not None
 
+    @property
+    def has_auth(self):
+        return True
+
     def authorize(self, user_settings, save=False):
-        self.user_settings = user_settings
-        self.nodelogger.log(action='node_authorized', save=save)
+        pass
 
     def clear_settings(self):
-        self.folder_id = None
-        self.folder_name = None
-        self.folder_location = None
+        pass
 
     def deauthorize(self, auth=None, log=True):
-        """Remove user authorization from this node and log the event."""
-        self.clear_settings()
-        self.clear_auth()  # Also performs a save
-
         if log:
             self.nodelogger.log(action='node_deauthorized', save=True)
 
@@ -109,19 +129,17 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
         super(NodeSettings, self).delete(save=save)
 
     def serialize_waterbutler_credentials(self):
-        if not self.has_auth:
+        region_external_account = get_region_external_account(self.owner)
+        if region_external_account is None:
             raise exceptions.AddonError('Cannot serialize credentials for {} addon'.format(FULL_NAME))
-        return {
-            'host': settings.HOST,
-            'access_key': self.external_account.oauth_key,
-            'secret_key': self.external_account.oauth_secret,
-        }
+        region_provider = self.oauth_provider(region_external_account.external_account)
+        return {'token': region_provider.fetch_access_token()}
 
     def serialize_waterbutler_settings(self):
         if not self.folder_id:
             raise exceptions.AddonError('Cannot serialize settings for {} addon'.format(FULL_NAME))
         return {
-            'bucket': self.folder_id
+            'folder': self.folder_id
         }
 
     def create_waterbutler_log(self, auth, action, metadata):
@@ -134,7 +152,7 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
                 'project': self.owner.parent_id,
                 'node': self.owner._id,
                 'path': metadata['materialized'],
-                'bucket': self.folder_id,
+                'folder': self.folder_name,
                 'urls': {
                     'view': url,
                     'download': url + '?action=download'
@@ -144,3 +162,60 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
 
     def after_delete(self, user):
         self.deauthorize(Auth(user=user), log=True)
+
+
+@receiver(pre_save, sender=Node)
+def node_pre_save(sender, instance, **kwargs):
+    if instance.is_deleted:
+        return
+    if SHORT_NAME not in website_settings.ADDONS_AVAILABLE_DICT:
+        return
+    region_external_account = get_region_external_account(instance)
+    if region_external_account is None:
+        return # disabled
+    try:
+        old_node = Node.objects.get(id=instance.id)
+        syncinfo = SyncInfo.get(old_node.id)
+        syncinfo.old_node_title = old_node.title
+    except Exception:
+        logger.info('Cannot get node information at pre_save', exc_info=True)
+
+
+@receiver(post_save, sender=Node)
+def node_post_save(sender, instance, created, **kwargs):
+    if instance.is_deleted:
+        return
+    if SHORT_NAME not in website_settings.ADDONS_AVAILABLE_DICT:
+        return
+    region_external_account = get_region_external_account(instance)
+    if region_external_account is None:
+        return # disabled
+    if created:
+        addon = instance.add_addon(SHORT_NAME, auth=Auth(instance.creator), log=True)
+    else:
+        addon = instance.get_addon(SHORT_NAME)
+        if addon is None or not addon.complete:  # disabled
+            return
+        #syncinfo = SyncInfo.get(instance.id)
+        #if addon.owner.title == syncinfo.old_node_title \
+        #    and not syncinfo.need_to_update_members:
+        #    return
+    addon.ensure_team_folder(region_external_account)
+
+
+@receiver(post_save, sender=Contributor)
+@receiver(post_delete, sender=Contributor)
+def update_group_members(sender, instance, **kwargs):
+    if SHORT_NAME not in website_settings.ADDONS_AVAILABLE_DICT:
+        return
+    node = instance.node
+    if node.is_deleted:
+        return
+    region_external_account = get_region_external_account(node)
+    if region_external_account is None:
+        return # disabled
+    ns = node.get_addon(SHORT_NAME)
+    if ns is None or not ns.complete:  # disabled
+        return
+    syncinfo = SyncInfo.get(node.id)
+    syncinfo.need_to_update_members = True
