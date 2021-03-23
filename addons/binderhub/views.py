@@ -3,6 +3,7 @@ import json
 from rest_framework import status as http_status
 from flask import request
 import logging
+from future.moves.urllib.parse import urljoin
 
 from . import SHORT_NAME
 from framework.exceptions import HTTPError
@@ -12,6 +13,7 @@ from website.project.decorators import (
     must_have_permission,
 )
 from website.ember_osf_web.views import use_ember_app
+from website import settings as website_settings
 from website.util import api_url_for
 
 from .models import BinderHubToken
@@ -25,9 +27,17 @@ def get_deployment():
         'images': settings.BINDERHUB_DEPLOYMENT_IMAGES,
     }
 
+def get_launcher_endpoint(endpoint):
+    endpoint = endpoint.copy()
+    if 'image' in endpoint:
+        endpoint['imageurl'] = urljoin(
+            website_settings.DOMAIN, '/static/addons/binderhub/' + endpoint['image']
+        )
+    return endpoint
+
 def get_launcher():
     return {
-        'endpoints': settings.JUPYTERHUB_LAUNCHERS,
+        'endpoints': [get_launcher_endpoint(e) for e in settings.JUPYTERHUB_LAUNCHERS],
     }
 
 @must_be_valid_project

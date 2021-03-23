@@ -41,10 +41,12 @@ JUPYTERHUB_LAUNCHERS = [
         'id': 'default',
         'name': 'Jupyter Notebook',
         'path': None,
+        'image': 'jupyter-notebook.png',
     },
     {
         'id': 'lab',
         'name': 'JupyterLab',
         'path': 'lab/',
+        'image': 'jupyterlab.png',
     },
 ]
