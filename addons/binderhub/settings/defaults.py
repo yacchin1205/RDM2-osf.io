@@ -49,4 +49,10 @@ JUPYTERHUB_LAUNCHERS = [
         'path': 'lab/',
         'image': 'jupyterlab.png',
     },
+    {
+        'id': 'rstudio',
+        'name': 'RStudio',
+        'path': 'rstuio/',
+        'image': 'rstudio.png',
+    },
 ]
