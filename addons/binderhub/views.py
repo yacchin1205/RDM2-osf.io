@@ -17,7 +17,6 @@ from website import settings as website_settings
 from website.util import api_url_for
 
 from .models import BinderHubToken
-from .oauth import binderhub_oauth_authorize, binderhub_oauth_callback
 from . import settings
 
 logger = logging.getLogger(__name__)
@@ -101,9 +100,9 @@ def binderhub_get_config_ember(**kwargs):
     return {'data': {'id': node._id, 'type': 'binderhub-config',
                      'attributes': {
                          'binderhub': {
-                            'url': addon.get_binder_url(),
-                            'authorize_url': binderhub_authorize_url,
-                            'token': binderhub_token,
+                             'url': addon.get_binder_url(),
+                             'authorize_url': binderhub_authorize_url,
+                             'token': binderhub_token,
                          },
                          'jupyterhub': jupyterhub,
                          'deployment': get_deployment(),
