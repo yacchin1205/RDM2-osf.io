@@ -224,6 +224,8 @@ def celery_worker(ctx, level='debug', hostname=None, beat=False, queues=None, co
         cmd = cmd + ' --concurrency={}'.format(concurrency)
     if max_tasks_per_child:
         cmd = cmd + ' --maxtasksperchild={}'.format(max_tasks_per_child)
+    from addons.base.lock_utils import init_lock
+    init_lock()
     ctx.run(bin_prefix(cmd), pty=True)
 
 
@@ -580,7 +582,10 @@ def wheelhouse(ctx, addons=False, release=False, dev=False, pty=True):
             if os.path.isdir(path):
                 req_file = os.path.join(path, 'requirements.txt')
                 if os.path.exists(req_file):
-                    cmd = 'pip3 wheel --find-links={} -r {} --wheel-dir={} -c {}'.format(
+                    cmd = (
+                        'pip3 wheel --use-deprecated=legacy-resolver '
+                        '--find-links={} -r {} --wheel-dir={} -c {} '
+                    ).format(
                         WHEELHOUSE_PATH, req_file, WHEELHOUSE_PATH, CONSTRAINTS_PATH,
                     )
                     ctx.run(cmd, pty=pty)
@@ -590,7 +595,10 @@ def wheelhouse(ctx, addons=False, release=False, dev=False, pty=True):
         req_file = os.path.join(HERE, 'requirements', 'dev.txt')
     else:
         req_file = os.path.join(HERE, 'requirements.txt')
-    cmd = 'pip3 wheel --find-links={} -r {} --wheel-dir={} -c {}'.format(
+    cmd = (
+        'pip3 wheel --use-deprecated=legacy-resolver '
+        '--find-links={} -r {} --wheel-dir={} -c {} '
+    ).format(
         WHEELHOUSE_PATH, req_file, WHEELHOUSE_PATH, CONSTRAINTS_PATH,
     )
     ctx.run(cmd, pty=pty)

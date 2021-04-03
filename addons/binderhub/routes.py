@@ -3,6 +3,7 @@ from framework.routing import Rule, json_renderer
 from website.routes import notemplate
 from . import SHORT_NAME
 from . import views
+from . import oauth
 
 # HTML endpoints
 page_routes = {
@@ -21,10 +22,10 @@ page_routes = {
         Rule([
             '/project/<pid>/{}/<serviceid>/authorize'.format(SHORT_NAME),
             '/project/<pid>/node/<nid>/{}/<serviceid>/authorize'.format(SHORT_NAME),
-        ], 'get', views.binderhub_oauth_authorize, json_renderer),
+        ], 'get', oauth.binderhub_oauth_authorize, json_renderer),
         Rule([
             '/project/{}/callback'.format(SHORT_NAME),
-        ], 'get', views.binderhub_oauth_callback, json_renderer),
+        ], 'get', oauth.binderhub_oauth_callback, json_renderer),
     ]
 }
 
