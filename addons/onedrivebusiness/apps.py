@@ -35,8 +35,6 @@ class OneDriveBusinessAddonAppConfig(BaseAddonAppConfig):
     is_allowed_default = False
     for_institutions = True
 
-    BUCKET_LINKED = 'onedrivebusiness_bucket_linked'
-    BUCKET_UNLINKED = 'onedrivebusiness_bucket_unlinked'
     FILE_ADDED = 'onedrivebusiness_file_added'
     FILE_REMOVED = 'onedrivebusiness_file_removed'
     FILE_UPDATED = 'onedrivebusiness_file_updated'
@@ -45,8 +43,6 @@ class OneDriveBusinessAddonAppConfig(BaseAddonAppConfig):
     NODE_DEAUTHORIZED = 'onedrivebusiness_node_deauthorized'
     NODE_DEAUTHORIZED_NO_USER = 'onedrivebusiness_node_deauthorized_no_user'
     actions = (
-        BUCKET_LINKED,
-        BUCKET_UNLINKED,
         FILE_ADDED,
         FILE_REMOVED,
         FILE_UPDATED,

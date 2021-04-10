@@ -20,7 +20,6 @@ from addons.onedrive.models import OneDriveProvider
 from framework.auth.core import Auth
 from osf.models.files import File, Folder, BaseFileNode
 from addons.onedrivebusiness import settings
-from addons.dropboxbusiness.models import SyncInfo
 
 
 logger = logging.getLogger(__name__)
@@ -48,7 +47,7 @@ class OneDriveBusinessProvider(OneDriveProvider):
     auth_url_base = settings.ONEDRIVE_OAUTH_AUTH_ENDPOINT
     callback_url = settings.ONEDRIVE_OAUTH_TOKEN_ENDPOINT
     auto_refresh_url = settings.ONEDRIVE_OAUTH_TOKEN_ENDPOINT
-    default_scopes = ['openid profile offline_access user.read files.readwrite.all']
+    default_scopes = ['openid profile offline_access user.read.all files.readwrite.all']
 
     refresh_time = settings.REFRESH_TIME
 
@@ -93,6 +92,12 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
         folder_name = settings.TEAM_FOLDER_NAME_FORMAT.format(
             title=node.title, guid=node._id
         )
+        if self.folder_id is not None:
+            updated = self._update_team_folder(region_client, folder_name)
+            updated = self._update_team_members(region_client) or updated
+            if updated:
+                self.save()
+            return
         region = region_external_account.region
         root_folder_id = region.waterbutler_settings['root_folder_id']
         folders = region_client.folders(folder_id=root_folder_id)
@@ -104,6 +109,7 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
         logger.info('Folder: {}'.format(folder))
         self.folder_name = folder_name
         self.folder_id = folder['id']
+        self._update_team_members(region_client)
         self.save()
 
     @property
@@ -163,22 +169,16 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
     def after_delete(self, user):
         self.deauthorize(Auth(user=user), log=True)
 
+    def _update_team_folder(self, region_client, folder_name):
+        if self.folder_name == folder_name:
+            return False
+        logger.info('Renaming {} -> {}'.format(self.folder_name, folder_name))
+        region_client.rename_folder(self.folder_id, folder_name)
+        self.folder_name = folder_name
+        return True
 
-@receiver(pre_save, sender=Node)
-def node_pre_save(sender, instance, **kwargs):
-    if instance.is_deleted:
-        return
-    if SHORT_NAME not in website_settings.ADDONS_AVAILABLE_DICT:
-        return
-    region_external_account = get_region_external_account(instance)
-    if region_external_account is None:
-        return # disabled
-    try:
-        old_node = Node.objects.get(id=instance.id)
-        syncinfo = SyncInfo.get(old_node.id)
-        syncinfo.old_node_title = old_node.title
-    except Exception:
-        logger.info('Cannot get node information at pre_save', exc_info=True)
+    def _update_team_members(self, region_client):
+        return False
 
 
 @receiver(post_save, sender=Node)
@@ -190,32 +190,7 @@ def node_post_save(sender, instance, created, **kwargs):
     region_external_account = get_region_external_account(instance)
     if region_external_account is None:
         return # disabled
-    if created:
+    addon = instance.get_addon(SHORT_NAME)
+    if addon is None:
         addon = instance.add_addon(SHORT_NAME, auth=Auth(instance.creator), log=True)
-    else:
-        addon = instance.get_addon(SHORT_NAME)
-        if addon is None or not addon.complete:  # disabled
-            return
-        #syncinfo = SyncInfo.get(instance.id)
-        #if addon.owner.title == syncinfo.old_node_title \
-        #    and not syncinfo.need_to_update_members:
-        #    return
     addon.ensure_team_folder(region_external_account)
-
-
-@receiver(post_save, sender=Contributor)
-@receiver(post_delete, sender=Contributor)
-def update_group_members(sender, instance, **kwargs):
-    if SHORT_NAME not in website_settings.ADDONS_AVAILABLE_DICT:
-        return
-    node = instance.node
-    if node.is_deleted:
-        return
-    region_external_account = get_region_external_account(node)
-    if region_external_account is None:
-        return # disabled
-    ns = node.get_addon(SHORT_NAME)
-    if ns is None or not ns.complete:  # disabled
-        return
-    syncinfo = SyncInfo.get(node.id)
-    syncinfo.need_to_update_members = True

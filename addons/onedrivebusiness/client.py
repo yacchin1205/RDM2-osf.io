@@ -39,3 +39,30 @@ class OneDriveBusinessClient(OneDriveClient):
             throws=HTTPError(401)
         )
         return res.json()
+
+    def rename_folder(self, folder_id, name):
+        """Rename a folder specified by ``folder_id`` with ``name``
+
+        API Docs:  https://docs.microsoft.com/en-us/graph/api/driveitem-update
+
+        :param str folder_id: the id of the folder.
+        :param str name: the name of the folder.
+        :rtype: dict
+        :return: a metadata object representing the folder
+        """
+
+        if folder_id is None or folder_id == settings.DEFAULT_ROOT_ID:
+            url = self._build_url(settings.ONEDRIVE_API_URL, 'drive', settings.DEFAULT_ROOT_ID)
+        else:
+            url = self._build_url(settings.ONEDRIVE_API_URL, 'drive', 'items', folder_id)
+
+        res = self._make_request(
+            'PATCH',
+            url,
+            json={
+                'name': name,
+            },
+            expects=(200,),
+            throws=HTTPError(401)
+        )
+        return res.json()
