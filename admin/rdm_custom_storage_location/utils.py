@@ -525,26 +525,47 @@ def test_dropboxbusiness_connection(institution):
             'message': 'Invalid tokens.'
         }, http_status.HTTP_400_BAD_REQUEST)
 
-def test_onedrivebusiness_connection(institution_id, folder_id):
-    validation_result = oauth_validation('onedrivebusiness', institution_id, folder_id)
+def get_onedrivebusiness_folder_id(client, folder_path, parent='root'):
+    folder_path_parts = folder_path.rstrip('/').split('/', maxsplit=1)
+    folder_name = folder_path_parts[0]
+    folders = [f for f in client.folders(parent) if f['name'] == folder_name]
+    if len(folders) == 0:
+        raise HTTPError(http_status.HTTP_400_BAD_REQUEST)
+    if len(folder_path_parts) == 1:
+        return folders[0]['id']
+    return get_onedrivebusiness_folder_id(
+        client, folder_path_parts[1], parent=folders[0]['id']
+    )
+
+def validate_onedrivebusiness_connection(institution_id, folder_id_or_path):
+    validation_result = oauth_validation('onedrivebusiness', institution_id, folder_id_or_path)
     if isinstance(validation_result, tuple):
-        return validation_result
+        return validation_result, None
 
     access_token = ExternalAccountTemporary.objects.get(
         _id=institution_id, provider='onedrivebusiness'
     ).oauth_key
     client = OneDriveClient(access_token)
 
-    try:
-        client.folders(folder_id)
-    except HTTPError:
-        return ({
-            'message': 'Invalid folder ID.'
-        }, http_status.HTTP_400_BAD_REQUEST)
+    if folder_id_or_path.startswith('/'):
+        try:
+            folder_id = get_onedrivebusiness_folder_id(client, folder_id_or_path[1:])
+        except HTTPError:
+            return ({
+                'message': 'Invalid folder Path.'
+            }, http_status.HTTP_400_BAD_REQUEST), None
+    else:
+        try:
+            client.folders(folder_id_or_path)
+            folder_id = folder_id_or_path
+        except HTTPError:
+            return ({
+                'message': 'Invalid folder ID.'
+            }, http_status.HTTP_400_BAD_REQUEST), None
 
     return ({
         'message': 'Credentials are valid'
-    }, http_status.HTTP_200_OK)
+    }, http_status.HTTP_200_OK), folder_id
 
 def save_s3_credentials(institution_id, storage_name, access_key, secret_key, bucket):
     test_connection_result = test_s3_connection(access_key, secret_key, bucket)
@@ -810,10 +831,10 @@ def save_owncloud_credentials(institution_id, storage_name, host_url, username, 
         'message': 'Saved credentials successfully!!'
     }, http_status.HTTP_200_OK)
 
-def save_onedrivebusiness_credentials(user, storage_name, provider_name, folder_id):
+def save_onedrivebusiness_credentials(user, storage_name, provider_name, folder_id_or_path):
     institution_id = user.affiliated_institutions.first()._id
 
-    test_connection_result = test_onedrivebusiness_connection(institution_id, folder_id)
+    test_connection_result, folder_id = validate_onedrivebusiness_connection(institution_id, folder_id_or_path)
     if test_connection_result[1] != http_status.HTTP_200_OK:
         return test_connection_result
 
