@@ -30,14 +30,14 @@
         "iqbrims",
         "dropboxbusiness",
         "googledriveinstitutions",
-        "binderhub"
+        "binderhub",
+        "onedrivebusiness"
     ],
     "addons_default": [
         "osfstorage",
         "nextcloudinstitutions",
         "dropboxbusiness",
-        "s3compatinstitutions",
-        "ociinstitutions"
+        "onedrivebusiness"
     ],
     "addons_archivable": {
         "osfstorage": "full",
@@ -65,7 +65,8 @@
         "nextcloudinstitutions": "partial",
         "iqbrims": "partial",
         "dropboxbusiness": "partial",
-        "googledriveinstitutions": "partial"
+        "googledriveinstitutions": "partial",
+        "onedrivebusiness": "partial"
     },
     "addons_commentable": [
         "osfstorage",
@@ -92,7 +93,8 @@
         "nextcloudinstitutions",
         "iqbrims",
         "dropboxbusiness",
-        "googledriveinstitutions"
+        "googledriveinstitutions",
+        "onedrivebusiness"
     ],
     "addons_based_on_ids": [
         "osfstorage",
@@ -133,7 +135,8 @@
         "nextcloudinstitutions": "Nextcloud for Institutions is a file storage add-on for Institutions. Connect your Nextcloud account to a GakuNin RDM project to interact with files hosted on Nextcloud via the GakuNin RDM.",
         "dropboxbusiness": "Dropbox Business for Institutions is a file storage add-on for Institutions. Connect your Dropbox Business administrator account to a GakuNin RDM project to interact with files hosted on Dropbox via the GakuNin RDM.",
         "googledriveinstitutions": "Google Drive in G Suite / Google Workspace is a file storage add-on for Institutions. Connect your G Suite / Google Workspace account to a GakuNin RDM project to interact with files hosted on Google Drive via the GakuNin RDM.",
-        "binderhub": "BinderHub is a web-based interactive computational environment. Files on a GakuNin RDM project can be imported to/exported from BinderHub"
+        "binderhub": "BinderHub is a web-based interactive computational environment. Files on a GakuNin RDM project can be imported to/exported from BinderHub",
+        "onedrivebusiness": "OneDrive for Office365 is a file storage add-on. Connect your Microsoft OneDrive account to a GakuNin RDM project to interact with files hosted on Microsoft OneDrive via the GakuNin RDM."
     },
     "addons_url": {
         "box": "http://www.box.com",
@@ -159,6 +162,7 @@
         "iqbrims": "https://drive.google.com",
         "dropboxbusiness": "http://www.dropbox.com",
         "googledriveinstitutions": "https://drive.google.com",
-        "binderhub": "https://binder.cs.rcos.nii.ac.jp"
+        "binderhub": "https://binder.cs.rcos.nii.ac.jp",
+        "onedrivebusiness": "https://onedrive.live.com"
     }
 }
