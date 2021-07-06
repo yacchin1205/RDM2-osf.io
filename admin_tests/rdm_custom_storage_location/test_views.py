@@ -42,6 +42,7 @@ class TestInstitutionDefaultStorage(AdminTestCase):
             'S3CompatInstitutionsAddonAppConfig',
             'OCIInstitutionsAddonAppConfig',
             'GoogleDriveInstitutionsAddonConfig',
+            'OneDriveBusinessAddonAppConfig',
         ]
 
     def test_admin_login(self):
