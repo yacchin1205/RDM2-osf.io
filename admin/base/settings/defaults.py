@@ -137,6 +137,7 @@ INSTALLED_APPS = (
     'addons.s3compatinstitutions',
     'addons.ociinstitutions',
     'addons.googledriveinstitutions',
+    'addons.onedrivebusiness',
 )
 
 MIGRATION_MODULES = {
@@ -172,6 +173,7 @@ MIGRATION_MODULES = {
     'addons_s3compatinstitutions': None,
     'addons_ociinstitutions': None,
     'addons_googledriveinstitutions': None,
+    'addons_onedrivebusiness': None,
 }
 
 UNSUPPORTED_FORCE_TO_USE_ADDONS = [
