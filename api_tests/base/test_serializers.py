@@ -197,7 +197,9 @@ class TestNodeSerializerAndRegistrationSerializerDifferences(ApiTestCase):
             'creator',
             'quota_rate',
             'quota_threshold',
-            'wiki_enabled']
+            'wiki_enabled',
+            'binderhub_enabled',
+            'iqbrims_enabled']
         # fields that do not appear on registrations
         non_registration_fields = ['registrations', 'draft_registrations', 'templated_by_count', 'settings', 'children', 'groups']
 

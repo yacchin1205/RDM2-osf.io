@@ -291,6 +291,8 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
         'view_only_links',
         'wiki_enabled',
         'wikis',
+        'binderhub_enabled',
+        'iqbrims_enabled',
     ]
 
     id = IDField(source='_id', read_only=True)
@@ -336,6 +338,8 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
         help_text='Whether the current user is a contributor or group member on this node.',
     )
     wiki_enabled = ser.SerializerMethodField(help_text='Whether the wiki addon is enabled')
+    binderhub_enabled = ser.SerializerMethodField(help_text='Whether the binderhub addon is enabled')
+    iqbrims_enabled = ser.SerializerMethodField(help_text='Whether the iqbrims addon is enabled')
 
     # Public is only write-able by admins--see update method
     public = ser.BooleanField(
@@ -757,6 +761,12 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
 
     def get_wiki_enabled(self, obj):
         return obj.has_wiki_addon if hasattr(obj, 'has_wiki_addon') else obj.has_addon('wiki')
+
+    def get_binderhub_enabled(self, obj):
+        return obj.has_addon('binderhub')
+
+    def get_iqbrims_enabled(self, obj):
+        return obj.has_addon('iqbrims')
 
     def create(self, validated_data):
         request = self.context['request']
@@ -1724,6 +1734,8 @@ class NodeSettingsSerializer(JSONAPISerializer):
     anyone_can_comment = ser.SerializerMethodField()
     anyone_can_edit_wiki = ser.SerializerMethodField()
     wiki_enabled = ser.SerializerMethodField()
+    binderhub_enabled = ser.SerializerMethodField()
+    iqbrims_enabled = ser.SerializerMethodField()
     redirect_link_enabled = ser.SerializerMethodField()
     redirect_link_url = ser.SerializerMethodField()
     redirect_link_label = ser.SerializerMethodField()
@@ -1742,6 +1754,12 @@ class NodeSettingsSerializer(JSONAPISerializer):
 
     def get_wiki_enabled(self, obj):
         return self.context['wiki_addon'] is not None
+
+    def get_binderhub_enabled(self, obj):
+        return self.context['binderhub_addon'] is not None
+
+    def get_iqbrims_enabled(self, obj):
+        return self.context['iqbrims_addon'] is not None
 
     def get_anyone_can_edit_wiki(self, obj):
         wiki_addon = self.context['wiki_addon']
