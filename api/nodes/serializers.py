@@ -763,10 +763,10 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
         return obj.has_wiki_addon if hasattr(obj, 'has_wiki_addon') else obj.has_addon('wiki')
 
     def get_binderhub_enabled(self, obj):
-        return obj.has_addon('binderhub')
+        return obj.has_binderhub_addon if hasattr(obj, 'has_binderhub_addon') else obj.has_addon('binderhub')
 
     def get_iqbrims_enabled(self, obj):
-        return obj.has_addon('iqbrims')
+        return obj.has_iqbrims_addon if hasattr(obj, 'has_iqbrims_addon') else obj.has_addon('iqbrims')
 
     def create(self, validated_data):
         request = self.context['request']

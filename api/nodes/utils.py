@@ -10,6 +10,8 @@ import requests
 
 from addons.osfstorage.models import OsfStorageFile, OsfStorageFolder, NodeSettings, Region
 from addons.wiki.models import NodeSettings as WikiNodeSettings
+from addons.binderhub.models import NodeSettings as BinderhubNodeSettings
+from addons.iqbrims.models import NodeSettings as IQBRIMSNodeSettings
 from osf.models import AbstractNode, Preprint, Guid, NodeRelation, Contributor
 from osf.models.node import NodeGroupObjectPermission
 from osf.utils import permissions
@@ -89,6 +91,8 @@ class NodeOptimizationMixin(object):
         guid = Guid.objects.filter(content_type_id=abstract_node_contenttype_id, object_id=OuterRef('parent_id'))
         parent = NodeRelation.objects.annotate(parent__id=Subquery(guid.values('_id')[:1])).filter(child=OuterRef('pk'), is_node_link=False)
         wiki_addon = WikiNodeSettings.objects.filter(owner=OuterRef('pk'), is_deleted=False)
+        binderhub_addon = BinderhubNodeSettings.objects.filter(owner=OuterRef('pk'), is_deleted=False)
+        iqbrims_addon = IQBRIMSNodeSettings.objects.filter(owner=OuterRef('pk'), is_deleted=False)
         preprints = Preprint.objects.can_view(user=auth.user).filter(node_id=OuterRef('pk'))
         region = Region.objects.filter(id=OuterRef('region_id'))
         node_settings = NodeSettings.objects.annotate(region_abbrev=Subquery(region.values('_id')[:1])).filter(owner_id=OuterRef('pk'))
@@ -106,6 +110,8 @@ class NodeOptimizationMixin(object):
             has_write=Exists(node_group.filter(permission_id=write_permission.id)),
             has_admin=Exists(node_group.filter(permission_id=admin_permission.id)),
             has_wiki_addon=Exists(wiki_addon),
+            has_binderhub_addon=Exists(binderhub_addon),
+            has_iqbrims_addon=Exists(iqbrims_addon),
             annotated_parent_id=Subquery(parent.values('parent__id')[:1], output_field=CharField()),
             has_viewable_preprints=Exists(preprints),
             has_admin_scope=Value(admin_scope, output_field=BooleanField()),
