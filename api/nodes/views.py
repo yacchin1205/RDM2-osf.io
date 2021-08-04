@@ -2273,5 +2273,7 @@ class NodeSettings(JSONAPIBaseView, generics.RetrieveUpdateAPIView, NodeMixin):
         context = super(NodeSettings, self).get_serializer_context()
         node = self.get_node(check_object_permissions=False)
         context['wiki_addon'] = node.get_addon('wiki')
+        context['binderhub_addon'] = node.get_addon('binderhub')
+        context['iqbrims_addon'] = node.get_addon('iqbrims')
         context['forward_addon'] = node.get_addon('forward')
         return context
