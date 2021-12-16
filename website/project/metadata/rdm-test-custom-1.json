@@ -1,0 +1,31 @@
+{
+    "name": "RDM Test Custom 1",
+    "version": 1,
+    "description": "test custom",
+    "pages": [
+        {
+            "id": "page1",
+            "title": "e-Rad",
+            "questions": [
+                {
+                    "qid": "q1",
+                    "nav": "Researcher number of data manager",
+                    "type": "rdm",
+                    "format": "e-rad-data-manager-number",
+                    "title": "Researcher number of data manager",
+                    "description": "e-Rad researcher number of data manager",
+                    "required": true
+                },
+                {
+                    "qid": "q2",
+                    "nav": "Name of data manager",
+                    "type": "rdm",
+                    "format": "e-rad-data-manager-name",
+                    "title": "Name of data manager",
+                    "description": "Name of data Manager (full name)",
+                    "required": true
+                }
+            ]
+        }
+    ]
+}

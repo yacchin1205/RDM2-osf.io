@@ -39,7 +39,9 @@ OSF_META_SCHEMAS = [
     ensure_schema_structure(from_json('osf-preregistration.json')),
     ensure_schema_structure(from_json('osf-preregistration-3.json')),
     ensure_schema_structure(from_json('egap-registration.json')),
-    ensure_schema_structure(from_json('egap-registration-3.json'))
+    ensure_schema_structure(from_json('egap-registration-3.json')),
+    ensure_schema_structure(from_json('rdm-test-1.json')),
+    ensure_schema_structure(from_json('rdm-test-custom-1.json')),
 ]
 
 METASCHEMA_ORDERING = (
@@ -56,4 +58,6 @@ METASCHEMA_ORDERING = (
     'RIDIE Registration - Study Initiation',
     'RIDIE Registration - Study Complete',
     'EGAP Registration',
+    'RDM Test 1',
+    'RDM Test Custom 1',
 )

@@ -38,6 +38,11 @@ FORMAT_TYPE_TO_TYPE_MAP = {
     ('textarea-lg', None): 'long-text-input',
     ('textarea-lg', 'string'): 'long-text-input',
     ('textarea-xl', 'string'): 'long-text-input',
+    # RDM
+    # type length must be greater than 31
+    ('text-test', 'string'): 'test-text-input',
+    ('e-rad-data-manager-number', 'rdm'): 'rdm-erad-dm-num-input',
+    ('e-rad-data-manager-name', 'rdm'): 'rdm-erad-dm-name-input',
 }
 
 def get_osf_models():
