@@ -124,6 +124,7 @@ INSTALLED_APPS = (
     'addons.s3compatinstitutions',
     'addons.ociinstitutions',
     'addons.binderhub',
+    'addons.metadata',
 )
 
 # local development using https
