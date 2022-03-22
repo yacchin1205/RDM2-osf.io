@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-
+import logging
 import os
 import itertools
 
@@ -7,6 +7,9 @@ import furl
 import requests
 
 from framework.exceptions import HTTPError
+
+
+logger = logging.getLogger(__name__)
 
 
 class BaseClient(object):
@@ -29,6 +32,7 @@ class BaseClient(object):
 
         kwargs['headers'] = self._build_defaults(self._default_headers, **kwargs.get('headers', {}))
         kwargs['params'] = self._build_defaults(self._default_params, **kwargs.get('params', {}))
+        logger.debug('_make_request: url={}, kwargs={}'.format(url, repr(kwargs)))
 
         response = requests.request(method, url, auth=self._auth, **kwargs)
         if expects and response.status_code not in expects:

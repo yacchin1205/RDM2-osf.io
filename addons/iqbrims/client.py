@@ -24,7 +24,6 @@ class IQBRIMSAuthClient(BaseClient):
             self._build_url(settings.API_BASE_URL, 'oauth2', 'v3', 'userinfo'),
             params={'access_token': access_token},
             expects=(200, ),
-            throws=HTTPError(401)
         ).json()
 
 
@@ -44,7 +43,6 @@ class IQBRIMSClient(BaseClient):
             'GET',
             self._build_url(settings.API_BASE_URL, 'drive', 'v2', 'about', ),
             expects=(200, ),
-            throws=HTTPError(401)
         ).json()
 
     def get_folder_link(self, folder_id='root'):
@@ -53,7 +51,6 @@ class IQBRIMSClient(BaseClient):
             self._build_url(settings.API_BASE_URL, 'drive', 'v2', 'files',
             folder_id),
             expects=(200, ),
-            throws=HTTPError(401)
         )
         return res.json()['alternateLink']
 
@@ -63,7 +60,6 @@ class IQBRIMSClient(BaseClient):
             self._build_url(settings.API_BASE_URL, 'drive', 'v2', 'files',
             file_id),
             expects=(200, ),
-            throws=HTTPError(401)
         )
         return res.json()['alternateLink']
 
@@ -73,7 +69,6 @@ class IQBRIMSClient(BaseClient):
             self._build_url(settings.API_BASE_URL, 'drive', 'v3', 'files',
             file_id, 'permissions'),
             expects=(200, ),
-            throws=HTTPError(401)
         )
         permissions = res.json()['permissions']
         permissions = [p
@@ -92,7 +87,6 @@ class IQBRIMSClient(BaseClient):
                         'role': 'writer',
                     }),
                     expects=(200, ),
-                    throws=HTTPError(401)
                 )
         else:
             res = self._make_request(
@@ -108,7 +102,6 @@ class IQBRIMSClient(BaseClient):
                     'allowFileDiscovery': False,
                 }),
                 expects=(200, ),
-                throws=HTTPError(401)
             )
             return res.json()
 
@@ -118,7 +111,6 @@ class IQBRIMSClient(BaseClient):
             self._build_url(settings.API_BASE_URL, 'drive', 'v3', 'files',
             file_id, 'permissions'),
             expects=(200, ),
-            throws=HTTPError(401)
         )
         permissions = res.json()['permissions']
         permissions = [p
@@ -137,7 +129,6 @@ class IQBRIMSClient(BaseClient):
                         'role': 'reader',
                     }),
                     expects=(200, ),
-                    throws=HTTPError(401)
                 )
         else:
             for p in permissions:
@@ -146,7 +137,6 @@ class IQBRIMSClient(BaseClient):
                     self._build_url(settings.API_BASE_URL, 'drive', 'v3', 'files',
                     file_id, 'permissions', p['id']),
                     expects=(200, ),
-                    throws=HTTPError(401)
                 )
         return permissions
 
@@ -156,7 +146,6 @@ class IQBRIMSClient(BaseClient):
             self._build_url(settings.API_BASE_URL, 'drive', 'v2', 'files',
             folder_id),
             expects=(200, ),
-            throws=HTTPError(401)
         )
         return res.json()
 
@@ -175,7 +164,6 @@ class IQBRIMSClient(BaseClient):
                             'files') + '?uploadType=multipart',
             files=files,
             expects=(200, ),
-            throws=HTTPError(401)
         )
         return res.json()
 
@@ -189,7 +177,6 @@ class IQBRIMSClient(BaseClient):
             },
             data=content,
             expects=(200, ),
-            throws=HTTPError(401)
         )
         return res.json()
 
@@ -200,7 +187,6 @@ class IQBRIMSClient(BaseClient):
             file_id),
             params={'alt': 'media'},
             expects=(200, ),
-            throws=HTTPError(401)
         )
         return res.content
 
@@ -215,7 +201,6 @@ class IQBRIMSClient(BaseClient):
             self._build_url(settings.API_BASE_URL, 'drive', 'v2', 'files', ),
             params={'q': query},
             expects=(200, ),
-            throws=HTTPError(401)
         )
         return res.json()['items']
 
@@ -229,7 +214,6 @@ class IQBRIMSClient(BaseClient):
             self._build_url(settings.API_BASE_URL, 'drive', 'v2', 'files', ),
             params={'q': query},
             expects=(200, ),
-            throws=HTTPError(401)
         )
         return res.json()['items']
 
@@ -248,7 +232,6 @@ class IQBRIMSClient(BaseClient):
                 'mimeType': 'application/vnd.google-apps.folder',
             }),
             expects=(200, ),
-            throws=HTTPError(401)
         )
         return res.json()
 
@@ -264,7 +247,6 @@ class IQBRIMSClient(BaseClient):
                 'title': title,
             }),
             expects=(200, ),
-            throws=HTTPError(401)
         )
         return res.json()
 
@@ -274,7 +256,6 @@ class IQBRIMSClient(BaseClient):
             self._build_url(settings.API_BASE_URL, 'drive', 'v2', 'files',
                             file_id),
             expects=(200, ),
-            throws=HTTPError(401)
         )
         return res.json()
 
@@ -302,7 +283,6 @@ class IQBRIMSClient(BaseClient):
                 'mimeType': 'application/vnd.google-apps.spreadsheet',
             }),
             expects=(200, ),
-            throws=HTTPError(401)
         )
         return res.json()
 
@@ -330,7 +310,6 @@ class IQBRIMSClient(BaseClient):
                 }],
             }),
             expects=(200, ),
-            throws=HTTPError(401)
         )
         return res.json()
 
@@ -362,7 +341,6 @@ class SpreadsheetClient(BaseClient):
             self._build_url(settings.SHEETS_API_BASE_URL, 'v4', 'spreadsheets',
                             self.resource_id),
             expects=(200, ),
-            throws=HTTPError(401)
         )
         return res.json()['sheets']
 
@@ -385,7 +363,6 @@ class SpreadsheetClient(BaseClient):
                 }]
             }),
             expects=(200, ),
-            throws=HTTPError(401)
         )
         return res.json()
 
@@ -397,7 +374,6 @@ class SpreadsheetClient(BaseClient):
             self._build_url(settings.SHEETS_API_BASE_URL, 'v4', 'spreadsheets',
                             self.resource_id, 'values', r),
             expects=(200, ),
-            throws=HTTPError(401)
         )
         data = res.json()
         return self._as_rows(data['values'], data['majorDimension']) \
@@ -411,7 +387,6 @@ class SpreadsheetClient(BaseClient):
             self._build_url(settings.SHEETS_API_BASE_URL, 'v4', 'spreadsheets',
                             self.resource_id, 'values', r),
             expects=(200, ),
-            throws=HTTPError(401)
         )
         data = res.json()
         return self._as_columns(data['values'], data['majorDimension']) \
@@ -433,7 +408,6 @@ class SpreadsheetClient(BaseClient):
                 'majorDimension': 'ROWS'
             }),
             expects=(200, ),
-            throws=HTTPError(401)
         )
         logger.info('Inserted: {}'.format(res.json()))
 
@@ -455,7 +429,6 @@ class SpreadsheetClient(BaseClient):
                 'majorDimension': 'ROWS'
             }),
             expects=(200, 400, ),
-            throws=HTTPError(401)
         )
         logger.info('Updated: {}'.format(res.json()))
 
@@ -468,7 +441,6 @@ class SpreadsheetClient(BaseClient):
             self._build_url(settings.SHEETS_API_BASE_URL, 'v4', 'spreadsheets',
                             self.resource_id, 'values', r),
             expects=(200, ),
-            throws=HTTPError(401)
         )
         data = res.json()
         return self._as_columns(data['values'], data['majorDimension']) \
@@ -481,7 +453,6 @@ class SpreadsheetClient(BaseClient):
             self._build_url(settings.SHEETS_API_BASE_URL, 'v4', 'spreadsheets',
                             self.resource_id, 'values', r),
             expects=(200, ),
-            throws=HTTPError(401)
         )
         data = res.json()
         ecolumns = self._as_columns(data['values'], data['majorDimension']) \
@@ -508,7 +479,6 @@ class SpreadsheetClient(BaseClient):
                 'majorDimension': 'ROWS'
             }),
             expects=(200, ),
-            throws=HTTPError(401)
         )
         logger.info('Updated: {}'.format(res.json()))
         return ecolumns + new_columns
@@ -579,7 +549,6 @@ class SpreadsheetClient(BaseClient):
                 'majorDimension': 'ROWS'
             }),
             expects=(200, ),
-            throws=HTTPError(401)
         )
         FILE_EXTRA_COLUMNS = 1  # Ext
         logger.info('Inserted: {}'.format(res.json()))
@@ -679,7 +648,6 @@ class SpreadsheetClient(BaseClient):
                 }] + hide_col_reqs + update_style_reqs
             }),
             expects=(200, ),
-            throws=HTTPError(401)
         )
         logger.info('DataValidation Updated: {}'.format(res.json()))
 
