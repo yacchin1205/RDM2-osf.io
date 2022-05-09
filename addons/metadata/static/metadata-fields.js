@@ -265,7 +265,9 @@ function SingleElementField(formField, question, defaultValue, options, callback
 function createFileCapacityFieldElement(createHandler, options) {
   // ref: website/project/util.py sizeof_fmt()
   function sizeofFormat(num) {
-    for (const unit of ['', 'K', 'M', 'G', 'T', 'P', 'E', 'Z']) {
+    const units = ['', 'K', 'M', 'G', 'T', 'P', 'E', 'Z'];
+    for (var i = 0; i < units.length; i ++) {
+      const unit = units[i];
       if (Math.abs(num) < 1000) {
         return Math.round(num * 10) / 10 + unit + 'B';
       }
