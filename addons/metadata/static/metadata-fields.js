@@ -339,7 +339,7 @@ function createFileCapacityFieldElement(createHandler, options) {
           .css('margin', 'auto 0 auto 8px')
           .append(calcButton)
           .append(errorContainer);
-        let calculating = false;
+        var calculating = false;
         calcButton.on('click', function (e) {
           e.preventDefault();
           if (!calculating) {
