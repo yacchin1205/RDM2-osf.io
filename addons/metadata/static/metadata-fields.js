@@ -2,7 +2,7 @@
 
 const $ = require('jquery');
 const $osf = require('js/osfHelpers');
-const oop = require('js/oop');
+const fangorn = require('js/fangorn');
 const rdmGettext = require('js/rdmGettext');
 const _ = rdmGettext._;
 const datepicker = require('js/rdmDatepicker');
@@ -122,6 +122,16 @@ function createStringField(erad, question, value, options, callback) {
       options,
       callback
     );
+  } else if (question.format == 'file-url') {
+    return new SingleElementField(
+      createFileURLFieldElement(function() {
+        return $('<input></input>');
+      }, options),
+      question,
+      value,
+      options,
+      callback
+    );
   }
   return new SingleElementField(
     createFormElement(function() {
@@ -167,7 +177,7 @@ function createChooser(options) {
   const select = $('<select></select>');
   select.append($('<option></option>').attr('value', '').text(_('Choose...')));
   (options || []).forEach(function(opt) {
-    if (!opt.text) {
+    if (opt.text === undefined) {
       const optElem = $('<option></option>').attr('value', opt).text(opt);
       select.append(optElem);
       return;
@@ -355,6 +365,43 @@ function createFileCapacityFieldElement(createHandler, options) {
         container.append(calcContainer)
       }
 
+      addToContainer(container);
+      return container;
+    },
+    getValue: function(container) {
+      return container.find('input').val();
+    },
+    setValue: function(container, value) {
+      container.find('input').val(value);
+    },
+  };
+}
+
+function createFileURLFieldElement(createHandler, options) {
+  return {
+    create: function(addToContainer, callback) {
+      const input = createHandler();
+      if (options && options.readonly) {
+        input.attr('readonly', true);
+      }
+      if (callback) {
+        input.change(callback);
+      }
+      input.addClass('form-control');
+      const container = $('<div>').css('display', 'flex').append(input);
+      if (!options || !options.readonly) {
+        const fillButton = $('<a class="btn btn-default btn-sm">')
+          .append($('<i class="fa fa-refresh"></i>'))
+          .append($('<span></span>').text(_('Fill')));
+        const fillContainer = $('<div>')
+          .css('margin', 'auto 0 auto 8px')
+          .append(fillButton);
+        fillButton.on('click', function (e) {
+          e.preventDefault();
+          input.val(fangorn.getPersistentLinkFor(options.fileitem));
+        });
+        container.append(fillContainer)
+      }
       addToContainer(container);
       return container;
     },
