@@ -6,7 +6,8 @@ const Fangorn = require('js/fangorn').Fangorn;
 const Raven = require('raven-js');
 
 const logPrefix = '[metadata] ';
-const _ = require('js/rdmGettext')._;
+const rdmGettext = require('js/rdmGettext');
+const _ = rdmGettext._;
 
 const metadataFields = require('./metadata-fields.js');
 const WaterButlerCache = require('./wbcache.js').WaterButlerCache;
@@ -275,20 +276,54 @@ function MetadataButtons() {
     return targetSchemas[0];
   }
 
+  self.resolveActiveSchemaId = function(schemaId) {
+    const targetSchemas = (self.registrationSchemas.schemas || [])
+      .filter(function(s) {
+        return s.id === schemaId;
+      });
+    if (targetSchemas.length === 0) {
+      console.warn(logPrefix, 'No schemas for ' + schemaId);
+      return null;
+    }
+    const targetSchema = targetSchemas[0];
+    const alternativeSchemas = (self.registrationSchemas.schemas || [])
+      .filter(function(s) {
+        return s.attributes.name === targetSchema.attributes.name;
+      });
+    if (alternativeSchemas.length === 0) {
+      console.warn(logPrefix, 'No schemas for ' + targetSchema.attributes.name);
+      return null;
+    }
+    return alternativeSchemas[0].id;
+  }
+
   self.createSchemaSelector = function(targetItem) {
     const label = $('<label></label>').text(_('Data Schema:'));
     const schema = $('<select></select>');
-    (self.registrationSchemas.schemas || []).forEach(function(s) {
+    const activeSchemas = (self.registrationSchemas.schemas || [])
+      .filter(function(s) {
+        return s.attributes.active;
+      });
+    if (activeSchemas.length === 0) {
+      throw new Error('No active metadata schemas');
+    }
+    activeSchemas.forEach(function(s) {
       schema.append($('<option></option>')
         .attr('value', s.id)
         .text(s.attributes.name));
     });
     var currentSchemaId = null;
-    if (targetItem.schema) {
+    const activeSchemaIds = activeSchemas.map(function(s) {
+      return s.id;
+    });
+    if (targetItem.schema && activeSchemaIds.includes(targetItem.schema)) {
       currentSchemaId = targetItem.schema;
       schema.val(currentSchemaId);
+    } else if (targetItem.schema && self.resolveActiveSchemaId(targetItem.schema)) {
+      currentSchemaId = self.resolveActiveSchemaId(targetItem.schema);
+      schema.val(currentSchemaId);
     } else {
-      currentSchemaId = ((self.registrationSchemas.schemas || [])[0] || {}).id;
+      currentSchemaId = activeSchemas[0].id;
       schema.val(currentSchemaId);
     }
     const group = $('<div></div>').addClass('form-group')
@@ -679,13 +714,10 @@ function MetadataButtons() {
     if (!projectNameJaValue && !projectNameEnValue) {
       return _('No name');
     }
-    if (projectNameJaValue && !projectNameEnValue) {
-      return projectNameJaValue;
+    if (rdmGettext.getBrowserLang() === 'ja') {
+      return projectNameJaValue || projectNameEnValue;
     }
-    if (!projectNameJaValue && projectNameEnValue) {
-      return projectNameEnValue;
-    }
-    return projectNameJaValue + ' / ' + projectNameEnValue;
+    return projectNameEnValue || projectNameJaValue;
   };
 
   self.includePathInDraftRegistration = function(context, path, registration) {
@@ -721,7 +753,7 @@ function MetadataButtons() {
       const text = $('<label></label>')
         .css('margin-right', '0.5em')
         .attr('for', 'draft-' + r.id)
-        .text(projectName + ' - ' + r.id);
+        .text(projectName);
       if (disabled) {
         text.css('color', '#888');
       }
