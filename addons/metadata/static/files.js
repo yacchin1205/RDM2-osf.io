@@ -370,7 +370,7 @@ function MetadataButtons() {
    */
   self.editMetadata = function(context, filepath, item) {
     if (!self.editMetadataDialog) {
-      self.editMetadataDialog = self.createEditMetadataDialog();
+      self.editMetadataDialog = self.initEditMetadataDialog();
     }
     const dialog = self.editMetadataDialog;
     console.log(logPrefix, 'edit metadata: ', filepath, item);
@@ -1378,7 +1378,7 @@ function MetadataButtons() {
   /**
    * Create the Edit Metadata dialog.
    */
-  self.createEditMetadataDialog = function() {
+  self.initEditMetadataDialog = function() {
     const close = $('<a href="#" class="btn btn-default" data-dismiss="modal"></a>').text(_('Close'));
     close.click(self.closeModal);
     const save = $('<a href="#" class="btn btn-success" data-dismiss="modal"></a>').text(_('Save'));
@@ -1392,6 +1392,11 @@ function MetadataButtons() {
     });
     const toolbar = $('<div></div>');
     const container = $('<ul></ul>');
+    const notice = $('<div></div>')
+      .css('text-align', 'left')
+      .css('padding', '0.2em 0.2em 0.2em 1em')
+      .css('color', 'red')
+      .text(_('Renaming, moving the file/directory, or changing the directory hierarchy can break the association of the metadata you have added.'));
     const dialog = $('<div class="modal fade"></div>')
       .append($('<div class="modal-dialog modal-lg"></div>')
         .append($('<div class="modal-content"></div>')
@@ -1411,6 +1416,7 @@ function MetadataButtons() {
               .css('align-items', 'center')
               .append(copyToClipboard.css('margin-left', 0).css('margin-right', 0))
               .append(copyStatus.css('margin-left', 0).css('margin-right', 'auto'))
+              .append(notice)
               .append(close)
               .append(save)))));
     dialog.appendTo($('#treeGrid'));
