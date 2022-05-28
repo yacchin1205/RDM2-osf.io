@@ -95,7 +95,7 @@ function MetadataButtons() {
     if (!context) {
       return null;
     }
-    self.editMetadata(context, path, null);
+    self.editMetadata(context, path, self.getFileItemFromContext());
     return path;
   }
 
@@ -386,6 +386,7 @@ function MetadataButtons() {
       return {
         kind: 'file',
         data: {
+          name: file.name,
           materialized: file.materializedPath,
           path: file.path,
           provider: file.provider,
@@ -410,7 +411,7 @@ function MetadataButtons() {
     if (!currentMetadata) {
       self.lastMetadata = {
         path: filepath,
-        folder: item === null ? false : item.kind === 'folder',
+        folder: item.kind === 'folder',
         items: [],
       };
     } else {
@@ -556,6 +557,7 @@ function MetadataButtons() {
     if (!self.resolveConsistencyDialog) {
       self.resolveConsistencyDialog = self.createResolveConsistencyDialog();
     }
+    self.currentContext = context;
     self.currentMetadata = metadata;
     const container = self.resolveConsistencyDialog.container;
     self.resolveConsistencyDialog.copyStatus.text('');
@@ -668,13 +670,13 @@ function MetadataButtons() {
     });
     console.log('matchedFiles', matchedFiles, self.currentMetadata);
     if (matchedFiles.length === 0) {
-      self.deleteMetadata(self.currentMetadata.path);
+      self.deleteMetadata(self.currentContext, self.currentMetadata.path);
       return;
     }
     const newMetadata = Object.assign({}, self.currentMetadata, {
       path: matchedFiles[0].path
     });
-    const url = self.baseUrl + 'files/' + newMetadata.path;
+    const url = self.currentContext.baseUrl + 'files/' + newMetadata.path;
     $.ajax({
       method: 'PATCH',
       url: url,
@@ -683,12 +685,12 @@ function MetadataButtons() {
     }).done(function (data) {
       console.log(logPrefix, 'saved: ', data);
       return $.ajax({
-        url: self.baseUrl + 'files/' + self.currentMetadata.path,
+        url: self.currentContext.baseUrl + 'files/' + self.currentMetadata.path,
         type: 'DELETE',
         dataType: 'json'
       }).done(function (data) {
         console.log(logPrefix, 'deleted: ', data);
-        self.reloadMetadatas();
+        window.location.reload();
       }).fail(function(xhr, status, error) {
         Raven.captureMessage('Error while retrieving addon info', {
             extra: {
@@ -1176,16 +1178,26 @@ function MetadataButtons() {
       const filepath = item.data.provider + (item.data.materialized || '/');
       const metadata = self.findMetadataByPath(context.nodeId, filepath);
       const projectMetadata = context.projectMetadata;
-      if (!metadata) {
-        if (filepath.length > 0 && filepath[filepath.length - 1] !== '/') {
-          return false;
-        }
-        const childMetadata = projectMetadata.files.filter(function(f) {
-          return f.path.substring(0, filepath.length) === filepath;
-        });
-        if (childMetadata.length === 0) {
-          return false;
-        }
+      if (!metadata && filepath.length > 0 && filepath[filepath.length - 1] !== '/') {
+        // file with no metadata
+        return false;
+      }
+      const childMetadata = projectMetadata.files.filter(function(f) {
+        return f.path.substring(0, filepath.length) === filepath;
+      });
+      if (!metadata && childMetadata.length === 0) {
+        // folder with no metadata
+        return false;
+      }
+      if (metadata) {
+        indicator.empty();
+        indicator.append($('<span></span>')
+          .text('{}')
+          .css('font-weight', 'bold')
+          .css('margin', '0 8px')
+          .attr('title', _('Metadata is defined')));
+        self.setValidatedFile(context, filepath, item, metadata);
+      } else {
         indicator.empty();
         indicator.append($('<span></span>')
           .text('{}')
@@ -1193,30 +1205,22 @@ function MetadataButtons() {
           .css('margin', '0 8px')
           .css('color', '#ccc')
           .attr('title', _('Some of the children have metadata.')));
-        childMetadata.forEach(function (child) {
-          self.validateFile(context, child.path, child, function(item) {
-            if (item) {
-              return;
-            }
-            const ic = $('<span></span>')
-              .append($('<i></i>')
-                .addClass('fa fa-exclamation-circle')
-                .attr('title', _('File not found: ') + child.path))
-              .on('click', function() {
-                self.resolveMetadataConsistency(context, child);
-              });
-            indicator.append(ic);
-          });
-        });
-        return false;
       }
-      indicator.empty();
-      indicator.append($('<span></span>')
-        .text('{}')
-        .css('font-weight', 'bold')
-        .css('margin', '0 8px')
-        .attr('title', _('Metadata is defined')));
-      self.setValidatedFile(context, filepath, item, metadata);
+      childMetadata.forEach(function (child) {
+        self.validateFile(context, child.path, child, function(item) {
+          if (item) {
+            return;
+          }
+          const ic = $('<span></span>')
+            .append($('<i></i>')
+              .addClass('fa fa-exclamation-circle')
+              .attr('title', _('File not found: ') + child.path))
+            .on('click', function() {
+              self.resolveMetadataConsistency(context, child);
+            });
+          indicator.append(ic);
+        });
+      });
       return false;
     });
     if (remains.length === 0) {
@@ -1241,7 +1245,7 @@ function MetadataButtons() {
         .attr('id', 'metadata-toolbar');
       self.createButtonsBase(
         path,
-        null,
+        self.getFileItemFromContext(),
         function(options, label) {
           const btn = $('<button></button>')
             .addClass('btn')
