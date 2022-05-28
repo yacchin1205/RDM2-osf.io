@@ -366,6 +366,37 @@ function MetadataButtons() {
   };
 
   /**
+   * Get the file item for input fields.
+   */
+  self.getFileItemFromContext = function() {
+    if (contextVars.directory) {
+      const dir = contextVars.directory;
+      return {
+        kind: 'folder',
+        data: {
+          materialized: dir.materializedPath,
+          path: dir.path,
+          provider: dir.provider,
+          nodeId: contextVars.node.id
+        }
+      };
+    }
+    if (contextVars.file) {
+      const file = contextVars.file;
+      return {
+        kind: 'file',
+        data: {
+          materialized: file.materializedPath,
+          path: file.path,
+          provider: file.provider,
+          nodeId: contextVars.node.id
+        }
+      };
+    }
+    return null;
+  }
+
+  /**
    * Start editing metadata.
    */
   self.editMetadata = function(context, filepath, item) {
@@ -406,7 +437,7 @@ function MetadataButtons() {
         fieldContainer,
         self.findSchemaById(self.currentSchemaId),
         filepath,
-        item
+        item === null ? self.getFileItemFromContext() : item
       );
     });
     const pasteButton = $('<button></button>')
@@ -425,7 +456,7 @@ function MetadataButtons() {
       fieldContainer,
       self.findSchemaById(self.currentSchemaId),
       filepath,
-      item
+      item === null ? self.getFileItemFromContext() : item
     );
     dialog.container.append(fieldContainer);
     dialog.dialog.modal('show');
