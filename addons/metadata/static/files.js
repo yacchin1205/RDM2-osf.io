@@ -235,7 +235,8 @@ function MetadataButtons() {
 
   self.prepareFields = function(context, container, schema, filepath, fileitem) {
     const lastMetadataItems = (self.lastMetadata.items || []).filter(function(item) {
-      return item.schema == schema.id;
+      const resolved = self.resolveActiveSchemaId(item.schema) || self.currentSchemaId;
+      return resolved === schema.id;
     });
     const lastMetadataItem = lastMetadataItems[0] || {};
     container.empty();
@@ -286,6 +287,9 @@ function MetadataButtons() {
       return null;
     }
     const targetSchema = targetSchemas[0];
+    if (targetSchema.attributes.active) {
+      return targetSchema.id;
+    }
     const alternativeSchemas = (self.registrationSchemas.schemas || [])
       .filter(function(s) {
         return s.attributes.name === targetSchema.attributes.name;
