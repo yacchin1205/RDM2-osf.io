@@ -1,4 +1,5 @@
 # Reference README-docker-compose.md for instructions.
+#TEST
 
 version: '3.4'
 
