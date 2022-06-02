@@ -32,17 +32,6 @@ ERAD_COLUMNS = [
 ]
 
 
-def _response_user_erad_config(addon):
-    return {
-        'data': {
-            'id': addon.owner._id,
-            'type': 'metadata-user-erad',
-            'attributes': {
-                'researcher_number': addon.get_erad_researcher_number() if addon else None,
-            }
-        }
-    }
-
 def _response_project_metadata(addon):
     return {
         'data': {
@@ -99,26 +88,6 @@ def _get_file_metadata_node(node, metadata_node_id):
         raise ValueError('Unexpected node ID: {}'.format(metadata_node_id))
     return AbstractNode.objects.filter(guids___id=metadata_node_id).first()
 
-@must_be_logged_in
-@must_be_rdm_addons_allowed(SHORT_NAME)
-def metadata_get_user_erad_config(auth, **kwargs):
-    addon = auth.user.get_addon(SHORT_NAME)
-    return _response_user_erad_config(addon)
-
-@must_be_logged_in
-@must_be_rdm_addons_allowed(SHORT_NAME)
-def metadata_set_user_erad_config(auth, **kwargs):
-    addon = auth.user.get_addon(SHORT_NAME)
-    if not addon:
-        auth.user.add_addon(SHORT_NAME)
-        addon = auth.user.get_addon(SHORT_NAME)
-    try:
-        researcher_number = request.json['researcher_number']
-    except KeyError:
-        raise HTTPError(http_status.HTTP_400_BAD_REQUEST)
-    addon.set_erad_researcher_number(researcher_number)
-    return _response_user_erad_config(addon)
-
 @must_be_valid_project
 @must_be_logged_in
 @must_have_permission('write')
@@ -126,10 +95,7 @@ def metadata_get_erad_candidates(auth, **kwargs):
     node = kwargs['node'] or kwargs['project']
     candidates = []
     for user in node.contributors:
-        addon = user.get_addon(SHORT_NAME)
-        if addon is None:
-            continue
-        rn = addon.get_erad_researcher_number()
+        rn = user.erad
         if rn is None:
             continue
         candidates += _erad_candidates(rn)
