@@ -869,10 +869,10 @@ def build_js_config_files(ctx):
 @task()
 def assets(ctx, dev=False, watch=False, colors=False):
     """Install and build static assets."""
-    command = 'yarn install --frozen-lockfile'
-    if not dev:
-        command += ' --production'
-    ctx.run(command, echo=True)
+    # command = 'yarn install --frozen-lockfile'
+    # if not dev:
+    #     command += ' --production'
+    # ctx.run(command, echo=True)
     bower_install(ctx)
     build_js_config_files(ctx)
     # Always set clean=False to prevent possible mistakes
