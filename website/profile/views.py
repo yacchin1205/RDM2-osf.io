@@ -41,8 +41,6 @@ from website.util.sanitize import escape_html
 from addons.base import utils as addon_utils
 from api.base import settings as api_settings
 from addons.metadata import FULL_NAME as METADATA_FULL_NAME
-from addons.metadata.utils import append_user_social as append_metadata_user_social
-from addons.metadata.utils import unserialize_user_social as unserialize_metadata_user_social
 from admin.rdm_addons.utils import validate_rdm_addons_allowed
 
 from api.waffle.utils import storage_i18n_flag_active
@@ -790,8 +788,6 @@ def serialize_social(auth, uid=None, **kwargs):
     if ret['editable']:
         ret['erad'] = target.erad
         ret['addons'] = serialize_social_addons(target)
-    if METADATA_FULL_NAME in api_settings.INSTALLED_APPS:
-        append_metadata_user_social(ret, target)
     return ret
 
 
@@ -909,8 +905,6 @@ def unserialize_social(auth, **kwargs):
         raise HTTPError(http_status.HTTP_400_BAD_REQUEST, data=dict(
             message_long=exc.messages[0]
         ))
-    if METADATA_FULL_NAME in api_settings.INSTALLED_APPS:
-        unserialize_metadata_user_social(json_data, user)
 
 
 def unserialize_job(job):
