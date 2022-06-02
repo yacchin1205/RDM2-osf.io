@@ -39,8 +39,6 @@ from website.profile import utils as profile_utils
 from website.util import api_v2_url, web_url_for, paths
 from website.util.sanitize import escape_html
 from addons.base import utils as addon_utils
-from api.base import settings as api_settings
-from addons.metadata import FULL_NAME as METADATA_FULL_NAME
 from admin.rdm_addons.utils import validate_rdm_addons_allowed
 
 from api.waffle.utils import storage_i18n_flag_active

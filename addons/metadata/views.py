@@ -13,7 +13,6 @@ from framework.exceptions import HTTPError
 from framework.auth.decorators import must_be_logged_in
 from osf.models import AbstractNode, DraftRegistration, Registration
 from osf.models.metaschema import RegistrationSchema
-from admin.rdm_addons.decorators import must_be_rdm_addons_allowed
 from website.project.decorators import (
     must_be_valid_project,
     must_have_addon,

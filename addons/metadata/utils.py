@@ -6,8 +6,6 @@ import logging
 from jinja2 import Environment
 from osf.models.metaschema import RegistrationSchema
 
-from . import SHORT_NAME
-
 
 logger = logging.getLogger(__name__)
 
