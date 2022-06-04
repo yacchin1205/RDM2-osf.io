@@ -205,11 +205,11 @@ msgstr "e-Rad研究者番号"
 
 #: addons/metadata/static/metadata-fields.js:500
 msgid "Name (Japanese)"
-msgstr "名前　(日本語)"
+msgstr "名前 (日本語)"
 
 #: addons/metadata/static/metadata-fields.js:501
 msgid "Name (English)"
-msgstr "名前　(英語)"
+msgstr ""
 
 #: addons/metadata/static/metadata-fields.js:515
 #: website/static/js/myProjects.js:1565

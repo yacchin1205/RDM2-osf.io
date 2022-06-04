@@ -744,7 +744,12 @@ function MetadataButtons() {
         dataType: 'json'
     }).done(function (data) {
       console.log(logPrefix, 'deleted: ', data, context.nodeId);
-      self.loadMetadata(context.nodeId, context.baseUrl);
+      self.loadMetadata(context.nodeId, context.baseUrl, function() {
+        if (!self.fileViewPath) {
+          return;
+        }
+        self.refreshFileViewButtons(self.fileViewPath);
+      });
     }).fail(function(xhr, status, error) {
       Raven.captureMessage('Error while retrieving addon info', {
           extra: {
@@ -1274,38 +1279,59 @@ function MetadataButtons() {
     self.loadConfig(callback);
   }
 
+  /**
+   * Refresh buttons for file view.
+   */
+  self.refreshFileViewButtons = function(path) {
+    if (!self.fileViewButtons) {
+      self.fileViewButtons = $('<div></div>')
+        .addClass('btn-group m-t-xs')
+        .attr('id', 'metadata-toolbar');
+    }
+    self.fileViewPath = path;
+    const buttons = self.fileViewButtons;
+    buttons.empty();
+    self.createButtonsBase(
+      path,
+      self.getFileItemFromContext(),
+      function(options, label) {
+        const btn = $('<button></button>')
+          .addClass('btn')
+          .addClass('btn-sm');
+        if (options.className) {
+          btn.addClass(options.className.replace(/^text-/, 'btn-'));
+        }
+        if (options.icon) {
+          btn.append($('<i></i>').addClass(options.icon));
+        }
+        if (options.onclick) {
+          btn.click(options.onclick);
+        }
+        btn.append($('<span></span>').text(label));
+        return btn;
+      }
+    )
+      .forEach(function(button) {
+        buttons.append(button);
+      });
+    $('#toggleBar .btn-toolbar').append(buttons);
+  };
+
   self.initFileView = function() {
     self.initBase(function(path) {
       if (!path) {
         return;
       }
-      const buttons = $('<div></div>')
-        .addClass('btn-group m-t-xs')
-        .attr('id', 'metadata-toolbar');
-      self.createButtonsBase(
-        path,
-        self.getFileItemFromContext(),
-        function(options, label) {
-          const btn = $('<button></button>')
-            .addClass('btn')
-            .addClass('btn-sm');
-          if (options.className) {
-            btn.addClass(options.className.replace(/^text-/, 'btn-'));
-          }
-          if (options.icon) {
-            btn.append($('<i></i>').addClass(options.icon));
-          }
-          if (options.onclick) {
-            btn.click(options.onclick);
-          }
-          btn.append($('<span></span>').text(label));
-          return btn;
+      const handler = function() {
+        // Wait until btn-toolbar is created
+        const toolbar = $('#toggleBar .btn-toolbar');
+        if (toolbar.length > 0) {
+          self.refreshFileViewButtons(path);
+          return;
         }
-      )
-        .forEach(function(button) {
-          buttons.append(button);
-        });
-      $('#toggleBar').prepend(buttons);
+        setTimeout(handler, 100);
+      };
+      setTimeout(handler, 100);
     });
   }
 
@@ -1426,7 +1452,12 @@ function MetadataButtons() {
           console.log(logPrefix, 'saved: ', hash, data);
           self.currentItem = null;
           self.editingContext = null;
-          self.loadMetadata(context.nodeId, context.baseUrl)
+          self.loadMetadata(context.nodeId, context.baseUrl, function() {
+            if (!self.fileViewPath) {
+              return;
+            }
+            self.refreshFileViewButtons(self.fileViewPath);
+          });
         }).fail(function(xhr, status, error) {
           Raven.captureMessage('Error while retrieving addon info', {
               extra: {
