@@ -1322,7 +1322,8 @@ function MetadataButtons() {
       if (!path) {
         return;
       }
-      const handler = function() {
+      var handler = null;
+      handler = function() {
         // Wait until btn-toolbar is created
         const toolbar = $('#toggleBar .btn-toolbar');
         if (toolbar.length > 0) {
