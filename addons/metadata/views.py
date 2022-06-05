@@ -219,7 +219,7 @@ def metadata_set_file_to_drafts(auth, did=None, mnode=None, filepath=None, **kwa
         draft_files.append(file_metadata)
         draft.update_metadata({
             FIELD_GRDM_FILES: {
-                'value': json.dumps(draft_files, indent=2),
+                'value': json.dumps(draft_files, indent=2) if len(draft_files) > 0 else '',
             },
         })
         draft.save()
@@ -251,7 +251,7 @@ def metadata_delete_file_from_drafts(auth, did=None, mnode=None, filepath=None, 
                        if df['path'] != draft_filepath]
         draft.update_metadata({
             FIELD_GRDM_FILES: {
-                'value': json.dumps(draft_files, indent=2),
+                'value': json.dumps(draft_files, indent=2) if len(draft_files) > 0 else '',
             },
         })
         draft.save()
