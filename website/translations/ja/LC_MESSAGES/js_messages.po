@@ -5466,7 +5466,7 @@ msgstr "${user}が${pointer_category} ${pointer}へのリンクを作成しま�
 
 #: website/static/js/logActionsList_extract.js:10
 msgid "${user} forked a link to ${pointer_category} ${pointer}"
-msgstr "${user}が${pointer_category} ${pointer}へのリンクをforkしました"
+msgstr "${user}が${pointer_category} ${pointer}へのリンクをフォークしました"
 
 #: website/static/js/logActionsList_extract.js:11
 msgid "${user} removed a link to ${pointer_category} ${pointer}"
@@ -5498,11 +5498,11 @@ msgstr "${user}が${node}を非公開にしました"
 
 #: website/static/js/logActionsList_extract.js:18
 msgid "${user} added tag ${tag} to ${node}"
-msgstr "${user}さんがタグ${tag}を${node}に追加しました"
+msgstr "${user}がタグ${tag}を${node}に追加しました"
 
 #: website/static/js/logActionsList_extract.js:19
 msgid "${user} removed tag ${tag} from ${node}"
-msgstr "${user}が${node}からタグ${tag}を削除しました"
+msgstr "${user}がタグ${tag}を${node}から削除しました"
 
 #: website/static/js/logActionsList_extract.js:20
 msgid "${user} changed the title from ${title_original} to ${title_new}"
@@ -5562,7 +5562,7 @@ msgstr "${user}が目録表示メンバー(${contributors})を${node}の目録�
 
 #: website/static/js/logActionsList_extract.js:33
 msgid "${user} updated wiki page ${page} to version ${version} of ${node}"
-msgstr "${user}が${node}のWiki(${page})をバージョン${version}に更新"
+msgstr "${user}が${node}のWiki(${page})をバージョン${version}に更新しました"
 
 #: website/static/js/logActionsList_extract.js:34
 msgid "${user} deleted wiki page ${page} of ${node}"
@@ -5634,11 +5634,11 @@ msgstr "${user}が${kind} ${path}を${node}にチェックインしました"
 
 #: website/static/js/logActionsList_extract.js:51
 msgid "${user} added a comment ${comment_location} in ${node}"
-msgstr "${user}さんが${node}にコメント${comment_location}を追加しました"
+msgstr "${user}が${node}にコメント${comment_location}を追加しました"
 
 #: website/static/js/logActionsList_extract.js:52
 msgid "${user} deleted a comment ${comment_location} in ${node}"
-msgstr "${user}さんが${node}のコメント${comment_location}を削除しました"
+msgstr "${user}が${node}のコメント${comment_location}を削除しました"
 
 #: website/static/js/logActionsList_extract.js:53
 msgid "${user} restored a comment ${comment_location}  in ${node}"
@@ -5790,21 +5790,21 @@ msgstr "${user}が${node}への${anonymous_link}参照専用リンクを削除�
 
 #: website/static/js/logActionsList_extract.js:90
 msgid "${user} verified timestamp"
-msgstr "${user}がタイムスタンプ確認"
+msgstr "${user}がタイムスタンプ確認をしました"
 
 #: website/static/js/logActionsList_extract.js:91
 msgid "${user} requested trusted timestamp"
-msgstr "${user}がタイムスタンプを打つ"
+msgstr "${user}がタイムスタンプを打ちました"
 
 #: website/static/js/logActionsList_extract.js:92
 msgid "${user} requested trusted timestamp file ${path}"
-msgstr "${user}がファイル${path}にタイムスタンプを打つ"
+msgstr "${user}がファイル${path}にタイムスタンプを打ちました"
 
 #: website/static/js/logActionsList_extract.js:93
 msgid ""
 "${user} downloaded a file of timestamp errors as a "
 "${timestamp_errors_file_format}"
-msgstr "${user}がタイムスタンプエラーのファイルを${timestamp_errors_file_format}でダウンロード"
+msgstr "${user}がタイムスタンプエラーのファイルを${timestamp_errors_file_format}でダウンロードしました"
 
 #: website/static/js/logActionsList_extract.js:94
 msgid ""
@@ -5830,7 +5830,7 @@ msgstr "[MAPCORE_SYNC:ERROR] GRDMプロジェクト<${node}>はmAPグループ�
 msgid ""
 "[MAPCORE_SYNC:NOTICE] Unknown (unregistered in GRDM) users belong to mAP "
 "group <${node}> (ignored) (See logs for details)"
-msgstr ""
+msgstr "不明(GRDMに登録されていない)ユーザーはmAPグループ<${node}>に属しています(無視されます)(詳細についてはログを参照してください)"
 
 #: website/static/js/logActionsList_extract.js:98
 msgid "${user} linked the Azure Blob Storage container ${bucket} to ${node}"
@@ -5874,7 +5874,7 @@ msgstr "${user}が${node}のAzure Blob Storageアドオンの認証を解除し�
 
 #: website/static/js/logActionsList_extract.js:106
 msgid "Azure Blob Storage addon for ${node} deauthorized"
-msgstr "許可されていない${node}のAzure Blob Storageアドオン"
+msgstr "${node}のAzure Blob Storageアドオンの認証が解除されました"
 
 #: website/static/js/logActionsList_extract.js:107
 msgid "${user} added file ${path} to Bitbucket repo ${bitbucket_repo} in ${node}"
@@ -5908,7 +5908,7 @@ msgstr "${user}が${node}のBitbucketアドオンの認証を解除しました"
 
 #: website/static/js/logActionsList_extract.js:113
 msgid "Bitbucket addon for ${node} deauthorized"
-msgstr "許可されていない${node}のBitbucketアドオン"
+msgstr "${node}のBitbucketドオンの認証が解除されました"
 
 #: website/static/js/logActionsList_extract.js:114
 msgid "${user} linked Bitbucket repo ${bitbucket_repo} to ${node}"
@@ -5944,7 +5944,7 @@ msgstr "${user}が${node}のBoxアドオンの認証を解除しました"
 
 #: website/static/js/logActionsList_extract.js:122
 msgid "Box addon for ${node} deauthorized"
-msgstr "許可されていない${node}のボックスアドオン"
+msgstr "${node}のBoxアドオンの認証が解除されました"
 
 #: website/static/js/logActionsList_extract.js:123
 msgid "${user} added a citation ${citation} to ${node}"
@@ -5994,7 +5994,7 @@ msgstr "${user}が${node}のDataverseアドオンの認証を解除しました"
 
 #: website/static/js/logActionsList_extract.js:134
 msgid "Dataverse addon for ${node} deauthorized"
-msgstr "許可されていない${node}のDataverseアドオン"
+msgstr "${node}のDataverseアドオンの認証が解除されました"
 
 #: website/static/js/logActionsList_extract.js:135
 msgid "${user} added file ${path} to Dropbox in ${node}"
@@ -6026,7 +6026,7 @@ msgstr "${user}が${node}のDropboxアドオンの認証を解除しました"
 
 #: website/static/js/logActionsList_extract.js:142
 msgid "Dropbox addon for ${node} deauthorized"
-msgstr "許可されていない${node}のDropboxアドオン"
+msgstr "${node}のDropboxアドオンの認証が解除されました"
 
 #: website/static/js/logActionsList_extract.js:143
 msgid "${user} added file ${path} to Dropbox Business in ${node}"
@@ -6060,7 +6060,7 @@ msgstr "${user}が${node}のDropbox Businessアドオンの認証を解除しま
 
 #: website/static/js/logActionsList_extract.js:150
 msgid "Dropbox Business addon for ${node} deauthorized"
-msgstr "許可されていない${node}のDropbox Businessアドオン"
+msgstr "${node}のDropbox Businessアドオンの認証が解除されました"
 
 #: website/static/js/logActionsList_extract.js:151
 msgid "${user} linked figshare ${folder} ${folder_name} to ${node}"
@@ -6068,7 +6068,7 @@ msgstr "${user}がfigshare ${folder}(${folder_name})を${node}にリンクしま
 
 #: website/static/js/logActionsList_extract.js:152
 msgid "${user} unlinked content from figshare in ${node}"
-msgstr "${user}が${node}のfigshareからリンク解除されたコンテンツ"
+msgstr "${user}が${node}のfigshareからコンテンツのリンクを解除しました。"
 
 #: website/static/js/logActionsList_extract.js:153
 msgid "${user} added file ${path} to figshare in ${node}"
@@ -6092,7 +6092,7 @@ msgstr "${user}が${node}のfigshareアドオンの認証を解除しました"
 
 #: website/static/js/logActionsList_extract.js:158
 msgid "figshare addon for ${node} deauthorized"
-msgstr "許可されていない${node}のfigshareアドオン"
+msgstr "${node}のfigshareアドオンの認証が解除されました"
 
 #: website/static/js/logActionsList_extract.js:159
 msgid "${user} changed external link to ${forward_url} in ${node}"
@@ -6124,7 +6124,7 @@ msgstr "${user}が${node}のGitHubアドオンの認証を解除しました"
 
 #: website/static/js/logActionsList_extract.js:166
 msgid "GitHub addon for ${node} deauthorized"
-msgstr "許可されていない${node}のGitHubアドオン"
+msgstr "${node}のGitHubアドオンの認証が解除されました"
 
 #: website/static/js/logActionsList_extract.js:167
 msgid "${user} linked GitHub repo ${repo} to ${node}"
@@ -6156,7 +6156,7 @@ msgstr "${user}が${node}のGitLabアドオンの認証を解除しました"
 
 #: website/static/js/logActionsList_extract.js:174
 msgid "GitLab addon for ${node} deauthorized"
-msgstr "許可されていない${node}のGitLabアドオン"
+msgstr "${node}のGitLabアドオンの認証が解除されました"
 
 #: website/static/js/logActionsList_extract.js:175
 msgid "${user} linked GitLab repo ${gitlab_repo} to ${node}"
@@ -6194,7 +6194,7 @@ msgstr "${user}が${node}のGoogle Driveアドオンの認証を解除しまし�
 
 #: website/static/js/logActionsList_extract.js:183
 msgid "Google Drive addon for ${node} deauthorized"
-msgstr "許可されていない${node}のGoogle Driveアドオン"
+msgstr "${node}のGoogle Driveアドオンの認証が解除されました"
 
 #: website/static/js/logActionsList_extract.js:184
 msgid "${user} added file ${iqbrims_path} to IQB-RIMS in ${node}"
@@ -6226,7 +6226,7 @@ msgstr "${user}が${node}のIQB-RIMSアドオンの認証を解除しました"
 
 #: website/static/js/logActionsList_extract.js:191
 msgid "IQB-RIMS addon for ${node} deauthorized"
-msgstr "許可されていない${node}のIQB-RIMSアドオン"
+msgstr "${node}のIQB-RIMSアドオンの認証が解除されました"
 
 #: website/static/js/logActionsList_extract.js:192
 #: website/static/js/logActionsList_extract.js:194
@@ -6280,7 +6280,7 @@ msgstr "${user}が${node}のNextcloudアドオンの認証を解除しました"
 
 #: website/static/js/logActionsList_extract.js:206
 msgid "Nextcloud addon for ${node} deauthorized"
-msgstr "許可されていない${node}のNextcloudアドオン"
+msgstr "${node}のNextcloudアドオンの認証が解除されました"
 
 #: website/static/js/logActionsList_extract.js:207
 msgid "${user} added file ${path} to Microsoft OneDrive in ${node}"
@@ -6312,7 +6312,7 @@ msgstr "${user}が${node}のMicrosoft OneDriveアドオンの認証を解除し�
 
 #: website/static/js/logActionsList_extract.js:214
 msgid "Microsoft OneDrive addon for ${node} deauthorized"
-msgstr "許可されていない${node}のMicrosoft OneDriveアドオン"
+msgstr "${node}のMicrosoft OneDriveアドオンの認証が解除されました"
 
 #: website/static/js/logActionsList_extract.js:215
 msgid "${user} added file ${path} to ownCloud in ${node}"
@@ -6344,7 +6344,7 @@ msgstr "${user}が${node}のownCloudアドオンの認証を解除しました"
 
 #: website/static/js/logActionsList_extract.js:222
 msgid "ownCloud addon for ${node} deauthorized"
-msgstr "許可されていない${node}のownCloudアドオン"
+msgstr "${node}のownCloudアドオンの認証が解除されました"
 
 #: website/static/js/logActionsList_extract.js:223
 msgid "${user} linked the Amazon S3 bucket ${bucket} to ${node}"
@@ -6380,7 +6380,7 @@ msgstr "${user}が${node}のAmazon S3アドオンの認証を解除しました"
 
 #: website/static/js/logActionsList_extract.js:231
 msgid "Amazon S3 addon for ${node} deauthorized"
-msgstr "許可されていない${node}のAmazon S3アドオン"
+msgstr "${node}のAmazon S3アドオンの認証が解除されました"
 
 #: website/static/js/logActionsList_extract.js:232
 msgid "${user} linked the S3 Compatible Storage bucket ${bucket} to ${node}"
@@ -6424,7 +6424,7 @@ msgstr "${user}が${node}のS3互換ストレージアドオンの認証を解�
 
 #: website/static/js/logActionsList_extract.js:240
 msgid "S3 Compatible Storage addon for ${node} deauthorized"
-msgstr "許可されていない${node}のS3互換ストレージアドオン"
+msgstr "${node}のS3互換ストレージアドオンの認証が解除されました"
 
 #: website/static/js/logActionsList_extract.js:241
 msgid "${user} linked the Swift container ${bucket} to ${node}"
@@ -6460,7 +6460,7 @@ msgstr "${user}が${node}のSwiftアドオンの認証を解除しました"
 
 #: website/static/js/logActionsList_extract.js:249
 msgid "Swift addon for ${node} deauthorized"
-msgstr "許可されていない${node}のSwiftアドオン"
+msgstr "${node}のSwiftアドオンの認証が解除されました"
 
 #: website/static/js/logActionsList_extract.js:250
 msgid "${user} added file ${filename} to WEKO index ${dataset} in ${node}"
@@ -6496,7 +6496,7 @@ msgstr "${user}が${node}のWEKOアドオンの認証を解除しました"
 
 #: website/static/js/logActionsList_extract.js:258
 msgid "WEKO addon for ${node} deauthorized"
-msgstr "許可されていない${node}のWEKOアドオン"
+msgstr "${node}のWEKOアドオンの認証が解除されました"
 
 #: website/static/js/logActionsList_extract.js:259
 msgid "${user} linked Zotero folder ${folder_name} to ${node}"
