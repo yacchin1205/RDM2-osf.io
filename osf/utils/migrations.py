@@ -209,7 +209,8 @@ def remove_schemas(*args):
 
 
 def create_schema_block(state, schema_id, block_type, display_text='', required=False, help_text='',
-        registration_response_key=None, schema_block_group_key='', example_text=''):
+        registration_response_key=None, schema_block_group_key='', example_text='',
+        default=False):
     """
     For mapping schemas to schema blocks: creates a given block from the specified parameters
     """
@@ -219,6 +220,7 @@ def create_schema_block(state, schema_id, block_type, display_text='', required=
         schema_id=schema_id,
         block_type=block_type,
         required=required,
+        default=default,
         display_text=unescape_entities(
             display_text,
             safe={
@@ -253,6 +255,7 @@ def split_options_into_blocks(state, rs, question, schema_block_group_key):
     for option in question.get('options', []):
         answer_text = option if isinstance(option, basestring) else option.get('text')
         help_text = '' if isinstance(option, basestring) else option.get('tooltip', '')
+        default = False if isinstance(option, basestring) else option.get('default', False)
 
         create_schema_block(
             state,
@@ -260,6 +263,7 @@ def split_options_into_blocks(state, rs, question, schema_block_group_key):
             'select-input-option',
             display_text=answer_text,
             help_text=help_text,
+            default=default,
             schema_block_group_key=schema_block_group_key,
         )
 
