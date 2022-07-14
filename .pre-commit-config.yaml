@@ -17,3 +17,4 @@ repos:
   rev: v2.9.6
   hooks:
   - id: jshint
+    language_version: 14.20.0
