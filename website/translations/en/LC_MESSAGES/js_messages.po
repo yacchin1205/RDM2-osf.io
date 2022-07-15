@@ -184,11 +184,11 @@ msgid "Do you want to delete metadata? This operation cannot be undone."
 msgstr ""
 
 #: addons/metadata/static/files.js:1591
-msgid "Select draft registration"
+msgid "Select a destination for file metadata registration"
 msgstr ""
 
 #: addons/metadata/static/files.js:1623
-msgid "Resolve metadata"
+msgid "Fix file metadata"
 msgstr ""
 
 #: addons/metadata/static/metadata-fields.js:43
