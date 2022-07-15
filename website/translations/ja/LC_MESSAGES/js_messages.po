@@ -188,8 +188,8 @@ msgid "Select a destination for file metadata registration"
 msgstr "ファイルメタデータ登録先の選択"
 
 #: addons/metadata/static/files.js:1623
-msgid "Resolve metadata"
-msgstr "メタデータの解決"
+msgid "Fix file metadata"
+msgstr "ファイルメタデータの修正"
 
 #: addons/metadata/static/metadata-fields.js:43
 #: addons/metadata/static/metadata-fields.js:188
