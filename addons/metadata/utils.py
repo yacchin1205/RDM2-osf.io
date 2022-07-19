@@ -39,7 +39,7 @@ def _convert_metadata_value(key, value, questions):
         return [('', value)]
     v = value['value']
     if key == 'grdm-files':
-        return _convert_metadata_grdm_files(v, questions)
+        return [('', _convert_metadata_grdm_files(v, questions))]
     if key in questions and 'type' in questions[key] and \
             questions[key]['type'] == 'string' and 'format' in questions[key] and \
             questions[key]['format'] == 'file-creators':
