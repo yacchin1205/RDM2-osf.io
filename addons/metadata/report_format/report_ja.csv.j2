@@ -2,7 +2,7 @@
 {% for grdm_file in grdm_files -%}
 {{funder | quotecsv}},{{e_rad_project_id | quotecsv}},{{project_name_ja | quotecsv}},{{grdm_file.data_number | quotecsv}},{{grdm_file.title_ja | quotecsv}},{{grdm_file.date_issued_updated | quotecsv}},{{grdm_file.data_description_ja | quotecsv}},
     {%- if grdm_file.data_research_field == 'project' -%}
-        {{grdm_file.project_research_field | quotecsv}}
+        {{project_research_field | quotecsv}}
     {%- else -%}
         {{grdm_file.data_research_field | quotecsv}}
     {%- endif -%}
