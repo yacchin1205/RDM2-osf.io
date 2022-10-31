@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version:  0.6.0\n"
 "Report-Msgid-Bugs-To: rocs-office@nii.ac.jp\n"
-"POT-Creation-Date: 2022-09-19 12:24+0000\n"
+"POT-Creation-Date: 2022-10-25 03:07+0000\n"
 "PO-Revision-Date: 2020-11-23 09:30+0900\n"
 "Last-Translator: Hidetoshi Yoshimoto\n"
 "Language: ja\n"
@@ -205,6 +205,16 @@ msgstr "メタデータ貼り付け"
 #: addons/metadata/static/files.js:1727
 msgid "Press Ctrl-V (Command-V) to paste."
 msgstr "クリップボードから貼り付けるために Ctrl-V (Command-V) を押してください。"
+
+#: addons/metadata/static/files.js:1729
+msgid ""
+"[Why is this needed?] In this browser, retrieving clipboard values with "
+"button operations is prohibited. Therefore, you must explicitly indicate "
+"clipboard operations by using the shortcut key or by pasting in the "
+"browser menu."
+msgstr ""
+"[この操作が必要な理由] "
+"このブラウザでは、ボタン操作でのクリップボードの値取得が禁止されています。そのため、ショートカットキーまたはブラウザメニューの貼り付けにより明示的にクリップボード操作を指示する必要があります。"
 
 #: addons/metadata/static/metadata-fields.js:43
 #: addons/metadata/static/metadata-fields.js:188

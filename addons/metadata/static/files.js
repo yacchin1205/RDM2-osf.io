@@ -491,6 +491,7 @@ function MetadataButtons() {
         .css('margin-left', 'auto')
         .append($('<i></i>').addClass('fa fa-paste'))
         .append(_('Paste from Clipboard'))
+        .attr('type', 'button')
         .on('click', self.pasteFromClipboard);
       dialog.toolbar.append($('<div></div>')
         .css('display', 'flex')
@@ -1550,7 +1551,8 @@ function MetadataButtons() {
     }
     const copyToClipboard = $('<button class="btn btn-default"></button>')
       .append($('<i></i>').addClass('fa fa-copy'))
-      .append(_('Copy to clipboard'));
+      .append(_('Copy to clipboard'))
+      .attr('type', 'button');
     const copyStatus = $('<div></div>');
     copyToClipboard.on('click', function(event) {
       self.copyToClipboard(event, copyStatus);
@@ -1724,7 +1726,11 @@ function MetadataButtons() {
             .append($('<div class="modal-body"></div>')
               .append($('<div class="row"></div>')
                 .append($('<div class="col-sm-12"></div>')
-                  .append(_('Press Ctrl-V (Command-V) again to paste.')))))
+                  .append(_('Press Ctrl-V (Command-V) to paste.'))
+                  .append($('<br/>'))
+                  .append(_('[Why is this needed?] In this browser, retrieving clipboard values with ' +
+                    'button operations is prohibited. Therefore, you must explicitly indicate clipboard operations ' +
+                    'by using the shortcut key or by pasting in the browser menu.')))))
             .append($('<div class="modal-footer"></div>')
               .append(close)))));
     dialog.appendTo($('#treeGrid'));

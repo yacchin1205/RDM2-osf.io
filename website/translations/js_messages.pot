@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2022-09-19 12:24+0000\n"
+"POT-Creation-Date: 2022-10-25 03:07+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -203,6 +203,14 @@ msgstr ""
 
 #: addons/metadata/static/files.js:1727
 msgid "Press Ctrl-V (Command-V) to paste."
+msgstr ""
+
+#: addons/metadata/static/files.js:1729
+msgid ""
+"[Why is this needed?] In this browser, retrieving clipboard values with "
+"button operations is prohibited. Therefore, you must explicitly indicate "
+"clipboard operations by using the shortcut key or by pasting in the "
+"browser menu."
 msgstr ""
 
 #: addons/metadata/static/metadata-fields.js:43
