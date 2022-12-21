@@ -210,9 +210,9 @@ function createChooser(question, options) {
     defaultOption.text(_('Choose...'));
   }
   select.append(defaultOption);
-  let groupElem = null;
+  var groupElem = null;
   (question.options || []).forEach(function(opt) {
-    if (opt.text && opt.text === 'group:None') {
+    if (opt.text && opt.text.startsWith('group:None:')) {
       groupElem = null;
     } else if (opt.text && opt.text.startsWith('group:')) {
       groupElem = $('<optgroup></optgroup>').attr('label', getLocalizedText(opt.tooltip));
@@ -336,7 +336,7 @@ function SingleElementField(formField, clearField, question, defaultValue, optio
     const group = $('<div></div>').addClass('form-group')
       .append(header);
     if (self.help) {
-      let isDisplayedHelp = false;
+      var isDisplayedHelp = false;
       const helpLink = $('<a></a>')
           .addClass('help-toggle-button')
           .text(_('Show example'));
