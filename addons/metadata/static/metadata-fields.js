@@ -75,6 +75,8 @@ function createStringField(erad, question, value, options, callback) {
       callback
     );
   } else if (question.format == 'date') {
+    const overridedOptions = Object.assign({}, options);
+    overridedOptions.candidatesProvider = null;
     return new SingleElementField(
       createFormElement(function() {
         const elem = $('<input></input>').addClass('datepicker');
@@ -83,7 +85,7 @@ function createStringField(erad, question, value, options, callback) {
       }, options),
       question,
       value,
-      options,
+      overridedOptions,
       callback
     );
   } else if (question.format == 'file-creators') {
@@ -245,6 +247,7 @@ function SingleElementField(formField, question, defaultValue, options, callback
   self.label = question.qid;
   self.title = question.title;
   self.defaultValue = defaultValue;
+  self.candidatesProvider = options.candidatesProvider || null;
 
   self.createFormGroup = function(input, errorContainer) {
     const label = $('<label></label>').text(self.getDisplayText());
@@ -283,6 +286,36 @@ function SingleElementField(formField, question, defaultValue, options, callback
       },
       callback
     );
+    if (self.candidatesProvider) {
+      input.typeahead(
+        {
+          hint: false,
+          highlight: true,
+          minLength: 0,
+        },
+        {
+          display: function(data) {
+            return data.value;
+          },
+          templates: {
+            suggestion: function(data) {
+              return '<div style="background-color: white;"><span>' + $osf.htmlEscape(data.displayText) + '</span> ' +
+                '<span><small class="m-l-md text-muted">' +
+                $osf.htmlEscape(data.originText)
+                + '</small></span></div>';
+            },
+          },
+          source: candidatesMatcher(self.candidatesProvider, question.qid),
+        }
+      );
+      input.bind('typeahead:selected', function(event, data) {
+        if (!data.value) {
+          return;
+        }
+        input.val(data.value);
+      });
+      parent.find('.twitter-typeahead').css('width', '100%');
+    }
     if (self.defaultValue) {
       formField.setValue(input, self.defaultValue);
     }
@@ -562,7 +595,7 @@ function createFileCreatorsFieldElement(erad, options) {
           'name_en': $(this).find('[name=file-creator-name-en]').val()
         };
       }).toArray().filter(function (researcher) {
-        return Object.values(researcher).every(function (v) { return v && v.trim().length > 0; });
+        return Object.values(researcher).some(function (v) { return v && v.trim().length > 0; });
       });
       if (researchers.length === 0) {
         return '';
@@ -643,17 +676,40 @@ function createERadResearcherNumberFieldElement(erad, options) {
   };
 }
 
+function matchText(query, value) {
+  if (!query) {
+    return value;
+  }
+  const substrRegex = new RegExp(query, 'i');
+  return substrRegex.test(value);
+}
 
 function substringMatcher(candidates) {
   return function findMatches(q, cb) {
-    const substrRegex = new RegExp(q, 'i');
     const matches = (candidates || []).filter(function(c) {
       if (!c.kenkyusha_no) {
         return false;
       }
-      return substrRegex.test(c.kenkyusha_no);
+      return matchText(q, c.kenkyusha_no);
     });
     cb(matches);
+  };
+}
+
+function candidatesMatcher(candidatesProvider, qid) {
+  return function findMatches(q, cb) {
+    candidatesProvider.getCandidates(
+      qid,
+      function(candidates) {
+        const matches = (candidates || []).filter(function(c) {
+          if (!c.value) {
+            return false;
+          }
+          return matchText(q, c.value);
+        });
+        cb(matches);
+      }
+    );
   };
 }
 

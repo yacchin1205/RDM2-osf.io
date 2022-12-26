@@ -35,6 +35,10 @@ api_routes = {
             '/project/<pid>/node/<nid>/{}/files/<path:filepath>'.format(SHORT_NAME),
         ], 'delete', views.metadata_delete_file, json_renderer),
         Rule([
+            '/project/<pid>/{}/auto/files/<path:filepath>'.format(SHORT_NAME),
+            '/project/<pid>/node/<nid>/{}/auto/files/<path:filepath>'.format(SHORT_NAME),
+        ], 'get', views.metadata_get_file_metadata_candidate, json_renderer),
+        Rule([
             '/project/<pid>/{}/hashes/<path:filepath>'.format(SHORT_NAME),
             '/project/<pid>/node/<nid>/{}/hashes/<path:filepath>'.format(SHORT_NAME),
         ], 'patch', views.metadata_set_file_hash, json_renderer),

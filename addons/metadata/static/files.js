@@ -49,6 +49,63 @@ function ERad() {
   };
 }
 
+function CandidatesProvider(owner, item, schema) {
+  var self = this;
+
+  self.cache = null;
+
+  self.retrieveCandidatesUnit = function(r, data, qid) {
+    (data.items || []).forEach(function(cand) {
+      if (!cand.data) {
+        return;
+      }
+      if (cand.schema !== schema) {
+        return;
+      }
+      if (!cand.data[qid]) {
+        return;
+      }
+      r.push({
+        value: (cand.data[qid] || {}).value || '',
+        originText: data.path || '',
+        displayText: (cand.data[qid] || {}).value || '',
+      });
+    });
+    return r;
+  };
+
+  self.retrieveCandidates = function(data, qid) {
+    const r = [];
+    self.retrieveCandidatesUnit(r, data, qid);
+    Object.keys(owner.contexts || {}).forEach(function(nodeId) {
+      const context = owner.contexts[nodeId];
+      ((context.projectMetadata || {}).files || []).forEach(function(metadata) {
+        self.retrieveCandidatesUnit(r, metadata, qid);
+      });
+    });
+    return r;
+  };
+
+  self.getCandidates = function(qid, callback) {
+    console.log(logPrefix, 'Item', item, owner);
+    if (self.cache !== null) {
+      callback(self.retrieveCandidates(self.cache, qid));
+      return;
+    }
+    owner.loadGeneratedMetadata(
+      item.data.provider + (item.data.materialized || '/'),
+      function(data) {
+        console.log(logPrefix, 'Candidates', data);
+        if (!data) {
+          return;
+        }
+        self.cache = data;
+        callback(self.retrieveCandidates(data, qid));
+      }
+    );
+  };
+}
+
 
 function MetadataButtons() {
   var self = this;
@@ -134,7 +191,6 @@ function MetadataButtons() {
         type: 'GET',
         dataType: 'json'
     }).done(function (data) {
-      self.loadingMetadatas[nodeId] = false;
       console.log(logPrefix, 'loaded: ', data);
       if (!self.contexts) {
         self.contexts = {};
@@ -145,13 +201,41 @@ function MetadataButtons() {
         projectMetadata: (data.data || {}).attributes,
         wbcache: (self.contexts[nodeId] ? self.contexts[nodeId].wbcache : null) || new WaterButlerCache(),
         validatedFiles: (self.contexts[nodeId] ? self.contexts[nodeId].validatedFiles : null) || {},
-        addonAttached: true
+        addonAttached: true,
+        repositories: null,
+        candidatesProvider: function(item, schema) {
+          return new CandidatesProvider(self, item, schema);
+        },
       };
-      self.contexts[nodeId] = metadata;
-      if (!callback) {
-        return;
-      }
-      callback((data.data || {}).attributes);
+      self.loadRepositories(
+        metadata.projectMetadata.repositories || [],
+        function(repositories) {
+          self.loadingMetadatas[nodeId] = false;
+          metadata.repositories = repositories;
+          const files = [];
+          (metadata.projectMetadata.files || []).forEach(function(file) {
+            files.push(file);
+          });
+          metadata.repositories.forEach(function(repo, repoIndex) {
+            if (!repo.data || repo.data.type !== 'metadata-node-files') {
+              return;
+            }
+            (repo.data.attributes || []).forEach(function(file) {
+              const readonly = !metadata.projectMetadata.repositories[repoIndex].metadata.urls.update;
+              files.push(Object.assign(file, {
+                readonly: readonly,
+              }));
+            });
+          });
+          metadata.projectMetadata.files = files;
+          console.log(logPrefix, 'Metadata loaded', metadata);
+          self.contexts[nodeId] = metadata;
+          if (!callback) {
+            return;
+          }
+          callback((data.data || {}).attributes);
+        }
+      );
     }).fail(function(xhr, status, error) {
       self.loadingMetadatas[nodeId] = false;
       if (error === 'BAD REQUEST') {
@@ -167,7 +251,8 @@ function MetadataButtons() {
           },
           wbcache: (self.contexts[nodeId] ? self.contexts[nodeId].wbcache : null) || new WaterButlerCache(),
           validatedFiles: (self.contexts[nodeId] ? self.contexts[nodeId].validatedFiles : null) || {},
-          addonAttached: false
+          addonAttached: false,
+          candidatesProvider: null,
         };
       } else {
         Raven.captureMessage('Error while retrieving addon info', {
@@ -178,6 +263,84 @@ function MetadataButtons() {
           }
         });
       }
+      if (!callback) {
+        return;
+      }
+      callback(null);
+    });
+  };
+
+  self.loadGeneratedMetadata = function(filepath, callback) {
+    const url = contextVars.node.urls.api + 'metadata/auto/files/' + filepath;
+    console.log(logPrefix, 'loading: ', url);
+
+    return $.ajax({
+        url: url,
+        type: 'GET',
+        dataType: 'json'
+    }).done(function (data) {
+      console.log(logPrefix, 'loaded: ', data);
+      if (!callback) {
+        return;
+      }
+      callback((data.data || {}).attributes);
+    }).fail(function(xhr, status, error) {
+      Raven.captureMessage('Error while retrieving addon info', {
+        extra: {
+            url: url,
+            status: status,
+            error: error
+        }
+      });
+      if (!callback) {
+        return;
+      }
+      callback(null);
+    });
+  };
+
+  // For Metadata-supported addon
+  self.loadRepositories = function(repos, callback) {
+    if (repos.length === 0) {
+      callback([]);
+      return;
+    }
+    self.loadRepository(repos[0], function(result) {
+      self.loadRepositories(repos.slice(1), function(results) {
+        results.splice(0, 0, result);
+        callback(results);
+      });
+    });
+  };
+
+  self.loadRepository = function(repo, callback) {
+    if (!repo.metadata) {
+      if (!callback) {
+        return;
+      }
+      callback(null);
+      return;
+    }
+    const url = repo.metadata.urls.get;
+    console.log(logPrefix, 'loading: ', repo, url);
+    return $.ajax({
+        url: url,
+        type: 'GET',
+        dataType: 'json'
+    }).done(function (data) {
+      console.log(logPrefix, 'loaded: ', data);
+      if (!callback) {
+        return;
+      }
+      callback(data);
+    }).fail(function(xhr, status, error) {
+      Raven.captureMessage('Error while retrieving addon info', {
+        extra: {
+            url: url,
+            status: status,
+            error: error
+        }
+      });
       if (!callback) {
         return;
       }
@@ -261,7 +424,8 @@ function MetadataButtons() {
         context: context,
         filepath: filepath,
         wbcache: context.wbcache,
-        fileitem: fileitem
+        fileitem: fileitem,
+        candidatesProvider: context.candidatesProvider(fileitem, schema.id),
       },
       self.fieldsChanged
     );
@@ -419,6 +583,54 @@ function MetadataButtons() {
    * Start editing metadata.
    */
   self.editMetadata = function(context, filepath, item) {
+    console.log(logPrefix, 'edit metadata: ', filepath, item);
+    self.currentItem = item;
+    const currentMetadata = self.findMetadataByPath(context.nodeId, filepath);
+    if (currentMetadata) {
+      self.performEditMetadata(context, filepath, item, currentMetadata);
+      return;
+    }
+    self.loadGeneratedMetadata(filepath, function(metadata) {
+      // Generate new metadata
+      const loadedMetadata = {
+        path: filepath,
+        folder: item.kind === 'folder',
+        items: metadata.items || [],
+      };
+      self.performEditMetadata(context, filepath, item, loadedMetadata);
+    });
+  };
+
+  /**
+   * Get metadata list for complementing metadata.
+   */
+  self.getExistingMetadataList = function() {
+    const parent = $('<ul></ul>')
+      .css('line-style-type', 'none')
+      .css('padding', 0)
+      .css('margin', 0);
+    Object.keys(self.contexts || {}).forEach(function(nodeId) {
+      const context = self.contexts[nodeId];
+      ((context.projectMetadata || {}).files || []).forEach(function(metadata) {
+        parent.append($('<li></li>')
+          .css('padding', '4px')
+          .append($('<a></a>')
+            .addClass('dropdown-item')
+            .attr('href', '#')
+            .css('color', 'inherit')
+            .text(metadata.path)
+            .on('click', function(event) {
+              self.complementMetadata(event, metadata);
+            })));
+      });
+    });
+    return parent;
+  };
+
+  /**
+   * Start editing metadata w/ current metadata.
+   */
+   self.performEditMetadata = function(context, filepath, item, currentMetadata) {
     var dialog = null;
     if ((context.projectMetadata || {}).editable) {
       if (!self.editMetadataDialog) {
@@ -431,18 +643,7 @@ function MetadataButtons() {
       }
       dialog = self.viewMetadataDialog;
     }
-    console.log(logPrefix, 'edit metadata: ', filepath, item);
-    self.currentItem = item;
-    const currentMetadata = self.findMetadataByPath(context.nodeId, filepath);
-    if (!currentMetadata) {
-      self.lastMetadata = {
-        path: filepath,
-        folder: item.kind === 'folder',
-        items: [],
-      };
-    } else {
-      self.lastMetadata = Object.assign({}, currentMetadata);
-    }
+    self.lastMetadata = Object.assign({}, currentMetadata);
     self.editingContext = context;
     dialog.toolbar.empty();
     dialog.container.empty();
@@ -469,15 +670,39 @@ function MetadataButtons() {
     });
     dialog.toolbar.append(selector.group);
     if ((context.projectMetadata || {}).editable) {
+      const dropdownIcon = $('<i></i>').addClass('fa fa-caret-down');
+      const complementMetadataButton = $('<button></button>')
+        .attr('type', 'button')
+        .addClass('btn btn-default')
+        .append($('<i></i>').addClass('fa fa-magic'))
+        .append(_('Complement metadata'))
+        .on('click', self.complementMetadata);
+      const complementMetadataDropdownButton = $('<button></button>')
+        .attr('type', 'button')
+        .addClass('btn btn-default dropdown-toggle dropdown-toggle-split')
+        .attr('data-toggle', 'dropdown')
+        .attr('aria-haspopup', 'true')
+        .attr('aria-expanded', 'false')
+        .append(dropdownIcon);
+      const complementMetadataButtonGroup = $('<div></div>')
+        .addClass('btn-group')
+        .css('margin-right', 0)
+        .css('margin-left', 'auto')
+        .append(complementMetadataButton)
+        .append(complementMetadataDropdownButton)
+        .append($('<div class="dropdown-menu"></div>')
+          .css('background-color', 'white')
+          .append(self.getExistingMetadataList()));
       const pasteButton = $('<button></button>')
         .addClass('btn btn-default')
         .css('margin-right', 0)
-        .css('margin-left', 'auto')
+        .css('margin-left', '8px')
         .append($('<i></i>').addClass('fa fa-paste'))
         .append(_('Paste from Clipboard'))
         .on('click', self.pasteFromClipboard);
       dialog.toolbar.append($('<div></div>')
         .css('display', 'flex')
+        .append(complementMetadataButtonGroup)
         .append(pasteButton));
     }
     self.prepareFields(
@@ -489,6 +714,46 @@ function MetadataButtons() {
     );
     dialog.container.append(fieldContainer);
     dialog.dialog.modal('show');
+  };
+
+  /**
+   * Complement meadata using other metadata
+   */
+  self.complementMetadata = function(event, metadata) {
+    const applyMetadata = function(metadata) {
+      console.log(logPrefix, 'Loaded', metadata);
+      const items = metadata.items.filter(function(item) {
+        return item.schema === self.currentSchemaId;
+      });
+      if (items.length === 0) {
+        console.log(logPrefix, 'No candidates for ' + self.currentSchemaId);
+        return;
+      }
+      const data = items[0].data;
+      (self.lastFields || []).forEach(function(fieldSet) {
+        const value = fieldSet.field.getValue(fieldSet.input);
+        if (value) {
+          return;
+        }
+        const newEntry = data[fieldSet.question.qid] || '';
+        if (!newEntry) {
+          return;
+        }
+        fieldSet.field.setValue(fieldSet.input, newEntry.value);
+      });
+    };
+    event.preventDefault();
+    if (metadata) {
+      applyMetadata(metadata);
+      return;
+    }
+    console.log(logPrefix, 'Starting complement...', self.lastMetadata, self.currentSchemaId);
+    self.loadGeneratedMetadata(
+      self.lastMetadata.path,
+      function(metadata) {
+        applyMetadata(metadata);
+      }
+    );
   };
 
   /**
@@ -835,6 +1100,31 @@ function MetadataButtons() {
           .attr('id', 'draft-' + r.id + '-link')));
       empty = false;
     });
+    // Metadata-supported addons
+    self.getMetadataSupportedRegistries().forEach(function(r) {
+      if (r.schema !== schema.id) {
+        return;
+      }
+      const text = $('<label></label>')
+        .css('margin-right', '0.5em')
+        .attr('for', r.id)
+        .text(r.name);
+      if (disabled) {
+        text.css('color', '#888');
+      }
+      registrations.append($('<li></li>')
+        .append($('<input></input>')
+          .css('margin-right', '0.5em')
+          .attr('type', 'checkbox')
+          .attr('id', r.id)
+          .attr('name', r.id)
+          .attr('disabled', disabled)
+          .attr('checked', false))
+        .append(text)
+        .append($('<span></span>')
+          .attr('id', r.id + '-link')));
+      empty = false;
+    });
     if (empty) {
       registrations.append($('<li></li>')
         .append($('<span></span>').text(_('There is no draft project metadata compliant with the schema. Create new draft project metadata from the Metadata tab:')))
@@ -993,10 +1283,40 @@ function MetadataButtons() {
     });
   };
 
+  self.getMetadataSupportedRegistries = function() {
+    return (self.contexts[contextVars.node.id].projectMetadata.repositories || [])
+      .map(function(repo) {
+        return repo.registries || [];
+      })
+      .reduce(function(x, y) {
+        var r = [];
+        x.forEach(function(e) {
+          r.push(e);
+        });
+        y.forEach(function(e) {
+          r.push(e);
+        });
+        return r;
+      }, []);
+  }
+
+  self.getRegistrationURL = function(draftId, nodeId, filepath) {
+    console.log('URL', self.baseUrl);
+    // Metadata-supported addons
+    const regs = self.getMetadataSupportedRegistries()
+      .filter(function(reg) {
+        return reg.id === draftId;
+      });
+    if (regs.length > 0) {
+      return regs[0].url + '/' + nodeId + '/' + filepath;
+    }
+    return self.baseUrl + 'draft_registrations/' + draftId + '/files/' + nodeId + '/' + filepath;
+  };
+
   self.updateRegistrationAsync = function(context, checked, filepath, draftId, link) {
     return new Promise(function(resolve, perror) {
       console.log(logPrefix, 'register metadata: ', filepath, draftId);
-      var url = self.baseUrl + 'draft_registrations/' + draftId + '/files/' + context.nodeId + '/' + filepath;
+      const url = self.getRegistrationURL(draftId, context.nodeId, filepath);
       link.text(checked ? _('Registering...') : _('Deleting...'));
       return $.ajax({
           url: url,
@@ -1032,6 +1352,15 @@ function MetadataButtons() {
       }
       const link = self.selectDraftDialog.container.find('#draft-' + r.id + '-link');
       ops.push(self.updateRegistrationAsync(context, checked, filepath, r.id, link));
+    });
+    // Metadata-supported addons
+    self.getMetadataSupportedRegistries().forEach(function(r) {
+      const checkbox = self.selectDraftDialog.container.find('#' + r.id);
+      const checked = checkbox.is(':checked');
+      if (checked) {
+        const link = self.selectDraftDialog.container.find('#' + r.id + '-link');
+        ops.push(self.updateRegistrationAsync(context, checked, filepath, r.id, link));
+      }
     });
     Promise.all(ops)
       .then(function(data) {

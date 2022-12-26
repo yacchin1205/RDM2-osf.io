@@ -1,5 +1,4 @@
 from addons.base.serializer import OAuthAddonSerializer
-from addons.weko import client
 from addons.weko import settings as weko_settings
 from website.util import api_url_for, web_url_for
 
@@ -14,10 +13,10 @@ class WEKOSerializer(OAuthAddonSerializer):
 
     def credentials_are_valid(self, user_settings, cl):
         try:
-            conn = client.connect_from_settings(weko_settings, self.node_settings)
-            if conn is None:
+            c = self.node_settings.create_client()
+            if c is None:
                 return False
-            conn.get_login_user()
+            c.get_login_user()
         except requests_exceptions.HTTPError:
             return False
         return True
@@ -60,7 +59,6 @@ class WEKOSerializer(OAuthAddonSerializer):
             'auth': api_url_for('weko_oauth_connect',
                                 repoid='<repoid>'),
             'set': node.api_url_for('weko_set_config'),
-            'create': node.api_url_for('weko_add_user_account'),
             'importAuth': node.api_url_for('weko_import_auth'),
             'deauthorize': node.api_url_for('weko_deauthorize_node'),
             'accounts': api_url_for('weko_account_list'),
@@ -73,16 +71,12 @@ class WEKOSerializer(OAuthAddonSerializer):
 
         # Update with WEKO specific fields
         if self.node_settings.has_auth:
-            connection = client.connect_from_settings(weko_settings, self.node_settings)
-            all_indices = client.get_all_indices(connection)
-            indices = list(filter(lambda i: i.nested == 0, all_indices))
+            c = self.node_settings.create_client()
+            indices = c.get_indices()
 
             result.update({
                 'validCredentials': True,
-                'indices': [
-                    {'title': index.title, 'id': index.identifier, 'about': index.about}
-                    for index in indices
-                ],
+                'indices': [self._serialize_index(index) for index in indices],
                 'savedIndex': {
                     'title': self.node_settings.index_title,
                     'id': self.node_settings.index_id,
@@ -124,3 +118,10 @@ class WEKOSerializer(OAuthAddonSerializer):
             # Show available indices
             result.update(self.serialized_node_settings)
         return result
+
+    def _serialize_index(self, index):
+        return {
+            'title': index.title,
+            'id': index.identifier,
+            'children': [self._serialize_index(i) for i in index.children],
+        }

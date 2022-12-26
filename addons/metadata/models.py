@@ -5,13 +5,17 @@ import os
 import re
 
 from addons.base.models import BaseUserSettings, BaseNodeSettings
-from addons.osfstorage.models import OsfStorageFileNode
+from addons.osfstorage.models import OsfStorageFileNode, OsfStorageFolder
 from django.db import models
 from django.contrib.contenttypes.models import ContentType
+from api.base import settings
 from osf.models import DraftRegistration, BaseFileNode
 from osf.models.base import BaseModel
 from osf.models.metaschema import RegistrationSchema
 from osf.utils.fields import EncryptedTextField
+from website.util import waterbutler
+
+from . import mapper
 
 logger = logging.getLogger(__name__)
 
@@ -149,6 +153,52 @@ class NodeSettings(BaseNodeSettings):
         r.update(self._get_file_metadata(m))
         return r
 
+    def generate_file_metadata_for_path(self, path, user_info):
+        if '/' not in path:
+            raise ValueError(f'Malformed path: {path}')
+        q = self.file_metadata.filter(path=path)
+        if q.exists():
+            base_metadata = self._get_file_metadata(q.first())
+        else:
+            base_metadata = None
+        provider = path[:path.index('/')]
+        file_path = path[path.index('/'):]
+        content_type = ContentType.objects.get_for_model(self.owner)
+        if provider == 'osfstorage':
+            # materialized path -> object path
+            file_nodes = [fn for fn in OsfStorageFileNode.objects.filter(
+                target_content_type=content_type,
+                target_object_id=self.owner.id
+            ) if fn.materialized_path == file_path]
+            if len(file_nodes) == 0:
+                file_nodes = [fn for fn in OsfStorageFolder.objects.filter(
+                    target_content_type=content_type,
+                    target_object_id=self.owner.id
+                ) if fn.materialized_path == file_path]
+            logger.debug('Files: {}'.format([fn._materialized_path for fn in file_nodes]))
+            if len(file_nodes) == 0:
+                logger.warn('No files: ' + path)
+                return None
+            file_node = file_nodes[0]
+        else:
+            cookie = user_info.get_or_create_cookie().decode()
+            # TBD support for folder metadata
+            wb_resp = waterbutler.get_node_info(cookie, self.owner._id, provider, file_path.rstrip('/'))
+            if wb_resp is None:
+                return None
+            file_node = wb_resp['data']
+            if isinstance(file_node, list):
+                file_node = file_node[0]
+            logger.debug(f'File: {file_node}')
+        r = {
+            'generated': True,
+            'path': path,
+            'hash': None,
+            'urlpath': None,
+            'items': mapper.generate_file_metadata_items(self.owner, file_node, base_metadata),
+        }
+        return r
+
     def set_file_metadata(self, filepath, file_metadata, auth=None):
         self._validate_file_metadata(file_metadata)
         q = self.file_metadata.filter(path=filepath)
@@ -227,6 +277,9 @@ class NodeSettings(BaseNodeSettings):
             r = json.loads(self.project_metadata)
         r.update({
             'files': self.get_file_metadatas(),
+        })
+        r.update({
+            'repositories': self._get_repositories(),
         })
         return r
 
@@ -322,6 +375,16 @@ class NodeSettings(BaseNodeSettings):
         except RegistrationSchema.DoesNotExist:
             return []
 
+    def _get_repositories(self):
+        r = []
+        for addon in self.owner.get_addons():
+            if not hasattr(addon, 'has_metadata') or not addon.has_metadata:
+                continue
+            repo = addon.get_metadata_repository()
+            if repo is None:
+                continue
+            r.append(repo)
+        return r
 
 class FileMetadata(BaseModel):
     project = models.ForeignKey(NodeSettings, related_name='file_metadata',

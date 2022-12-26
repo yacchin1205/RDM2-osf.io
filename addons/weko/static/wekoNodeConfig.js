@@ -13,6 +13,46 @@ var $modal = $('#wekoInputCredentials');
 var language = require('js/osfLanguage').Addons.weko;
 
 
+function _getIndexById(indices, id) {
+    for (var i = 0; i < indices.length; i++) {
+        const data = indices[i];
+        if (data.id === id) {
+            return data;
+        }
+        const index = _getIndexById(data.children, id);
+        if (index !== null) {
+            return index;
+        }
+    }
+    return null;
+}
+
+function _getIndexDisplayTitle(index, level) {
+    if (level === 0) {
+        return index.title;
+    }
+    var prefix = '';
+    for (var i = 0; i < level; i ++) {
+        prefix += ' ';
+    }
+    return prefix + '- ' + index.title;
+}
+
+function _flattenIndices(indices, level) {
+    const r = [];
+    indices.forEach(function(data) {
+        const displayTitle = _getIndexDisplayTitle(data, level);
+        r.push(Object.assign({
+            displayTitle: displayTitle,
+        }, data));
+        _flattenIndices(data.children, level + 1).forEach(function(child) {
+            r.push(child);
+        });
+    });
+    return r;
+}
+
+
 function ViewModel(url) {
     var self = this;
 
@@ -91,25 +131,25 @@ function ViewModel(url) {
         })
     };
 
+    self.selectedIndex = ko.pureComputed(function() {
+        return _getIndexById(self.indices(), self.selectedIndexId());
+    });
+
     self.savedIndexUrl = ko.pureComputed(function() {
-        for (var i = 0; i < self.indices().length; i++) {
-            var data = self.indices()[i];
-            if (data.id === self.selectedIndexId()) {
-                return data.about;
-            }
+        const index = self.selectedIndex();
+        if (!index) {
+            return null;
         }
-        return null;
+        return index.url;
     });
 
     self.selectedIndexId = ko.observable();
     self.selectedIndexTitle = ko.pureComputed(function() {
-        for (var i = 0; i < self.indices().length; i++) {
-            var data = self.indices()[i];
-            if (data.id === self.selectedIndexId()) {
-                return data.title;
-            }
+        const index = self.selectedIndex();
+        if (!index) {
+            return null;
         }
-        return null;
+        return index.title;
     });
 
     self.showLinkedIndex = ko.pureComputed(function() {
@@ -134,6 +174,10 @@ function ViewModel(url) {
     });
     self.showTokenCreateButton = ko.pureComputed(function() {
         return !self.userHasAuth() && !self.nodeHasAuth() && self.loadedSettings();
+    });
+
+    self.flattenIndices = ko.pureComputed(function() {
+        return _flattenIndices(self.indices(), 0);
     });
 
     // Flashed messages
