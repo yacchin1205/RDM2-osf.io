@@ -1,5 +1,7 @@
 DEFAULT_BINDER_URL = 'https://binder.cs.rcos.nii.ac.jp'
 
+DEFAULT_TOKEN_SCOPES = ['read:users', 'read:servers']
+
 BINDERHUB_OAUTH_CLIENT = dict(
     client_id='AAAA',
     client_secret='BBBB',
@@ -7,6 +9,7 @@ BINDERHUB_OAUTH_CLIENT = dict(
     token_url='https://192.168.168.167:8585/api/oauth2/token',
     services_url='https://192.168.168.167:8585/api/services',
     scope=['identity'],
+    token_scopes=DEFAULT_TOKEN_SCOPES,
 )
 
 JUPYTERHUB_TOKEN_EXPIRES_IN_SEC = 3600
@@ -20,6 +23,7 @@ JUPYTERHUB_OAUTH_CLIENTS = {
         token_url='http://192.168.168.167:12000/hub/api/oauth2/token',
         api_url='http://192.168.168.167:12000/hub/api/',
         scope=['identity'],
+        token_scopes=DEFAULT_TOKEN_SCOPES,
         max_servers=2,
     )
 }

@@ -141,6 +141,7 @@ def update_jupyterhub_data(client_settings, token, token_resp):
     token_req = {
         'expires_in': settings.JUPYTERHUB_TOKEN_EXPIRES_IN_SEC,
         'note': 'RDM BinderHub Addon',
+        'scopes': client_settings.get('token_scopes', settings.DEFAULT_TOKEN_SCOPES),
     }
     token_resp = requests.post(urljoin(client_settings['api_url'],
                                       'users/{}/tokens'.format(user_name)),
