@@ -540,6 +540,29 @@
         </p>
         <!-- /ko -->
     </script>
+    <script type="text/html" id="metadata">
+        <span>
+            <div class="search-result-title">
+                <span class="tb-expand-icon-holder" style="vertical-align: middle;">
+                    <span class="glyphicon glyphicon-file">
+                    </span>
+                </span>
+                <span style="vertical-align: middle;">
+                    <font size="5"><a data-bind="attr: {href: url + '#edit-metadata'}, html: path"></a></font>
+                </span>
+            </div>
+        </span>
+        <!-- ko if: node_title && node_url -->
+        <span>
+            <strong>${_("Project")}:</strong>
+            <a data-bind="attr: {href: node_url}, text: node_title"></a>
+        </span>
+        <br>
+        <!-- /ko -->
+        <!-- ko if: (modifier_id && modifier_name && date_modified) || (creator_id && creator_name && date_created) -->
+        <div data-bind="template: {name: 'updated-time', data: $data}"></div>
+        <!-- /ko -->
+    </script>
     <script type="text/html" id="registration">
         <!-- ko if: parent_url -->
         <h4><a data-bind="attr: {href: parent_url}, text: parent_title"></a> / <a data-bind="attr: {href: url}, text: title"></a>  (<span class="text-danger" data-bind="if: is_retracted">${_("Withdrawn ")}</span>${_("Registration")})</h4>
