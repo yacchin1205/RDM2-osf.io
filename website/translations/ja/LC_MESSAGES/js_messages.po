@@ -5316,6 +5316,10 @@ msgstr "Wiki"
 msgid "Comments"
 msgstr "コメント"
 
+#: website/static/js/js_messages.js:21
+msgid "Metadata"
+msgstr "メタデータ"
+
 #: website/static/js/js_messages.js:23
 msgid "Default Notification Settings"
 msgstr "デフォルトの通知設定"
