@@ -35,11 +35,11 @@
           "required": true
         },
         {
-          "qid": "e-rad-project-id",
-          "nav": "e-Radの課題番号",
-          "title": "e-Radの課題番号|e-Rad project ID",
+          "qid": "systematic-project-id",
+          "nav": "体系的課題番号",
+          "title": "体系的課題番号|Systematic project ID",
           "type": "string",
-          "format": "e-rad-award-number",
+          "format": "e-rad-award-sys-number",
           "required": true
         },
         {

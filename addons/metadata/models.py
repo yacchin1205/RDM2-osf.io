@@ -81,6 +81,7 @@ class ERadRecord(BaseModel):
     jigyo_cd = models.TextField(blank=True, null=True)
     jigyo_mei = models.TextField(blank=True, null=True)
 
+    s_kadai_id = models.TextField(blank=True, null=True)
     kadai_id = models.TextField(blank=True, null=True)
     kadai_mei = EncryptedTextField(blank=True, null=True)
 
@@ -89,7 +90,8 @@ class ERadRecord(BaseModel):
 
     class Meta:
         indexes = [
-            models.Index(fields=['kenkyusha_no', 'kadai_id', 'nendo'])
+            models.Index(fields=['kenkyusha_no', 'kadai_id', 'nendo']),
+            models.Index(fields=['kenkyusha_no', 's_kadai_id', 'nendo']),
         ]
 
 

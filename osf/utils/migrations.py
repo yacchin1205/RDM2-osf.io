@@ -40,6 +40,7 @@ FORMAT_TYPE_TO_TYPE_MAP = {
     ('textarea-xl', 'string'): 'long-text-input',
     ('e-rad-award-funder', 'choose'): 'e-rad-award-funder-input',
     ('e-rad-award-number', 'string'): 'e-rad-award-number-input',
+    ('e-rad-award-sys-number', 'string'): 'e-rad-award-sys-number-input',
     ('e-rad-award-title-ja', 'string'): 'e-rad-award-title-ja-input',
     ('e-rad-award-title-en', 'string'): 'e-rad-award-title-en-input',
     ('e-rad-award-field', 'choose'): 'e-rad-award-field-input',
