@@ -1579,6 +1579,56 @@ function MetadataButtons() {
                 }
                 return base;
               };
+            } else if (propname == 'onMoveComplete') {
+              return function (item, from) {
+                const context = self.findContextByNodeId(from.data.nodeId);
+                if (!context) {
+                  return;
+                }
+                const fromFilepath = from.data.provider + (from.data.materialized || '/');
+                const projectMetadata = context.projectMetadata;
+                const fromFilepaths = projectMetadata.files
+                  .map(f => f.path)
+                  .filter(p => p.substring(0, fromFilepath.length) === fromFilepath);
+                if (!fromFilepaths.length) {
+                  return;
+                }
+                const toFilepath = item.data.provider + (item.data.materialized || '/');
+                const toFilepaths = fromFilepaths
+                  .map(p => toFilepath + p.replace(fromFilepath, ''));
+                // try reload project metadata
+                const interval = 250;
+                const maxRetry = 10;
+                var retry = 0;
+                osfBlock.block();
+                function tryLoadMetadata() {
+                  self.loadMetadata(context.nodeId, context.baseUrl, function() {
+                    const context2 = self.findContextByNodeId(context.nodeId);
+                    const matches = toFilepaths
+                      .map(p => context2.projectMetadata.files.find(f => f.path === p));
+                    const unmatchCount = matches.filter(m => !m).length;
+                    console.log(logPrefix, 'reloaded metadata: ', {
+                      context: context2,
+                      unmatchCount: unmatchCount,
+                      expectedFilepaths: toFilepaths
+                    });
+                    if (!unmatchCount) {
+                      m.redraw();
+                      osfBlock.unblock();
+                      return;
+                    }
+                    retry += 1;
+                    if (retry >= maxRetry) {
+                      console.log(logPrefix, 'failed retry reloading metadata');
+                      osfBlock.unblock();
+                      return;
+                    }
+                    console.log(logPrefix, retry + 'th retry reload metadata after ' + interval + 'ms: ');
+                    setTimeout(tryLoadMetadata, interval);
+                  });
+                }
+                setTimeout(tryLoadMetadata, interval);
+              }
             } else {
               return target[propname];
             }
