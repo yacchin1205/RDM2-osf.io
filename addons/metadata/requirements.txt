@@ -1,1 +1,1 @@
-# No extra libraries
+jsonpath-ng>=1.5.3
