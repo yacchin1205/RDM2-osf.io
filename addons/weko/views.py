@@ -295,6 +295,7 @@ def _deposit_metadata(cookie, index_id, node_id, metadata_node_id, file_metadata
             with zf.open('data/index.csv', 'w') as f:
                 with io.TextIOWrapper(f, encoding='utf8') as tf:
                     schema.write_csv(tf, target_index, [download_file_name], schema_id, file_metadata)
+        # DEBUG
         shutil.copyfile(zip_path, './payload.zip')
         headers = {
             'Packaging': 'http://purl.org/net/sword/3.0/package/SimpleZip',
