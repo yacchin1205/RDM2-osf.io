@@ -5,13 +5,18 @@ import os
 import re
 
 from addons.base.models import BaseUserSettings, BaseNodeSettings
-from addons.osfstorage.models import OsfStorageFileNode
+from addons.osfstorage.models import OsfStorageFileNode, OsfStorageFolder
 from django.db import models
 from django.contrib.contenttypes.models import ContentType
-from osf.models import DraftRegistration, BaseFileNode
+from osf.models import DraftRegistration, BaseFileNode, NodeLog, AbstractNode
 from osf.models.base import BaseModel
 from osf.models.metaschema import RegistrationSchema
 from osf.utils.fields import EncryptedTextField
+from addons.metadata import SHORT_NAME
+from api.base import settings
+from website.util import waterbutler
+
+from . import mapper
 
 logger = logging.getLogger(__name__)
 
@@ -154,6 +159,52 @@ class NodeSettings(BaseNodeSettings):
         r.update(self._get_file_metadata(m))
         return r
 
+    def generate_file_metadata_for_path(self, path, user_info):
+        if '/' not in path:
+            raise ValueError(f'Malformed path: {path}')
+        q = self.file_metadata.filter(path=path)
+        if q.exists():
+            base_metadata = self._get_file_metadata(q.first())
+        else:
+            base_metadata = None
+        provider = path[:path.index('/')]
+        file_path = path[path.index('/'):]
+        content_type = ContentType.objects.get_for_model(self.owner)
+        if provider == 'osfstorage':
+            # materialized path -> object path
+            file_nodes = [fn for fn in OsfStorageFileNode.objects.filter(
+                target_content_type=content_type,
+                target_object_id=self.owner.id
+            ) if fn.materialized_path == file_path]
+            if len(file_nodes) == 0:
+                file_nodes = [fn for fn in OsfStorageFolder.objects.filter(
+                    target_content_type=content_type,
+                    target_object_id=self.owner.id
+                ) if fn.materialized_path == file_path]
+            logger.debug('Files: {}'.format([fn._materialized_path for fn in file_nodes]))
+            if len(file_nodes) == 0:
+                logger.warn('No files: ' + path)
+                return None
+            file_node = file_nodes[0]
+        else:
+            cookie = user_info.get_or_create_cookie().decode()
+            # TBD support for folder metadata
+            wb_resp = waterbutler.get_node_info(cookie, self.owner._id, provider, file_path.rstrip('/'))
+            if wb_resp is None:
+                return None
+            file_node = wb_resp['data']
+            if isinstance(file_node, list):
+                file_node = file_node[0]
+            logger.debug(f'File: {file_node}')
+        r = {
+            'generated': True,
+            'path': path,
+            'hash': None,
+            'urlpath': None,
+            'items': mapper.generate_file_metadata_items(self.owner, file_node, base_metadata),
+        }
+        return r
+
     def set_file_metadata(self, filepath, file_metadata, auth=None):
         self._validate_file_metadata(file_metadata)
         q = self.file_metadata.filter(path=filepath)
@@ -233,6 +284,9 @@ class NodeSettings(BaseNodeSettings):
         r.update({
             'files': self.get_file_metadatas(),
         })
+        r.update({
+            'repositories': self._get_repositories(),
+        })
         return r
 
     def get_report_formats_for(self, schemas):
@@ -246,6 +300,49 @@ class NodeSettings(BaseNodeSettings):
         return {
             'formats': formats
         }
+
+    def update_file_metadata_for(self, action, payload, auth):
+        if action in [NodeLog.FILE_RENAMED, NodeLog.FILE_MOVED, NodeLog.FILE_COPIED]:
+            src = payload['source']
+            dest = payload['destination']
+        elif action in [NodeLog.FILE_REMOVED]:
+            src = payload['metadata']
+            dest = payload['metadata']
+        else:
+            return
+        if src['nid'] == dest['nid']:
+            source_addon = self
+        else:
+            source_node = AbstractNode.load(payload['source']['nid'])
+            if source_node is None:
+                return
+            source_addon = source_node.get_addon(SHORT_NAME)
+            if source_addon is None:
+                return
+        src_path = os.path.join(src['provider'], src['materialized'])
+        dest_path = os.path.join(dest['provider'], dest['materialized'])
+        if src_path.endswith('/'):
+            q = source_addon.file_metadata.filter(path__startswith=src_path)
+            path_suffixes = [fm.path[len(src_path):] for fm in q.all()]
+        else:
+            path_suffixes = ['']
+        for path_suffix in path_suffixes:
+            src_path_child = src_path + path_suffix
+            dest_path_child = dest_path + path_suffix
+            q = source_addon.file_metadata.filter(path=src_path_child)
+            if not q.exists():
+                continue
+            if action in [NodeLog.FILE_RENAMED, NodeLog.FILE_MOVED, NodeLog.FILE_COPIED]:
+                m = q.first()
+                file_metadata = {
+                    'path': dest_path_child,
+                    'folder': m.folder,
+                    'hash': m.hash,
+                    'items': self._get_file_metadata(m).get('items', [])
+                }
+                self.set_file_metadata(dest_path_child, file_metadata, auth)
+            if action in [NodeLog.FILE_RENAMED, NodeLog.FILE_MOVED, NodeLog.FILE_REMOVED]:
+                self.delete_file_metadata(src_path_child, auth)
 
     def _get_file_metadata(self, file_metadata):
         if file_metadata.metadata is None or file_metadata.metadata == '':
@@ -327,6 +424,16 @@ class NodeSettings(BaseNodeSettings):
         except RegistrationSchema.DoesNotExist:
             return []
 
+    def _get_repositories(self):
+        r = []
+        for addon in self.owner.get_addons():
+            if not hasattr(addon, 'has_metadata') or not addon.has_metadata:
+                continue
+            repo = addon.get_metadata_repository()
+            if repo is None:
+                continue
+            r.append(repo)
+        return r
 
 class FileMetadata(BaseModel):
     project = models.ForeignKey(NodeSettings, related_name='file_metadata',

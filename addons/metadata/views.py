@@ -54,6 +54,15 @@ def _response_file_metadata(addon, path):
         }
     }
 
+def _response_file_metadata_candidate(addon, path, user_info):
+    return {
+        'data': {
+            'id': addon.owner._id,
+            'type': 'metadata-node-file',
+            'attributes': addon.generate_file_metadata_for_path(path, user_info),
+        }
+    }
+
 def _response_schemas(addon, schemas):
     return {
         'data': {
@@ -180,6 +189,15 @@ def metadata_delete_file(auth, filepath=None, **kwargs):
     addon = node.get_addon(SHORT_NAME)
     addon.delete_file_metadata(filepath, auth=auth)
     return _response_file_metadata(addon, filepath)
+
+@must_be_valid_project
+@must_be_logged_in
+@must_have_permission('read')
+@must_have_addon(SHORT_NAME, 'node')
+def metadata_get_file_metadata_candidate(auth, filepath=None, **kwargs):
+    node = kwargs['node'] or kwargs['project']
+    addon = node.get_addon(SHORT_NAME)
+    return _response_file_metadata_candidate(addon, filepath, auth.user)
 
 @must_be_valid_project
 @must_be_logged_in
