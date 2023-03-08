@@ -161,13 +161,38 @@ function MetadataButtons() {
         projectMetadata: (data.data || {}).attributes,
         wbcache: (self.contexts[nodeId] ? self.contexts[nodeId].wbcache : null) || new WaterButlerCache(),
         validatedFiles: (self.contexts[nodeId] ? self.contexts[nodeId].validatedFiles : null) || {},
-        addonAttached: true
+        addonAttached: true,
+        repositories: null
       };
-      self.contexts[nodeId] = metadata;
-      if (!callback) {
-        return;
-      }
-      callback((data.data || {}).attributes);
+      self.loadRepositories(
+        metadata.projectMetadata.repositories || [],
+        function(repositories) {
+          self.loadingMetadatas[nodeId] = false;
+          metadata.repositories = repositories;
+          const files = [];
+          (metadata.projectMetadata.files || []).forEach(function(file) {
+            files.push(file);
+          });
+          metadata.repositories.forEach(function(repo, repoIndex) {
+            if (!repo.data || repo.data.type !== 'metadata-node-files') {
+              return;
+            }
+            (repo.data.attributes || []).forEach(function(file) {
+              const readonly = !metadata.projectMetadata.repositories[repoIndex].metadata.urls.update;
+              files.push(Object.assign(file, {
+                readonly: readonly,
+              }));
+            });
+          });
+          metadata.projectMetadata.files = files;
+          console.log(logPrefix, 'Metadata loaded', metadata);
+          self.contexts[nodeId] = metadata;
+          if (!callback) {
+            return;
+          }
+          callback((data.data || {}).attributes);
+        }
+      );
     }).fail(function(xhr, status, error) {
       self.loadingMetadatas[nodeId] = false;
       if (error === 'BAD REQUEST') {
@@ -194,6 +219,55 @@ function MetadataButtons() {
           }
         });
       }
+      if (!callback) {
+        return;
+      }
+      callback(null);
+    });
+  };
+
+  // For Metadata-supported addon
+  self.loadRepositories = function(repos, callback) {
+    if (repos.length === 0) {
+      callback([]);
+      return;
+    }
+    self.loadRepository(repos[0], function(result) {
+      self.loadRepositories(repos.slice(1), function(results) {
+        results.splice(0, 0, result);
+        callback(results);
+      });
+    });
+  };
+
+  self.loadRepository = function(repo, callback) {
+    if (!repo.metadata) {
+      if (!callback) {
+        return;
+      }
+      callback(null);
+      return;
+    }
+    const url = repo.metadata.urls.get;
+    console.log(logPrefix, 'loading: ', repo, url);
+    return $.ajax({
+        url: url,
+        type: 'GET',
+        dataType: 'json'
+    }).done(function (data) {
+      console.log(logPrefix, 'loaded: ', data);
+      if (!callback) {
+        return;
+      }
+      callback(data);
+    }).fail(function(xhr, status, error) {
+      Raven.captureMessage('Error while retrieving addon info', {
+        extra: {
+            url: url,
+            status: status,
+            error: error
+        }
+      });
       if (!callback) {
         return;
       }
@@ -925,6 +999,31 @@ function MetadataButtons() {
           .attr('id', 'draft-' + r.id + '-link')));
       empty = false;
     });
+    // Metadata-supported addons
+    self.getMetadataSupportedRegistries().forEach(function(r) {
+      if (r.schema !== schema.id) {
+        return;
+      }
+      const text = $('<label></label>')
+        .css('margin-right', '0.5em')
+        .attr('for', r.id)
+        .text(r.name);
+      if (disabled) {
+        text.css('color', '#888');
+      }
+      registrations.append($('<li></li>')
+        .append($('<input></input>')
+          .css('margin-right', '0.5em')
+          .attr('type', 'checkbox')
+          .attr('id', r.id)
+          .attr('name', r.id)
+          .attr('disabled', disabled)
+          .attr('checked', false))
+        .append(text)
+        .append($('<span></span>')
+          .attr('id', r.id + '-link')));
+      empty = false;
+    });
     if (empty) {
       registrations.append($('<li></li>')
         .append($('<span></span>').text(_('There is no draft project metadata compliant with the schema. Create new draft project metadata from the Metadata tab:')))
@@ -1083,10 +1182,40 @@ function MetadataButtons() {
     });
   };
 
+  self.getMetadataSupportedRegistries = function() {
+    return (self.contexts[contextVars.node.id].projectMetadata.repositories || [])
+      .map(function(repo) {
+        return repo.registries || [];
+      })
+      .reduce(function(x, y) {
+        var r = [];
+        x.forEach(function(e) {
+          r.push(e);
+        });
+        y.forEach(function(e) {
+          r.push(e);
+        });
+        return r;
+      }, []);
+  }
+
+  self.getRegistrationURL = function(draftId, nodeId, filepath) {
+    console.log('URL', self.baseUrl);
+    // Metadata-supported addons
+    const regs = self.getMetadataSupportedRegistries()
+      .filter(function(reg) {
+        return reg.id === draftId;
+      });
+    if (regs.length > 0) {
+      return regs[0].url + '/' + nodeId + '/' + filepath;
+    }
+    return self.baseUrl + 'draft_registrations/' + draftId + '/files/' + nodeId + '/' + filepath;
+  };
+
   self.updateRegistrationAsync = function(context, checked, filepath, draftId, link) {
     return new Promise(function(resolve, perror) {
       console.log(logPrefix, 'register metadata: ', filepath, draftId);
-      var url = self.baseUrl + 'draft_registrations/' + draftId + '/files/' + context.nodeId + '/' + filepath;
+      const url = self.getRegistrationURL(draftId, context.nodeId, filepath);
       link.text(checked ? _('Registering...') : _('Deleting...'));
       osfBlock.block();
       return $.ajax({
@@ -1125,6 +1254,15 @@ function MetadataButtons() {
       }
       const link = self.selectDraftDialog.container.find('#draft-' + r.id + '-link');
       ops.push(self.updateRegistrationAsync(context, checked, filepath, r.id, link));
+    });
+    // Metadata-supported addons
+    self.getMetadataSupportedRegistries().forEach(function(r) {
+      const checkbox = self.selectDraftDialog.container.find('#' + r.id);
+      const checked = checkbox.is(':checked');
+      if (checked) {
+        const link = self.selectDraftDialog.container.find('#' + r.id + '-link');
+        ops.push(self.updateRegistrationAsync(context, checked, filepath, r.id, link));
+      }
     });
     Promise.all(ops)
       .then(function(data) {
