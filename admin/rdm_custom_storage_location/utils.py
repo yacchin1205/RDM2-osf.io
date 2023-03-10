@@ -305,19 +305,19 @@ def test_s3compatb3_connection(host_url, access_key, secret_key, bucket):
             'message': 'All the fields above are required.'
         }, http_status.HTTP_400_BAD_REQUEST)
 
-    try:
-        user_info = s3compatb3_utils.get_user_info(host, access_key, secret_key)
-        e_message = ''
-    except Exception as e:
-        user_info = None
-        e_message = traceback.format_exception_only(type(e), e)[0].rstrip('\n')
-    if not user_info:
-        return ({
-            'message': 'Unable to access account.\n'
-            'Check to make sure that the above credentials are valid, '
-            'and that they have permission to list buckets.',
-            'e_message': e_message
-        }, http_status.HTTP_400_BAD_REQUEST)
+    # try:
+    #     user_info = s3compatb3_utils.get_user_info(host, access_key, secret_key)
+    #     e_message = ''
+    # except Exception as e:
+    #     user_info = None
+    #     e_message = traceback.format_exception_only(type(e), e)[0].rstrip('\n')
+    # if not user_info:
+    #     return ({
+    #         'message': 'Unable to access account.\n'
+    #         'Check to make sure that the above credentials are valid, '
+    #         'and that they have permission to list buckets.',
+    #         'e_message': e_message
+    #     }, http_status.HTTP_400_BAD_REQUEST)
 
     try:
         res = s3compatb3_utils.can_list(host, access_key, secret_key)
