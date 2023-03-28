@@ -128,7 +128,7 @@ class WaterButlerObject(object):
         )
         response.raise_for_status()
         return [WaterButlerObject(f, self.wb, self.provider) for f in response.json()['data']]
-    
+
     def download_to(self, f, _internal=True):
         logger.debug(f'download content: {self.links}')
         url = furl.furl(website_settings.WATERBUTLER_INTERNAL_URL if _internal else website_settings.WATERBUTLER_URL)
@@ -141,13 +141,13 @@ class WaterButlerObject(object):
             stream=True,
         )
         response.raise_for_status()
-        for chunk in response.iter_content(chunk_size=8192): 
+        for chunk in response.iter_content(chunk_size=8192):
             f.write(chunk)
-        
+
     @property
     def guid(self):
         return self.raw['id']
-        
+
     @property
     def attributes(self):
         return self.raw['attributes']
@@ -165,18 +165,18 @@ class WaterButlerObject(object):
 class WikiAsFile(object):
     def __init__(self, wrapped):
         self.wrapped = wrapped
-        
+
     def __getattr__(self, name):
         return getattr(self.wrapped, name)
-        
+
     @property
     def contentType(self):
         return self.wrapped.content_type
-    
+
     @property
     def modified_utc(self):
         return self.wrapped.date_modified
-    
+
     @property
     def created_utc(self):
         return self.wrapped.versions[-1].date_created
@@ -196,15 +196,15 @@ class GeneratorIOStream(io.RawIOBase):
         ret = self._left[:size]
         self._left = self._left[len(ret):]
         return ret
-    
+
     def readall(self):
-        l = []
+        r = []
         while True:
             m = self._read1()
             if not m:
                 break
-            l.append(m)
-        return b''.join(l)
+            r.append(m)
+        return b''.join(r)
 
     def readinto(self, b):
         pos = 0
@@ -297,7 +297,6 @@ def _create_project_entities(crate, entity_id, node, extra_props=None):
                 '@value': _fill_license_params(node.license.text, node.node_license),
             }] if node.license.text else []),
         })
-    
     return [
         ContextEntity(crate, entity_id, properties=props),
         ContextEntity(crate, f'{entity_id}.jpcoar', properties=custom_props)
@@ -317,11 +316,10 @@ def _fill_license_params(license_text, node_license):
 def _snake_to_camel(name):
     components = name.split('_')
     return components[0] + ''.join([c.capitalize() for c in components[1:]])
-        
+
 def _to_localized(o, prop, default_lang='en'):
     items = []
     items.append(dict([('@value', getattr(o, prop))] + ([('@language', default_lang)] if default_lang else [])))
-    
     prop_ja = f'{prop}_ja'
     if not hasattr(o, prop_ja):
         return items
@@ -420,7 +418,7 @@ def _create_comment_entities(crate, parent_id, comment, user_ids):
     for reply in Comment.objects.filter(target___id=comment._id):
         r += _create_comment_entities(crate, comment_id, reply, user_ids)
     return r
-    
+
 def _create_file_entities(crate, base_path, node, wb_file, user_ids):
     r = []
     # TBD test
@@ -546,10 +544,10 @@ def _build_ro_crate(node, wb, config):
     # for wiki in node.wikis:
     #     wiki_ = WikiAsFile(wiki)
     #     files += _create_file_entities(crate, './wiki/', wiki_, wiki_, user_ids)
-        
+
     for log in node.logs.all():
         crate.add(_create_log_entity(crate, log, user_ids))
-        
+
     for _, _, comments in files:
         crate.add(*comments)
     return crate, files
