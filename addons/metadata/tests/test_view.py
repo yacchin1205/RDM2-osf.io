@@ -24,6 +24,7 @@ class TestViews(BaseAddonTestCase, OsfTestCase):
                 'attributes': {
                     'editable': True,
                     'files': [],
+                    'repositories': [],
                 },
                 'id': self.node_settings.owner._id,
                 'type': 'metadata-node-project',
