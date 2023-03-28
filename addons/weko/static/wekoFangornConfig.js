@@ -109,8 +109,7 @@ function _fangornWEKOTitle(item, col) {
         return Fangorn.Utils.connectCheckTemplate.call(this, item);
     }
     if (item.data.addonFullname) {
-        var contents = [m('weko-name', item.data.name)];
-        return m('span', contents);
+        return m('span', [m('weko-name', item.data.name)]);
     } else {
         const contents = [
             m('weko-name.fg-file-links',

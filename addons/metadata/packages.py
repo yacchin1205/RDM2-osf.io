@@ -500,7 +500,7 @@ def _build_ro_crate(node, wb, config):
     crate = ROCrate()
     crate.metadata.extra_terms.update({
         # TBD RO-Crateスキーマ定義
-        "@vocab": "https://terms.rcos.nii.ac.jp/schema/1.0/",
+        '@vocab': 'https://terms.rcos.nii.ac.jp/schema/1.0/',
         'isReplacedBy': 'http://purl.org/dc/terms/isReplacedBy',
         'dc': 'http://purl.org/dc/terms/',
         'datacite': 'https://schema.datacite.org/meta/kernel-4/',
