@@ -7,7 +7,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('osf', '0225_add_pattern_and_norm_to_registration_schema_block'),
+        ('osf', '0226_ensure_schema_and_reports'),
     ]
 
     operations = [
