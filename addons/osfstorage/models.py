@@ -528,7 +528,7 @@ class NodeSettings(BaseNodeSettings, BaseStorageAddon):
     def has_auth(self):
         # GRDM-37149: Hide osfstorage for institutional provider
         from addons.base import institutions_utils
-        region_disabled, _ = institutions_utils.get_region_provider(self.owner)
+        _, region_disabled, _ = institutions_utils.get_region_provider(self.owner)
         if region_disabled:
             # hide osfstorage
             return False

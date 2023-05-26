@@ -128,9 +128,9 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
 
     @property
     def has_auth(self):
-        if not self._institutions_enabled:
-            return False
         """Instance has *active* permission to use it"""
+        if self._institutions_disabled:
+            return False
         return self.user_settings and self.user_settings.has_auth
 
     def authorize(self, user_settings, save=False):
