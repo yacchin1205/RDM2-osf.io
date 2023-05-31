@@ -63,6 +63,10 @@ api_routes = {
             '/project/<pid>/{}/packages/tasks/<taskid>/'.format(SHORT_NAME),
             '/project/<pid>/node/<nid>/{}/packages/tasks/<taskid>/'.format(SHORT_NAME),
         ], 'get', views.metadata_node_task_progress, json_renderer),
+        Rule([
+            '/project/<pid>/{}/file_metadata/suggestions/files/<path:filepath>'.format(SHORT_NAME),
+            '/project/<pid>/node/<nid>/{}/file_metadata/suggestions/files/<path:filepath>'.format(SHORT_NAME),
+        ], 'get', views.metadata_file_metadata_suggestions, json_renderer),
     ],
     'prefix': '/api/v1',
 }
