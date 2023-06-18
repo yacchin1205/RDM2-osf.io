@@ -1,12 +1,7 @@
 """Views for the node settings page."""
 # -*- coding: utf-8 -*-
 from rest_framework import status as http_status
-import os
 import logging
-import io
-import shutil
-import tempfile
-from zipfile import ZipFile
 
 from flask import request
 from flask import redirect
@@ -20,9 +15,7 @@ from addons.base import generic_views
 from .apps import SHORT_NAME
 from .serializer import WEKOSerializer
 from . import settings as weko_settings
-from osf.models.metaschema import RegistrationSchema
 from osf.utils import permissions
-from . import schema
 from website.project.decorators import (
     must_have_addon, must_be_addon_authorizer,
     must_have_permission, must_not_be_registration,
@@ -37,7 +30,7 @@ from website.oauth.signals import oauth_complete
 from admin.rdm_addons.decorators import must_be_rdm_addons_allowed
 from admin.rdm_addons.utils import get_rdm_addon_option
 from addons.metadata import SHORT_NAME as METADATA_SHORT_NAME
-from website.util import waterbutler
+from .deposit import deposit_metadata
 
 
 logger = logging.getLogger('addons.weko.views')
@@ -225,12 +218,11 @@ def weko_publish_file(auth, did=None, index_id=None, mnode=None, filepath=None, 
     if not addon.validate_index_id(index_id):
         logger.error(f'The index is not out of range: {index_id}')
         return HTTPError(http_status.HTTP_400_BAD_REQUEST)
-    cookie = auth.user.get_or_create_cookie().decode()
     content_path = request.json.get('content_path', filepath) if request.json is not None else filepath
     after_delete_path = request.json.get('after_delete_path', None) if request.json is not None else None
     addon.set_publish_task_id(filepath, None)
-    enqueue_task(_deposit_metadata.s(
-        cookie, index_id, node._id, mnode_obj._id, file_metadata_, filepath, content_path, after_delete_path
+    enqueue_task(deposit_metadata.s(
+        auth.user._id, index_id, node._id, mnode_obj._id, file_metadata_, filepath, content_path, after_delete_path
     ))
     return _response_file_metadata(addon, filepath)
 
@@ -261,83 +253,3 @@ def weko_get_publishing_file(auth, did=None, index_id=None, mnode=None, filepath
     elif aresult.info is not None and 'result' in aresult.info:
         result = aresult.info['result']
     return _response_file_metadata(addon, filepath, progress=progress, error=error, result=result)
-
-@celery_app.task(bind=True, max_retries=5, default_retry_delay=60)
-def _deposit_metadata(self, cookie, index_id, node_id, metadata_node_id, file_metadata, metadata_path, content_path, after_delete_path):
-    logger.info(f'Deposit: {metadata_path}, {content_path} {self.request.id}')
-    path = content_path
-    if '/' not in path:
-        raise ValueError(f'Malformed path: {path}')
-    self.update_state(state='initializing', meta={
-        'progress': 0,
-        'path': metadata_path,
-    })
-    provider = path[:path.index('/')]
-    materialized_path = path[path.index('/'):]
-    node = AbstractNode.load(node_id)
-    weko_addon = node.get_addon(SHORT_NAME)
-    weko_addon.set_publish_task_id(metadata_path, self.request.id)
-    mnode_obj = AbstractNode.load(metadata_node_id)
-    metadata_addon = mnode_obj.get_addon(METADATA_SHORT_NAME)
-    file_nodes = metadata_addon.owner.files.filter(provider=provider)
-    file_nodes = [fn for fn in file_nodes if fn.materialized_path == materialized_path]
-    if len(file_nodes) == 0:
-        raise KeyError(f'File not found: {materialized_path}')
-    file_node = file_nodes[0]
-    tmp_dir = None
-    try:
-        tmp_dir = tempfile.mkdtemp()
-        self.update_state(state='downloading', meta={
-            'progress': 10,
-            'path': metadata_path,
-        })
-        download_file_path = waterbutler.download_file(cookie, file_node, tmp_dir, _internal=True)
-        filesize = os.path.getsize(download_file_path)
-        logger.info(f'Downloaded: {download_file_path} {filesize}')
-        self.update_state(state='packaging', meta={
-            'progress': 50,
-            'path': metadata_path,
-        })
-
-        c = weko_addon.create_client()
-        target_index = c.get_index_by_id(index_id)
-
-        _, download_file_name = os.path.split(download_file_path)
-
-        zip_path = os.path.join(tmp_dir, 'payload.zip')
-        schema_id = RegistrationSchema.objects.get(name=weko_settings.REGISTRATION_SCHEMA_NAME)._id
-        with ZipFile(zip_path, 'w') as zf:
-            with zf.open(os.path.join('data/', download_file_name), 'w') as df:
-                with open(download_file_path, 'rb') as sf:
-                    shutil.copyfileobj(sf, df)
-            with zf.open('data/index.csv', 'w') as f:
-                with io.TextIOWrapper(f, encoding='utf8') as tf:
-                    schema.write_csv(tf, target_index, [download_file_name], schema_id, file_metadata)
-        headers = {
-            'Packaging': 'http://purl.org/net/sword/3.0/package/SimpleZip',
-            'Content-Disposition': 'attachment; filename=payload.zip',
-        }
-        files = {
-            'file': ('payload.zip', open(zip_path, 'rb'), 'application/zip'),
-        }
-        self.update_state(state='uploading', meta={
-            'progress': 60,
-            'path': metadata_path,
-        })
-        logger.info(f'Uploading... {file_metadata}')
-        respbody = c.deposit(files, headers=headers)
-        logger.info(f'Uploaded: {respbody}')
-        self.update_state(state='uploaded', meta={
-            'progress': 100,
-            'path': metadata_path,
-        })
-        links = [l for l in respbody['links'] if 'contentType' in l and '@id' in l and l['contentType'] == 'text/html']
-        if after_delete_path:
-            waterbutler.delete_file(cookie, file_node.target._id, SHORT_NAME, after_delete_path)
-        return {
-            'result': links[0]['@id'] if len(links) > 0 else None,
-            'path': metadata_path,
-        }
-    finally:
-        if tmp_dir and os.path.exists(tmp_dir):
-            shutil.rmtree(tmp_dir)

@@ -169,6 +169,9 @@ function MetadataButtons() {
     if (self.loadingMetadatas[nodeId]) {
       return;
     }
+    if (!baseUrl) {
+      throw new Error('baseUrl is not defined');
+    }
     self.loadingMetadatas[nodeId] = true;
     const url = baseUrl + 'project';
     console.log(logPrefix, 'loading: ', url);
@@ -1600,6 +1603,8 @@ function MetadataButtons() {
       return;
     }
     const remains = items.filter(function(item) {
+      return item.data && item.data.nodeApiUrl;
+    }).filter(function(item) {
       const text = $('.td-title.tb-td[data-id="' + item.id + '"] .title-text');
       if (text.length === 0) {
         return true;
@@ -2336,6 +2341,32 @@ function MetadataButtons() {
 
 if (contextVars.metadataAddonEnabled) {
   const btn = new MetadataButtons();
+  contextVars.metadata = {
+    loadMetadata: function(nodeId, nodeApiUrl, callback) {
+      var metadataUrl = nodeApiUrl;
+      if (!nodeApiUrl.match(/.+\/$/)) {
+        metadataUrl += '/';
+      }
+      btn.loadMetadata(nodeId, metadataUrl + 'metadata/', callback);
+    },
+    getMetadata: function(nodeId, path) {
+      if (!btn.contexts) {
+        return undefined;
+      }
+      const context = btn.contexts[nodeId];
+      if (!context) {
+        return undefined;
+      }
+      const files = (context.projectMetadata || {}).files || [];
+      const results = files.filter(function(metadata) {
+        return metadata.path === path;
+      });
+      if (results.length === 0) {
+        return null;
+      }
+      return results[0];
+    },
+  };
   if ($('#fileViewPanelLeft').length > 0) {
     // File View
     btn.initFileView();

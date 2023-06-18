@@ -139,9 +139,11 @@ class NodeSettings(BaseNodeSettings):
             files.append(r)
         return files
 
-    def get_file_metadata_for_path(self, path):
+    def get_file_metadata_for_path(self, path, resolve_parent=True):
         q = self.file_metadata.filter(deleted__isnull=True, path=path)
         if not q.exists():
+            if not resolve_parent:
+                return None
             parent, _ = os.path.split(path.strip('/'))
             if len(parent) == 0:
                 return None

@@ -193,6 +193,8 @@ class File(object):
 
     @property
     def format(self):
+        if 'format' not in self.raw:
+            return None
         return self.raw['format']
 
     @property

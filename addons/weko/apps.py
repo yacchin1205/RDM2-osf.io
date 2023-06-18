@@ -32,11 +32,19 @@ class WEKOAddonAppConfig(BaseAddonAppConfig):
         return weko_root_folder
 
     INDEX_LINKED = 'weko_index_linked'
+    FILE_ADDED = 'weko_file_added'
+    FILE_REMOVED = 'weko_file_removed'
+    FOLDER_CREATED = 'weko_folder_created'
+    ITEM_DEPOSITED = 'weko_item_deposited'
     NODE_AUTHORIZED = 'weko_node_authorized'
     NODE_DEAUTHORIZED = 'weko_node_deauthorized'
     NODE_DEAUTHORIZED_NO_USER = 'weko_node_deauthorized_no_user'
 
     actions = (INDEX_LINKED,
+        FILE_ADDED,
+        FILE_REMOVED,
+        FOLDER_CREATED,
+        ITEM_DEPOSITED,
         NODE_AUTHORIZED,
         NODE_DEAUTHORIZED,
         NODE_DEAUTHORIZED_NO_USER)
