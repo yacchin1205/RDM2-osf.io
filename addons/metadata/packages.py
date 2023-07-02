@@ -27,7 +27,7 @@ from osf.models import Guid, OSFUser, AbstractNode, Comment, BaseFileNode
 from website.util import waterbutler
 from website import settings as website_settings
 from osf.models.metaschema import RegistrationSchema
-from . import SHORT_NAME
+from . import SHORT_NAME, settings
 from .jsonld import (
     convert_metadata_to_json_ld_entities,
     convert_json_ld_entity_to_metadata_item,
@@ -326,15 +326,26 @@ class BaseROCrateFactory(object):
             'n': 'ro-crate-metadata.json',
         }
         tmp_path = os.path.join(self.work_dir, 'temp.dat')
+        total_size = 0
         for path, file, _ in files:
             logger.info(f'Downloading... {path}')
             assert path.startswith('./'), path
             with open(tmp_path, 'wb') as df:
                 file.download_to(df)
+            size = os.path.getsize(tmp_path)
+            total_size += size
+            logger.info(f'Downloaded: path={path}, size={size} (total downloaded={total_size})')
+            self._check_file_size(total_size)
             yield {
                 'fs': tmp_path,
                 'n': path[2:],
             }
+
+    def _check_file_size(self, total_size):
+        if total_size <= settings.MAX_EXPORTABLE_FILES_BYTES:
+            return
+        params = f'exported={total_size}, limit={settings.MAX_EXPORTABLE_FILES_BYTES}'
+        raise IOError(f'Exported file size exceeded limit: {params}')
 
     def _get_jpcoar_context(self):
         return {

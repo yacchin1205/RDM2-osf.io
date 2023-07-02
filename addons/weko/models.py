@@ -9,6 +9,8 @@ from addons.base import exceptions
 from addons.base.models import (BaseOAuthNodeSettings, BaseOAuthUserSettings,
                                 BaseStorageAddon)
 from django.db import models
+from django.db.models.signals import post_save
+from django.dispatch import receiver
 from django.utils import timezone
 
 from framework.auth.decorators import Auth
@@ -16,6 +18,7 @@ from framework.auth.decorators import Auth
 from osf.models.base import BaseModel
 from osf.models.files import File, Folder, BaseFileNode
 from osf.models.metaschema import RegistrationSchema
+from osf.models.nodelog import NodeLog
 from osf.utils.fields import NonNaiveDateTimeField
 from website import settings as website_settings
 
@@ -352,6 +355,8 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
             return None
         provider = metadata['provider']
         materialized = metadata['materialized']
+        if not materialized.startswith('/'):
+            materialized = f'/{materialized}'
         filepath = f'{provider}{materialized}'
         file_metadata = metadata_addon.get_file_metadata_for_path(filepath)
         _, filename = os.path.split(filepath.rstrip('/'))
@@ -417,3 +422,29 @@ class PublishTask(BaseModel):
     updated = NonNaiveDateTimeField(blank=True, null=True)
 
     last_task_id = models.CharField(max_length=128, blank=True, null=True)
+
+
+@receiver(post_save, sender=NodeLog)
+def node_post_save(sender, instance, created, **kwargs):
+    action = instance.action
+    logger.debug(f'create_waterbutler_log: {action}, created={created}')
+    if not created:
+        return
+    if action not in ['addon_file_moved', 'addon_file_copied']:
+        return
+    params = instance.params
+    dest = params.get('destination', None)
+    if not dest:
+        return
+    if dest.get('provider', None) != SHORT_NAME:
+        return
+    node = instance.node
+    addon = node.get_addon(SHORT_NAME)
+    if addon is None:
+        return
+    if not addon._is_top_level_draft(dest):
+        logger.debug(f'Destination is not top level draft: {dest}')
+        return
+    logger.debug(f'Generating file metadata: {action}, {dest}')
+    auth = Auth(user=instance.user)
+    addon._generate_draft_metadata(dest, auth)

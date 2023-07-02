@@ -19,6 +19,8 @@ const metadataRefreshingTimeout = 1000;
 const metadataRefreshingTimeoutExp = 2;
 var fileViewButtons = null;
 var hashProcessed = false;
+var uploadCount = 0;
+var uploadReservedHandler = null;
 
 // Define Fangorn Button Actions
 const wekoItemButtons = {
@@ -142,10 +144,10 @@ function wekoWEKOTitle(item, col) {
         return Fangorn.Utils.connectCheckTemplate.call(this, item);
     }
     if (item.data.addonFullname) {
-        return m('span', [m('weko-name', item.data.name)]);
+        return m('span', [m('span', item.data.name)]);
     } else {
         const contents = [
-            m('weko-name.fg-file-links',
+            m('span.fg-file-links',
                 {
                     onclick: function () {
                         gotoItem(item);
@@ -169,7 +171,7 @@ function wekoColumns(item) {
         item,
         function(item) {
             const parentItem = findItem(treebeard.treeData, item.parentID);
-            deposit(treebeard, item, function() {
+            reserveDeposit(treebeard, item, function() {
                 treebeard.updateFolder(null, parentItem);
             });
         }
@@ -338,6 +340,21 @@ function cancelDepositing(tb, item) {
     item.data.progress = 100;
     item.data.uploadState = null;
     tb.redraw();
+}
+
+function reserveDeposit(treebeard, item, cancelCallback) {
+    if (uploadCount <= 0) {
+        deposit(treebeard, item, cancelCallback);
+        return;
+    }
+    if (uploadReservedHandler) {
+        console.warn(logPrefix, 'Upload handler already reserved', item);
+        return;
+    }
+    console.log(logPrefix, 'Reserve upload handler', item);
+    uploadReservedHandler = function() {
+        deposit(treebeard, item, cancelCallback);
+    };
 }
 
 function deposit(treebeard, item, cancelCallback) {
@@ -601,10 +618,42 @@ function initFileView() {
     observer.observe(toggleBar, {attributes: false, childList: true, subtree: false});
 }
 
+function wekoUploadAdd(file, item) {
+    console.log(logPrefix, 'Detected: uploadAdded', file);
+    uploadCount ++;
+}
+
+function wekoUploadSuccess(file, row) {
+    console.log(logPrefix, 'Detected: uploadSuccess', file);
+    uploadCount --;
+    if (!uploadReservedHandler) {
+        return;
+    }
+    if (uploadCount > 0) {
+        console.log(logPrefix, 'Reserved upload handler exists. waiting for ', uploadCount, ' files');
+        return;
+    }
+    console.log(logPrefix, 'Processing reserved upload handler...');
+    const f = uploadReservedHandler;
+    uploadReservedHandler = null;
+    setTimeout(function() {
+        // If uploadAdded is called immediately afterwards, then revert to the reserved state again.
+        if (uploadCount > 0) {
+            console.log(logPrefix, 'Reserved upload handler restored');
+            uploadReservedHandler = f;
+            return;
+        }
+        f();
+        console.log(logPrefix, 'Reserved upload handler processed');
+    }, 500);
+}
+
 Fangorn.config.weko = {
     folderIcon: wekoFolderIcons,
     itemButtons: wekoItemButtons,
     resolveRows: wekoColumns,
+    uploadAdd: wekoUploadAdd,
+    uploadSuccess: wekoUploadSuccess,
 };
 
 if ($('#fileViewPanelLeft').length > 0) {

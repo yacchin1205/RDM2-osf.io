@@ -475,16 +475,21 @@ class FileMetadata(BaseModel):
                 logger.warn('No files: ' + self.path)
                 return None
             path = filenode[0].path
-        file_guids = BaseFileNode.resolve_class(provider, BaseFileNode.FILE).get_file_guids(
-            materialized_path=path,
-            provider=provider,
-            target=node
-        )
-        if len(file_guids) == 0:
-            fileUrl = node.url + 'files/' + provider + path
-            logger.info('No guid: ' + self.path + '(provider=' + provider + ')')
-            return fileUrl
-        return '/' + file_guids[0] + '/'
+        try:
+            file_guids = BaseFileNode.resolve_class(provider, BaseFileNode.FILE).get_file_guids(
+                materialized_path=path,
+                provider=provider,
+                target=node
+            )
+            if len(file_guids) == 0:
+                fileUrl = node.url + 'files/' + provider + path
+                logger.info('No guid: ' + self.path + '(provider=' + provider + ')')
+                return fileUrl
+            return '/' + file_guids[0] + '/'
+        except AttributeError:
+            # File node inconsistency detected
+            logger.exception('File node inconsistency detected')
+            return None
 
     def update_search(self):
         from website import search
