@@ -98,9 +98,10 @@ RUN set -ex \
     && tar zxvf hdf5-1.10.10.tar.gz \
     && cd hdf5-1.10.10 \
     && ./configure --prefix=/usr \
-    && make check \
+    && make \
     && make install \
-    && make check-install \
+    && cd \
+    && rm -fr /tmp/hdf5-1.10.10 \
     && for reqs_file in \
         /code/requirements.txt \
         /code/requirements/release.txt \
