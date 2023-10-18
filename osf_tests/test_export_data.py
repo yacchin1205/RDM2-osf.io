@@ -6,6 +6,7 @@ from django.test import TestCase
 from nose import tools as nt
 
 from addons.osfstorage.models import Region
+from addons.osfstorage.settings import DEFAULT_REGION_ID
 from addons.osfstorage.tests.factories import FileVersionFactory
 from osf.models import AbstractNode
 from osf.models.export_data import DateTruncMixin
@@ -130,7 +131,6 @@ class TestExportData(TestCase):
         target = AbstractNode(id=object_id)
         node = OsfStorageFileFactory.create(target_object_id=object_id, target=target)
         file_version = FileVersionFactory(region=cls.export_data.source)
-        file_version.creator.affiliated_institutions.set([cls.institution])
 
         file_versions_through = BaseFileVersionsThroughFactory.create(version_name='file.txt', basefilenode=node,
                                                                       fileversion=file_version)
@@ -260,9 +260,8 @@ class TestExportData(TestCase):
         project = ProjectFactory()
         institution = InstitutionFactory.create(_id=export_data.source.guid)
         institution.nodes.set([project])
-        default_region = Region.objects.first()
+        default_region = Region.objects.get(_id=DEFAULT_REGION_ID)
         file_version = FileVersionFactory(region=default_region)
-        file_version.creator.affiliated_institutions.set([institution])
         object_id = project.id
         target = AbstractNode(id=object_id)
         node = OsfStorageFileFactory.create(name='file2.txt', created=datetime.now(), target_content_type=self.file.target_content_type,
