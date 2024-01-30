@@ -1160,6 +1160,14 @@ class TestOSFUser:
         user.is_staff = True
         assert user.is_allowed_to_use_institution(institution)
 
+    def test_is_data_steward_true(self):
+        user = UserFactory(is_data_steward=True)
+        assert user.is_data_steward is True
+
+    def test_is_data_steward_default_value_false(self):
+        user = UserFactory()
+        assert user.is_data_steward is False
+
 
 class TestProjectsInCommon:
 

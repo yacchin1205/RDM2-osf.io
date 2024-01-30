@@ -27,6 +27,8 @@ class Client(object):
         self.token = token
         self.username = username
         self.password = password
+        if not self.host.endswith('/'):
+            self.host += '/'
 
     def get_login_user(self, default_user=None):
         resp = requests.get(self._base_host + 'api/get_profile_info/', **self._requests_args())
@@ -83,6 +85,7 @@ class Client(object):
             files=files,
             **self._requests_args(headers=headers)
         )
+        logger.info(f'_post: url={self._base_host + path}, status={resp.status_code}, response={resp.content}')
         resp.raise_for_status()
         return resp.json()
 
@@ -152,6 +155,14 @@ class Item(object):
     @property
     def identifier(self):
         return self.raw['id']
+
+    @property
+    def primary_title(self):
+        v = self._metadata['title']
+        if isinstance(v, str):
+            return v
+        # TBD waterbutler: 順番は登録順に依存する。jaかenを返すように固定したい
+        return v[0]
 
     @property
     def title(self):
