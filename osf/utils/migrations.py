@@ -53,6 +53,13 @@ FORMAT_TYPE_TO_TYPE_MAP = {
     ('e-rad-bunnya', 'string'): 'e-rad-bunnya-input',
     ('file-metadata', 'string'): 'file-metadata-input',
     ('date', 'string'): 'date-input',
+    ('file-capacity', 'string'): 'file-capacity-input',
+    ('file-creators', 'string'): 'file-creators-input',
+    ('file-data-number', 'string'): 'file-data-number-input',
+    ('file-url', 'string'): 'file-url-input',
+    ('file-institution-ja', 'string'): 'file-institution-ja-input',
+    ('file-institution-en', 'string'): 'file-institution-en-input',
+    ('file-institution-identifier', 'string'): 'file-institution-id-input',
 }
 
 def get_osf_models():
