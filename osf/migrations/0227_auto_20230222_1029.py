@@ -9,7 +9,6 @@ class Migration(migrations.Migration):
 
     dependencies = [
         ('osf', '0226_osfuser_is_data_steward'),
-        ('osf', '0226_alter_filelog_path'),
     ]
 
     operations = [
