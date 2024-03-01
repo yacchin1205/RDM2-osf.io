@@ -333,14 +333,16 @@ class BaseROCrateFactory(object):
         tmp_path = os.path.join(self.work_dir, 'temp.dat')
         total_size = 0
         for path, file, _ in files:
-            logger.info(f'Downloading... {path}')
+            logger.info(f'Downloading... {path}, size={file.size}')
             assert path.startswith('./'), path
+            self._check_file_size(total_size + file.size)
             with open(tmp_path, 'wb') as df:
                 file.download_to(df)
             size = os.path.getsize(tmp_path)
+            if size != file.size:
+                raise IOError(f'File size mismatch: {size} != {file.size}')
             total_size += size
             logger.info(f'Downloaded: path={path}, size={size} (total downloaded={total_size})')
-            self._check_file_size(total_size)
             yield {
                 'fs': tmp_path,
                 'n': path[2:],
@@ -711,12 +713,23 @@ class WikiFile(object):
     def __init__(self, wiki):
         self.wiki = wiki
 
+    @property
+    def size(self):
+        data = self._get_content_as_bytes()
+        return len(data) if data is not None else 0
+
     def download_to(self, f):
-        latest = self.wiki.get_version()
-        if latest is None:
+        data = self._get_content_as_bytes()
+        if data is None:
             logger.warn(f'Wiki content is empty: {self.wiki.page_name}')
             return
-        f.write(latest.content.encode('utf8'))
+        f.write(data)
+
+    def _get_content_as_bytes(self):
+        latest = self.wiki.get_version()
+        if latest is None:
+            return None
+        return latest.content.encode('utf8')
 
 class ROCrateFactory(BaseROCrateFactory):
 
