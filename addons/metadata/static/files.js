@@ -1591,9 +1591,73 @@ function MetadataButtons() {
     const observer = new MutationObserver(refreshIfToolbarExists);
     const toggleBar = $('#toggleBar').get(0);
     observer.observe(toggleBar, {attributes: false, childList: true, subtree: false});
+
+    function resolveRows(items) {
+      if (items.length === 0) {
+        return;
+      }
+      const remains = items.filter(function(item) {
+        const text = $('.td-title.tb-td[data-id="' + item.id + '"] .title-text');
+        if (text.length === 0) {
+          return true;
+        }
+        const context = self.findContextByNodeId(item.data.nodeId);
+        if (!context) {
+          self.loadMetadata(item.data.nodeId, item.data.nodeApiUrl + 'metadata/');
+          return true;
+        }
+        if (!item.data.materialized) {
+          context.wbcache.setProvider(item);
+        }
+        return false;
+      });
+      if (remains.length === 0) {
+        return;
+      }
+      setTimeout(function() {
+        resolveRows(remains);
+      }, 1000);
+    }
+
     self.initBase(function(p) {
       path = p;
       refreshIfToolbarExists();
+      resolveRows(self.reservedRows);
+    });
+
+    Fangorn.config = new Proxy(Fangorn.config, {
+      get: function(targetprov, name) {
+        var obj = targetprov[name];
+        if (obj === undefined) {
+          obj = {};
+        }
+        return new Proxy(obj, {
+          get: function(target, propname) {
+            if (propname == 'resolveRows') {
+              return function(item) {
+                var base = null;
+                if (target[propname] !== undefined) {
+                  const prop = target[propname];
+                  const baseRows = typeof prop === 'function' ? prop.apply(this, [item]) : prop;
+                  if (baseRows !== undefined) {
+                    base = baseRows;
+                  }
+                }
+                if (self.contexts) {
+                  setTimeout(function() {
+                    resolveRows([item]);
+                  }, 500);
+                } else {
+                  self.reservedRows.push(item);
+                }
+                return base;
+              };
+            } else {
+              return target[propname];
+            }
+          }
+        });
+      }
     });
   }
 
