@@ -24,7 +24,7 @@ from api.nodes.serializers import NodeSerializer
 from api.base.utils import waterbutler_api_url_for
 from framework.auth import Auth
 from framework.celery_tasks import app as celery_app
-from framework.exceptions import HTTPError
+from framework.exceptions import HTTPError, PermissionsError
 from osf.models import Guid, OSFUser, AbstractNode, Comment, BaseFileNode, DraftRegistration, Registration
 from website.util import waterbutler
 from website import settings as website_settings
@@ -36,6 +36,7 @@ from .jsonld import (
     convert_json_ld_entity_to_file_metadata_item,
 )
 from addons.wiki.models import WikiPage
+from addons.metadata.apps import SHORT_NAME as METADATA_SHORT_NAME
 
 
 logger = logging.getLogger(__name__)
@@ -337,11 +338,11 @@ class BaseROCrateFactory(object):
         for path, file, _ in files:
             logger.info(f'Downloading... {path}, size={file.size}')
             assert path.startswith('./'), path
-            self._check_file_size(total_size + file.size)
+            self._check_file_size(total_size + int(file.size))
             with open(tmp_path, 'wb') as df:
                 file.download_to(df)
             size = os.path.getsize(tmp_path)
-            if size != file.size:
+            if size != int(file.size):
                 raise IOError(f'File size mismatch: {size} != {file.size}')
             total_size += size
             logger.info(f'Downloaded: path={path}, size={size} (total downloaded={total_size})')
@@ -991,7 +992,11 @@ class ROCrateExtractor(object):
         addon_object = node.get_addon(addon_name)
         if addon_object is None:
             addon_object = node.add_addon(addon_name, auth=Auth(user=self.user), log=False)
-        # TBD: restore addon settings
+        folder_id = addon.properties().get('rdmFolderId', None)
+        if not folder_id:
+            return
+        metadata_addon = node.get_or_add_addon(METADATA_SHORT_NAME, auth=Auth(user=self.user))
+        metadata_addon.add_imported_addon_settings(addon_name, folder_id)
 
     def ensure_folders(self, wb):
         addons = [
@@ -1156,6 +1161,11 @@ class ROCrateExtractor(object):
 
     def _download(self, file):
         resp = requests.get(self.url, stream=True)
+        logger.info(f'GET {self.url} => {resp.status_code}, {resp.url}')
+        # Check whether the response is login page
+        resp_is_html = resp.headers['content-type'].startswith('text/html')
+        if resp.status_code == 200 and 'login' in resp.url and resp_is_html:
+            raise PermissionsError(f'URL {self.url} is not publicly accessible')
         resp.raise_for_status()
         resp.raw.decode_content = True
         shutil.copyfileobj(resp.raw, file)
@@ -1242,20 +1252,6 @@ class WikiExtractor(BaseExtractor):
             Auth(user=self.owner.user),
         )
 
-
-def start_importing(auth, title):
-    serializer = NodeSerializer(context={
-        'request': RequestWrapper(auth),
-    })
-    node = serializer.create({
-        'title': title,
-        'category': 'project',
-        'creator': auth.user,
-    })
-    return node
-
-def _to_date(d):
-    return d.date().isoformat()
 
 def _to_datetime(d):
     return d.isoformat()
@@ -1453,22 +1449,32 @@ def export_project(self, user_id, node_id, config):
     finally:
         shutil.rmtree(work_dir)
 
+def _create_node(user, node_title):
+    auth = Auth(user)
+    serializer = NodeSerializer(context={
+        'request': RequestWrapper(auth),
+    })
+    return serializer.create({
+        'title': node_title,
+        'category': 'project',
+        'creator': auth.user,
+    })
+
 @celery_app.task(bind=True, max_retries=3)
-def import_project(self, url, user_id, node_id):
+def import_project(self, url, user_id, node_title):
     user = OSFUser.load(user_id)
-    node = AbstractNode.load(node_id)
     wb = WaterButlerClient(user)
     work_dir = tempfile.mkdtemp()
-    logger.info(f'Importing: {url} -> {node_id}, {work_dir}')
+    logger.info(f'Importing: {url} -> (new node), {work_dir}')
     self.update_state(state='provisioning node', meta={
         'progress': 0,
         'user': user_id,
-        'node': node_id,
     })
-    node.add_addon(SHORT_NAME, auth=Auth(user=user))
     try:
         extractor = ROCrateExtractor(user, url, work_dir)
         logger.info(f'RO-Crate loaded: {extractor.crate}')
+        node = _create_node(user, node_title)
+        node_id = node._id
         extractor.ensure_node(node)
         self.update_state(state='provisioning folders', meta={
             'progress': 10,
@@ -1504,6 +1510,7 @@ def get_task_result(auth, task_id):
     error = None
     info = {}
     if result.failed():
+        logger.info(f'Failed: {result.info}: {type(result.info)}')
         error = str(result.info)
     elif result.info is not None and auth.user._id != result.info['user']:
         raise HTTPError(http_status.HTTP_403_FORBIDDEN)

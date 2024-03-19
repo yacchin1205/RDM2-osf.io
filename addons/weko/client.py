@@ -16,7 +16,7 @@ def _flatten_indices(indices):
 
 class Client(object):
     """
-    WEKO3 Client
+    WEKO Client
     """
     host = None
     token = None
@@ -37,13 +37,13 @@ class Client(object):
             resp.raise_for_status()
         if self.username is not None:
             default_user = self.username
-        logger.debug(f'WEKO3 service-document headers={resp.headers}, json={resp.json()}')
+        logger.debug(f'WEKO service-document headers={resp.headers}, json={resp.json()}')
         results = resp.json().get('results', {})
         return results.get('subitem_mail_address', default_user)
 
     def get_indices(self):
         """
-        Get all indices from the WEKO3.
+        Get all indices from the WEKO.
         """
         root = self._get('api/tree')
         indices = []
@@ -109,7 +109,7 @@ class Client(object):
 
 class Index(object):
     """
-    WEKO3 Index
+    WEKO Index
     """
     client = None
     raw = None
@@ -149,7 +149,7 @@ class Index(object):
 
 class Item(object):
     """
-    WEKO3 Item
+    WEKO Item
     """
     raw = None
     index = None
@@ -167,7 +167,6 @@ class Item(object):
         v = self._metadata['title']
         if isinstance(v, str):
             return v
-        # TBD waterbutler: 順番は登録順に依存する。jaかenを返すように固定したい
         return v[0]
 
     @property
@@ -195,7 +194,7 @@ class Item(object):
 
 class File(object):
     """
-    WEKO3 File
+    WEKO File
     """
     raw = None
     item = None
