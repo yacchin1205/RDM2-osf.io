@@ -698,7 +698,7 @@
               "title": "e-Rad 研究者番号|e-Rad Researcher Number",
               "type": "string",
               "format": "text",
-              "required": true,
+              "required": false,
               "pattern": "^[0-9a-zA-Z]*$",
               "space_normalization": true,
               "suggestion": [

@@ -217,11 +217,11 @@ const QuestionField = oop.extend(Emitter, {
         .append(self.clearField)
         .append(clearLabel);
       self.clearField.on('change', function() {
-        if (self.clearField.checked()) {
-          self.formField.reset(input);
-          self.formField.disable(input, true);
+        if (self.clearField.prop('checked')) {
+          self.formField.reset();
+          self.formField.disable(true);
         } else {
-          self.formField.disable(input, false);
+          self.formField.disable(false);
         }
       });
       header.append(clearFormBlock);
@@ -282,7 +282,7 @@ const QuestionField = oop.extend(Emitter, {
 
   checkedClear: function() {
     const self = this;
-    return self.clearField && self.clearField.checked;
+    return self.clearField && self.clearField.prop('checked');
   },
 
   showError: function() {
@@ -324,10 +324,12 @@ function createFormField(question, options, value) {
     formField = new TextFormField(question, options);
   }
   formField.create();
-  try {
-    formField.setValue(value);
-  } catch (error) {
-    console.error('Cannot set default value for question ' + question.qid + ': ' + error.message, value);
+  if (value != null && value !== '') {
+    try {
+      formField.setValue(value);
+    } catch (error) {
+      console.error('Cannot set default value for question ' + question.qid + ': ' + error.message, value);
+    }
   }
   return formField;
 }
@@ -741,7 +743,7 @@ const ArrayFormField = oop.extend(FormFieldInterface, {
         res.push(row);
       }
     });
-    return res;
+    return res.length ? res : null;
   },
 
   setValue: function(value) {
@@ -840,7 +842,7 @@ const ObjectFormField = oop.extend(FormFieldInterface, {
     const self = this;
     self.reset();
     var rows = value || {};
-    if (typeof(value) === 'string') {
+    if (value && typeof value === 'string') {
       rows = JSON.parse(value);
     }
     self.fields.forEach(function(subquestion) {
