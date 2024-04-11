@@ -35,8 +35,14 @@ def get_region_external_account(node):
         return None
     try:
         region = Region.objects.get(_id=institution._id)
-        return RegionExternalAccount.objects.get(region=region)
-    except Region.DoesNotExist:
+        region_external_account = RegionExternalAccount.objects.get(region=region)
+        external_account = region_external_account.external_account
+        if external_account is None:
+            return None
+        if external_account.provider_name != SHORT_NAME:
+            return None
+        return region_external_account
+    except (Region.DoesNotExist, RegionExternalAccount.DoesNotExist):
         return None
 
 def get_column_id(sheet, text):
