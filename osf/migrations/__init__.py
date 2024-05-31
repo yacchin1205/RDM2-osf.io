@@ -33,6 +33,7 @@ def get_admin_write_permissions():
     from django.contrib.auth.models import Permission
     return Permission.objects.filter(codename__in=[
         'change_node',
+        'create_node',
         'delete_node',
         'change_user',
         'change_conference',

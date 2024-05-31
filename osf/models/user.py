@@ -54,7 +54,7 @@ from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
 from osf.utils.fields import NonNaiveDateTimeField, LowercaseEmailField
 from osf.utils.names import impute_names
 from osf.utils.requests import check_select_for_update
-from osf.utils.permissions import API_CONTRIBUTOR_PERMISSIONS, MANAGER, MEMBER, MANAGE, ADMIN
+from osf.utils.permissions import API_CONTRIBUTOR_PERMISSIONS, MANAGER, MEMBER, MANAGE, ADMIN, CREATE_NODE
 from website import settings as website_settings
 from website import filters, mails
 from website.project import new_bookmark_collection
@@ -626,6 +626,20 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         QuerySet.
         """
         return self.all_tags.filter(system=True).values_list('name', flat=True)
+
+    # GRDM-41284: `CREATE_NODE` permission support
+    def has_perm(self, perm, obj=None):
+        """Returns True if the user has the specified permission.
+
+        If obj is passed in, only returns the permissions for this specific object.
+        """
+        if obj is None and perm == CREATE_NODE:
+            # Allow the CREATE_NODE permission to all users if no object is passed in
+            # TBD: Skip allowing this permission if the user has the restricted attribute, or
+            # Add CREATE_NODE permission to all users in migration files(and Remove CREATE_NODE from
+            # user.permissions for users who do not allow it).
+            return True
+        return super(OSFUser, self).has_perm(perm, obj)
 
     @property
     def csl_given_name(self):
@@ -2071,6 +2085,8 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         # custom permissions for use in the GakuNin RDM Admin App
         permissions = (
             ('view_osfuser', 'Can view user details'),
+            # GRDM-41284: `CREATE_NODE` permission support
+            ('create_node', 'Can create a new project'),
         )
 
 @receiver(post_save, sender=OSFUser)

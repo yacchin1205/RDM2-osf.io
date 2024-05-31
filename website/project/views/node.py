@@ -136,47 +136,61 @@ def project_new_post(auth, **kwargs):
     campaign = data.get('campaign', None)
     new_project = {}
 
-    if template:
-        original_node = AbstractNode.load(template)
-        changes = {
-            'title': title,
-            'category': category,
-            'template_node': original_node,
-        }
-
-        if description:
-            changes['description'] = description
-
-        project = original_node.use_as_template(
-            auth=auth,
-            changes={
-                template: changes,
+    try:
+        if template:
+            original_node = AbstractNode.load(template)
+            changes = {
+                'title': title,
+                'category': category,
+                'template_node': original_node,
             }
-        )
 
-    else:
-        try:
-            project = new_node(category, title, user, description, campaign=campaign)
-        except ValidationError as e:
-            raise HTTPError(
-                http_status.HTTP_400_BAD_REQUEST,
-                data=dict(message_long=str(e))
+            if description:
+                changes['description'] = description
+
+            project = original_node.use_as_template(
+                auth=auth,
+                changes={
+                    template: changes,
+                }
             )
-        new_project = _view_project(project, auth)
-    return {
-        'projectUrl': project.url,
-        'newNode': new_project['node'] if new_project else None
-    }, http_status.HTTP_201_CREATED
+
+        else:
+            try:
+                project = new_node(category, title, user, description, campaign=campaign)
+            except ValidationError as e:
+                raise HTTPError(
+                    http_status.HTTP_400_BAD_REQUEST,
+                    data=dict(message_long=str(e))
+                )
+            new_project = _view_project(project, auth)
+        return {
+            'projectUrl': project.url,
+            'newNode': new_project['node'] if new_project else None
+        }, http_status.HTTP_201_CREATED
+    except PermissionsError as e:
+        # GRDM-41284: `CREATE_NODE` permission support
+        raise HTTPError(
+            http_status.HTTP_403_FORBIDDEN,
+            data=dict(message_long=str(e))
+        )
 
 
 @must_be_logged_in
 @must_be_valid_project
 def project_new_from_template(auth, node, **kwargs):
-    new_node = node.use_as_template(
-        auth=auth,
-        changes=dict(),
-    )
-    return {'url': new_node.url}, http_status.HTTP_201_CREATED, None
+    try:
+        new_node = node.use_as_template(
+            auth=auth,
+            changes=dict(),
+        )
+        return {'url': new_node.url}, http_status.HTTP_201_CREATED, None
+    except PermissionsError as e:
+        # GRDM-41284: `CREATE_NODE` permission support
+        raise HTTPError(
+            http_status.HTTP_403_FORBIDDEN,
+            data=dict(message_long=str(e))
+        )
 
 
 ##############################################################################
@@ -204,6 +218,12 @@ def project_new_node(auth, node, **kwargs):
         except ValidationError as e:
             raise HTTPError(
                 http_status.HTTP_400_BAD_REQUEST,
+                data=dict(message_long=str(e))
+            )
+        except PermissionsError as e:
+            # GRDM-41284: `CREATE_NODE` permission support
+            raise HTTPError(
+                http_status.HTTP_403_FORBIDDEN,
                 data=dict(message_long=str(e))
             )
         redirect_url = node.url

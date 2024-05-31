@@ -5,8 +5,10 @@ from django.apps import apps
 from django.core.exceptions import ValidationError
 
 from framework.auth.core import Auth
+from framework import exceptions as framework_exceptions
 from osf.exceptions import NodeStateError
 from osf.utils.sanitize import strip_html
+from osf.utils import permissions as osf_permissions
 
 # TODO: This should be a class method of Node
 def new_node(category, title, user, description='', parent=None, campaign=None):
@@ -28,6 +30,9 @@ def new_node(category, title, user, description='', parent=None, campaign=None):
     if description:
         description = strip_html(description.strip())
 
+    # GRDM-41284: `CREATE_NODE` permission support
+    if not user.has_perm(osf_permissions.CREATE_NODE):
+        raise framework_exceptions.PermissionsError('User does not have permission to create a new node.')
     node = Node(
         title=title,
         category=category,

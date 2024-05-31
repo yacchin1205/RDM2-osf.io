@@ -14,6 +14,10 @@ API_CONTRIBUTOR_PERMISSIONS = [READ, WRITE, ADMIN]
 CREATOR_PERMISSIONS = ADMIN
 DEFAULT_CONTRIBUTOR_PERMISSIONS = WRITE
 
+# GRDM-41284: `CREATE_NODE` permission support
+# Create node permission
+CREATE_NODE = 'osf.create_node'
+
 # Roles
 MANAGER = 'manager'
 MEMBER = 'member'

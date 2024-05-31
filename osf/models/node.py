@@ -76,7 +76,8 @@ from osf.utils.permissions import (
     READ,
     WRITE_NODE,
     READ_NODE,
-    WRITE
+    WRITE,
+    CREATE_NODE,
 )
 from website.util.metrics import OsfSourceTags, CampaignSourceTags
 from website.util import api_url_for, api_v2_url, web_url_for
@@ -1780,6 +1781,12 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         # Non-contributors can't template private nodes
         if not (self.is_public or self.has_permission(auth.user, READ)):
             raise PermissionsError('{0!r} does not have permission to template node {1!r}'.format(auth.user, self._id))
+
+        # GRDM-41284: `CREATE_NODE` permission support
+        if not auth.user.has_perm(CREATE_NODE):
+            raise PermissionError(
+                detail='User does not have permission to create a new node.'
+            )
 
         new = self.clone()
         if isinstance(new, Registration):

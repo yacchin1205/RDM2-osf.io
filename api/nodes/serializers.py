@@ -799,6 +799,11 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
             changed_data = {template_from: validated_data}
             node = template_node.use_as_template(auth=get_user_auth(request), changes=changed_data)
         else:
+            # GRDM-41284: `CREATE_NODE` permission support
+            if not user.has_perm(osf_permissions.CREATE_NODE):
+                raise exceptions.PermissionDenied(
+                    detail='User does not have permission to create a new node.'
+                )
             node = Node(**validated_data)
         try:
             node.save()
