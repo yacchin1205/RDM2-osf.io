@@ -3941,6 +3941,10 @@ msgstr ""
 msgid "User"
 msgstr ""
 
+#: website/templates/project/timestamp.mako:60
+msgid "Apply"
+msgstr ""
+
 #: website/templates/project/timestamp.mako:69
 msgid "Verify"
 msgstr ""

@@ -4053,6 +4053,10 @@ msgstr "終了日"
 msgid "User"
 msgstr "ユーザー"
 
+#: website/templates/project/timestamp.mako:60
+msgid "Apply"
+msgstr "適用"
+
 #: website/templates/project/timestamp.mako:69
 msgid "Verify"
 msgstr "タイムスタンプ確認"
