@@ -1553,6 +1553,7 @@ function MetadataButtons() {
       const projectMetadata = context.projectMetadata;
       if (!metadata && filepath.length > 0 && filepath[filepath.length - 1] !== '/') {
         // file with no metadata
+        indicator.empty();
         return false;
       }
       const childMetadata = projectMetadata.files.filter(function(f) {
@@ -1769,7 +1770,7 @@ function MetadataButtons() {
                       m.component(base, {treebeard : tb, mode : mode,
                                   item : item }),
                     ].concat(buttons);
-                    if (item.kind === 'folder') {
+                    if (item.kind === 'folder' && !item.data.addonFullname) {
                       const importDatasetButton = new ImportDatasetButton(tb, item, {
                         assign: function() {
                           return tempIdCounterForDataset ++;
