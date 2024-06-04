@@ -1125,3 +1125,13 @@ def mapcore_test_lock(ctx):
 
     if not (r1 and r2):
         print('ERROR: mapcore_test_lock')
+
+@task
+def show_urls(ctx):
+    '''show all URL patterns'''
+    from website.app import init_app
+    os.environ['DJANGO_SETTINGS_MODULE'] = 'api.base.settings'
+    app = init_app(set_backends=True, routes=True)
+
+    for url in app.url_map.iter_rules():
+        print(str(url) + '\t' + url.endpoint)
