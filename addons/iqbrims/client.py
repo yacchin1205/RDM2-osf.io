@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 import json
-import requests
 import logging
 import os
 import string
@@ -123,7 +122,7 @@ class IQBRIMSClient(BaseClient):
             expects=(200, ),
             throws=HTTPError(401)
         )
-        return res.text
+        return res.content
 
     def folders(self, folder_id='root'):
         query = ' and '.join([
@@ -184,6 +183,16 @@ class IQBRIMSClient(BaseClient):
             data=json.dumps({
                 'title': title,
             }),
+            expects=(200, ),
+            throws=HTTPError(401)
+        )
+        return res.json()
+
+    def delete_file(self, file_id):
+        res = self._make_request(
+            'DELETE',
+            self._build_url(settings.API_BASE_URL, 'drive', 'v2', 'files',
+                            file_id),
             expects=(200, ),
             throws=HTTPError(401)
         )
@@ -457,6 +466,8 @@ class SpreadsheetClient(BaseClient):
             throws=HTTPError(401)
         )
         logger.info('Inserted: {}'.format(res.json()))
+        ext_col_index = max_depth + 2 + len(fcolumns)
+        col_count = ext_col_index + 1 + len(fcolumns)
         res = self._make_request(
             'POST',
             self._build_url(settings.SHEETS_API_BASE_URL, 'v4', 'spreadsheets',
@@ -476,6 +487,50 @@ class SpreadsheetClient(BaseClient):
                             'condition': {
                                 'type': 'BOOLEAN'
                             }
+                        }
+                    }
+                }, {
+                    'addProtectedRange': {
+                        'protectedRange': {
+                            'range': {'sheetId': sheet_idx,
+                                      'startColumnIndex': 0,
+                                      'endColumnIndex': 1,
+                                      'startRowIndex': 0,
+                                      'endRowIndex': 1},
+                            'warningOnly': True
+                        }
+                    }
+                }, {
+                    'addProtectedRange': {
+                        'protectedRange': {
+                            'range': {'sheetId': sheet_idx,
+                                      'startColumnIndex': 0,
+                                      'endColumnIndex': col_count,
+                                      'startRowIndex': 2,
+                                      'endRowIndex': 3},
+                            'warningOnly': True
+                        }
+                    }
+                }, {
+                    'addProtectedRange': {
+                        'protectedRange': {
+                            'range': {'sheetId': sheet_idx,
+                                      'startColumnIndex': 0,
+                                      'endColumnIndex': max_depth + 2,
+                                      'startRowIndex': 3,
+                                      'endRowIndex': 3 + len(values)},
+                            'warningOnly': True
+                        }
+                    }
+                }, {
+                    'addProtectedRange': {
+                        'protectedRange': {
+                            'range': {'sheetId': sheet_idx,
+                                      'startColumnIndex': ext_col_index,
+                                      'endColumnIndex': ext_col_index + 1,
+                                      'startRowIndex': 3,
+                                      'endRowIndex': 3 + len(values)},
+                            'warningOnly': True
                         }
                     }
                 }]
@@ -553,7 +608,7 @@ class SpreadsheetClient(BaseClient):
         return ret
 
 
-class IQBRIMSFlowableClient(object):
+class IQBRIMSFlowableClient(BaseClient):
 
     def __init__(self, app_id):
         self.app_id = app_id
@@ -565,6 +620,12 @@ class IQBRIMSFlowableClient(object):
                                   else False
         register_type = status['state']
         labo_name = status['labo_id']
+        labos = [l['text'] for l in settings.LABO_LIST
+                 if l['id'] == labo_name]
+        labo_display_name = labos[0] if len(labos) > 0 \
+                            else u'LaboID:{}'.format(labo_name)
+        accepted_date = status['accepted_date'].split('T')[0] \
+                        if 'accepted_date' in status else ''
         payload = {'processDefinitionId': self.app_id,
                    'variables': [{'name': 'projectId',
                                   'type': 'string',
@@ -574,12 +635,18 @@ class IQBRIMSFlowableClient(object):
                                   'value': project_title},
                                  {'name': 'paperFolderPattern',
                                   'type': 'string',
-                                  'value': '{}/{}/%-{}/'.format(register_type,
-                                                                labo_name,
-                                                                project_id)},
+                                  'value': u'{}/{}/%-{}/'.format(register_type,
+                                                                 labo_name,
+                                                                 project_id)},
+                                 {'name': 'laboName',
+                                  'type': 'string',
+                                  'value': labo_display_name},
                                  {'name': 'isDirectlySubmitData',
                                   'type': 'boolean',
                                   'value': is_directly_submit_data},
+                                 {'name': 'acceptedDate',
+                                  'type': 'string',
+                                  'value': accepted_date},
                                  {'name': 'flowableWorkflowUrl',
                                   'type': 'string',
                                   'value': settings.FLOWABLE_TASK_URL},
@@ -588,9 +655,16 @@ class IQBRIMSFlowableClient(object):
                                   'value': secret}]}
         headers = {'Content-Type': 'application/json',
                    'Accept': 'application/json'}
-        response = requests.post(url, data=json.dumps(payload),
-                                 headers=headers,
-                                 auth=(settings.FLOWABLE_USER,
-                                       settings.FLOWABLE_PASSWORD))
-        logger.info('flowable-rest: response={}'.format(response.content))
-        response.raise_for_status()
+        response = self._make_request(
+            'POST',
+            url,
+            headers=headers,
+            data=json.dumps(payload),
+            expects=(200, 201),
+            throws=HTTPError(401)
+        )
+        logger.info('flowable-rest: response={}'.format(response.json()))
+
+    @property
+    def _auth(self):
+        return (settings.FLOWABLE_USER, settings.FLOWABLE_PASSWORD)

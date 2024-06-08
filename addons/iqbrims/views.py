@@ -5,6 +5,7 @@ import httplib as http
 import json
 import logging
 import urllib
+import re
 
 from django.db import transaction
 from django.db.models import Subquery
@@ -37,7 +38,8 @@ from addons.iqbrims.models import REVIEW_FOLDERS
 from addons.iqbrims.utils import (
     get_log_actions,
     must_have_valid_hash,
-    get_folder_title
+    get_folder_title,
+    add_comment
 )
 
 logger = logging.getLogger(__name__)
@@ -104,7 +106,7 @@ def iqbrims_get_status(**kwargs):
     node = kwargs['node'] or kwargs['project']
     iqbrims = node.get_addon('iqbrims')
     status = iqbrims.get_status()
-    status['labo_list'] = ['{}:{}'.format(l['id'], l['text'])
+    status['labo_list'] = [u'{}:{}'.format(l['id'], l['text'])
                            for l in settings.LABO_LIST]
     status['review_folders'] = REVIEW_FOLDERS
     is_admin = _get_management_node(node)._id == node._id
@@ -140,6 +142,8 @@ def iqbrims_post_notify(**kwargs):
     to = data['to']
     notify_title = data['notify_title'] if 'notify_title' in data else None
     notify_body = data['notify_body'] if 'notify_body' in data else None
+    notify_body_md = data['notify_body_md'] \
+                     if 'notify_body_md' in data else None
     use_mail = data['use_mail'] if 'use_mail' in data else False
     nodes = []
     if 'user' in to:
@@ -159,14 +163,23 @@ def iqbrims_post_notify(**kwargs):
             href = href_prefix + node._id + '/'
             nname = 'Paper <a href="{1}">{0}</a>'.format(node.title, href)
             notify_body = notify_body.replace('${node}', nname)
+    if notify_body_md is None:
+        a_pat = re.compile(r'<a\s+href=[\'"]?(https?://[^>\'"]+)[\'"]?>' +
+                           r'(https?://[^>]+)</a>')
+        notify_body_md = a_pat.sub(r'\1', notify_body) \
+                         if notify_body is not None else ''
     if notify_title is None:
         notify_title = action
     for n, email_template in nodes:
+        comment = add_comment(node=n, user=n.creator,
+                              title=notify_title,
+                              body=notify_body_md)
         n.add_log(
             action=action,
             params={
                 'project': n.parent_id,
                 'node': node._id,
+                'comment': comment._id,
             },
             auth=Auth(user=node.creator),
         )
@@ -180,6 +193,7 @@ def iqbrims_post_notify(**kwargs):
                       title=n.title, guid=n._id, author=node.creator,
                       notify_type=notify_type, mimetype='html',
                       notify_body=notify_body, notify_title=notify_title)
+    return {'status': 'complete'}
 
 @must_be_valid_project
 @must_have_addon(SHORT_NAME, 'node')
@@ -244,7 +258,7 @@ def iqbrims_get_storage(**kwargs):
             node_urls.append({'title': f['title'], 'url': url})
             url = website_settings.DOMAIN.rstrip('/') + '/' + management_node._id + \
                   '/files/googledrive' + \
-                  urllib.quote(root_folder_path) + \
+                  urllib.quote(root_folder_path.encode('utf8')) + \
                   urllib.quote(folders[0]['title'].encode('utf8')) + '/' + \
                   urllib.quote(f['title'].encode('utf8'))
             management_urls.append({'title': f['title'], 'url': url})
@@ -264,8 +278,12 @@ def iqbrims_reject_storage(**kwargs):
     iqbrims = node.get_addon('iqbrims')
     folder = kwargs['folder']
     folder_name = None
+    file_name = None
     if folder == 'index':
         folder_name = REVIEW_FOLDERS['raw']
+    elif folder == 'scan':
+        folder_name = REVIEW_FOLDERS[folder]
+        file_name = 'scan.pdf'
     else:
         folder_name = REVIEW_FOLDERS[folder]
     try:
@@ -275,6 +293,11 @@ def iqbrims_reject_storage(**kwargs):
     client = IQBRIMSClient(access_token)
     folders = client.folders(folder_id=iqbrims.folder_id)
     folders = [f for f in folders if f['title'] == folder_name]
+    if file_name is not None and len(folders) > 0:
+        files = client.files(folder_id=folders[0]['id'])
+        files = [f for f in files if f['title'] == file_name]
+    else:
+        files = []
 
     folder_path = iqbrims.folder_path
     management_node = _get_management_node(node)
@@ -282,19 +305,33 @@ def iqbrims_reject_storage(**kwargs):
     assert folder_path.startswith(base_folder_path)
     root_folder_path = folder_path[len(base_folder_path):]
 
-    if len(folders) == 0:
-        logger.info(u'Already rejected: {}, {}'.format(folder, folder_name))
-        return {'status': 'nochange',
+    if file_name is not None:
+        if len(files) == 0:
+            logger.info(u'Already rejected: {}, {}'.format(folder,
+                                                           file_name))
+            return {'status': 'nochange',
+                    'root_folder': root_folder_path}
+        logger.info(u'Rejecting Storage: {}, {}, {}'.format(folder,
+                                                            file_name,
+                                                            files[0]['id']))
+        client.delete_file(files[0]['id'])
+        return {'status': 'rejected',
                 'root_folder': root_folder_path}
-    logger.info(u'Rejecting Storage: {}, {}, {}'.format(folder, folder_name,
-                                                        folders[0]['id']))
-    rejected_name = u'{}.{}'.format(folder_name,
-                                    datetime.now().strftime('%Y%m%d-%H%M%S'))
-    client.rename_folder(folders[0]['id'], rejected_name)
-    client.create_folder(iqbrims.folder_id, folder_name)
-
-    return {'status': 'rejected',
-            'root_folder': root_folder_path}
+    else:
+        if len(folders) == 0:
+            logger.info(u'Already rejected: {}, {}'.format(folder,
+                                                           folder_name))
+            return {'status': 'nochange',
+                    'root_folder': root_folder_path}
+        logger.info(u'Rejecting Storage: {}, {}, {}'.format(folder,
+                                                            folder_name,
+                                                            folders[0]['id']))
+        dtid = datetime.now().strftime('%Y%m%d-%H%M%S')
+        rejected_name = u'{}.{}'.format(folder_name, dtid)
+        client.rename_folder(folders[0]['id'], rejected_name)
+        client.create_folder(iqbrims.folder_id, folder_name)
+        return {'status': 'rejected',
+                'root_folder': root_folder_path}
 
 @must_be_valid_project
 @must_have_addon(SHORT_NAME, 'node')
@@ -316,7 +353,7 @@ def iqbrims_create_index(**kwargs):
     logger.debug(u'Result files: {}'.format([f['title'] for f in files]))
     if len(files) == 0:
         return {'status': 'processing'}
-    files = client.get_content(files[0]['id']).split('\n')
+    files = client.get_content(files[0]['id']).decode('utf8').split('\n')
     _, r = client.create_spreadsheet_if_not_exists(folders[0]['id'],
                                                    settings.INDEXSHEET_FILENAME)
     sclient = SpreadsheetClient(r['id'], access_token)
