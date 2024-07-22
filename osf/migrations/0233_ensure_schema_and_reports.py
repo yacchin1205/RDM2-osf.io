@@ -18,7 +18,7 @@ def ensure_registration_reports(*args):
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('osf', '0232_auto_20230830_0425'),
+        ('osf', '0232_merge_20230824_1203'),
     ]
 
     operations = [

@@ -70,7 +70,7 @@ def add_storage_type_to_existing_regions(*args):
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('osf', '0232_auto_20230830_0425'),
+        ('osf', '0233_ensure_schema_and_reports'),
     ]
 
     operations = [
