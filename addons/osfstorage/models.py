@@ -492,6 +492,10 @@ class Region(models.Model):
     mfr_url = models.URLField(default=website_settings.MFR_SERVER_URL)
     waterbutler_settings = DateTimeAwareJSONField(default=dict)
 
+    # Storage type constants
+    NII_STORAGE = 'NII_STORAGE'
+    INSTITUTIONS = 'INSTITUTIONS'
+
     def __unicode__(self):
         return '{}'.format(self.name)
 
@@ -509,6 +513,11 @@ class Region(models.Model):
     @property
     def guid(self):
         return self._id
+
+    @property
+    def institution(self):
+        from osf.models import Institution
+        return Institution.load(self._id)
 
     @property
     def provider_name(self):

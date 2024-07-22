@@ -2242,8 +2242,11 @@ msgstr ""
 
 #: website/templates/include/profile/jobs.mako:54
 #: website/templates/include/profile/schools.mako:54
-#: website/templates/project/project.mako:614
 msgid "Start date"
+msgstr ""
+
+#: website/templates/project/project.mako:614
+msgid "Start time"
 msgstr ""
 
 #: website/templates/include/profile/jobs.mako:58
@@ -2262,8 +2265,11 @@ msgstr ""
 
 #: website/templates/include/profile/jobs.mako:69
 #: website/templates/include/profile/schools.mako:69
-#: website/templates/project/project.mako:617
 msgid "End date"
+msgstr ""
+
+#: website/templates/project/project.mako:617
+msgid "End time"
 msgstr ""
 
 #: website/templates/include/profile/jobs.mako:85
@@ -3563,7 +3569,7 @@ msgid "Clear Filters"
 msgstr ""
 
 #: website/templates/project/project.mako:607
-msgid "Refresh"
+msgid "Update"
 msgstr ""
 
 #: website/templates/project/project.mako:639
@@ -3571,7 +3577,7 @@ msgid "Loading logs..."
 msgstr ""
 
 #: website/templates/project/project.mako:645
-msgid "Download as file"
+msgid "Download as file for 0 logs"
 msgstr ""
 
 #: website/templates/project/project.mako:646
