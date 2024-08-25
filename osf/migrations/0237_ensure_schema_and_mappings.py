@@ -19,7 +19,7 @@ class Migration(migrations.Migration):
 
     dependencies = [
         ('addons_weko', '0005_registrationmetadatamapping'),
-        ('osf', '0229_merge_20230617_1021'),
+        ('osf', '0236_add_columns_to_registration_schema_block'),
     ]
 
     operations = [

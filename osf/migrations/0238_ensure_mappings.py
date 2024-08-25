@@ -17,7 +17,7 @@ def ensure_registration_mappings(*args):
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('osf', '0236_add_columns_to_registration_schema_block'),
+        ('osf', '0237_ensure_schema_and_mappings'),
     ]
 
     operations = [
