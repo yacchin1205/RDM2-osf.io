@@ -34,6 +34,10 @@ class TestViews(BaseAddonTestCase, OsfTestCase):
             'data': {
                 'attributes': {
                     'editable': True,
+                    'features': {
+                        'dataset_importing': True,
+                        'exporting': True
+                    },
                     'files': [],
                     'repositories': [],
                 },
