@@ -35,6 +35,7 @@ var sprintf = require('agh.sprintf').sprintf;
 
 var datetimepicker = require('js/rdmDatetimepicker');
 var moment = require('moment');
+
 require('js/rdmSelect2');
 
 // Listen for the nodeLoad event (prevents multiple requests for data)
@@ -143,7 +144,7 @@ var initDropdownSuggestAllUsers = function (placeholder) {
     var query = { 'page[size]': 100 };
     var options = {
         ajax: {
-	    url: $osf.apiV2Url('/users/', {query: query}),
+	    url: $osf.apiV2Url('/users/'),
 	    dataType: 'json',
 	    data: function (term, page) {
 		return {

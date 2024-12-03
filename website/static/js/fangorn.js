@@ -1341,7 +1341,7 @@ function _uploadFolderEvent(event, item, mode, col) {
                 var next_folder_index = ++index;
                 return next(node_parent, next_folder_index, list_paths, file, file_index, next);
             }, function (data) {
-                if (data && data.code === 409) {
+                if (data && (data.code === 409 || data.code === 406)) {
                     $osf.growl(data.message);
                     m.redraw();
                 } else {
@@ -2136,13 +2136,14 @@ function expandStateLoad(item) {
         }
     }
 
-    if (item.children.length > 0 && item.depth === 2) {
-        for (i = 0; i < item.children.length; i++) {
-            if (item.children[i].data.isAddonRoot || item.children[i].data.addonFullName === 'NII Storage' ) {
-                tb.updateFolder(null, item.children[i]);
-            }
-        }
-    }
+    // Do not load children to save hundreds of requests
+    // if (item.children.length > 0 && item.depth === 2) {
+    //     for (i = 0; i < item.children.length; i++) {
+    //         if (item.children[i].data.isAddonRoot || item.children[i].data.addonFullName === 'NII Storage' ) {
+    //           tb.updateFolder(null, item.children[i]);
+    //         }
+    //     }
+    // }
 
     if (item.depth > 2 && !item.data.isAddonRoot && !item.data.type && item.children.length === 0 && item.open) {
         // Displays loading indicator until request below completes
@@ -3481,7 +3482,7 @@ tbOptions = {
                     return false;
                 }
             }
-            if (item.data.provider === 'osfstorage') {
+            if (item.data.provider === 'osfstorage' || item.data.provider === 's3compatinstitutions') {
                 quota = $.ajax({
                     async: false,
                     method: 'GET',
@@ -3498,7 +3499,7 @@ tbOptions = {
                     if (quota.used + file.size > quota.max * window.contextVars.threshold) {
                         $osf.growl(
                             gettext('Quota usage alert'),
-                            sprintf(gettext('You have used more than %1$s% of your quota.'),(window.contextVars.threshold * 100)),
+                            sprintf(gettext('You have used more than %1$s%% of your quota.'),(window.contextVars.threshold * 100)),
                             'warning'
                         );
                     }
