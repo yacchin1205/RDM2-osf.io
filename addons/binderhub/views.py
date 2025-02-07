@@ -9,7 +9,7 @@ from future.moves.urllib.parse import urljoin, urlencode
 from . import SHORT_NAME
 from framework.auth.decorators import must_be_logged_in
 from framework.exceptions import HTTPError
-from osf.utils.permissions import READ, WRITE, ADMIN
+from osf.utils.permissions import READ, ADMIN
 from website.project.decorators import (
     must_have_addon,
     must_be_valid_project,
@@ -298,7 +298,7 @@ def get_server_annotation(**kwargs):
         raise HTTPError(http_status.HTTP_400_BAD_REQUEST)
 
 @must_be_valid_project
-@must_have_permission(WRITE)
+@must_have_permission(READ)
 @must_have_addon(SHORT_NAME, 'node')
 def create_server_annotation(**kwargs):
     try:
@@ -329,11 +329,15 @@ def create_server_annotation(**kwargs):
         raise HTTPError(http_status.HTTP_400_BAD_REQUEST)
 
 @must_be_valid_project
-@must_have_permission(WRITE)
+@must_have_permission(READ)
 @must_have_addon(SHORT_NAME, 'node')
 def patch_server_annotation(**kwargs):
     try:
-        annot = ServerAnnotation.objects.get(id=kwargs['aid'])
+        annot = ServerAnnotation.objects.get(
+            id=kwargs['aid'],
+            user=kwargs['auth'].user,
+            node=kwargs['node'] or kwargs['project'],
+        )
         annot.memotext = request.json['data']['attributes']['memotext']
         annot.save()
         return {'data': annot.make_resource_object()}
@@ -351,11 +355,15 @@ def patch_server_annotation(**kwargs):
         )
 
 @must_be_valid_project
-@must_have_permission(WRITE)
+@must_have_permission(READ)
 @must_have_addon(SHORT_NAME, 'node')
 def delete_server_annotation(**kwargs):
     try:
-        ServerAnnotation.objects.get(id=kwargs['aid']).delete()
+        ServerAnnotation.objects.get(
+            id=kwargs['aid'],
+            user=kwargs['auth'].user,
+            node=kwargs['node'] or kwargs['project'],
+        ).delete()
     except ObjectDoesNotExist:
         raise HTTPError(
             http_status.HTTP_404_NOT_FOUND,
