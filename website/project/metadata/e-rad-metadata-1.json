@@ -501,6 +501,10 @@
               "tooltip": "CC0 1.0 Universal"
             },
             {
+              "text": "CC0PD",
+              "tooltip": "TEST: CC0PD"
+            },
+            {
               "text": "CCBY",
               "tooltip": "CC BY 4.0 表示 国際|CC BY 4.0 Attribution International"
             },
