@@ -105,7 +105,7 @@ def migrate_CC0PD_to_CC0_for_registration(*args):
             try:
                 filemetadatas = json.loads(meta_value.get('grdm-files', {}).get('value', '[]'))
             except json.JSONDecodeError:
-                logger.error('Skipped: Failed to parse JSON for registered metadata {} of "{}"'.format(
+                logger.warning('Skipped: Failed to parse JSON for registered metadata {} of "{}"'.format(
                     registration._id,
                     registration.registered_from._id,
                 ), exc_info=True)
@@ -138,23 +138,22 @@ def migrate_CC0PD_to_CC0_for_draft_registration(*args):
     )
     logger.info('Found {} draft registrations'.format(draft_registrations.count()))
     for draft_registration in draft_registrations:
-        dirty = False
-        for meta_key, meta_value in draft_registration.registration_metadata.items():
-            try:
-                filemetadatas = json.loads(meta_value.get('grdm-files', {}).get('value', '[]'))
-            except json.JSONDecodeError:
-                logger.error('Skipped: Failed to parse JSON for draft registration metadata {} of "{}"'.format(
-                    draft_registration._id,
-                    draft_registration.branched_from._id,
-                ), exc_info=True)
+        meta_value = draft_registration.registration_metadata
+        try:
+            file_list = meta_value.get('grdm-files', {}).get('value', '[]')
+            if len(file_list) == 0:
                 continue
-            if not _fix_CC0PD_to_CC0_for_filemetadata(filemetadatas):
-                continue
-            dirty = True
-            meta_value['grdm-files']['value'] = json.dumps(filemetadatas)
-            draft_registration.registration_metadata[meta_key] = meta_value
-        if not dirty:
+            filemetadatas = json.loads(file_list)
+        except json.JSONDecodeError:
+            logger.warning('Skipped: Failed to parse JSON for draft registration metadata {} of "{}"'.format(
+                draft_registration._id,
+                draft_registration.branched_from._id,
+            ), exc_info=True)
+            logger.info(meta_value.get('grdm-files', {}).get('value', '[]'))
             continue
+        if not _fix_CC0PD_to_CC0_for_filemetadata(filemetadatas):
+            continue
+        meta_value['grdm-files']['value'] = json.dumps(filemetadatas)
         draft_registration.save()
         logger.info('Migrated: Fixed CC0PD to CC0 for draft registration metadata {} of "{}"'.format(
             draft_registration._id,
