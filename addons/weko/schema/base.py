@@ -1,4 +1,3 @@
-import csv
 from datetime import datetime
 import json
 import logging
@@ -6,33 +5,11 @@ import re
 
 from jinja2 import Environment
 
-from osf.models.metaschema import RegistrationSchema
-from .mappings.utils import JINJA2_FILTERS
+from ..mappings.utils import JINJA2_FILTERS
 
 
 logger = logging.getLogger(__name__)
 
-
-columns_default = [
-    ('#.id', '#ID', '#', '#', ''),
-    ('.uri', 'URI', '', '', ''),
-    ('.cnri', '.CNRI', '', '', ''),
-    ('.doi_ra', '.DOI_RA', '', '', ''),
-    ('.doi', '.DOI', '', '', ''),
-    ('.edit_mode', 'Keep/Upgrade Version', '', 'Required', 'Keep'),
-]
-
-
-def _generate_file_columns(index, download_file_name, download_file_type):
-    columns = []
-    columns.append((
-        f'.file_path[{index}]',
-        f'.ファイルパス[{index}]',
-        '',
-        'Allow Multiple',
-        f'files/{download_file_name}'
-    ))
-    return columns
 
 def _get_metadata_value(file_metadata_data, item, lang, index):
     assert 'type' in item, item
@@ -99,7 +76,7 @@ def _get_object_variables(o, prefix):
         values[f'{prefix}{key_}'] = v
     return values
 
-def _get_value(file_metadata, text, commonvars=None, schema=None):
+def get_value(file_metadata, text, commonvars=None, schema=None):
     values = _get_item_variables(file_metadata, schema=schema)
     if commonvars is not None:
         values.update(commonvars)
@@ -109,62 +86,15 @@ def _get_value(file_metadata, text, commonvars=None, schema=None):
     template = env.from_string(text)
     return template.render(**values)
 
-def _to_columns(full_key, value, weko_key_counts=None):
-    if f'{full_key}.__value__' in weko_key_counts:
-        if weko_key_counts[f'{full_key}.__value__'] != value:
-            raise ValueError(f'Different values to the same key are detected: {value}, {weko_key_counts[f"{full_key}.__value__"]}')
-        logger.debug(f'Skipped duplicated item: {full_key}')
-        return []
-    weko_key_counts[f'{full_key}.__value__'] = value
-    return [
-        (
-            full_key,
-            '',
-            '',
-            '',
-            value,
-        )
-    ]
-
-def _is_column_present(file_metadata, item, commonvars=None, schema=None):
+def is_key_present(file_metadata, item, commonvars=None, schema=None):
     if not isinstance(item, dict):
         return True
     present_expression = item.get('@createIf', None)
     if present_expression is None:
         return True
-    value = _get_value(file_metadata, present_expression, commonvars=commonvars, schema=schema)
+    value = get_value(file_metadata, present_expression, commonvars=commonvars, schema=schema)
     logger.debug(f'Column check: "{present_expression}" => "{value}"')
     return value
-
-def _get_columns(file_metadata, weko_key_prefix, weko_props, weko_key_counts=None, commonvars=None, schema=None):
-    if isinstance(weko_props, str):
-        value = _get_value(file_metadata, weko_props, commonvars=commonvars, schema=schema)
-        return _to_columns(weko_key_prefix, value, weko_key_counts=weko_key_counts)
-    columns = []
-    for key in sorted(weko_props.keys()):
-        items = weko_props[key]
-        if key.startswith('@'):
-            continue
-        if not isinstance(items, list):
-            items = [items]
-        for item in items:
-            if not _is_column_present(file_metadata, item, commonvars=commonvars, schema=schema):
-                continue
-            full_key = _resolve_array_index(weko_key_counts, f'{weko_key_prefix}.{key}')
-            if isinstance(item, dict):
-                # Subitem
-                columns += _get_columns(
-                    file_metadata,
-                    full_key,
-                    item,
-                    weko_key_counts=weko_key_counts,
-                    commonvars=commonvars,
-                    schema=schema,
-                )
-                continue
-            value = _get_value(file_metadata, item, commonvars=commonvars, schema=schema)
-            columns += _to_columns(full_key, value, weko_key_counts=weko_key_counts)
-    return columns
 
 def _get_item_metadata_key(key):
     m = re.match(r'^(.+)\[[0-9]*\]$', key)
@@ -172,7 +102,7 @@ def _get_item_metadata_key(key):
         return _get_item_metadata_key(m.group(1))
     return key
 
-def _find_schema_question(schema, qid):
+def find_schema_question(schema, qid):
     if 'pages' not in schema:
         return
     for page in schema['pages']:
@@ -185,7 +115,7 @@ def _find_schema_question(schema, qid):
     raise KeyError(f'Question {qid} not found')
 
 def get_available_schema_id(file_metadata):
-    from .models import RegistrationMetadataMapping
+    from ..models import RegistrationMetadataMapping
     available_schema_ids = [
         mapping.registration_schema_id
         for mapping in RegistrationMetadataMapping.objects.all()
@@ -215,13 +145,13 @@ def _get_common_variables(file_metadata_data, schema, skip_empty=False):
             continue
         values = _get_item_variables(
             file_metadata_data[key],
-            schema=_find_schema_question(schema.schema, key),
+            schema=find_schema_question(schema.schema, key),
         )
         key_ = key.replace('-', '_').replace(':', '_').replace('.', '_')
         r.update(dict([(f'{key_}_{k}', v) for k, v in values.items()]))
     return r
 
-def _resolve_array_index(weko_key_counts, key):
+def resolve_array_index(weko_key_counts, key):
     m = re.match(r'^(.+)\[(.*)\]$', key)
     if not m:
         return key
@@ -244,7 +174,7 @@ def _resolve_array_index(weko_key_counts, key):
     weko_key_count = matched[0]
     return f'{key_body}[{weko_key_count}]'
 
-def _expand_listed_key(mappings):
+def expand_listed_key(mappings):
     r = {}
     for k, v in mappings.items():
         if k == '@metadata':
@@ -314,7 +244,7 @@ def _has_serializable_attr(object, k):
     except Exception:
         return False
 
-def _get_sources_for_key(user, file_metadatas, download_file_names, project_metadatas, schema, key):
+def get_sources_for_key(user, file_metadatas, download_file_names, project_metadatas, schema, key):
     common_file_metadata_datas = sum([
         [item['data'] for item in file_metadata['items'] if item['schema'] == schema._id]
         for file_metadata in file_metadatas
@@ -396,140 +326,5 @@ def _get_sources_for_key(user, file_metadatas, download_file_names, project_meta
         commonvars,
     )]
 
-def _is_special_key(key):
+def is_special_key(key):
     return key in ['_', '@files', '@projects', '@agent']
-
-def write_csv(user, f, target_index, download_file_names, schema_id, file_metadatas, project_metadatas):
-    from .models import RegistrationMetadataMapping
-    schema = RegistrationSchema.objects.get(_id=schema_id)
-    mapping_def = RegistrationMetadataMapping.objects.get(
-        registration_schema_id=schema._id,
-    )
-    logger.debug(f'Mappings: {mapping_def.rules}')
-    for i, file_metadata in enumerate(file_metadatas):
-        logger.debug(f'File metadata #{i}: {file_metadata}')
-    for i, project_metadata in enumerate(project_metadatas):
-        logger.debug(f'Project metadata #{i}: {project_metadata}')
-    mapping_metadata = mapping_def.rules['@metadata']
-    itemtype_metadata = mapping_metadata['itemtype']
-    header = ['#ItemType', itemtype_metadata['name'], itemtype_metadata['schema']]
-
-    columns = [('.publish_status', '.PUBLISH_STATUS', '', 'Required', 'private')]
-    columns.append(('.metadata.path[0]', '.IndexID[0]', '', 'Allow Multiple', target_index.identifier))
-    columns.append(('.pos_index[0]', '.POS_INDEX[0]', '', 'Allow Multiple', target_index.title))
-    for i, (download_file_name, download_file_type) in enumerate(download_file_names):
-        columns += _generate_file_columns(i, download_file_name, download_file_type)
-
-    mappings = _expand_listed_key(mapping_def.rules)
-
-    weko_key_counts = {}
-    for key in sorted(mappings.keys()):
-        for source, commonvars in _get_sources_for_key(
-            user, file_metadatas, download_file_names, project_metadatas, schema, key
-        ):
-            if key not in mappings:
-                logger.warning(f'No mappings: {key}')
-                continue
-            weko_mapping = mappings[key]
-            if weko_mapping is None:
-                logger.debug(f'No mappings: {key}')
-                continue
-            source_data = source.get(key, {
-                'value': '',
-            }) if key != '_' else None
-            question_schema = _find_schema_question(schema.schema, key) if not _is_special_key(key) else None
-            if key == '_' or weko_mapping.get('@type', None) == 'string':
-                if not _is_column_present(
-                    source_data,
-                    weko_mapping,
-                    commonvars=commonvars,
-                    schema=question_schema,
-                ):
-                    logger.debug(f'Skipped: {key}')
-                    continue
-                columns += _get_columns(
-                    source_data,
-                    '',
-                    weko_mapping,
-                    weko_key_counts=weko_key_counts,
-                    commonvars=commonvars,
-                    schema=question_schema,
-                )
-                continue
-            if weko_mapping['@type'] in ['array', 'jsonarray']:
-                value = source_data.get('value', '')
-                if weko_mapping['@type'] == 'jsonarray':
-                    if value is None or not isinstance(value, str):
-                        logger.warn(f'Unexpected value: {value}, {key}')
-                        continue
-                    jsonarray = json.loads(value) if value is not None and len(value) > 0 else []
-                else:
-                    if value is None or not isinstance(value, list):
-                        logger.warn(f'Unexpected value: {value}, {key}')
-                        continue
-                    jsonarray = value if value is not None else []
-                for i, jsonelement in enumerate(jsonarray):
-                    target_data = {
-                        'object': jsonelement,
-                    }
-                    if not _is_column_present(
-                        target_data,
-                        weko_mapping,
-                        commonvars=commonvars,
-                        schema=question_schema,
-                    ):
-                        logger.debug(f'Skipped: {key}[{i}]')
-                        continue
-                    columns += _get_columns(
-                        target_data,
-                        '',
-                        weko_mapping,
-                        weko_key_counts=weko_key_counts,
-                        commonvars=commonvars,
-                        schema=question_schema,
-                    )
-                continue
-            if weko_mapping['@type'] in ['object', 'jsonobject']:
-                value = source_data.get('value', '')
-                if weko_mapping['@type'] == 'jsonobject':
-                    if value is None or not isinstance(value, str):
-                        logger.warn(f'Unexpected value: {value}, {key}')
-                        continue
-                    jsonobject = json.loads(value) if value is not None and len(value) > 0 else {}
-                else:
-                    if value is None or not isinstance(value, dict):
-                        logger.warn(f'Unexpected value: {value}, {key}')
-                        continue
-                    jsonobject = value if value is not None else {}
-                target_data = {
-                    'object': jsonobject,
-                }
-                if not _is_column_present(
-                    target_data,
-                    weko_mapping,
-                    commonvars=commonvars,
-                    schema=question_schema,
-                ):
-                    logger.debug(f'Skipped: {key}')
-                    continue
-                columns += _get_columns(
-                    target_data,
-                    '',
-                    weko_mapping,
-                    weko_key_counts=weko_key_counts,
-                    commonvars=commonvars,
-                    schema=question_schema,
-                )
-                continue
-            raise ValueError(f'Unexpected type: {weko_mapping["@type"]}')
-
-    columns += columns_default
-    logger.debug(f'Columns: {columns}')
-
-    cf = csv.writer(f)
-    cf.writerow(header)
-    cf.writerow([c for c, _, _, _, _ in columns])
-    cf.writerow([c for _, c, _, _, _ in columns])
-    cf.writerow([c for _, _, c, _, _ in columns])
-    cf.writerow([c for _, _, _, c, _ in columns])
-    cf.writerow([c for _, _, _, _, c in columns])

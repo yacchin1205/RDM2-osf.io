@@ -117,6 +117,7 @@ def deposit_metadata(
         c = weko_addon.create_client()
         target_index = c.get_index_by_id(index_id)
 
+        # TODO SimpleZip -> SWORD BagIt
         zip_path = os.path.join(tmp_dir, 'payload.zip')
         with ZipFile(zip_path, 'w') as zf:
             for download_file_name, _ in download_file_names:

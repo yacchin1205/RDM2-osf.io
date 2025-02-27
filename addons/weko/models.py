@@ -381,6 +381,8 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
 class RegistrationMetadataMapping(BaseModel):
     registration_schema_id = models.CharField(max_length=64, blank=True, null=True)
 
+    packaging_type = models.CharField(max_length=256, blank=True, null=True)
+
     rules = DateTimeAwareJSONField(default=dict, blank=True)
 
 
