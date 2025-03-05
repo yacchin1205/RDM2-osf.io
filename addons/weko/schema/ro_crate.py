@@ -195,6 +195,8 @@ def write_ro_crate_json(user, f, target_index, download_file_names, schema_id, f
 
     mappings = expand_listed_key(mapping_def.rules)
 
+    # TODO: wk:index <- target_index
+
     weko_key_counts = {}
     hierarchical_object = {}
     for key in sorted(mappings.keys()):
