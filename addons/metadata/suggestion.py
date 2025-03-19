@@ -479,7 +479,7 @@ def suggestion_ror(key, keyword):
     res = []
     for item in response.json()['items']:
         labels = item.get('labels', [])
-        name_ja = next((l['label'] for l in labels if l['iso639'] == 'ja'), item['name'])
+        name_ja = next((label['label'] for label in labels if label['iso639'] == 'ja'), item['name'])
         res.append({
             'key': key,
             'value': {

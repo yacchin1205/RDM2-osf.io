@@ -127,6 +127,7 @@ INSTALLED_APPS = (
     'addons.onedrivebusiness',
     'addons.metadata',
     'addons.onlyoffice',
+    'addons.workflow',
 )
 
 # local development using https
