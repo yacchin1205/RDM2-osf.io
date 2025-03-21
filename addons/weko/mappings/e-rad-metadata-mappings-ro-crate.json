@@ -1,9 +1,14 @@
 {
     "@metadata": {
-        "packaging": "http://purl.org/net/sword/3.0/package/SWORDBagIt"
+        "filename": "ro-crate-metadata.json"
     },
     "@files": {
-        "@type": "object"
+        "@type": "object",
+        "file[]": {
+            ".@type": "File",
+            "name": "{{object_filename}}",
+            "encodingFormat": "{{object_format}}"
+        }
     },
     "@projects": {
         "@type": "object",
@@ -468,7 +473,19 @@
             "conformsTo": {
                 ".@id": "https://w3id.org/ro/crate/1.1"
             },
-            "wk:publishStatus": "TODO"
+            "wk:publishStatus": "private",
+            "wk:index": "{{ index_id }}",
+            "datePublished": "{{ nowdate }}"
+        },
+        "ro_crate_metadata": {
+            ".@id": "ro-crate-metadata.json",
+            ".@type": "CreativeWork",
+            "about": {
+              ".@id": "./"
+            },
+            "conformsTo": {
+              ".@id": "https://w3id.org/ro/crate/1.1"
+            }
         }
     }
 }

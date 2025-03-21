@@ -136,9 +136,11 @@ def get_available_schema_id(file_metadata):
         return items[0]['schema']
     raise ValueError(f'Available schemas not found: {file_metadata}')
 
-def _get_common_variables(file_metadata_data, schema, skip_empty=False):
+def _get_common_variables(file_metadata_data, schema, target_index, skip_empty=False):
     r = {
         'nowdate': datetime.now().strftime('%Y-%m-%d'),
+        'index_id': str(target_index.identifier),
+        'index_title': target_index.title,
     }
     for key in file_metadata_data.keys():
         if skip_empty and not file_metadata_data[key].get('value', ''):
@@ -244,7 +246,9 @@ def _has_serializable_attr(object, k):
     except Exception:
         return False
 
-def get_sources_for_key(user, file_metadatas, download_file_names, project_metadatas, schema, key):
+def get_sources_for_key(
+    user, target_index, file_metadatas, download_file_names, project_metadatas, schema, key,
+):
     common_file_metadata_datas = sum([
         [item['data'] for item in file_metadata['items'] if item['schema'] == schema._id]
         for file_metadata in file_metadatas
@@ -254,12 +258,14 @@ def get_sources_for_key(user, file_metadatas, download_file_names, project_metad
     common_file_commonvars = _get_common_variables(
         common_file_metadata_data,
         schema,
+        target_index,
         skip_empty=True,
     )
     common_project_metadata = _concatenate_sources(common_project_metadatas)
     common_project_commonvars = _get_common_variables(
         common_project_metadata,
         schema,
+        target_index,
         skip_empty=True,
     )
     if key == '@files':
@@ -271,7 +277,7 @@ def get_sources_for_key(user, file_metadatas, download_file_names, project_metad
             if len(file_metadata_items) == 0:
                 raise ValueError(f'Schema not found: {file_metadata}, {schema._id}')
             file_metadata_data = file_metadata_items[0]['data']
-            commonvars = _get_common_variables(file_metadata_data, schema)
+            commonvars = _get_common_variables(file_metadata_data, schema, target_index)
             commonvars.update(common_project_commonvars)
             file_metadata_data_ = {
                 'filename': download_file_name,
@@ -290,7 +296,7 @@ def get_sources_for_key(user, file_metadatas, download_file_names, project_metad
     if key == '@projects':
         r = []
         for project_metadata in project_metadatas:
-            commonvars = _get_common_variables(project_metadata, schema)
+            commonvars = _get_common_variables(project_metadata, schema, target_index)
             commonvars.update(common_file_commonvars)
             r.append(({
                 '@projects': {
@@ -301,6 +307,7 @@ def get_sources_for_key(user, file_metadatas, download_file_names, project_metad
     commonvars = _get_common_variables(
         common_file_metadata_data,
         schema,
+        target_index,
     )
     commonvars.update(common_project_commonvars)
     if key == '@agent':

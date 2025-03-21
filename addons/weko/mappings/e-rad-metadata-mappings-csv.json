@@ -1,6 +1,6 @@
 {
     "@metadata": {
-        "packaging": "http://purl.org/net/sword/3.0/package/SimpleZip",
+        "filename": "index.csv",
         "itemtype": {
             "name": "デフォルトアイテムタイプ（フル）(30002)",
             "schema": "https://localhost:8443/items/jsonschema/30002"

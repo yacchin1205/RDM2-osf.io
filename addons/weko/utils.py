@@ -34,23 +34,20 @@ def _validate_metadata_element(element):
         raise ValueError('Metadata object must be dict')
     if len(element) == 0:
         raise ValueError('Metadata object cannot be empty')
-    if 'packaging' not in element:
-        raise ValueError('Metadata object must have packaging')
-    packaging_type = element['packaging']
-    if not isinstance(packaging_type, str):
-        raise ValueError('Metadata packaging must be string')
-    if packaging_type not in [
-        REGISTRATION_METADATA_MAPPING_PACKAGING_SIMPLE_ZIP,
-        REGISTRATION_METADATA_MAPPING_PACKAGING_SWORD_BAGIT,
-    ]:
-        raise ValueError(f'Unexpected packaging "{packaging_type}"')
-    if 'itemtype' not in element and packaging_type == REGISTRATION_METADATA_MAPPING_PACKAGING_SIMPLE_ZIP:
-        raise ValueError('Metadata object must have itemtype for SimpleZip packaging')
+    if 'filename' not in element:
+        raise ValueError('Metadata object must have filename')
+    filename = element['filename']
+    if not isinstance(filename, str):
+        raise ValueError('Metadata filename must be string')
+    if filename not in ['ro-crate-metadata.json', 'index.csv']:
+        raise ValueError(f'Unexpected filename "{filename}", must be "ro-crate-metadata.json" or "index.csv"')
+    if 'itemtype' not in element and filename == 'index.csv':
+        raise ValueError('Metadata object must have itemtype for index.csv')
     for key, v in element.items():
         if key == 'itemtype':
             _validate_itemtype_element(v)
             continue
-        if key in ['packaging']:
+        if key in ['filename']:
             continue
         raise ValueError(f'Unexpected key "{key}" in metadata')
 
@@ -96,7 +93,7 @@ def validate_mapping(mapping):
 
 def ensure_registration_metadata_mapping(schema_name, mapping):
     validate_mapping(mapping)
-    packaging_type = mapping['@metadata']['packaging']
+    filename = mapping['@metadata']['filename']
 
     from .models import RegistrationMetadataMapping
     registration_schema = RegistrationSchema.objects.filter(
@@ -104,25 +101,25 @@ def ensure_registration_metadata_mapping(schema_name, mapping):
     ).order_by('-schema_version').first()
     mapping_query = RegistrationMetadataMapping.objects.filter(
         registration_schema_id=registration_schema._id,
-        packaging_type=packaging_type,
+        filename=filename,
     )
     entity = None
     if mapping_query.exists():
         entity = mapping_query.first()
-    elif packaging_type == REGISTRATION_METADATA_MAPPING_PACKAGING_SIMPLE_ZIP:
-        # SimpleZip is default packaging type
+    elif filename == 'index.csv':
+        # index.csv is default filename
         old_mapping_query = RegistrationMetadataMapping.objects.filter(
             registration_schema_id=registration_schema._id,
-            packaging_type=None,
+            filename=None,
         )
         if old_mapping_query.exists():
             entity = old_mapping_query.first()
     if entity is None:
         entity = RegistrationMetadataMapping.objects.create(
             registration_schema_id=registration_schema._id,
-            packaging_type=packaging_type,
+            filename=filename,
         )
     entity.rules = mapping
-    entity.packaging_type = packaging_type
-    logger.info(f'Mapping registered: {registration_schema._id}, {packaging_type}, {mapping}')
+    entity.filename = filename
+    logger.info(f'Mapping registered: {registration_schema._id}, {filename}, {mapping}')
     entity.save()

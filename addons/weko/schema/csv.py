@@ -3,7 +3,6 @@ import json
 import logging
 
 from osf.models.metaschema import RegistrationSchema
-from ..utils import REGISTRATION_METADATA_MAPPING_PACKAGING_SIMPLE_ZIP
 
 from .base import (
     expand_listed_key, get_sources_for_key, find_schema_question, is_special_key, is_key_present, get_value, resolve_array_index
@@ -83,10 +82,12 @@ def _get_columns(file_metadata, weko_key_prefix, weko_props, weko_key_counts=Non
 def write_csv(user, f, target_index, download_file_names, schema_id, file_metadatas, project_metadatas):
     from ..models import RegistrationMetadataMapping
     schema = RegistrationSchema.objects.get(_id=schema_id)
-    mapping_def = RegistrationMetadataMapping.objects.get(
+    mapping_def = RegistrationMetadataMapping.objects.filter(
         registration_schema_id=schema._id,
-        packaging_type__in=[REGISTRATION_METADATA_MAPPING_PACKAGING_SIMPLE_ZIP, None],
-    )
+        filename__in=['index.csv', None],
+    ).first()
+    if mapping_def is None:
+        raise ValueError(f'No mapping definition: {schema_id}')
     logger.debug(f'Mappings: {mapping_def.rules}')
     for i, file_metadata in enumerate(file_metadatas):
         logger.debug(f'File metadata #{i}: {file_metadata}')
@@ -107,7 +108,7 @@ def write_csv(user, f, target_index, download_file_names, schema_id, file_metada
     weko_key_counts = {}
     for key in sorted(mappings.keys()):
         for source, commonvars in get_sources_for_key(
-            user, file_metadatas, download_file_names, project_metadatas, schema, key
+            user, target_index, file_metadatas, download_file_names, project_metadatas, schema, key
         ):
             if key not in mappings:
                 logger.warning(f'No mappings: {key}')

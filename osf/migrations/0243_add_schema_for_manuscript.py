@@ -31,6 +31,7 @@ def ensure_registration_mappings(*args):
 class Migration(migrations.Migration):
 
     dependencies = [
+        ('addons_weko', '0006_registrationmetadatamapping_filename'),
         ('osf', '0242_auto_20241113_1058'),
     ]
 

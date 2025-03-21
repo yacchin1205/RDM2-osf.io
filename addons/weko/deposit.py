@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-import io
 import logging
 import mimetypes
 import os
@@ -90,6 +89,7 @@ def _deposit_metadata(
     delete_after=False, delete_temp_dir_immediately=True,
     task_request_id=None, update_task_state=None,
 ):
+    from .models import RegistrationMetadataMapping
     user = OSFUser.load(user_id)
     logger.info(f'Deposit: {metadata_paths}, {status_path} {task_request_id}')
     node = AbstractNode.load(node_id)
@@ -153,27 +153,39 @@ def _deposit_metadata(
             os.makedirs(os.path.dirname(file_in_bagit_path), exist_ok=True)
             shutil.copyfile(os.path.join(tmp_dir, download_file_name), file_in_bagit_path)
         # Metadata as CSV
-        with open(os.path.join(bagit_dir, 'data', 'index.csv'), 'w', encoding='utf8') as f:
-            schema.write_csv(
-                user,
-                f,
-                target_index,
-                download_file_names,
-                schema_id,
-                file_metadatas,
-                project_metadatas,
-            )
+        mapping_def_csv = RegistrationMetadataMapping.objects.filter(
+            registration_schema_id=schema_id,
+            filename__in=['index.csv', None],
+        ).first()
+        if mapping_def_csv is not None:
+            with open(os.path.join(bagit_dir, 'data', 'index.csv'), 'w', encoding='utf8') as f:
+                schema.write_csv(
+                    user,
+                    f,
+                    target_index,
+                    download_file_names,
+                    schema_id,
+                    file_metadatas,
+                    project_metadatas,
+                )
         # Metadata as RO-Crate
-        with open(os.path.join(bagit_dir, 'data', 'ro-crate-metadata.json'), 'w', encoding='utf8') as f:
-            schema.write_ro_crate_json(
-                user,
-                f,
-                target_index,
-                download_file_names,
-                schema_id,
-                file_metadatas,
-                project_metadatas,
-            )
+        mapping_def_ro_crate_json = RegistrationMetadataMapping.objects.filter(
+            registration_schema_id=schema_id,
+            filename='ro-crate-metadata.json',
+        ).first()
+        if mapping_def_ro_crate_json is not None:
+            with open(os.path.join(bagit_dir, 'data', 'ro-crate-metadata.json'), 'w', encoding='utf8') as f:
+                schema.write_ro_crate_json(
+                    user,
+                    f,
+                    target_index,
+                    download_file_names,
+                    schema_id,
+                    file_metadatas,
+                    project_metadatas,
+                )
+        if mapping_def_csv is None and mapping_def_ro_crate_json is None:
+            logger.warning('No metadata mapping found')
         bag.save(manifests=True)
 
         zip_path = os.path.join(tmp_dir, 'payload.zip')

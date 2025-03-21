@@ -3,7 +3,6 @@ import logging
 import re
 
 from osf.models.metaschema import RegistrationSchema
-from ..utils import REGISTRATION_METADATA_MAPPING_PACKAGING_SWORD_BAGIT
 
 from .base import (
     expand_listed_key, get_sources_for_key, find_schema_question, is_special_key, is_key_present, get_value, resolve_array_index
@@ -155,7 +154,7 @@ def _flatten_json_ld(object, counts):
             entity_id = _generate_json_ld_id(value, counts)
             new_value['@id'] = entity_id
             entities += _flatten_json_ld(new_value, counts)
-            flattened_object[key] = { '@id': entity_id }
+            flattened_object[key] = {'@id': entity_id}
             continue
         if isinstance(value, list):
             new_value = []
@@ -174,7 +173,7 @@ def _flatten_json_ld(object, counts):
                 new_v.update(v)
                 new_v['@id'] = entity_id
                 entities += _flatten_json_ld(new_v, counts)
-                new_value.append({ '@id': entity_id })
+                new_value.append({'@id': entity_id})
             flattened_object[key] = new_value
             continue
         raise ValueError(f'Unexpected value: {value}')
@@ -183,10 +182,12 @@ def _flatten_json_ld(object, counts):
 def write_ro_crate_json(user, f, target_index, download_file_names, schema_id, file_metadatas, project_metadatas):
     from ..models import RegistrationMetadataMapping
     schema = RegistrationSchema.objects.get(_id=schema_id)
-    mapping_def = RegistrationMetadataMapping.objects.get(
+    mapping_def = RegistrationMetadataMapping.objects.filter(
         registration_schema_id=schema._id,
-        packaging_type=REGISTRATION_METADATA_MAPPING_PACKAGING_SWORD_BAGIT
-    )
+        filename='ro-crate-metadata.json',
+    ).first()
+    if mapping_def is None:
+        raise ValueError(f'No mapping definition: {schema_id}')
     logger.debug(f'Mappings: {mapping_def.rules}')
     for i, file_metadata in enumerate(file_metadatas):
         logger.debug(f'File metadata #{i}: {file_metadata}')
@@ -195,13 +196,11 @@ def write_ro_crate_json(user, f, target_index, download_file_names, schema_id, f
 
     mappings = expand_listed_key(mapping_def.rules)
 
-    # TODO: wk:index <- target_index
-
     weko_key_counts = {}
     hierarchical_object = {}
     for key in sorted(mappings.keys()):
         for source, commonvars in get_sources_for_key(
-            user, file_metadatas, download_file_names, project_metadatas, schema, key
+            user, target_index, file_metadatas, download_file_names, project_metadatas, schema, key
         ):
             if key not in mappings:
                 logger.warning(f'No mappings: {key}')
