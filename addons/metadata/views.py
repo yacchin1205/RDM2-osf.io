@@ -11,6 +11,7 @@ from .models import RegistrationReportFormat, get_draft_files, FIELD_GRDM_FILES,
 from .utils import make_report_as_csv
 from .suggestion import suggestion_metadata, valid_suggestion_key
 from .suggestions.erad import erad_candidates
+from .suggestions.kaken import kaken_candidates
 from .packages import import_project, export_project, get_task_result
 from framework.exceptions import HTTPError
 from framework.auth.decorators import must_be_logged_in
@@ -132,12 +133,61 @@ def metadata_update_config(auth, **kwargs):
 @must_have_permission('write')
 def metadata_get_erad_candidates(auth, **kwargs):
     node = kwargs['node'] or kwargs['project']
-    candidates = []
+    current_user = auth.user
+    current_user_erad = current_user.erad
+
+    # Collect candidates with metadata about which user they belong to
+    candidates_with_meta = []
+
     for user in node.contributors:
         rn = user.erad
         if rn is None:
             continue
-        candidates += erad_candidates(kenkyusha_no=rn)
+
+        user_candidates = []
+        user_candidates += erad_candidates(kenkyusha_no=rn)
+        user_candidates += kaken_candidates(rn, erad=rn)
+
+        # Store candidates with metadata
+        for candidate in user_candidates:
+            candidates_with_meta.append({
+                'candidate': candidate,
+                'is_current_user': (rn == current_user_erad)
+            })
+
+    # Sort function: primary by year (desc), secondary by current user first
+    def sort_key(item):
+        candidate = item['candidate']
+        try:
+            year = candidate.get('nendo', '')
+            year_value = int(year) if year else 0
+        except (ValueError, TypeError):
+            logger.warning(f"Invalid year format in candidate: {candidate.get('kadai_id', 'unknown')}, nendo: {candidate.get('nendo', 'N/A')}")
+            year_value = 0
+
+        # Return tuple: (negative year for desc order, 0 if current user else 1)
+        is_current_user_priority = 0 if item['is_current_user'] else 1
+        return (-year_value, is_current_user_priority)
+
+    # Sort candidates
+    candidates_with_meta.sort(key=sort_key)
+
+    # Deduplicate by kadai_id - keep only the first occurrence (which is the best match due to sorting)
+    seen_kadai_ids = set()
+    deduplicated_candidates = []
+
+    for item in candidates_with_meta:
+        candidate = item['candidate']
+        kadai_id = candidate.get('kadai_id', '')
+
+        # If kadai_id is empty or not seen before, include this candidate
+        if not kadai_id or kadai_id not in seen_kadai_ids:
+            deduplicated_candidates.append(candidate)
+            if kadai_id:  # Only add to seen set if kadai_id is not empty
+                seen_kadai_ids.add(kadai_id)
+
+    candidates = deduplicated_candidates
+
     return {
         'data': {
             'id': node._id,

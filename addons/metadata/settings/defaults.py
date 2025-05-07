@@ -18,3 +18,34 @@ DEFAULT_DATASET_TIMEOUT = 60  # seconds
 # List of addons that are not allowed to be exported
 EXCLUDED_ADDONS_FOR_EXPORT = ['mendeley', 'zotero', 'iqbrims']
 EXCLUDED_ADDONS_FOR_EXPORT += ['dropboxbusiness', 'nextcloudinstitutions', 'ociinstitutions', 'onedrivebusiness', 's3compatinstitutions']
+
+
+# KAKEN Elasticsearch settings
+KAKEN_ELASTIC_URI = None
+KAKEN_ELASTIC_INDEX = 'kaken_researchers'
+KAKEN_ELASTIC_KWARGS = {
+    'use_ssl': False,
+    'verify_certs': True,
+    'max_retries': 3,
+    'retry_on_timeout': True
+}
+
+# ResourceSync settings for KAKEN
+KAKEN_RESOURCESYNC_URL = 'https://nrid.nii.ac.jp/.well-known/resourcesync'
+
+# Batch processing control
+KAKEN_SYNC_MAX_DOCUMENTS_PER_EXECUTION = 1000  # Maximum documents to process per execution
+
+# Elasticsearch analyzer configuration for KAKEN
+# Note: Using standard analyzer since kuromoji plugin is not available in this environment
+KAKEN_ELASTIC_ANALYZER_CONFIG = {
+    'analysis': {
+        'analyzer': {
+            'kuromoji_analyzer': {
+                'type': 'custom',
+                'tokenizer': 'standard',
+                'filter': ['cjk_width', 'lowercase']
+            }
+        }
+    }
+}

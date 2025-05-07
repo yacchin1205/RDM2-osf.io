@@ -25,7 +25,7 @@ from addons.metadata.apps import AddonAppConfig as AddonAppConfig
 import mimetypes
 from api.base.utils import waterbutler_api_url_for
 
-from .suggestions import suggestion_erad, suggestion_contributor
+from .suggestions import suggestion_erad, suggestion_contributor, suggest_kaken
 
 
 logger = logging.getLogger(__name__)
@@ -42,6 +42,8 @@ def valid_suggestion_key(key):
     elif key == 'ror':
         return True
     elif key.startswith('erad:'):
+        return True
+    elif key.startswith('kaken:'):
         return True
     elif key.startswith('asset:'):
         return True
@@ -60,6 +62,12 @@ def suggestion_metadata(key, keyword, filepath, node):
         suggestions.extend(suggestion_ror(key, keyword))
     elif key.startswith('erad:'):
         suggestions.extend(suggestion_erad(key, keyword, node))
+        # Deduplicate ERAD suggestions
+        suggestions = _deduplicate_suggestions(suggestions)
+    elif key.startswith('kaken:'):
+        suggestions.extend(suggest_kaken(key, keyword, node))
+        # Deduplicate KAKEN suggestions
+        suggestions = _deduplicate_suggestions(suggestions)
     elif key.startswith('asset:'):
         suggestions.extend(suggestion_asset(key, keyword, node))
     elif key.startswith('contributor:'):
@@ -464,3 +472,61 @@ def suggestion_asset(key, keyword, node):
                 'value': asset,
             })
     return res
+
+
+def _deduplicate_suggestions(suggestions):
+    """
+    Deduplicate suggestions based on key and researcher/institution information
+    When duplicates exist, keep the one with the most recent nendo (year)
+
+    Args:
+        suggestions: List of suggestion dictionaries
+
+    Returns:
+        List of deduplicated suggestions
+    """
+    signature_to_suggestion = {}
+
+    for suggestion in suggestions:
+        value = suggestion.get('value', {})
+
+        # Helper function to create structured name signature
+        def name_to_signature(name_dict):
+            if not isinstance(name_dict, dict):
+                return ('str', str(name_dict) if name_dict else '')
+            return (
+                'dict',
+                name_dict.get('last', ''),
+                name_dict.get('middle', ''),
+                name_dict.get('first', '')
+            )
+
+        # Create a signature for deduplication
+        signature = (
+            suggestion.get('key', ''),
+            name_to_signature(value.get('kenkyusha_shimei_ja', {})),
+            name_to_signature(value.get('kenkyusha_shimei_en', {})),
+            str(value.get('kenkyukikan_mei_ja', '')),
+            str(value.get('kenkyukikan_mei_en', '')),
+        )
+
+        # Get the year for comparison
+        def get_year(suggestion_value):
+            try:
+                year = suggestion_value.get('nendo', '')
+                return int(year) if year else 0
+            except (ValueError, TypeError):
+                logger.warning(f"Invalid year format in suggestion: {suggestion_value.get('kadai_id', 'unknown')}, nendo: {suggestion_value.get('nendo', 'N/A')}")
+                return 0
+
+        current_year = get_year(value)
+
+        # If we haven't seen this signature or this one has a more recent year, use it
+        if signature not in signature_to_suggestion:
+            signature_to_suggestion[signature] = suggestion
+        else:
+            existing_year = get_year(signature_to_suggestion[signature].get('value', {}))
+            if current_year > existing_year:
+                signature_to_suggestion[signature] = suggestion
+
+    return list(signature_to_suggestion.values())
