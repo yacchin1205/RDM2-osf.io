@@ -254,13 +254,14 @@ jobs:
         # Create test user if it doesn't exist
         username = 'testuser@example.com'
         if not OSFUser.objects.filter(username=username).exists():
-            user = OSFUser.objects.create_user(
+            # Create user manually instead of using create_user
+            user = OSFUser(
                 username=username,
-                password='testpass123'
+                fullname='Test User',
+                is_registered=True,
+                is_confirmed=True
             )
-            user.fullname = 'Test User'
-            user.is_registered = True
-            user.is_confirmed = True
+            user.set_password('testpass123')
             user.save()
             print(f"Created test user: {username}")
         else:
