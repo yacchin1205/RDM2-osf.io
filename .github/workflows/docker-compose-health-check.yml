@@ -245,9 +245,31 @@ jobs:
         npm install
         npx playwright install chromium --with-deps
 
+    - name: Create test user
+      run: |
+        # Create a test user using Django shell
+        docker-compose exec -T web python3 manage.py shell << 'EOF'
+        from osf.models import OSFUser
+        
+        # Create test user if it doesn't exist
+        username = 'testuser@example.com'
+        if not OSFUser.objects.filter(username=username).exists():
+            user = OSFUser.objects.create_user(
+                username=username,
+                password='testpass123',
+                fullname='Test User'
+            )
+            user.is_registered = True
+            user.is_confirmed = True
+            user.save()
+            print(f"Created test user: {username}")
+        else:
+            print(f"Test user already exists: {username}")
+        EOF
+
     - name: Run UI tests
       env:
-        TEST_USERNAME: testuser
+        TEST_USERNAME: testuser@example.com
       run: |
         cd ui-tests
         npm test

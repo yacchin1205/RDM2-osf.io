@@ -32,6 +32,13 @@ test.describe('Sign In Flow', () => {
     console.log('Waiting for page response after submit...');
     await page.waitForLoadState('networkidle', { timeout: 30000 });
 
-    console.log('Sign-in flow completed successfully!');
+    console.log('Verifying dashboard is displayed...');
+    const dashboardElement = page.locator('div[data-analytics-scope="Dashboard"]');
+    await dashboardElement.waitFor({ timeout: 15000 });
+    
+    // Verify the dashboard element is visible
+    await expect(dashboardElement).toBeVisible();
+
+    console.log('Sign-in flow completed successfully! Dashboard is displayed.');
   });
 });
