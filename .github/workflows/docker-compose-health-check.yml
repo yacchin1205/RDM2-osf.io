@@ -193,6 +193,12 @@ jobs:
         echo "Testing Elasticsearch connectivity..."
         curl -f --retry 3 --retry-delay 5 http://localhost:9200/_cluster/health || echo "Elasticsearch not accessible"
 
+    - name: Run Django migrations
+      run: |
+        # Run Django migrations
+        echo "Running Django migrations..."
+        docker-compose exec -T web python3 manage.py migrate || echo "Django migrations failed"
+
     - name: Run basic health checks
       run: |
         # Run Django health check (if available)
