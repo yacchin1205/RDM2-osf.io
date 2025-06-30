@@ -166,24 +166,30 @@ jobs:
 
     - name: Test endpoint accessibility
       run: |
+        # Function to test endpoint and check for 400/500 errors
+        test_endpoint() {
+          local name="$1"
+          local url="$2"
+          echo "Testing $name..."
+          RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" --retry 5 --retry-delay 10 --retry-connrefused "$url" || echo "000")
+          echo "$name response code: $RESPONSE"
+          if [[ "$RESPONSE" == "400" || "$RESPONSE" == "500" ]]; then
+            echo "$name returned HTTP $RESPONSE - failing" >&2
+            exit 1
+          elif [[ "$RESPONSE" != "200" && "$RESPONSE" != "302" ]]; then
+            echo "$name not accessible (HTTP $RESPONSE)" >&2
+          else
+            echo "$name is accessible"
+          fi
+        }
+        
         # Test main OSF endpoints
-        echo "Testing OSF Web (port 5000)..."
-        curl -f --retry 5 --retry-delay 10 --retry-connrefused http://localhost:5000/ || echo "Web service not accessible"
-        
-        echo "Testing OSF API (port 8000)..."
-        curl -f --retry 5 --retry-delay 10 --retry-connrefused http://localhost:8000/v2/ || echo "API service not accessible"
-        
-        echo "Testing Ember OSF Web (port 4200)..."
-        curl -f --retry 5 --retry-delay 10 --retry-connrefused http://localhost:4200/ || echo "Ember OSF Web not accessible"
-        
-        echo "Testing WaterButler (port 7777)..."
-        curl -f --retry 5 --retry-delay 10 --retry-connrefused http://localhost:7777/status || echo "WaterButler not accessible"
-        
-        echo "Testing MFR (port 7778)..."
-        curl -f --retry 5 --retry-delay 10 --retry-connrefused http://localhost:7778/status || echo "MFR not accessible"
-        
-        echo "Testing FakeCAS (port 8080)..."
-        curl -f --retry 5 --retry-delay 10 --retry-connrefused http://localhost:8080/login || echo "FakeCAS not accessible"
+        test_endpoint "OSF Web (port 5000)" "http://localhost:5000/"
+        test_endpoint "OSF API (port 8000)" "http://localhost:8000/v2/"
+        test_endpoint "Ember OSF Web (port 4200)" "http://localhost:4200/"
+        test_endpoint "WaterButler (port 7777)" "http://localhost:7777/status"
+        test_endpoint "MFR (port 7778)" "http://localhost:7778/status"
+        test_endpoint "FakeCAS (port 8080)" "http://localhost:8080/login"
 
     - name: Test database connectivity
       run: |
