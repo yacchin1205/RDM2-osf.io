@@ -241,6 +241,7 @@ jobs:
 
     - name: Install UI test dependencies
       run: |
+        pip install -r requirements/dev.txt
         pip install pytest pytest-asyncio playwright
         playwright install chromium --with-deps
 
