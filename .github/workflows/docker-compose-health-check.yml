@@ -176,6 +176,9 @@ jobs:
           if [[ "$RESPONSE" == "400" || "$RESPONSE" == "500" ]]; then
             echo "$name returned HTTP $RESPONSE - failing" >&2
             exit 1
+          elif [[ "$RESPONSE" == "000" ]]; then
+            echo "$name connection failed (HTTP $RESPONSE) - failing" >&2
+            exit 1
           elif [[ "$RESPONSE" != "200" && "$RESPONSE" != "302" ]]; then
             echo "$name not accessible (HTTP $RESPONSE)" >&2
           else
