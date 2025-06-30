@@ -267,7 +267,11 @@ jobs:
             # Set additional fields after save
             user.is_registered = True
             user.date_confirmed = timezone.now()
+            user.have_email = True
             user.save()
+            
+            # Create email for the user
+            user.emails.create(address=username)
             print(f"Created test user: {username}")
         else:
             print(f"Test user already exists: {username}")
