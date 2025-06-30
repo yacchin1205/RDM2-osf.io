@@ -234,6 +234,23 @@ jobs:
         echo "Running Django management commands..."
         docker-compose exec -T web python3 manage.py check --deploy || echo "Django health check failed"
 
+    - name: Setup Python for UI tests
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.8'
+
+    - name: Install UI test dependencies
+      run: |
+        pip install pytest pytest-asyncio playwright
+        playwright install chromium --with-deps
+
+    - name: Run UI tests
+      env:
+        TEST_USERNAME: testuser
+      run: |
+        cd ui-tests
+        pytest test_sign_in.py -v
+
     - name: Display final service status
       run: |
         echo "=== Final service status ==="
