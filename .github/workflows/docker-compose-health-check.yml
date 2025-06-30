@@ -144,6 +144,26 @@ jobs:
         # Wait for services to start
         echo "Waiting for main services to start..."
         sleep 60
+        
+        # Wait for ember_osf_web to finish building by checking logs
+        echo "Waiting for ember_osf_web to complete build..."
+        TIMEOUT=600  # 10 minutes timeout
+        ELAPSED=0
+        while [ $ELAPSED -lt $TIMEOUT ]; do
+          if docker-compose logs ember_osf_web | grep -q "Build successful.*Serving on http://0.0.0.0:4200/"; then
+            echo "ember_osf_web build completed successfully!"
+            break
+          fi
+          echo "Waiting for ember_osf_web build to complete... (${ELAPSED}s elapsed)"
+          sleep 10
+          ELAPSED=$((ELAPSED + 10))
+        done
+        
+        if [ $ELAPSED -ge $TIMEOUT ]; then
+          echo "Timeout waiting for ember_osf_web build to complete"
+          docker-compose logs --tail 50 ember_osf_web
+          exit 1
+        fi
 
     - name: Check service status
       run: |
