@@ -256,9 +256,9 @@ jobs:
         if not OSFUser.objects.filter(username=username).exists():
             user = OSFUser.objects.create_user(
                 username=username,
-                password='testpass123',
-                fullname='Test User'
+                password='testpass123'
             )
+            user.fullname = 'Test User'
             user.is_registered = True
             user.is_confirmed = True
             user.save()
