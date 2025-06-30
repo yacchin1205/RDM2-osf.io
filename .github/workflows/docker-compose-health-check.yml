@@ -91,7 +91,9 @@ jobs:
     - name: Install requirements
       run: |
         # Install Python/Node requirements first
-        docker-compose up --exit-code-from requirements requirements mfr_requirements wb_requirements
+        docker-compose run --rm requirements
+        docker-compose run --rm mfr_requirements  
+        docker-compose run --rm wb_requirements
       timeout-minutes: 15
 
     - name: Start infrastructure services
