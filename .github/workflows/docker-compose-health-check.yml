@@ -250,6 +250,7 @@ jobs:
         # Create a test user using Django shell
         docker-compose exec -T web python3 manage.py shell << 'EOF'
         from osf.models import OSFUser
+        from django.utils import timezone
         
         # Create test user if it doesn't exist
         username = 'testuser@example.com'
@@ -258,10 +259,14 @@ jobs:
             user = OSFUser(
                 username=username,
                 fullname='Test User',
-                is_registered=True,
-                is_confirmed=True
+                is_active=True,
+                date_registered=timezone.now()
             )
             user.set_password('testpass123')
+            user.save()
+            # Set additional fields after save
+            user.is_registered = True
+            user.date_confirmed = timezone.now()
             user.save()
             print(f"Created test user: {username}")
         else:
