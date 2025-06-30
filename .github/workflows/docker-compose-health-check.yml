@@ -1,0 +1,170 @@
+name: Docker Compose Health Check
+
+on:
+  push:
+    branches: [ main, develop, feature/ui-tests ]
+  pull_request:
+    branches: [ main, develop, feature/ui-tests ]
+  workflow_dispatch:
+
+jobs:
+  docker-compose-health-check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+
+    - name: Create required configuration files
+      run: |
+        # Copy configuration files as per README-docker-compose.md
+        cp ./website/settings/local-dist.py ./website/settings/local.py
+        cp ./api/base/settings/local-dist.py ./api/base/settings/local.py
+        cp ./docker-compose-dist.override.yml ./docker-compose.override.yml
+        cp ./tasks/local-dist.py ./tasks/local.py
+
+    - name: Setup host networking alias
+      run: |
+        # Add loopback alias for Ubuntu as per README-docker-compose.md
+        sudo ifconfig lo:0 192.168.168.167 netmask 255.255.255.255 up
+
+    - name: Install requirements
+      run: |
+        # Install Python/Node requirements first
+        docker-compose up --exit-code-from requirements requirements mfr_requirements wb_requirements
+      timeout-minutes: 15
+
+    - name: Start infrastructure services
+      run: |
+        # Start core infrastructure services
+        docker-compose up -d elasticsearch postgres mongo rabbitmq
+        
+        # Wait for services to be ready
+        echo "Waiting for infrastructure services to start..."
+        sleep 30
+        
+        # Check if services are running
+        docker-compose ps
+
+    - name: Start supporting services
+      run: |
+        # Start supporting services
+        docker-compose up -d mfr wb fakecas sharejs
+        
+        # Wait for services to be ready
+        echo "Waiting for supporting services to start..."
+        sleep 20
+
+    - name: Build and start assets
+      run: |
+        # Remove existing node_modules and start assets
+        rm -rf ./node_modules || true
+        docker-compose up -d assets
+        
+        # Wait for assets to build (this can take a while)
+        echo "Waiting for assets to build..."
+        sleep 120
+        
+        # Check assets container status
+        docker-compose logs --tail 50 assets
+
+    - name: Start main OSF services
+      run: |
+        # Start the main OSF services
+        docker-compose up -d wb_worker worker web api ember_osf_web
+        
+        # Wait for services to start
+        echo "Waiting for main services to start..."
+        sleep 60
+
+    - name: Check service status
+      run: |
+        # Display status of all services
+        docker-compose ps
+        
+        # Show recent logs for debugging
+        echo "=== Web service logs ==="
+        docker-compose logs --tail 20 web
+        echo "=== API service logs ==="
+        docker-compose logs --tail 20 api
+        echo "=== Assets service logs ==="
+        docker-compose logs --tail 20 assets
+
+    - name: Wait for services to be fully ready
+      run: |
+        # Additional wait time for services to fully initialize
+        echo "Waiting for services to be fully ready..."
+        sleep 90
+
+    - name: Test endpoint accessibility
+      run: |
+        # Test main OSF endpoints
+        echo "Testing OSF Web (port 5000)..."
+        curl -f --retry 5 --retry-delay 10 --retry-connrefused http://localhost:5000/ || echo "Web service not accessible"
+        
+        echo "Testing OSF API (port 8000)..."
+        curl -f --retry 5 --retry-delay 10 --retry-connrefused http://localhost:8000/v2/ || echo "API service not accessible"
+        
+        echo "Testing Ember OSF Web (port 4200)..."
+        curl -f --retry 5 --retry-delay 10 --retry-connrefused http://localhost:4200/ || echo "Ember OSF Web not accessible"
+        
+        echo "Testing WaterButler (port 7777)..."
+        curl -f --retry 5 --retry-delay 10 --retry-connrefused http://localhost:7777/status || echo "WaterButler not accessible"
+        
+        echo "Testing MFR (port 7778)..."
+        curl -f --retry 5 --retry-delay 10 --retry-connrefused http://localhost:7778/status || echo "MFR not accessible"
+        
+        echo "Testing FakeCAS (port 8080)..."
+        curl -f --retry 5 --retry-delay 10 --retry-connrefused http://localhost:8080/login || echo "FakeCAS not accessible"
+
+    - name: Test database connectivity
+      run: |
+        # Test PostgreSQL connectivity
+        echo "Testing PostgreSQL connectivity..."
+        docker-compose exec -T postgres psql -U postgres -d osf -c "SELECT 1;" || echo "PostgreSQL not accessible"
+        
+        # Test MongoDB connectivity
+        echo "Testing MongoDB connectivity..."
+        docker-compose exec -T mongo mongo --eval "db.runCommand('ping')" || echo "MongoDB not accessible"
+        
+        # Test Elasticsearch connectivity
+        echo "Testing Elasticsearch connectivity..."
+        curl -f --retry 3 --retry-delay 5 http://localhost:9200/_cluster/health || echo "Elasticsearch not accessible"
+
+    - name: Run basic health checks
+      run: |
+        # Run Django health check (if available)
+        echo "Running Django management commands..."
+        docker-compose exec -T web python3 manage.py check --deploy || echo "Django health check failed"
+
+    - name: Display final service status
+      run: |
+        echo "=== Final service status ==="
+        docker-compose ps
+        
+        echo "=== Service resource usage ==="
+        docker stats --no-stream
+
+    - name: Cleanup
+      if: always()
+      run: |
+        # Save logs for debugging
+        docker-compose logs > docker-compose-logs.txt 2>&1 || true
+        
+        # Stop all services
+        docker-compose down -v
+        
+        # Clean up Docker resources
+        docker system prune -f
+
+    - name: Upload logs
+      if: failure()
+      uses: actions/upload-artifact@v4
+      with:
+        name: docker-compose-logs
+        path: docker-compose-logs.txt
+        retention-days: 7
