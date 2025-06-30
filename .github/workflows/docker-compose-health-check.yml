@@ -96,6 +96,12 @@ jobs:
         docker-compose run --rm wb_requirements
       timeout-minutes: 15
 
+    - name: Run Django migrations
+      run: |
+        # Run Django migrations after requirements installation
+        echo "Running Django migrations..."
+        docker-compose run --rm web python3 manage.py migrate || echo "Django migrations failed"
+
     - name: Start infrastructure services
       run: |
         # Start core infrastructure services
@@ -192,12 +198,6 @@ jobs:
         # Test Elasticsearch connectivity
         echo "Testing Elasticsearch connectivity..."
         curl -f --retry 3 --retry-delay 5 http://localhost:9200/_cluster/health || echo "Elasticsearch not accessible"
-
-    - name: Run Django migrations
-      run: |
-        # Run Django migrations
-        echo "Running Django migrations..."
-        docker-compose exec -T web python3 manage.py migrate || echo "Django migrations failed"
 
     - name: Run basic health checks
       run: |
