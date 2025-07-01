@@ -3,7 +3,7 @@
 # Requirements to be installed on server deployments
 
 # External storage addon packages
-git+https://github.com/yacchin1205/RDM-storage-s3compat.git@master#egg=s3compat[osf]
+git+https://github.com/yacchin1205/RDM-storage-s3compat.git@main#egg=s3compat[osf]
 
 # newrelic APM agent
 newrelic==4.0.0.99
