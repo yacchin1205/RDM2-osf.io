@@ -60,7 +60,6 @@ COPY ./addons/zotero/requirements.txt ./addons/zotero/
 COPY ./addons/swift/requirements.txt ./addons/swift/
 COPY ./addons/azureblobstorage/requirements.txt ./addons/azureblobstorage/
 COPY ./addons/weko/requirements.txt ./addons/weko/
-COPY ./addons/s3compat/requirements.txt ./addons/s3compat/
 COPY ./addons/s3compatinstitutions/requirements.txt ./addons/s3compatinstitutions/
 COPY ./addons/s3compatb3/requirements.txt ./addons/s3compatb3/
 COPY ./addons/ociinstitutions/requirements.txt ./addons/ociinstitutions/
@@ -166,7 +165,6 @@ COPY ./addons/swift/static/ ./addons/swift/static/
 COPY ./addons/azureblobstorage/static/ ./addons/azureblobstorage/static/
 COPY ./addons/weko/static/ ./addons/weko/static/
 COPY ./addons/jupyterhub/static/ ./addons/jupyterhub/static/
-COPY ./addons/s3compat/static/ ./addons/s3compat/static/
 COPY ./addons/s3compatinstitutions/static/ ./addons/s3compatinstitutions/static/
 COPY ./addons/s3compatb3/static/ ./addons/s3compatb3/static/
 COPY ./addons/ociinstitutions/requirements.txt ./addons/ociinstitutions/

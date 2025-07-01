@@ -21,7 +21,7 @@ from addons.box import settings as box_settings
 from addons.owncloud import settings as owncloud_settings
 from addons.nextcloud import settings as nextcloud_settings
 from addons.s3 import utils as s3_utils
-from addons.s3compat import utils as s3compat_utils
+from .plugin_loader import get_test_connection_function
 from addons.s3compatb3 import utils as s3compatb3_utils
 from addons.swift import settings as swift_settings, utils as swift_utils
 from addons.swift.provider import SwiftProvider
@@ -263,58 +263,60 @@ def test_s3_connection(access_key, secret_key, bucket):
     }, http_status.HTTP_200_OK)
 
 def test_s3compat_connection(host_url, access_key, secret_key, bucket):
+    """
+    Test S3 compatible storage connection using plugin mechanism
+    
+    Args:
+        host_url (str): S3 compatible storage endpoint URL
+        access_key (str): Access key for authentication
+        secret_key (str): Secret key for authentication
+        bucket (str): Bucket name to test access
+        
+    Returns:
+        tuple: (response_dict, http_status_code)
+    """
+    # Basic validation
     host = host_url.rstrip('/').replace('https://', '').replace('http://', '')
     if not (host and access_key and secret_key and bucket):
         return ({
             'message': 'All the fields above are required.'
         }, http_status.HTTP_400_BAD_REQUEST)
 
-    try:
-        user_info = s3compat_utils.get_user_info(host, access_key, secret_key)
-        e_message = ''
-    except Exception as e:
-        user_info = None
-        e_message = traceback.format_exception_only(type(e), e)[0].rstrip('\n')
-    if not user_info:
+    # Try to get the test function from plugin
+    test_func = get_test_connection_function('s3compat')
+    if not test_func:
+        # Fallback to legacy behavior if plugin not available
         return ({
-            'message': 'Unable to access account.\n'
-            'Check to make sure that the above credentials are valid, '
-            'and that they have permission to list buckets.',
-            'e_message': e_message
-        }, http_status.HTTP_400_BAD_REQUEST)
-
+            'message': 'S3 Compatible Storage plugin not available. Please install s3compat package.',
+            'e_message': 'Plugin not found'
+        }, http_status.HTTP_500_INTERNAL_SERVER_ERROR)
+    
     try:
-        res = s3compat_utils.can_list(host, access_key, secret_key)
-        e_message = ''
+        # Use plugin function to test connection
+        result = test_func(
+            endpoint_url=host_url,
+            access_key=access_key,
+            secret_key=secret_key,
+            bucket_name=bucket
+        )
+        
+        if result['success']:
+            return ({
+                'message': result['message'],
+                'data': result['user_info'] or {}
+            }, http_status.HTTP_200_OK)
+        else:
+            return ({
+                'message': result['message'],
+                'e_message': result['message']
+            }, http_status.HTTP_400_BAD_REQUEST)
+            
     except Exception as e:
-        res = False
         e_message = traceback.format_exception_only(type(e), e)[0].rstrip('\n')
-    if not res:
         return ({
-            'message': 'Unable to list buckets.\n'
-            'Listing buckets is required permission that can be changed via IAM',
+            'message': 'Connection test failed due to unexpected error.',
             'e_message': e_message
-        }, http_status.HTTP_400_BAD_REQUEST)
-
-    try:
-        res = s3compat_utils.bucket_exists(host, access_key, secret_key, bucket)
-        e_message = ''
-    except Exception as e:
-        res = False
-        e_message = traceback.format_exception_only(type(e), e)[0].rstrip('\n')
-    if not res:
-        return ({
-            'message': 'Invalid bucket.',
-            'e_message': e_message
-        }, http_status.HTTP_400_BAD_REQUEST)
-
-    return ({
-        'message': 'Credentials are valid',
-        'data': {
-            'id': user_info.id,
-            'display_name': user_info.display_name,
-        }
-    }, http_status.HTTP_200_OK)
+        }, http_status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 def test_s3compatb3_connection(host_url, access_key, secret_key, bucket):
     host = host_url.rstrip('/').replace('https://', '').replace('http://', '')

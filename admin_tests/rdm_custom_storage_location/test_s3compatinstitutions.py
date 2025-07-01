@@ -71,8 +71,8 @@ class TestConnection(AdminTestCase):
         nt.assert_equals(request_post_response.status_code, http_status.HTTP_400_BAD_REQUEST)
         nt.assert_in('All the fields above are required.', request_post_response.content.decode())
 
-    @mock.patch('addons.s3compat.views.utils.can_list', return_value=False)
-    @mock.patch('addons.s3compat.views.utils.get_user_info', return_value=True)
+    @mock.patch('s3compat.osf_addon.utils.can_list', return_value=False)
+    @mock.patch('s3compat.osf_addon.utils.get_user_info', return_value=True)
     def test_user_settings_cant_list(self, mock_get_user_info, mock_can_list):
         params = {
             's3compatinstitutions_endpoint_url': 's3.compat.co.jp',
@@ -85,9 +85,9 @@ class TestConnection(AdminTestCase):
         nt.assert_equals(request_post_response.status_code, http_status.HTTP_400_BAD_REQUEST)
         nt.assert_in('Unable to list buckets.', request_post_response.content.decode())
 
-    @mock.patch('addons.s3compat.views.utils.bucket_exists', return_value=False)
-    @mock.patch('addons.s3compat.views.utils.can_list', return_value=True)
-    @mock.patch('addons.s3compat.views.utils.get_user_info')
+    @mock.patch('s3compat.osf_addon.utils.bucket_exists', return_value=False)
+    @mock.patch('s3compat.osf_addon.utils.can_list', return_value=True)
+    @mock.patch('s3compat.osf_addon.utils.get_user_info')
     def test_invalid_bucket(self, mock_get_user_info, mock_can_list, mock_bucket_exists):
         params = {
             's3compatinstitutions_endpoint_url': 's3.compat.co.jp',
@@ -100,9 +100,9 @@ class TestConnection(AdminTestCase):
         nt.assert_equals(request_post_response.status_code, http_status.HTTP_400_BAD_REQUEST)
         nt.assert_in('Invalid bucket.', request_post_response.content.decode())
 
-    @mock.patch('addons.s3compat.views.utils.bucket_exists', return_value=True)
-    @mock.patch('addons.s3compat.views.utils.can_list', return_value=True)
-    @mock.patch('addons.s3compat.views.utils.get_user_info')
+    @mock.patch('s3compat.osf_addon.utils.bucket_exists', return_value=True)
+    @mock.patch('s3compat.osf_addon.utils.can_list', return_value=True)
+    @mock.patch('s3compat.osf_addon.utils.get_user_info')
     def test_success(self, mock_get_user_info, mock_can_list, mock_bucket_exists):
         mock_get_user_info.return_value.id = '12346789'
         mock_get_user_info.return_value.display_name = 's3.user'
@@ -118,7 +118,7 @@ class TestConnection(AdminTestCase):
         nt.assert_equals(request_post_response.status_code, http_status.HTTP_200_OK)
         nt.assert_in('Credentials are valid', request_post_response.content.decode())
 
-    @mock.patch('addons.s3compat.views.utils.get_user_info', return_value=None)
+    @mock.patch('s3compat.osf_addon.utils.get_user_info', return_value=None)
     def test_invalid_credentials(self, mock_uid):
         params = {
             's3compatinstitutions_endpoint_url': 's3.compat.co.jp',

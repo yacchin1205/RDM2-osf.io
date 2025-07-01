@@ -21,7 +21,6 @@
         "azureblobstorage",
         "weko",
         "jupyterhub",
-        "s3compat",
         "s3compatinstitutions",
         "s3compatb3",
         "ociinstitutions",
@@ -59,7 +58,6 @@
         "swift": "partial",
         "azureblobstorage": "partial",
         "weko": "partial",
-        "s3compat": "partial",
         "s3compatinstitutions": "partial",
         "s3compatb3": "partial",
         "ociinstitutions": "partial",
@@ -86,7 +84,6 @@
         "swift",
         "azureblobstorage",
         "weko",
-        "s3compat",
         "s3compatinstitutions",
         "s3compatb3",
         "ociinstitutions",
@@ -126,7 +123,6 @@
         "azureblobstorage": "Azure Blob Storage is a file storage add-on. Connect your Azure Storage account to a GakuNin RDM project to interact with files hosted on Azure Blob Storage (Block Blob) via the GakuNin RDM.",
         "weko": "WEKO is an application server to share, archive data.",
         "jupyterhub": "Jupyter is a web-based interactive computational environment. Files on a GakuNin RDM project can be imported to/exported from Jupyter",
-        "s3compat": "S3 Compatible Storage is a file storage add-on. Connect your S3 Compatible Storage account to a GakuNin RDM project to interact with files hosted on S3 Compatible Storage via the GakuNin RDM.",
         "s3compatinstitutions": "S3 Compatible Storage for Institutions is a file storage add-on. Connect your S3 Compatible Storage account to a GakuNin RDM project to interact with files hosted on S3 Compatible Storage via the GakuNin RDM.",
         "s3compatb3": "S3 Compatible Storage is a file storage add-on. Connect your S3 Compatible Storage account to a GakuNin RDM project to interact with files hosted on S3 Compatible Storage via the GakuNin RDM.",
         "ociinstitutions": "Oracle Cloud Infrastructure for Institutions is a file storage add-on. Connect your Oracle Cloud Infrastructure Object Storage account to a GakuNin RDM project to interact with files hosted on Oracle Cloud Infrastructure Object Storage via the GakuNin RDM.",
@@ -157,7 +153,6 @@
         "azureblobstorage": "https://azure.microsoft.com/",
         "weko": "https://weko.at.nii.ac.jp/",
         "jupyterhub": "https://jupyterhub.readthedocs.io/",
-        "s3compat": "https://aws.amazon.com/s3/",
         "s3compatb3": "https://aws.amazon.com/s3/",
         "nextcloud": "https://nextcloud.com/",
         "iqbrims": "https://drive.google.com",
@@ -173,7 +168,6 @@
         "s3compatinstitutions",
         "ociinstitutions",
         "s3",
-        "s3compat",
         "owncloud"
     ],
     "institutional_storage_bulk_mount_method": [
@@ -184,16 +178,13 @@
         "swift",
         "onedrive",
         "s3",
-        "s3compat",
         "owncloud"
     ],
     "addons_has_max_keys": [
-        "s3",
-        "s3compat"
+        "s3"
     ],
     "addons_folder_field": {
         "s3": "folder_name",
-        "s3compat": "folder_name",
         "s3compatb3": "folder_name",
         "azureblobstorage": "folder_name",
         "box": "folder_name",

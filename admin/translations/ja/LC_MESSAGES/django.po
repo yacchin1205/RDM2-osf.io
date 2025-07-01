@@ -251,7 +251,7 @@ msgstr "バナーをスケジュールする"
 #: admin/templates/rdm_custom_storage_location/providers/osfstorage_modal.html:22
 #: admin/templates/rdm_custom_storage_location/providers/owncloud_modal.html:55
 #: admin/templates/rdm_custom_storage_location/providers/s3_modal.html:38
-#: admin/templates/rdm_custom_storage_location/providers/s3compat_modal.html:50
+#: s3compat/osf_addon/templates/rdm_custom_storage_location/providers/s3compat_modal.html:50
 #: admin/templates/rdm_custom_storage_location/providers/s3compatinstitutions_modal.html:42
 #: admin/templates/rdm_custom_storage_location/providers/swift_modal.html:59
 msgid "Save"
@@ -1972,7 +1972,7 @@ msgstr "ありませんか？：%(guid)s"
 #: admin/templates/rdm_custom_storage_location/providers/osfstorage_modal.html:21
 #: admin/templates/rdm_custom_storage_location/providers/owncloud_modal.html:53
 #: admin/templates/rdm_custom_storage_location/providers/s3_modal.html:36
-#: admin/templates/rdm_custom_storage_location/providers/s3compat_modal.html:48
+#: s3compat/osf_addon/templates/rdm_custom_storage_location/providers/s3compat_modal.html:48
 #: admin/templates/rdm_custom_storage_location/providers/s3compatinstitutions_modal.html:40
 #: admin/templates/rdm_custom_storage_location/providers/swift_modal.html:57
 #: admin/templates/rdm_timestampadd/node_list.html:125
@@ -2519,7 +2519,7 @@ msgstr "Amazon S3アカウントに接続"
 #: admin/templates/rdm_addons/addons/s3_credentials_modal.html:14
 #: admin/templates/rdm_custom_storage_location/providers/ociinstitutions_modal.html:21
 #: admin/templates/rdm_custom_storage_location/providers/s3_modal.html:17
-#: admin/templates/rdm_custom_storage_location/providers/s3compat_modal.html:21
+#: s3compat/osf_addon/templates/rdm_custom_storage_location/providers/s3compat_modal.html:21
 #: admin/templates/rdm_custom_storage_location/providers/s3compatinstitutions_modal.html:21
 msgid "Access Key"
 msgstr "アクセスキー"
@@ -2527,7 +2527,7 @@ msgstr "アクセスキー"
 #: admin/templates/rdm_addons/addons/s3_credentials_modal.html:18
 #: admin/templates/rdm_custom_storage_location/providers/ociinstitutions_modal.html:25
 #: admin/templates/rdm_custom_storage_location/providers/s3_modal.html:21
-#: admin/templates/rdm_custom_storage_location/providers/s3compat_modal.html:25
+#: s3compat/osf_addon/templates/rdm_custom_storage_location/providers/s3compat_modal.html:25
 #: admin/templates/rdm_custom_storage_location/providers/s3compatinstitutions_modal.html:25
 msgid "Secret Key"
 msgstr "シークレットキー"
@@ -2675,7 +2675,7 @@ msgstr "フォルダID(例：ルートの場合は0)"
 #: admin/templates/rdm_custom_storage_location/providers/onedrivebusiness_modal.html:54
 #: admin/templates/rdm_custom_storage_location/providers/owncloud_modal.html:54
 #: admin/templates/rdm_custom_storage_location/providers/s3_modal.html:37
-#: admin/templates/rdm_custom_storage_location/providers/s3compat_modal.html:49
+#: s3compat/osf_addon/templates/rdm_custom_storage_location/providers/s3compat_modal.html:49
 #: admin/templates/rdm_custom_storage_location/providers/s3compatinstitutions_modal.html:41
 #: admin/templates/rdm_custom_storage_location/providers/swift_modal.html:58
 msgid "Connect"
@@ -2823,20 +2823,20 @@ msgid "Example of User Mapping file"
 msgstr "ユーザ対応表ファイルの例"
 
 #: admin/templates/rdm_custom_storage_location/providers/ociinstitutions_modal.html:9
-#: admin/templates/rdm_custom_storage_location/providers/s3compat_modal.html:9
+#: s3compat/osf_addon/templates/rdm_custom_storage_location/providers/s3compat_modal.html:9
 #: admin/templates/rdm_custom_storage_location/providers/s3compatinstitutions_modal.html:9
 msgid "Connect a S3 Compatible Storage Account"
 msgstr "S3互換ストレージアカウントに接続"
 
 #: admin/templates/rdm_custom_storage_location/providers/ociinstitutions_modal.html:17
-#: admin/templates/rdm_custom_storage_location/providers/s3compat_modal.html:17
+#: s3compat/osf_addon/templates/rdm_custom_storage_location/providers/s3compat_modal.html:17
 #: admin/templates/rdm_custom_storage_location/providers/s3compatinstitutions_modal.html:17
 msgid "Endpoint URL"
 msgstr "エンドポイントURL"
 
 #: admin/templates/rdm_custom_storage_location/providers/ociinstitutions_modal.html:29
 #: admin/templates/rdm_custom_storage_location/providers/s3_modal.html:25
-#: admin/templates/rdm_custom_storage_location/providers/s3compat_modal.html:29
+#: s3compat/osf_addon/templates/rdm_custom_storage_location/providers/s3compat_modal.html:29
 #: admin/templates/rdm_custom_storage_location/providers/s3compatinstitutions_modal.html:29
 msgid "Bucket"
 msgstr "バケット"
@@ -2890,15 +2890,15 @@ msgstr ""
 "これらの認証情報は暗号化されます。ただし、<a "
 "%(openWithNewWindow)s>デバイス(またはアプリ)パスワード</a>の使用を<strong>強くお勧めします</strong>。"
 
-#: admin/templates/rdm_custom_storage_location/providers/s3compat_modal.html:33
+#: s3compat/osf_addon/templates/rdm_custom_storage_location/providers/s3compat_modal.html:33
 msgid "Enable Server Side Encryption"
 msgstr "サーバー側の暗号化を有効にする"
 
-#: admin/templates/rdm_custom_storage_location/providers/s3compat_modal.html:34
+#: s3compat/osf_addon/templates/rdm_custom_storage_location/providers/s3compat_modal.html:34
 msgid "*The storage API must support Server Side Encryption"
 msgstr "※ストレージのAPI側でサーバー側の暗号化に対応している必要があります。"
 
-#: admin/templates/rdm_custom_storage_location/providers/s3compat_modal.html:37
+#: s3compat/osf_addon/templates/rdm_custom_storage_location/providers/s3compat_modal.html:37
 msgid "Yes@institutional_storage"
 msgstr "有効化する"
 
