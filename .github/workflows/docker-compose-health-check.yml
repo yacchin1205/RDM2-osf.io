@@ -2,9 +2,7 @@ name: Docker Compose Health Check
 
 on:
   push:
-    branches: [ main, develop, feature/ui-tests ]
   pull_request:
-    branches: [ main, develop, feature/ui-tests ]
   workflow_dispatch:
 
 jobs:
