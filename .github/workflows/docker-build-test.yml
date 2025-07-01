@@ -83,7 +83,12 @@ jobs:
     - name: Test admin integration entry point
       run: |
         echo "Testing admin integration entry point..."
-        docker run --rm rdm-osf-test bash -c 'cp /code/website/settings/local-dist.py /code/website/settings/local.py && cp /code/api/base/settings/local-dist.py /code/api/base/settings/local.py && python3 -c "import pkg_resources; entry_points = list(pkg_resources.iter_entry_points(\"rdm.admin_integrations\", \"s3compat\")); print(\"s3compat admin integration entry point found\") if entry_points else exit(1); integration_func = entry_points[0].load(); print(f\"Integration function: {integration_func}\")"'
+        docker run --rm rdm-osf-test python3 -c "import pkg_resources; entry_points = list(pkg_resources.iter_entry_points('rdm.admin_integrations', 's3compat')); print('s3compat admin integration entry point found') if entry_points else exit(1); print('Entry point name:', entry_points[0].name); print('Entry point module:', entry_points[0].module_name)"
+
+    - name: Test admin integration function loading
+      run: |
+        echo "Testing admin integration function loading..."
+        docker run --rm rdm-osf-test bash -c 'cp /code/website/settings/local-dist.py /code/website/settings/local.py && cp /code/api/base/settings/local-dist.py /code/api/base/settings/local.py && python3 -c "import os; os.environ[\"DJANGO_SETTINGS_MODULE\"] = \"api.base.settings.defaults\"; import django; django.setup(); import pkg_resources; entry_points = list(pkg_resources.iter_entry_points(\"rdm.admin_integrations\", \"s3compat\")); integration_func = entry_points[0].load(); print(f\"Integration function loaded: {integration_func}\")"'
 
     - name: Test package dependencies
       run: |
@@ -106,6 +111,7 @@ jobs:
         echo "✓ s3compat package installed and importable"
         echo "✓ Django app configuration verified"
         echo "✓ Waterbutler provider entry point working"
-        echo "✓ Admin integration entry point working"
+        echo "✓ Admin integration entry point discovered"
+        echo "✓ Admin integration function loading tested"
         echo "✓ Dependencies verified"
         echo "Docker build test completed successfully!"
