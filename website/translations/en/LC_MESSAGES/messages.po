@@ -44,8 +44,8 @@ msgstr ""
 #: addons/owncloud/templates/owncloud_node_settings.mako:72
 #: addons/s3/templates/s3_credentials_modal.mako:36
 #: addons/s3/templates/s3_node_settings.mako:77
-#: addons/s3compat/templates/s3compat_credentials_modal.mako:40
-#: addons/s3compat/templates/s3compat_node_settings.mako:77
+#: s3compat/osf_addon/templates/s3compat_credentials_modal.mako:40
+#: s3compat/osf_addon/templates/s3compat_node_settings.mako:77
 #: addons/s3compatb3/templates/s3compatb3_credentials_modal.mako:44
 #: addons/s3compatb3/templates/s3compatb3_node_settings.mako:76
 #: addons/swift/templates/swift_credentials_modal.mako:56
@@ -95,8 +95,8 @@ msgstr ""
 #: addons/owncloud/templates/owncloud_node_settings.mako:74
 #: addons/s3/templates/s3_credentials_modal.mako:39
 #: addons/s3/templates/s3_node_settings.mako:79
-#: addons/s3compat/templates/s3compat_credentials_modal.mako:43
-#: addons/s3compat/templates/s3compat_node_settings.mako:79
+#: s3compat/osf_addon/templates/s3compat_credentials_modal.mako:43
+#: s3compat/osf_addon/templates/s3compat_node_settings.mako:79
 #: addons/s3compatb3/templates/s3compatb3_credentials_modal.mako:47
 #: addons/s3compatb3/templates/s3compatb3_node_settings.mako:78
 #: addons/swift/templates/swift_credentials_modal.mako:59
@@ -138,8 +138,8 @@ msgstr ""
 #: addons/owncloud/templates/owncloud_user_settings.mako:18
 #: addons/s3/templates/s3_node_settings.mako:14
 #: addons/s3/templates/s3_user_settings.mako:18
-#: addons/s3compat/templates/s3compat_node_settings.mako:14
-#: addons/s3compat/templates/s3compat_user_settings.mako:18
+#: s3compat/osf_addon/templates/s3compat_node_settings.mako:14
+#: s3compat/osf_addon/templates/s3compat_user_settings.mako:18
 #: addons/s3compatb3/templates/s3compatb3_node_settings.mako:14
 #: addons/s3compatb3/templates/s3compatb3_user_settings.mako:18
 #: addons/swift/templates/swift_node_settings.mako:14
@@ -160,7 +160,7 @@ msgstr ""
 #: addons/nextcloud/templates/nextcloud_node_settings.mako:22
 #: addons/owncloud/templates/owncloud_node_settings.mako:22
 #: addons/s3/templates/s3_node_settings.mako:21
-#: addons/s3compat/templates/s3compat_node_settings.mako:21
+#: s3compat/osf_addon/templates/s3compat_node_settings.mako:21
 #: addons/s3compatb3/templates/s3compatb3_node_settings.mako:21
 #: addons/swift/templates/swift_node_settings.mako:21
 #: addons/weko/templates/weko_node_settings.mako:22
@@ -171,7 +171,7 @@ msgstr ""
 
 #: addons/azureblobstorage/templates/azureblobstorage_node_settings.mako:28
 #: addons/s3/templates/s3_node_settings.mako:28
-#: addons/s3compat/templates/s3compat_node_settings.mako:28
+#: s3compat/osf_addon/templates/s3compat_node_settings.mako:28
 #: addons/s3compatb3/templates/s3compatb3_node_settings.mako:28
 #: addons/swift/templates/swift_node_settings.mako:28
 #: addons/zotero/templates/zotero_node_settings.mako:24
@@ -184,7 +184,7 @@ msgstr ""
 #: addons/nextcloud/templates/nextcloud_node_settings.mako:29
 #: addons/owncloud/templates/owncloud_node_settings.mako:29
 #: addons/s3/templates/s3_node_settings.mako:35
-#: addons/s3compat/templates/s3compat_node_settings.mako:35
+#: s3compat/osf_addon/templates/s3compat_node_settings.mako:35
 #: addons/s3compatb3/templates/s3compatb3_node_settings.mako:35
 #: addons/swift/templates/swift_node_settings.mako:35
 #: addons/weko/templates/weko_node_settings.mako:29
@@ -197,7 +197,7 @@ msgstr ""
 #: addons/gitlab/templates/gitlab_node_settings.mako:71
 #: addons/owncloud/templates/owncloud_node_settings.mako:47
 #: addons/s3/templates/s3_node_settings.mako:50
-#: addons/s3compat/templates/s3compat_node_settings.mako:50
+#: s3compat/osf_addon/templates/s3compat_node_settings.mako:50
 #: addons/s3compatb3/templates/s3compatb3_node_settings.mako:50
 #: addons/swift/templates/swift_node_settings.mako:50
 #: addons/weko/templates/weko_node_settings.mako:49
@@ -222,7 +222,7 @@ msgstr ""
 #: addons/nextcloud/templates/nextcloud_node_settings.mako:67
 #: addons/owncloud/templates/owncloud_node_settings.mako:67
 #: addons/s3/templates/s3_node_settings.mako:72
-#: addons/s3compat/templates/s3compat_node_settings.mako:72
+#: s3compat/osf_addon/templates/s3compat_node_settings.mako:72
 #: addons/s3compatb3/templates/s3compatb3_node_settings.mako:71
 #: addons/swift/templates/swift_node_settings.mako:72
 #: addons/zotero/templates/zotero_node_settings.mako:122
@@ -237,7 +237,7 @@ msgstr ""
 #: addons/nextcloud/templates/nextcloud_user_settings.mako:12
 #: addons/owncloud/templates/owncloud_user_settings.mako:12
 #: addons/s3/templates/s3_user_settings.mako:12
-#: addons/s3compat/templates/s3compat_user_settings.mako:12
+#: s3compat/osf_addon/templates/s3compat_user_settings.mako:12
 #: addons/s3compatb3/templates/s3compatb3_user_settings.mako:12
 #: addons/swift/templates/swift_user_settings.mako:12
 #: addons/weko/templates/weko_user_settings.mako:12
@@ -256,7 +256,7 @@ msgstr ""
 #: addons/nextcloud/templates/nextcloud_user_settings.mako:31
 #: addons/owncloud/templates/owncloud_user_settings.mako:31
 #: addons/s3/templates/s3_user_settings.mako:32
-#: addons/s3compat/templates/s3compat_user_settings.mako:32
+#: s3compat/osf_addon/templates/s3compat_user_settings.mako:32
 #: addons/s3compatb3/templates/s3compatb3_user_settings.mako:32
 #: addons/swift/templates/swift_user_settings.mako:32
 #: addons/weko/templates/weko_user_settings.mako:31
@@ -267,7 +267,7 @@ msgstr ""
 #: addons/azureblobstorage/templates/azureblobstorage_user_settings.mako:36
 #: addons/binderhub/templates/binderhub_user_settings.mako:41
 #: addons/s3/templates/s3_user_settings.mako:36
-#: addons/s3compat/templates/s3compat_user_settings.mako:36
+#: s3compat/osf_addon/templates/s3compat_user_settings.mako:36
 #: addons/s3compatb3/templates/s3compatb3_user_settings.mako:36
 #: addons/swift/templates/swift_user_settings.mako:36
 #: addons/weko/templates/weko_user_settings.mako:35
@@ -763,19 +763,19 @@ msgid "Connect an Amazon S3 Account"
 msgstr ""
 
 #: addons/s3/templates/s3_credentials_modal.mako:17
-#: addons/s3compat/templates/s3compat_credentials_modal.mako:21
+#: s3compat/osf_addon/templates/s3compat_credentials_modal.mako:21
 #: addons/s3compatb3/templates/s3compatb3_credentials_modal.mako:25
 msgid "Access Key"
 msgstr ""
 
 #: addons/s3/templates/s3_credentials_modal.mako:21
-#: addons/s3compat/templates/s3compat_credentials_modal.mako:25
+#: s3compat/osf_addon/templates/s3compat_credentials_modal.mako:25
 #: addons/s3compatb3/templates/s3compatb3_credentials_modal.mako:29
 msgid "Secret Key"
 msgstr ""
 
 #: addons/s3/templates/s3_node_settings.mako:58
-#: addons/s3compat/templates/s3compat_node_settings.mako:58
+#: s3compat/osf_addon/templates/s3compat_node_settings.mako:58
 msgid "Create bucket"
 msgstr ""
 
@@ -784,7 +784,7 @@ msgid "Loading buckets..."
 msgstr ""
 
 #: addons/s3/templates/s3_user_settings.mako:24
-#: addons/s3compat/templates/s3compat_user_settings.mako:24
+#: s3compat/osf_addon/templates/s3compat_user_settings.mako:24
 #: addons/s3compatb3/templates/s3compatb3_user_settings.mako:24
 #: addons/swift/templates/swift_user_settings.mako:24
 #: addons/weko/templates/weko_user_settings.mako:23
@@ -792,16 +792,16 @@ msgstr ""
 msgid "Authorized by "
 msgstr ""
 
-#: addons/s3compat/templates/s3compat_credentials_modal.mako:6
+#: s3compat/osf_addon/templates/s3compat_credentials_modal.mako:6
 #: addons/s3compatb3/templates/s3compatb3_credentials_modal.mako:6
 msgid "Connect an S3 Compatible Storage Account"
 msgstr ""
 
-#: addons/s3compat/templates/s3compat_credentials_modal.mako:17
+#: s3compat/osf_addon/templates/s3compat_credentials_modal.mako:17
 msgid "S3 Compatible Service"
 msgstr ""
 
-#: addons/s3compat/templates/s3compat_node_settings.mako:45
+#: s3compat/osf_addon/templates/s3compat_node_settings.mako:45
 #: addons/s3compatb3/templates/s3compatb3_node_settings.mako:45
 msgid "Current Bucket:"
 msgstr ""
