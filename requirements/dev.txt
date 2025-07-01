@@ -2,6 +2,9 @@
 
 # Requirements that are used in the development environment only
 
+# External storage addon packages
+git+https://github.com/yacchin1205/RDM-storage-s3compat.git@ad34a3e#egg=s3compat[osf]
+
 # Testing
 pytest==5.0.0
 pytest-socket==0.3.5
