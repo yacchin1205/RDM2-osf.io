@@ -367,7 +367,7 @@ USER_TIMEZONE = osf_settings.USER_TIMEZONE
 USER_LOCALE = osf_settings.USER_LOCALE
 CLOUD_GATEWAY_ISMEMBEROF_PREFIX = osf_settings.CLOUD_GATEWAY_ISMEMBEROF_PREFIX
 # install-addons.py
-INSTALLED_APPS += ('addons.s3compat',)
+INSTALLED_APPS += ('s3compat.osf_addon',)
 ADDONS_FOLDER_CONFIGURABLE.append('s3compat')
 ADDONS_OAUTH.append('s3compat')
 INSTALLED_APPS += ('addons.s3compatb3',)
