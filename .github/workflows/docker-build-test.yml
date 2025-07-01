@@ -58,25 +58,25 @@ jobs:
         
         # Test Django app detection (create required config files first)
         echo "Testing Django app configuration..."
-        docker run --rm rdm-osf-test bash -c "
+        docker run --rm rdm-osf-test bash -c '
         # Create required configuration files
         cp /code/website/settings/local-dist.py /code/website/settings/local.py
         cp /code/api/base/settings/local-dist.py /code/api/base/settings/local.py
         
         # Test Django setup
-        python3 -c \"
+        python3 -c "
 import os
-os.environ['DJANGO_SETTINGS_MODULE'] = 'api.base.settings.defaults'
+os.environ[\"DJANGO_SETTINGS_MODULE\"] = \"api.base.settings.defaults\"
 import django
 django.setup()
 from django.conf import settings
-if 's3compat.osf_addon' in settings.INSTALLED_APPS:
-    print('s3compat.osf_addon found in INSTALLED_APPS')
+if \"s3compat.osf_addon\" in settings.INSTALLED_APPS:
+    print(\"s3compat.osf_addon found in INSTALLED_APPS\")
 else:
-    print('ERROR: s3compat.osf_addon not found in INSTALLED_APPS')
+    print(\"ERROR: s3compat.osf_addon not found in INSTALLED_APPS\")
     exit(1)
-\"
-        "
+"
+        '
 
     - name: Test Waterbutler provider entry point
       run: |
@@ -100,57 +100,57 @@ else:
     - name: Test admin integration entry point
       run: |
         echo "Testing admin integration entry point..."
-        docker run --rm rdm-osf-test bash -c "
+        docker run --rm rdm-osf-test bash -c '
         # Create required configuration files
         cp /code/website/settings/local-dist.py /code/website/settings/local.py
         cp /code/api/base/settings/local-dist.py /code/api/base/settings/local.py
         
         # Test admin integration
-        python3 -c \"
+        python3 -c "
 import pkg_resources
 try:
-    entry_points = list(pkg_resources.iter_entry_points('rdm.admin_integrations', 's3compat'))
+    entry_points = list(pkg_resources.iter_entry_points(\"rdm.admin_integrations\", \"s3compat\"))
     if entry_points:
-        print('s3compat admin integration entry point found')
+        print(\"s3compat admin integration entry point found\")
         integration_func = entry_points[0].load()
-        print(f'Integration function: {integration_func}')
+        print(f\"Integration function: {integration_func}\")
     else:
-        print('ERROR: s3compat admin integration entry point not found')
+        print(\"ERROR: s3compat admin integration entry point not found\")
         exit(1)
 except Exception as e:
-    print(f'ERROR loading admin integration: {e}')
+    print(f\"ERROR loading admin integration: {e}\")
     exit(1)
-\"
-        "
+"
+        '
 
     - name: Test package dependencies
       run: |
         echo "Testing package dependencies..."
-        docker run --rm rdm-osf-test bash -c "
+        docker run --rm rdm-osf-test bash -c '
         # Create required configuration files
         cp /code/website/settings/local-dist.py /code/website/settings/local.py
         cp /code/api/base/settings/local-dist.py /code/api/base/settings/local.py
         
         # Test dependencies
-        python3 -c \"
+        python3 -c "
 # Test boto3 (required for S3 compatibility)
 import boto3
-print('boto3 imported successfully')
+print(\"boto3 imported successfully\")
 
 # Test Django apps
 import django
-print('Django imported successfully')
+print(\"Django imported successfully\")
 
 # Test Flask components (if any)
 try:
     import flask
-    print('Flask imported successfully')
+    print(\"Flask imported successfully\")
 except ImportError:
-    print('Flask not available (expected in this environment)')
+    print(\"Flask not available (expected in this environment)\")
 
-print('All dependency tests passed')
-\"
-        "
+print(\"All dependency tests passed\")
+"
+        '
 
     - name: Clean up Docker resources
       if: always()
