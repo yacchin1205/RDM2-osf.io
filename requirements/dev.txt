@@ -3,7 +3,7 @@
 # Requirements that are used in the development environment only
 
 # External storage addon packages
-git+https://github.com/yacchin1205/RDM-storage-s3compat.git@97978df#egg=s3compat[osf]
+git+https://github.com/yacchin1205/RDM-storage-s3compat.git@cf3d7a4#egg=s3compat[osf]
 
 # Testing
 pytest==5.0.0
