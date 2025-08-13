@@ -191,6 +191,24 @@ class TestExtractCrossrefMetadata:
         assert result['authors'][0]['name_ja'] == 'Doe, John'
         assert result['authors'][2]['name'] == 'Research Group'
 
+        # Test common metadata format
+        assert len(result['authors_common_metadata_format']) == 3
+        assert result['authors_common_metadata_format'][0]['name-ja'] == {
+            'last': 'Doe',
+            'middle': '',
+            'first': 'John'
+        }
+        assert result['authors_common_metadata_format'][0]['name-en'] == {
+            'last': 'Doe',
+            'middle': '',
+            'first': 'John'
+        }
+        assert result['authors_common_metadata_format'][1]['name-ja'] == {
+            'last': 'Smith',
+            'middle': '',
+            'first': 'Jane'
+        }
+
     def test_dates_extraction(self):
         message = {
             'published-print': {
@@ -436,7 +454,7 @@ class TestExtractDates:
 
     def test_publication_year_month_extraction(self):
         # Test extraction of year-month from different date formats
-        
+
         # Full date should extract year-month
         message = {
             'published-print': {
@@ -446,7 +464,7 @@ class TestExtractDates:
         result = {}
         extract_dates(message, result)
         assert result['publication_year_month'] == '2021-12'
-        
+
         # Year-month date should use as-is
         message = {
             'published-print': {
@@ -456,7 +474,7 @@ class TestExtractDates:
         result = {}
         extract_dates(message, result)
         assert result['publication_year_month'] == '2021-06'
-        
+
         # Year-only date should use just the year
         message = {
             'published-print': {

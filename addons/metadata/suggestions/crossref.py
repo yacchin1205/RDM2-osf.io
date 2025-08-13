@@ -108,6 +108,28 @@ def extract_crossref_metadata(message):
             authors.append(author_data)
     result['authors'] = authors
 
+    # Authors in common metadata format for direct autofill
+    result['authors_common_metadata_format'] = []
+    for author in authors:
+        formatted_author = {}
+
+        # Name fields as objects with first, middle, last
+        # For Japanese name (family name first)
+        formatted_author['name-ja'] = {
+            'last': author.get('family', ''),
+            'middle': '',
+            'first': author.get('given', '')
+        }
+
+        # For English name (given name first)
+        formatted_author['name-en'] = {
+            'last': author.get('family', ''),
+            'middle': '',
+            'first': author.get('given', '')
+        }
+
+        result['authors_common_metadata_format'].append(formatted_author)
+
     # Editors
     editors = []
     for editor in message.get('editor', []):
@@ -154,7 +176,7 @@ def extract_crossref_metadata(message):
     if 'page' in message:
         page_value = message['page']
         result['page'] = page_value
-        
+
         # Parse page range (e.g., "123-145" or "e1-e10") or single page
         if '-' in page_value:
             # Handle page range
