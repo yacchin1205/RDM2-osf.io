@@ -138,8 +138,39 @@ class TestExtractCrossrefMetadata:
         assert result['volume'] == '5'
         assert result['issue'] == '4'
         assert result['page'] == '76'
+        assert result['page_start'] == '76'  # Single page
+        assert 'page_end' not in result  # No end page for single page
         assert result['publisher'] == 'MDPI AG'
         assert result['type'] == 'journal-article'
+
+    def test_page_parsing(self):
+        # Test single page
+        message = {'page': '76'}
+        result = extract_crossref_metadata(message)
+        assert result['page'] == '76'
+        assert result['page_start'] == '76'
+        assert 'page_end' not in result
+
+        # Test page range
+        message = {'page': '54-58'}
+        result = extract_crossref_metadata(message)
+        assert result['page'] == '54-58'
+        assert result['page_start'] == '54'
+        assert result['page_end'] == '58'
+
+        # Test electronic page format
+        message = {'page': 'e12-e20'}
+        result = extract_crossref_metadata(message)
+        assert result['page'] == 'e12-e20'
+        assert result['page_start'] == 'e12'
+        assert result['page_end'] == 'e20'
+
+        # Test page with spaces
+        message = {'page': '100 - 105'}
+        result = extract_crossref_metadata(message)
+        assert result['page'] == '100 - 105'
+        assert result['page_start'] == '100'
+        assert result['page_end'] == '105'
 
     def test_authors_extraction(self):
         message = {

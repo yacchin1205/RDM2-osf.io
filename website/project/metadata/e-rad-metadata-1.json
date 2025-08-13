@@ -314,7 +314,8 @@
                 "grdm-file:date-published": "publication_year_month",
                 "grdm-file:volume": "volume",
                 "grdm-file:issue": "issue",
-                "grdm-file:page-start": "page"
+                "grdm-file:page-start": "page_start",
+                "grdm-file:page-end": "page_end"
               }
             }
           ]

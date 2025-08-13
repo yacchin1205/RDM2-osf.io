@@ -152,7 +152,20 @@ def extract_crossref_metadata(message):
         result['issue'] = message['issue']
 
     if 'page' in message:
-        result['page'] = message['page']
+        page_value = message['page']
+        result['page'] = page_value
+        
+        # Parse page range (e.g., "123-145" or "e1-e10") or single page
+        if '-' in page_value:
+            # Handle page range
+            page_parts = page_value.split('-')
+            if len(page_parts) >= 1:
+                result['page_start'] = page_parts[0].strip()
+            if len(page_parts) >= 2:
+                result['page_end'] = page_parts[-1].strip()  # Use last part to handle ranges like "e1-e10"
+        else:
+            # Single page number
+            result['page_start'] = page_value.strip()
 
     if 'article-number' in message:
         result['article_number'] = message['article-number']
