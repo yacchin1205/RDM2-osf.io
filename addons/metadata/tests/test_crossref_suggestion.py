@@ -385,6 +385,7 @@ class TestExtractDates:
 
         assert result['publication_date'] == '2021-12-13'
         assert result['publication_year'] == '2021'
+        assert result['publication_year_month'] == '2021-12'
         assert result['published_print'] == '2021-12-13'
         assert result['published_online'] == '2021-11-01'
 
@@ -400,6 +401,40 @@ class TestExtractDates:
 
         assert result['publication_date'] == '2021-11-01'
         assert result['publication_year'] == '2021'
+        assert result['publication_year_month'] == '2021-11'
+
+    def test_publication_year_month_extraction(self):
+        # Test extraction of year-month from different date formats
+        
+        # Full date should extract year-month
+        message = {
+            'published-print': {
+                'date-parts': [[2021, 12, 13]]
+            }
+        }
+        result = {}
+        extract_dates(message, result)
+        assert result['publication_year_month'] == '2021-12'
+        
+        # Year-month date should use as-is
+        message = {
+            'published-print': {
+                'date-parts': [[2021, 6]]
+            }
+        }
+        result = {}
+        extract_dates(message, result)
+        assert result['publication_year_month'] == '2021-06'
+        
+        # Year-only date should use just the year
+        message = {
+            'published-print': {
+                'date-parts': [[2021]]
+            }
+        }
+        result = {}
+        extract_dates(message, result)
+        assert result['publication_year_month'] == '2021'
 
     def test_all_date_fields(self):
         message = {

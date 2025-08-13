@@ -311,7 +311,7 @@
                 "grdm-file:title-en": "title",
                 "grdm-file:journal-name-ja": "journal_title",
                 "grdm-file:journal-name-en": "journal_title",
-                "grdm-file:date-published": "publication_date",
+                "grdm-file:date-published": "publication_year_month",
                 "grdm-file:volume": "volume",
                 "grdm-file:issue": "issue",
                 "grdm-file:page-start": "page"

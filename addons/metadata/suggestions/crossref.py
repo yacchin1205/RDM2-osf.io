@@ -416,6 +416,13 @@ def extract_dates(message, result):
         year_match = re.match(r'^(\d{4})', main_date)
         if year_match:
             result['publication_year'] = year_match.group(1)
+        # Extract year-month for date-published field (YYYY-MM format)
+        year_month_match = re.match(r'^(\d{4}-\d{2})', main_date)
+        if year_month_match:
+            result['publication_year_month'] = year_month_match.group(1)
+        elif year_match:
+            # If only year is available, just use the year
+            result['publication_year_month'] = year_match.group(1)
 
     # Other dates
     if 'created' in message:
