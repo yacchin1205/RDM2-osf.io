@@ -441,17 +441,25 @@ const TextFormField = oop.extend(FormFieldInterface, {
       return suggestion.button;
     });
     if (!self.options.readonly && !self.options.multiple && buttonSuggestions.length) {
-      function onSuggested(value) {
-        self.setValue(value);
+      function onSuggested(value, suggestion) {
+        // If there's autofill configuration, emit suggestionSelected event for autofill
+        if (suggestion && suggestion.autofill && value) {
+          self.emit('suggestionSelected', {
+            suggestion: suggestion,
+            value: value
+          }, [self]);
+        } else {
+          // Otherwise, just set the value on the current field
+          self.setValue(value);
+        }
       }
-      function enteredValue() {
-        const value = self.getValue();
-        return value != null && value !== '';
+      function getFieldValue() {
+        return self.getValue();
       }
       const suggestionContainer = createSuggestionButton(
         self.container,
         self.question, buttonSuggestions, self.options,
-        onSuggested, enteredValue
+        onSuggested, getFieldValue
       );
       self.container
         .css('display', 'flex')
@@ -1049,7 +1057,7 @@ function requestSuggestion(filepath, key, keyword) {
   });
 }
 
-function suggestForButton(question, suggestion, options) {
+function suggestForButton(question, suggestion, options, getFieldValue) {
   if (suggestion.key === 'file-size') {
     const wbcache = options.wbcache;
     const filepath = options.filepath;
@@ -1076,13 +1084,22 @@ function suggestForButton(question, suggestion, options) {
       })
   } else if (suggestion.key === 'file-url') {
     return Promise.resolve(fangorn.getPersistentLinkFor(options.fileitem));
-  } else { // for key === file-data-number
+  } else { // for other keys including crossref:doi
+    if (!getFieldValue) {
+      throw new Error('getFieldValue function is required for suggestion key: ' + suggestion.key);
+    }
+
     const fileitem = options.fileitem;
     const itemUrl = fangorn.getPersistentLinkFor(fileitem);
     const filepath = itemUrl.substr(itemUrl.indexOf('files/'));
-    return requestSuggestion(filepath, suggestion.key)
+
+    // Get the current field value as keyword for suggestions that need it (like Crossref)
+    const keyword = getFieldValue();
+
+    return requestSuggestion(filepath, suggestion.key, keyword)
       .then(function (suggestions) {
-        return (suggestions.find(function (s) { return s.key === suggestion.key}) || {}).value;
+        const found = suggestions.find(function (s) { return s.key === suggestion.key}) || {};
+        return found.value;
       });
   }
 }
@@ -1117,7 +1134,7 @@ function suggestForTypeahead(question, templateSuggestions, keyword, options) {
     });
 }
 
-function createSuggestionButton(container, question, buttonSuggestions, options, onSuggested, enteredValue) {
+function createSuggestionButton(container, question, buttonSuggestions, options, onSuggested, getFieldValue) {
   const suggestionContainer = $('<div>')
     .css('margin', 'auto 0 auto 8px');
   buttonSuggestions.forEach(function(suggestion) {
@@ -1132,15 +1149,20 @@ function createSuggestionButton(container, question, buttonSuggestions, options,
     var processing = false;
     button.on('click', function (e) {
       e.preventDefault();
-      if (enteredValue() && !window.confirm(_('Overwrite already entered value?'))) {
-        return;
+      // If suggestion has autofill, it fills other fields, not the current field
+      // So we only check for overwrite if there's no autofill configuration
+      if (!suggestion.autofill) {
+        const currentValue = getFieldValue();
+        if (currentValue && currentValue !== '' && !window.confirm(_('Overwrite already entered value?'))) {
+          return;
+        }
       }
       if (!processing) {
         processing = true;
         button.attr('disabled', true);
         errorContainer.hide().text('');
         indicator.show();
-        suggestForButton(question, suggestion, options)
+        suggestForButton(question, suggestion, options, getFieldValue)
           .then(function (value) {
             if(value == 'error'){
               return;
@@ -1151,7 +1173,7 @@ function createSuggestionButton(container, question, buttonSuggestions, options,
                 '<div class="'+name+'" style="color: red;">'+ _("File size exceeds the maximum allowed size.")+'</div>'
                );
             } else{
-              onSuggested(value);
+              onSuggested(value, suggestion);
             }
           })
           .catch(function (err) {

@@ -300,7 +300,24 @@
           "required_if": {
             "grdm-file:doi-exists": "exists"
           },
-          "message_required_if": "論文（出版社版）のDOIの有無が「あり」の場合は必須項目です|This field is required if the existence of DOI of the publication (publisher version) is \"exists\""
+          "message_required_if": "論文（出版社版）のDOIの有無が「あり」の場合は必須項目です|This field is required if the existence of DOI of the publication (publisher version) is \"exists\"",
+          "suggestion": [
+            {
+              "key": "crossref:doi",
+              "button": "Crossrefから取得|Fetch from Crossref",
+              "autofill": {
+                "grdm-file:doi": "doi",
+                "grdm-file:title-ja": "title",
+                "grdm-file:title-en": "title",
+                "grdm-file:journal-name-ja": "journal_title",
+                "grdm-file:journal-name-en": "journal_title",
+                "grdm-file:date-published": "publication_date",
+                "grdm-file:volume": "volume",
+                "grdm-file:issue": "issue",
+                "grdm-file:page-start": "page"
+              }
+            }
+          ]
         },
         {
           "qid": "grdm-file:manuscript-type",
