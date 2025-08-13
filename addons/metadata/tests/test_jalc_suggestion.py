@@ -182,6 +182,7 @@ class TestExtractJalcMetadata:
         assert result['publisher'] == 'Japanese Psychological Review'
         assert result['publisher_ja'] == '心理学評論刊行会'
         assert result['content_type'] == 'JA'
+        assert result['manuscript_type_common_metadata_format'] == 'journal article'
 
     def test_authors_extraction(self):
         jalc_data = {
@@ -323,6 +324,32 @@ class TestExtractJalcMetadata:
         result = extract_jalc_metadata({})
 
         assert result == {'authors': [], 'authors_common_metadata_format': []}
+
+    def test_manuscript_type_mapping(self):
+        """Test manuscript type mapping to common metadata format"""
+        # Test journal article
+        jalc_data = {'content_type': 'JA'}
+        result = extract_jalc_metadata(jalc_data)
+        assert result['manuscript_type_common_metadata_format'] == 'journal article'
+        assert result['content_type'] == 'JA'
+
+        # Test unmapped type (GD = General Data)
+        jalc_data = {'content_type': 'GD'}
+        result = extract_jalc_metadata(jalc_data)
+        assert 'manuscript_type_common_metadata_format' not in result
+        assert result['content_type'] == 'GD'  # Original type should still be preserved
+
+        # Test unknown type
+        jalc_data = {'content_type': 'XX'}
+        result = extract_jalc_metadata(jalc_data)
+        assert 'manuscript_type_common_metadata_format' not in result
+        assert result['content_type'] == 'XX'
+
+        # Test missing content_type
+        jalc_data = {}
+        result = extract_jalc_metadata(jalc_data)
+        assert 'manuscript_type_common_metadata_format' not in result
+        assert 'content_type' not in result
 
 
 class TestExtractPersonData:

@@ -231,6 +231,27 @@ def extract_jalc_metadata(jalc_data):
     # Resource type
     if 'content_type' in jalc_data:
         result['content_type'] = jalc_data['content_type']
+        # Map JaLC content type to common metadata format manuscript type
+        # Based on observed values and JaLC documentation
+        # TODO: Research and add more type mappings from JaLC API documentation
+        # Target manuscript types defined in grdm-file:manuscript-type:
+        # - conference paper
+        # - data paper
+        # - departmental bulletin paper
+        # - editorial
+        # - journal article (confirmed: JA)
+        # - review article
+        # - software paper
+        # - article
+        # Observed JaLC content_type values:
+        # - JA = Journal Article (confirmed)
+        # - GD = General Data (observed, mapping unclear)
+        type_mapping = {
+            'JA': 'journal article',  # Journal Article (confirmed)
+        }
+        manuscript_type = type_mapping.get(jalc_data['content_type'])
+        if manuscript_type:
+            result['manuscript_type_common_metadata_format'] = manuscript_type
     if 'resource_type' in jalc_data:
         result['resource_type'] = jalc_data['resource_type']
 

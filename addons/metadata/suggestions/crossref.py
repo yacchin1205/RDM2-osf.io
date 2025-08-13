@@ -113,15 +113,7 @@ def extract_crossref_metadata(message):
     for author in authors:
         formatted_author = {}
 
-        # Name fields as objects with first, middle, last
-        # For Japanese name (family name first)
-        formatted_author['name-ja'] = {
-            'last': author.get('family', ''),
-            'middle': '',
-            'first': author.get('given', '')
-        }
-
-        # For English name (given name first)
+        # Only English name since Crossref only contains English data
         formatted_author['name-en'] = {
             'last': author.get('family', ''),
             'middle': '',
@@ -264,6 +256,25 @@ def extract_crossref_metadata(message):
     # Type and subtype
     if 'type' in message:
         result['type'] = message['type']
+        # Map Crossref type to common metadata format manuscript type
+        # Only use confirmed mappings
+        # TODO: Research and add more type mappings from Crossref documentation
+        # Target manuscript types defined in grdm-file:manuscript-type:
+        # - conference paper (confirmed: proceedings-article)
+        # - data paper
+        # - departmental bulletin paper
+        # - editorial
+        # - journal article (confirmed: journal-article)
+        # - review article
+        # - software paper
+        # - article
+        type_mapping = {
+            'journal-article': 'journal article',  # Confirmed
+            'proceedings-article': 'conference paper',  # Confirmed
+        }
+        manuscript_type = type_mapping.get(message['type'])
+        if manuscript_type:
+            result['manuscript_type_common_metadata_format'] = manuscript_type
 
     if 'subtype' in message:
         result['subtype'] = message['subtype']

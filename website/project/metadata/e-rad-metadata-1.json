@@ -307,9 +307,8 @@
               "button": "Crossrefから取得|Fetch from Crossref",
               "autofill": {
                 "grdm-file:doi": "doi",
-                "grdm-file:title-ja": "title",
+                "grdm-file:manuscript-type": "manuscript_type_common_metadata_format",
                 "grdm-file:title-en": "title",
-                "grdm-file:journal-name-ja": "journal_title",
                 "grdm-file:journal-name-en": "journal_title",
                 "grdm-file:date-published": "publication_year_month",
                 "grdm-file:volume": "volume",
@@ -324,6 +323,7 @@
               "button": "JaLCから取得|Fetch from JaLC",
               "autofill": {
                 "grdm-file:doi": "doi",
+                "grdm-file:manuscript-type": "manuscript_type_common_metadata_format",
                 "grdm-file:title-ja": "title_ja",
                 "grdm-file:title-en": "title_en",
                 "grdm-file:journal-name-ja": "journal_title_ja",

@@ -142,6 +142,7 @@ class TestExtractCrossrefMetadata:
         assert 'page_end' not in result  # No end page for single page
         assert result['publisher'] == 'MDPI AG'
         assert result['type'] == 'journal-article'
+        assert result['manuscript_type_common_metadata_format'] == 'journal article'
 
     def test_page_parsing(self):
         # Test single page
@@ -193,21 +194,19 @@ class TestExtractCrossrefMetadata:
 
         # Test common metadata format
         assert len(result['authors_common_metadata_format']) == 3
-        assert result['authors_common_metadata_format'][0]['name-ja'] == {
-            'last': 'Doe',
-            'middle': '',
-            'first': 'John'
-        }
+        # Only English names since Crossref only has English data
         assert result['authors_common_metadata_format'][0]['name-en'] == {
             'last': 'Doe',
             'middle': '',
             'first': 'John'
         }
-        assert result['authors_common_metadata_format'][1]['name-ja'] == {
+        assert 'name-ja' not in result['authors_common_metadata_format'][0]
+        assert result['authors_common_metadata_format'][1]['name-en'] == {
             'last': 'Smith',
             'middle': '',
             'first': 'Jane'
         }
+        assert 'name-ja' not in result['authors_common_metadata_format'][1]
 
     def test_dates_extraction(self):
         message = {
@@ -304,7 +303,31 @@ class TestExtractCrossrefMetadata:
     def test_empty_message(self):
         result = extract_crossref_metadata({})
 
-        assert result == {'authors': [], 'editors': [], 'translators': [], 'chairs': []}
+        assert result == {'authors': [], 'authors_common_metadata_format': [], 'editors': [], 'translators': [], 'chairs': []}
+
+    def test_manuscript_type_mapping(self):
+        """Test manuscript type mapping to common metadata format"""
+        # Test journal article
+        message = {'type': 'journal-article'}
+        result = extract_crossref_metadata(message)
+        assert result['manuscript_type_common_metadata_format'] == 'journal article'
+
+        # Test conference paper
+        message = {'type': 'proceedings-article'}
+        result = extract_crossref_metadata(message)
+        assert result['manuscript_type_common_metadata_format'] == 'conference paper'
+
+        # Test unmapped type (should not have manuscript_type_common_metadata_format)
+        message = {'type': 'book-chapter'}
+        result = extract_crossref_metadata(message)
+        assert 'manuscript_type_common_metadata_format' not in result
+        assert result['type'] == 'book-chapter'  # Original type should still be preserved
+
+        # Test unknown type
+        message = {'type': 'unknown-type'}
+        result = extract_crossref_metadata(message)
+        assert 'manuscript_type_common_metadata_format' not in result
+        assert result['type'] == 'unknown-type'
 
 
 class TestExtractPersonData:
