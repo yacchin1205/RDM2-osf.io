@@ -442,14 +442,18 @@ const TextFormField = oop.extend(FormFieldInterface, {
     });
     if (!self.options.readonly && !self.options.multiple && buttonSuggestions.length) {
       function onSuggested(value, suggestion) {
+        // If value is null (no suggestions found for autofill), don't update anything
+        if (value === null) {
+          return;
+        }
         // If there's autofill configuration, emit suggestionSelected event for autofill
         if (suggestion && suggestion.autofill && value) {
           self.emit('suggestionSelected', {
             suggestion: suggestion,
             value: value
           }, [self]);
-        } else {
-          // Otherwise, just set the value on the current field
+        } else if (value !== undefined) {
+          // Otherwise, just set the value on the current field (but not if undefined)
           self.setValue(value);
         }
       }
@@ -1098,8 +1102,13 @@ function suggestForButton(question, suggestion, options, getFieldValue) {
 
     return requestSuggestion(filepath, suggestion.key, keyword)
       .then(function (suggestions) {
-        const found = suggestions.find(function (s) { return s.key === suggestion.key}) || {};
-        return found.value;
+        const found = suggestions.find(function (s) { return s.key === suggestion.key});
+        // If no suggestions found and this is an autofill button, return null to indicate no data
+        // This prevents clearing existing field values
+        if (!found && suggestion.autofill) {
+          return null;
+        }
+        return found ? found.value : undefined;
       });
   }
 }
@@ -1137,65 +1146,147 @@ function suggestForTypeahead(question, templateSuggestions, keyword, options) {
 function createSuggestionButton(container, question, buttonSuggestions, options, onSuggested, getFieldValue) {
   const suggestionContainer = $('<div>')
     .css('margin', 'auto 0 auto 8px');
-  buttonSuggestions.forEach(function(suggestion) {
-    const errorContainer = $('<span>')
-      .css('color', 'red').hide();
-    const indicator = $('<i class="fa fa-spinner fa-pulse">')
-      .hide();
+
+  if (buttonSuggestions.length === 0) {
+    return suggestionContainer;
+  }
+
+  const errorContainer = $('<span>')
+    .css('color', 'red')
+    .css('margin-left', '8px')
+    .hide();
+  const indicator = $('<i class="fa fa-spinner fa-pulse">')
+    .hide();
+
+  var processing = false;
+
+  // Function to handle suggestion click
+  function handleSuggestionClick(suggestion) {
+    // If suggestion has autofill, it fills other fields, not the current field
+    // So we only check for overwrite if there's no autofill configuration
+    if (!suggestion.autofill) {
+      const currentValue = getFieldValue();
+      if (currentValue && currentValue !== '' && !window.confirm(_('Overwrite already entered value?'))) {
+        return;
+      }
+    }
+    if (!processing) {
+      processing = true;
+      mainButton.attr('disabled', true);
+      if (dropdownButton) {
+        dropdownButton.attr('disabled', true);
+      }
+      errorContainer.hide().text('');
+      indicator.show();
+      suggestForButton(question, suggestion, options, getFieldValue)
+        .then(function (value) {
+          if(value == 'error'){
+            return;
+          }else if( value == 'get-filesize-over-error'){
+            var name = question.qid.split(':')[1].replace('/', '-');
+            $('.'+name).remove();
+            container.after(
+              '<div class="'+name+'" style="color: red;">'+ _("File size exceeds the maximum allowed size.")+'</div>'
+             );
+          } else{
+            onSuggested(value, suggestion);
+          }
+        })
+        .catch(function (err) {
+          console.error(err);
+          Raven.captureMessage(_('Could not list files'), {
+            extra: {
+              error: err.toString()
+            }
+          });
+          errorContainer.text('Suggestion error: ' + err).show();
+        })
+        .then(function () {
+          processing = false;
+          mainButton.attr('disabled', false);
+          if (dropdownButton) {
+            dropdownButton.attr('disabled', false);
+          }
+          indicator.hide();
+        });
+    }
+  }
+
+  // If only one suggestion, create a simple button
+  if (buttonSuggestions.length === 1) {
+    const suggestion = buttonSuggestions[0];
     const button = $('<a class="btn btn-default btn-sm">')
       .append($('<i class="fa fa-refresh"></i>'))
       .append($('<span></span>').text(getLocalizedText(suggestion.button)))
       .append(indicator);
-    var processing = false;
+
     button.on('click', function (e) {
       e.preventDefault();
-      // If suggestion has autofill, it fills other fields, not the current field
-      // So we only check for overwrite if there's no autofill configuration
-      if (!suggestion.autofill) {
-        const currentValue = getFieldValue();
-        if (currentValue && currentValue !== '' && !window.confirm(_('Overwrite already entered value?'))) {
-          return;
-        }
-      }
-      if (!processing) {
-        processing = true;
-        button.attr('disabled', true);
-        errorContainer.hide().text('');
-        indicator.show();
-        suggestForButton(question, suggestion, options, getFieldValue)
-          .then(function (value) {
-            if(value == 'error'){
-              return;
-            }else if( value == 'get-filesize-over-error'){
-              var name = question.qid.split(':')[1].replace('/', '-');
-              $('.'+name).remove();
-              container.after(
-                '<div class="'+name+'" style="color: red;">'+ _("File size exceeds the maximum allowed size.")+'</div>'
-               );
-            } else{
-              onSuggested(value, suggestion);
-            }
-          })
-          .catch(function (err) {
-            console.error(err);
-            Raven.captureMessage(_('Could not list files'), {
-              extra: {
-                error: err.toString()
-              }
-            });
-            errorContainer.text('Suggestion error: ' + err).show();
-          })
-          .then(function () {
-            processing = false;
-            button.attr('disabled', false);
-            indicator.hide();
-          });
-      }
+      handleSuggestionClick(suggestion);
     });
+
     suggestionContainer
       .append(button)
       .append(errorContainer);
-  });
+
+    var mainButton = button; // For use in handleSuggestionClick
+    var dropdownButton = null;
+  } else {
+    // Multiple suggestions: create a button group with dropdown
+    const buttonGroup = $('<div class="btn-group">')
+      .css('display', 'flex');
+
+    // Main button (uses first suggestion by default)
+    const mainSuggestion = buttonSuggestions[0];
+    var mainButton = $('<button class="btn btn-default btn-sm">')
+      .css('border-top-right-radius', '0')
+      .css('border-bottom-right-radius', '0')
+      .append($('<i class="fa fa-refresh"></i>'))
+      .append(' ')  // Add space between icon and text
+      .append($('<span class="button-label"></span>').text(getLocalizedText(mainSuggestion.button)))
+      .append(indicator);
+
+    mainButton.on('click', function (e) {
+      e.preventDefault();
+      const currentIndex = mainButton.data('suggestionIndex') || 0;
+      handleSuggestionClick(buttonSuggestions[currentIndex]);
+    });
+
+    // Dropdown toggle button
+    var dropdownButton = $('<button class="btn btn-default btn-sm dropdown-toggle" data-toggle="dropdown">')
+      .css('border-top-left-radius', '0')
+      .css('border-bottom-left-radius', '0')
+      .css('margin-left', '-1px')  // Overlap borders for seamless appearance
+      .append($('<span class="caret"></span>'));
+
+    // Dropdown menu
+    const dropdownMenu = $('<ul class="dropdown-menu dropdown-menu-right">');  // Use dropdown-menu-right to prevent overflow
+    buttonSuggestions.forEach(function(suggestion, index) {
+      const menuItem = $('<li>')
+        .append($('<a href="#">').text(getLocalizedText(suggestion.button)));
+
+      menuItem.on('click', function(e) {
+        e.preventDefault();
+        // Update main button text and data
+        mainButton.find('.button-label').text(getLocalizedText(suggestion.button));
+        mainButton.data('suggestionIndex', index);
+        // Execute the suggestion
+        handleSuggestionClick(suggestion);
+      });
+
+      dropdownMenu.append(menuItem);
+    });
+
+    buttonGroup
+      .append(mainButton)
+      .append(dropdownButton)
+      .append(dropdownMenu);
+
+    suggestionContainer
+      .append(buttonGroup)
+      .append(errorContainer);
+  }
+
   return suggestionContainer;
 }
 

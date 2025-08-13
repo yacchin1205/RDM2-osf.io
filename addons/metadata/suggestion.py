@@ -27,6 +27,10 @@ from addons.metadata.suggestions.crossref import (
     valid_crossref_key,
     suggestion_crossref
 )
+from addons.metadata.suggestions.jalc import (
+    valid_jalc_key,
+    suggestion_jalc
+)
 
 import mimetypes
 from api.base.utils import waterbutler_api_url_for
@@ -59,6 +63,8 @@ def valid_suggestion_key(key):
         return True
     elif valid_crossref_key(key):
         return True
+    elif valid_jalc_key(key):
+        return True
     return False
 
 
@@ -78,6 +84,8 @@ def suggestion_metadata(key, keyword, filepath, node):
         suggestions.extend(suggestion_contributor(key, keyword, node))
     elif key.startswith('crossref:'):
         suggestions.extend(suggestion_crossref(key, keyword))
+    elif key.startswith('jalc:'):
+        suggestions.extend(suggestion_jalc(key, keyword))
     else:
         raise KeyError('Invalid key: {}'.format(key))
     return suggestions

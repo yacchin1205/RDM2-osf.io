@@ -318,6 +318,23 @@
                 "grdm-file:page-end": "page_end",
                 "grdm-file:authors": "authors_common_metadata_format"
               }
+            },
+            {
+              "key": "jalc:doi",
+              "button": "JaLCから取得|Fetch from JaLC",
+              "autofill": {
+                "grdm-file:doi": "doi",
+                "grdm-file:title-ja": "title_ja",
+                "grdm-file:title-en": "title_en",
+                "grdm-file:journal-name-ja": "journal_title_ja",
+                "grdm-file:journal-name-en": "journal_title_en",
+                "grdm-file:date-published": "publication_year_month",
+                "grdm-file:volume": "volume",
+                "grdm-file:issue": "issue",
+                "grdm-file:page-start": "page_start",
+                "grdm-file:page-end": "page_end",
+                "grdm-file:authors": "authors_common_metadata_format"
+              }
             }
           ]
         },
