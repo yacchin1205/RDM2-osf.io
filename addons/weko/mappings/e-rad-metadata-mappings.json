@@ -82,7 +82,7 @@
     },
     "grdm-file:doi": {
         "@type": "string",
-        "@createIf": "{% if grdm_file_file_type_value == \"manuscript\" and grdm_file_doi_exists_value == \"exists\" %}{{value}}{% endif %}",
+        "@createIf": "{% if grdm_file_file_type_value == \"manuscript\" %}{{value}}{% endif %}",
         "metadata.item_30002_relation18[]": {
             "subitem_relation_type": "isVersionOf",
             "subitem_relation_type_id": {

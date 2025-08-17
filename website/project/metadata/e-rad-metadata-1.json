@@ -265,27 +265,6 @@
           }
         },
         {
-          "qid": "grdm-file:doi-exists",
-          "nav": "論文（出版社版）のDOIの有無",
-          "title": "論文（出版社版）のDOIの有無|Existence of DOI of the publication (publisher version)",
-          "type": "choose",
-          "format": "singleselect",
-          "options": [
-            {
-              "text": "exists",
-              "tooltip": "あり|exists"
-            },
-            {
-              "text": "not exists",
-              "tooltip": "なし|not exists"
-            }
-          ],
-          "required": true,
-          "enabled_if": {
-            "grdm-file:file-type": "manuscript"
-          }
-        },
-        {
           "qid": "grdm-file:doi",
           "nav": "論文（出版社版）のDOI",
           "title": "論文（出版社版）のDOI|DOI of the publication (publisher version)",
@@ -297,10 +276,6 @@
           "enabled_if": {
             "grdm-file:file-type": "manuscript"
           },
-          "required_if": {
-            "grdm-file:doi-exists": "exists"
-          },
-          "message_required_if": "論文（出版社版）のDOIの有無が「あり」の場合は必須項目です|This field is required if the existence of DOI of the publication (publisher version) is \"exists\"",
           "suggestion": [
             {
               "key": "crossref:doi",
@@ -1095,14 +1070,14 @@
           "required_if": {
             "$and": [
               {
-                "grdm-file:doi-exists": "not exists"
+                "grdm-file:doi": {"$exists":  false}
               },
               {
-                "grdm-file:journal-name-en": ""
+                "grdm-file:journal-name-en": {"$exists":  false}
               }
             ]
           },
-          "message_required_if": "論文（出版社版）のDOIの有無が「なし」の場合は日英どちらか必須です|Either Japanese or English is required if the existence of DOI of the publication (publisher version) is \"not exists\""
+          "message_required_if": "DOIが入力されていない場合は日英どちらか必須です|Either Japanese or English is required if DOI is not provided"
         },
         {
           "qid": "grdm-file:journal-name-en",
@@ -1117,14 +1092,14 @@
           "required_if": {
             "$and": [
               {
-                "grdm-file:doi-exists": "not exists"
+                "grdm-file:doi": {"$exists":  false}
               },
               {
-                "grdm-file:journal-name-ja": ""
+                "grdm-file:journal-name-ja": {"$exists":  false}
               }
             ]
           },
-          "message_required_if": "論文（出版社版）のDOIの有無が「なし」の場合は日英どちらか必須です|Either Japanese or English is required if the existence of DOI of the publication (publisher version) is \"not exists\""
+          "message_required_if": "DOIが入力されていない場合は日英どちらか必須です|Either Japanese or English is required if DOI is not provided"
         },
         {
           "qid": "grdm-file:date-published",
@@ -1138,9 +1113,9 @@
             "grdm-file:file-type": "manuscript"
           },
           "required_if": {
-            "grdm-file:doi-exists": "not exists"
+            "grdm-file:doi": {"$exists":  false}
           },
-          "message_required_if": "論文（出版社版）のDOIの有無が「なし」の場合は必須項目です|This field is required if the existence of DOI of the publication (publisher version) is \"not exists\""
+          "message_required_if": "DOIが入力されていない場合は必須項目です|This field is required if DOI is not provided"
         },
         {
           "qid": "grdm-file:volume",
