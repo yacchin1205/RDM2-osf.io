@@ -584,6 +584,48 @@ def _contributor_to_name_en(user):
     }
 
 
+def _contributor_to_affiliation_name(user, lang):
+    """Extract affiliation name from user's jobs or schools.
+    
+    Args:
+        user: OSFUser object
+        lang: 'ja' for Japanese, 'en' for English
+        
+    Returns:
+        str: Institution name or empty string if not available
+    """
+    # Try jobs first (current affiliation for employed users)
+    if user.jobs and len(user.jobs) > 0:
+        first_job = user.jobs[0]
+        if lang == 'ja':
+            name = first_job.get('institution_ja', '')
+        else:
+            name = first_job.get('institution', '')
+        if name:
+            return name
+    
+    # Use schools for students (those without jobs)
+    if user.schools and len(user.schools) > 0:
+        # First check for ongoing schools
+        for school in user.schools:
+            if school.get('ongoing', False):
+                if lang == 'ja':
+                    name = school.get('institution_ja', '')
+                else:
+                    name = school.get('institution', '')
+                if name:
+                    return name
+        
+        # If no ongoing school, use the most recent one (last in the list)
+        last_school = user.schools[-1]
+        if lang == 'ja':
+            return last_school.get('institution_ja', '')
+        else:
+            return last_school.get('institution', '')
+    
+    return ''
+
+
 def suggestion_contributor(key, keyword, node):
     contributors = [
         {
@@ -608,6 +650,8 @@ def suggestion_contributor(key, keyword, node):
             'name-en': _contributor_to_name_en(user),
             'name-ja-msfullname': _to_msfullname(_contributor_to_name_ja(user), 'ja'),
             'name-en-msfullname': _to_msfullname(_contributor_to_name_en(user), 'en'),
+            'affiliation-name-ja': _contributor_to_affiliation_name(user, 'ja'),
+            'affiliation-name-en': _contributor_to_affiliation_name(user, 'en'),
         }
         for user in node.contributors
     ]

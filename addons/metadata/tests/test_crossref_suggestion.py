@@ -219,9 +219,10 @@ class TestExtractCrossrefMetadata:
         assert 'name-ja' not in result['authors_common_metadata_format'][0]
         
         # Check affiliation in common metadata format
-        assert 'affiliation' in result['authors_common_metadata_format'][0]
-        assert result['authors_common_metadata_format'][0]['affiliation']['name-ja'] == ''
-        assert result['authors_common_metadata_format'][0]['affiliation']['name-en'] == 'University of Tokyo'
+        assert 'affiliation-name-ja' in result['authors_common_metadata_format'][0]
+        assert result['authors_common_metadata_format'][0]['affiliation-name-ja'] == ''
+        assert 'affiliation-name-en' in result['authors_common_metadata_format'][0]
+        assert result['authors_common_metadata_format'][0]['affiliation-name-en'] == 'University of Tokyo'
         
         # Second author has no affiliation
         assert result['authors_common_metadata_format'][1]['name-en'] == {
@@ -230,7 +231,8 @@ class TestExtractCrossrefMetadata:
             'first': 'Jane'
         }
         assert 'name-ja' not in result['authors_common_metadata_format'][1]
-        assert 'affiliation' not in result['authors_common_metadata_format'][1]
+        assert 'affiliation-name-ja' not in result['authors_common_metadata_format'][1]
+        assert 'affiliation-name-en' not in result['authors_common_metadata_format'][1]
 
     def test_dates_extraction(self):
         message = {

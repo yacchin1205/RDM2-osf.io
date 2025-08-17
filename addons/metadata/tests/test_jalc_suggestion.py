@@ -251,9 +251,10 @@ class TestExtractJalcMetadata:
             'first': 'Taro'
         }
         # Check affiliation in common metadata format
-        assert 'affiliation' in result['authors_common_metadata_format'][0]
-        assert result['authors_common_metadata_format'][0]['affiliation']['name-ja'] == '東京大学'
-        assert result['authors_common_metadata_format'][0]['affiliation']['name-en'] == 'The University of Tokyo'
+        assert 'affiliation-name-ja' in result['authors_common_metadata_format'][0]
+        assert result['authors_common_metadata_format'][0]['affiliation-name-ja'] == '東京大学'
+        assert 'affiliation-name-en' in result['authors_common_metadata_format'][0]
+        assert result['authors_common_metadata_format'][0]['affiliation-name-en'] == 'The University of Tokyo'
 
     def test_dates_extraction(self):
         jalc_data = {

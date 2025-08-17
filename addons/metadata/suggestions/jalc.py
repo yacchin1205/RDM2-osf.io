@@ -138,10 +138,8 @@ def extract_jalc_metadata(jalc_data):
         if 'affiliations' in author and author['affiliations']:
             # Take the first affiliation
             first_affiliation = author['affiliations'][0]
-            formatted_author['affiliation'] = {
-                'name-ja': first_affiliation.get('name_ja', ''),
-                'name-en': first_affiliation.get('name_en', first_affiliation.get('name', ''))
-            }
+            formatted_author['affiliation-name-ja'] = first_affiliation.get('name_ja', '')
+            formatted_author['affiliation-name-en'] = first_affiliation.get('name_en', first_affiliation.get('name', ''))
 
         result['authors_common_metadata_format'].append(formatted_author)
 
