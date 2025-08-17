@@ -405,6 +405,9 @@ const FormFieldInterface = oop.extend(Emitter, {
   setValue: noImplementation,
   reset: noImplementation,
   disable: noImplementation,
+  getChildFields: function() {
+    return [];
+  },
 });
 
 const TextFormField = oop.extend(FormFieldInterface, {
@@ -768,8 +771,45 @@ const ArrayFormField = oop.extend(FormFieldInterface, {
     }
   },
 
+  _createVerticalEditCell: function(subFormFields) {
+    const self = this;
+    // Calculate colspan from display_template
+    const columnCount = self.question.display_template.split('|').length + 1; // +1 for button column
+    const editCell = $('<td>').attr('colspan', columnCount);
+    const fieldsContainer = $('<div>').css('padding', '10px');
+    
+    // Add each field with its label in vertical layout
+    self.question.properties.forEach(function(prop, index) {
+      const fieldWrapper = $('<div>').addClass('form-group');
+      
+      // Create label
+      const fieldLabel = $('<label>')
+        .text(prop.title ? getLocalizedText(prop.title) : prop.label);
+      if (prop.required) {
+        fieldLabel.append($('<span>')
+          .css('color', 'red')
+          .css('font-weight', 'bold')
+          .text('*'));
+      }
+      
+      fieldWrapper.append(fieldLabel);
+      fieldWrapper.append(subFormFields[index].container);
+      fieldsContainer.append(fieldWrapper);
+    });
+    
+    editCell.append(fieldsContainer);
+    return editCell;
+  },
+
   addRow: function(value) {
     const self = this;
+    
+    // Create display row first (if display_template exists)
+    let displayTr = null;
+    if (self.question.display_template) {
+      displayTr = $('<tr class="metadata-display-mode">');
+    }
+    
     const subFormFields = self.question.properties.map(function(prop) {
       const subFormField = createFormField(prop, self.options);
       subFormField.create();
@@ -790,31 +830,167 @@ const ArrayFormField = oop.extend(FormFieldInterface, {
         self.emit('suggestionSelected', suggestion, nextTree);
       });
     });
-    const tr = $('<tr>');
-    subFormFields.forEach(function(subFormField) {
-      tr.append($('<td>').append(subFormField.container));
-    });
-    if (!self.options || !self.options.readonly) {
-      const removeButton = $('<span class="remove-row"><i class="fa fa-times fa-2x remove-or-reject"></i></span>');
-      removeButton.on('click', function (e) {
-        e.preventDefault();
-        self.removeRow(subFormFields, tr);
-        self.emit('change', self.getValue());
+    
+    // Create edit row (always)
+    const editTr = $('<tr class="metadata-edit-mode">');
+    let editCell = null;
+    
+    if (self.question.display_template) {
+      // For display_template mode: use vertical layout
+      editCell = self._createVerticalEditCell(subFormFields);
+      editTr.append(editCell);
+    } else {
+      // Standard mode: horizontal layout with one field per column
+      subFormFields.forEach(function(subFormField) {
+        editTr.append($('<td>').append(subFormField.container));
       });
-      tr.append($('<td>').append(removeButton));
     }
-    self.tbody.append(tr);
+    
+    // Add buttons
+    if (!self.options || !self.options.readonly) {
+      if (self.question.display_template) {
+        // For display_template mode: add toggle edit button and remove button
+        const displayButtonCell = $('<td>').css('text-align', 'right').css('vertical-align', 'middle');
+        
+        const showEditButton = $('<span class="show-edit-row" style="cursor: pointer; padding: 0 2px; vertical-align: middle;">')
+          .append($('<i class="fa fa-pencil"></i>'));
+        const hideEditButton = $('<span class="hide-edit-row" style="cursor: pointer; padding: 0 5px;">')
+          .append($('<i class="fa fa-times"></i>'));
+        const removeButtonDisplay = $('<span class="remove-row" style="cursor: pointer; padding: 0 2px; vertical-align: middle;"><i class="fa fa-trash"></i></span>');
+        const removeButtonEdit = removeButtonDisplay.clone();
+        
+        showEditButton.on('click', function(e) {
+          e.preventDefault();
+          displayTr.hide();
+          editTr.show();
+        });
+        
+        hideEditButton.on('click', function(e) {
+          e.preventDefault();
+          // Update display row when switching to display mode
+          self.updateDisplayRow(displayTr, subFormFields);
+          editTr.hide();
+          displayTr.show();
+        });
+        
+        const removeHandler = function(e) {
+          e.preventDefault();
+          self.removeRow(subFormFields, [editTr, displayTr]);
+          self.emit('change', self.getValue());
+        };
+        
+        removeButtonDisplay.on('click', removeHandler);
+        removeButtonEdit.on('click', removeHandler);
+        
+        displayButtonCell.append(showEditButton).append(' ').append(removeButtonDisplay);
+        displayTr.append(displayButtonCell);
+        
+        // Add buttons to the edit cell's button container
+        const editButtonContainer = $('<div>')
+          .css('text-align', 'right')
+          .css('margin-top', '10px');
+        editButtonContainer.append(hideEditButton).append(' ').append(removeButtonEdit);
+        editCell.append(editButtonContainer);
+        
+        // Initialize display row and show appropriate mode
+        if (value && Object.keys(value).some(function(key) { return value[key]; })) {
+          self.updateDisplayRow(displayTr, subFormFields);
+          editTr.hide();
+        } else {
+          displayTr.hide();
+        }
+        
+        self.tbody.append(displayTr);
+        self.tbody.append(editTr);
+      } else {
+        // Normal mode: just remove button
+        const removeButton = $('<span class="remove-row" style="cursor: pointer; vertical-align: middle;"><i class="fa fa-trash"></i></span>');
+        removeButton.on('click', function (e) {
+          e.preventDefault();
+          self.removeRow(subFormFields, editTr);
+          self.emit('change', self.getValue());
+        });
+        editTr.append($('<td>').css('vertical-align', 'middle').append(removeButton));
+        self.tbody.append(editTr);
+      }
+    } else {
+      // Readonly mode
+      if (self.question.display_template) {
+        self.updateDisplayRow(displayTr, subFormFields);
+        editTr.hide();
+        self.tbody.append(displayTr);
+        self.tbody.append(editTr);
+      } else {
+        self.tbody.append(editTr);
+      }
+    }
+    
     self.emptyLine.hide();
     self.fields.push(subFormFields);
   },
 
   removeRow: function(subquestion, tr) {
     const self = this;
-    tr.remove();
+    // Handle both single tr and array of trs
+    if (Array.isArray(tr)) {
+      tr.forEach(function(row) { row.remove(); });
+    } else {
+      tr.remove();
+    }
     self.fields.splice(self.fields.indexOf(subquestion), 1);
     if (self.fields.length === 0) {
       self.emptyLine.show();
     }
+  },
+  
+  updateDisplayRow: function(displayTr, subFormFields) {
+    const self = this;
+    if (!displayTr) {
+      throw new Error('updateDisplayRow called without displayTr');
+    }
+    if (!self.question.display_template) {
+      throw new Error('updateDisplayRow called without display_template');
+    }
+    
+    // Clear existing cells except button cell
+    displayTr.find('td:not(:last)').remove();
+    
+    // Split template by pipe and create cells
+    const templates = self.question.display_template.split('|');
+    templates.forEach(function(template) {
+      const displayText = self.evaluateTemplate(template.trim(), subFormFields);
+      const td = $('<td>').text(displayText);
+      // Insert before button cell
+      displayTr.find('td:last').before(td);
+    });
+  },
+  
+  evaluateTemplate: function(template, subFormFields) {
+    const self = this;
+    let result = template;
+    
+    // Helper function to recursively process fields
+    function processField(field, prefix) {
+      const fieldId = prefix ? prefix + '.' + field.question.id : field.question.id;
+      const value = field.getValue();
+      
+      // Replace simple property
+      const regex = new RegExp('{{' + fieldId + '}}', 'g');
+      result = result.replace(regex, value || '');
+      
+      // Recursively handle nested fields using getChildFields
+      const childFields = field.getChildFields();
+      childFields.forEach(function(childField) {
+        processField(childField, fieldId);
+      });
+    }
+    
+    // Process all fields
+    subFormFields.forEach(function(field) {
+      processField(field, '');
+    });
+    
+    return result;
   },
 
   getValue: function() {
@@ -974,6 +1150,11 @@ const ObjectFormField = oop.extend(FormFieldInterface, {
     self.fields.forEach(function (subquestion) {
       subquestion.disable(disabled);
     });
+  },
+
+  getChildFields: function() {
+    const self = this;
+    return self.fields || [];
   },
 });
 

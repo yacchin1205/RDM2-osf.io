@@ -408,6 +408,7 @@
           "nav": "著者名",
           "title": "著者名|Author Name",
           "type": "array",
+          "display_template": "{{number}}|{{name-ja.last}} {{name-ja.middle}} {{name-ja.first}}|{{name-en.last}}, {{name-en.first}} {{name-en.middle}}",
           "required": true,
           "enabled_if": {
             "grdm-file:file-type": "manuscript"
