@@ -408,7 +408,7 @@
           "nav": "著者名",
           "title": "著者名|Author Name",
           "type": "array",
-          "display_template": "{{number}}|{{name-ja.last}} {{name-ja.middle}} {{name-ja.first}}|{{name-en.last}}, {{name-en.first}} {{name-en.middle}}",
+          "display_template": "{{number}}|{{name-ja.last}} {{name-ja.middle}} {{name-ja.first}}|{{name-en.last}}, {{name-en.first}} {{name-en.middle}}|{{affiliation.name-ja}} / {{affiliation.name-en}}",
           "required": true,
           "enabled_if": {
             "grdm-file:file-type": "manuscript"
@@ -627,6 +627,30 @@
                       }
                     }
                   ]
+                }
+              ]
+            },
+            {
+              "id": "affiliation",
+              "title": "所属|Affiliation",
+              "type": "object",
+              "required": false,
+              "properties": [
+                {
+                  "id": "name-ja",
+                  "title": "機関名(日本語)|Organization Name (Japanese)",
+                  "type": "string",
+                  "format": "text",
+                  "required": false,
+                  "space_normalization": true
+                },
+                {
+                  "id": "name-en",
+                  "title": "機関名(英語)|Organization Name (English)",
+                  "type": "string",
+                  "format": "text",
+                  "required": false,
+                  "space_normalization": true
                 }
               ]
             }

@@ -120,6 +120,15 @@ def extract_crossref_metadata(message):
             'first': author.get('given', '')
         }
 
+        # Add affiliation if available
+        if 'affiliations' in author and author['affiliations']:
+            # Take the first affiliation
+            first_affiliation = author['affiliations'][0]
+            formatted_author['affiliation'] = {
+                'name-ja': '',  # Crossref doesn't have Japanese names
+                'name-en': first_affiliation.get('name', '')
+            }
+
         result['authors_common_metadata_format'].append(formatted_author)
 
     # Editors

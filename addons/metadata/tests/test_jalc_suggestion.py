@@ -70,7 +70,7 @@ class TestSuggestionJalc:
 
         responses.add(
             responses.GET,
-            'https://api.japanlinkcenter.org/dois/10.24602%2Fsjpr.67.1_109',
+            'https://api.japanlinkcenter.org/v2/dois/10.24602%2Fsjpr.67.1_109',
             json=mock_response,
             status=200
         )
@@ -89,7 +89,7 @@ class TestSuggestionJalc:
 
         responses.add(
             responses.GET,
-            'https://api.japanlinkcenter.org/dois/10.1234%2Fnotfound',
+            'https://api.japanlinkcenter.org/v2/dois/10.1234%2Fnotfound',
             status=404
         )
 
@@ -111,7 +111,7 @@ class TestSuggestionJalc:
 
         responses.add(
             responses.GET,
-            'https://api.japanlinkcenter.org/dois/10.24602%2Ferror',
+            'https://api.japanlinkcenter.org/v2/dois/10.24602%2Ferror',
             json=mock_response,
             status=200
         )
@@ -250,6 +250,10 @@ class TestExtractJalcMetadata:
             'middle': '',
             'first': 'Taro'
         }
+        # Check affiliation in common metadata format
+        assert 'affiliation' in result['authors_common_metadata_format'][0]
+        assert result['authors_common_metadata_format'][0]['affiliation']['name-ja'] == '東京大学'
+        assert result['authors_common_metadata_format'][0]['affiliation']['name-en'] == 'The University of Tokyo'
 
     def test_dates_extraction(self):
         jalc_data = {
@@ -530,7 +534,7 @@ class TestSuggestionIntegration:
 
         responses.add(
             responses.GET,
-            'https://api.japanlinkcenter.org/dois/10.24602%2Fsjpr.67.1_109',
+            'https://api.japanlinkcenter.org/v2/dois/10.24602%2Fsjpr.67.1_109',
             json=mock_response,
             status=200
         )
@@ -551,7 +555,7 @@ class TestSuggestionIntegration:
 
         responses.add(
             responses.GET,
-            'https://api.japanlinkcenter.org/dois/10.1234%2Fnotfound',
+            'https://api.japanlinkcenter.org/v2/dois/10.1234%2Fnotfound',
             status=404
         )
 

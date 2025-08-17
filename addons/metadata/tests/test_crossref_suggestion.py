@@ -176,7 +176,18 @@ class TestExtractCrossrefMetadata:
     def test_authors_extraction(self):
         message = {
             'author': [
-                {'given': 'John', 'family': 'Doe', 'ORCID': 'https://orcid.org/0000-0000-0000-0001'},
+                {
+                    'given': 'John', 
+                    'family': 'Doe', 
+                    'ORCID': 'https://orcid.org/0000-0000-0000-0001',
+                    'affiliation': [
+                        {
+                            'name': 'University of Tokyo',
+                            'department': ['Computer Science'],
+                            'place': ['Tokyo', 'Japan']
+                        }
+                    ]
+                },
                 {'given': 'Jane', 'family': 'Smith'},
                 {'name': 'Research Group'}
             ]
@@ -190,6 +201,11 @@ class TestExtractCrossrefMetadata:
         assert result['authors'][0]['orcid'] == 'https://orcid.org/0000-0000-0000-0001'
         assert result['authors'][0]['name_en'] == 'John Doe'
         assert result['authors'][0]['name_ja'] == 'Doe, John'
+        
+        # Check affiliation in raw authors data
+        assert 'affiliations' in result['authors'][0]
+        assert result['authors'][0]['affiliations'][0]['name'] == 'University of Tokyo'
+        
         assert result['authors'][2]['name'] == 'Research Group'
 
         # Test common metadata format
@@ -201,12 +217,20 @@ class TestExtractCrossrefMetadata:
             'first': 'John'
         }
         assert 'name-ja' not in result['authors_common_metadata_format'][0]
+        
+        # Check affiliation in common metadata format
+        assert 'affiliation' in result['authors_common_metadata_format'][0]
+        assert result['authors_common_metadata_format'][0]['affiliation']['name-ja'] == ''
+        assert result['authors_common_metadata_format'][0]['affiliation']['name-en'] == 'University of Tokyo'
+        
+        # Second author has no affiliation
         assert result['authors_common_metadata_format'][1]['name-en'] == {
             'last': 'Smith',
             'middle': '',
             'first': 'Jane'
         }
         assert 'name-ja' not in result['authors_common_metadata_format'][1]
+        assert 'affiliation' not in result['authors_common_metadata_format'][1]
 
     def test_dates_extraction(self):
         message = {

@@ -9,7 +9,7 @@ from urllib.parse import quote
 
 logger = logging.getLogger(__name__)
 
-JALC_API_URL = 'https://api.japanlinkcenter.org/dois/'
+JALC_API_URL = 'https://api.japanlinkcenter.org/v2/dois/'
 JALC_TIMEOUT = 10  # seconds
 
 
@@ -133,6 +133,15 @@ def extract_jalc_metadata(jalc_data):
         # For English name
         if 'name_en' in author:
             formatted_author['name-en'] = author['name_en']
+
+        # Add affiliation if available
+        if 'affiliations' in author and author['affiliations']:
+            # Take the first affiliation
+            first_affiliation = author['affiliations'][0]
+            formatted_author['affiliation'] = {
+                'name-ja': first_affiliation.get('name_ja', ''),
+                'name-en': first_affiliation.get('name_en', first_affiliation.get('name', ''))
+            }
 
         result['authors_common_metadata_format'].append(formatted_author)
 
@@ -370,10 +379,6 @@ def extract_person_data(person):
                 elif isinstance(aff_name, str):
                     # Sometimes it's just a string
                     aff_data['name'] = aff_name
-
-            # Single affiliation_name field (alternative format)
-            if 'affiliation_name' in aff:
-                aff_data['name'] = aff['affiliation_name']
 
             if aff_data:
                 person_data['affiliations'].append(aff_data)
