@@ -11,6 +11,9 @@
  ******************************************************************************************/
 
 const $ = require('jquery');
+
+// Style definitions
+const AUTOFILLED_BG_COLOR = '#fffbf0';
 const $osf = require('js/osfHelpers');
 const fangorn = require('js/fangorn');
 const rdmGettext = require('js/rdmGettext');
@@ -96,7 +99,7 @@ const QuestionPage = oop.defclass({
       }
       const value = suggestion.value[autofillMap[path]];
       if (value != null) {
-        field.setValue(value);
+        field.setValue(value, true); // Mark as autofilled
       }
     });
   },
@@ -333,9 +336,9 @@ const QuestionField = oop.extend(Emitter, {
     return self.formField.getValue();
   },
 
-  setValue: function(value) {
+  setValue: function(value, isAutofilled) {
     const self = this;
-    self.formField.setValue(value);
+    self.formField.setValue(value, isAutofilled);
   },
 
   checkedClear: function() {
@@ -427,6 +430,10 @@ const TextFormField = oop.extend(FormFieldInterface, {
     if (self.options.readonly) {
       self.input.attr('readonly', true);
     }
+    self.input.on('input', function() {
+      // Reset background color when user edits the field
+      self.input.css('background-color', '');
+    });
     self.input.change(function(event) {
       const value = event.target.value;
       if (value && self.question.space_normalization) {
@@ -516,11 +523,14 @@ const TextFormField = oop.extend(FormFieldInterface, {
     return self.input.val();
   },
 
-  setValue: function(value) {
+  setValue: function(value, isAutofilled) {
     const self = this;
     if (self.getValue() === '' && value === '') {
       // to avoid typehead bug
       return;
+    }
+    if (isAutofilled) {
+      self.input.css('background-color', AUTOFILLED_BG_COLOR);
     }
     if (self.usedTypeahead) {
       self.input.typeahead('val', value).change();
@@ -556,6 +566,10 @@ const TextareaFormField = oop.extend(FormFieldInterface, {
     if (self.options.readonly) {
       self.input.attr('readonly', true);
     }
+    self.input.on('input', function() {
+      // Reset background color when user edits the field
+      self.input.css('background-color', '');
+    });
     self.input.change(function(event) {
       const value = event.target.value;
       if (value && self.question.space_normalization) {
@@ -575,9 +589,12 @@ const TextareaFormField = oop.extend(FormFieldInterface, {
     return self.input.val();
   },
 
-  setValue: function(value) {
+  setValue: function(value, isAutofilled) {
     const self = this;
     self.input.val(value);
+    if (isAutofilled) {
+      self.input.css('background-color', AUTOFILLED_BG_COLOR);
+    }
   },
 
   reset: function() {
@@ -609,6 +626,10 @@ const DatePickerFormField = oop.extend(FormFieldInterface, {
     if (self.options.readonly) {
       self.input.attr('readonly', true);
     }
+    self.input.on('input', function() {
+      // Reset background color when user edits the field
+      self.input.css('background-color', '');
+    });
     self.input.change(function(event) {
       self.emit('change', event.target.value);
     });
@@ -620,9 +641,12 @@ const DatePickerFormField = oop.extend(FormFieldInterface, {
     return self.input.val();
   },
 
-  setValue: function(value) {
+  setValue: function(value, isAutofilled) {
     const self = this;
     self.input.datepicker('update', value);
+    if (isAutofilled) {
+      self.input.css('background-color', AUTOFILLED_BG_COLOR);
+    }
   },
 
   reset: function() {
@@ -681,6 +705,10 @@ const SingleSelectFormField = oop.extend(FormFieldInterface, {
         }
       }
     });
+    self.select.on('input change', function() {
+      // Reset background color when user edits the field
+      self.select.css('background-color', '');
+    });
     self.select.change(function(event) {
       self.emit('change', event.target.value);
     });
@@ -703,7 +731,7 @@ const SingleSelectFormField = oop.extend(FormFieldInterface, {
     return defaultValue;
   },
 
-  setValue: function(value) {
+  setValue: function(value, isAutofilled) {
     const self = this;
     // assign default value if value is not in the options
     const defaultValue = self.getDefaultValue();
@@ -712,6 +740,9 @@ const SingleSelectFormField = oop.extend(FormFieldInterface, {
       return;
     }
     self.select.val(value);
+    if (isAutofilled) {
+      self.select.css('background-color', AUTOFILLED_BG_COLOR);
+    }
   },
 
   reset: function() {
@@ -801,7 +832,7 @@ const ArrayFormField = oop.extend(FormFieldInterface, {
     return editCell;
   },
 
-  addRow: function(value) {
+  addRow: function(value, isAutofilled) {
     const self = this;
     
     // Create display row first (if display_template exists)
@@ -814,7 +845,7 @@ const ArrayFormField = oop.extend(FormFieldInterface, {
       const subFormField = createFormField(prop, self.options);
       subFormField.create();
       if (value && value[prop.id]) {
-        subFormField.setValue(value[prop.id]);
+        subFormField.setValue(value[prop.id], isAutofilled);
       }
       subFormField.on('change', function() {
         self.emit('change', self.getValue());
@@ -1010,7 +1041,7 @@ const ArrayFormField = oop.extend(FormFieldInterface, {
     return res.length ? res : null;
   },
 
-  setValue: function(value) {
+  setValue: function(value, isAutofilled) {
     const self = this;
     self.reset();
     var rows = [];
@@ -1030,7 +1061,7 @@ const ArrayFormField = oop.extend(FormFieldInterface, {
     }
 
     rows.forEach(function(row) {
-      self.addRow(row);
+      self.addRow(row, isAutofilled);
     });
 
     if(self.question.hasOwnProperty('initial_row_addition') && self.question.initial_row_addition ){
@@ -1116,7 +1147,7 @@ const ObjectFormField = oop.extend(FormFieldInterface, {
     return null;
   },
 
-  setValue: function(value) {
+  setValue: function(value, isAutofilled) {
     const self = this;
     self.reset();
     var rows = value || {};
@@ -1134,7 +1165,7 @@ const ObjectFormField = oop.extend(FormFieldInterface, {
     }
     self.fields.forEach(function(subquestion) {
       const value = rows[subquestion.question.id];
-      subquestion.setValue(value);
+      subquestion.setValue(value, isAutofilled);
     });
   },
 
