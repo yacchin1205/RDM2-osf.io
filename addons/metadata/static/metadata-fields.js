@@ -147,9 +147,9 @@ const QuestionPage = oop.defclass({
           walk(childField, field.fields);
         });
       } else if (field instanceof ArrayFormField) {
-        field.fields.forEach(function (row) {
-          row.forEach(function (childField) {
-            walk(childField, row);
+        field.fields.forEach(function (fieldGroup) {
+          fieldGroup.subFormFields.forEach(function (childField) {
+            walk(childField, fieldGroup.subFormFields);
           });
         });
       }
@@ -879,8 +879,39 @@ const ArrayFormField = oop.extend(FormFieldInterface, {
     
     // Add buttons
     if (!self.options || !self.options.readonly) {
+      // Create move buttons (for both display_template and normal mode)
+      const moveButtons = $('<span>')
+        .css('white-space', 'nowrap')
+        .css('margin-right', '5px');
+      
+      const moveUpButton = $('<span class="move-up-row">')
+        .css('cursor', 'pointer')
+        .css('padding', '0 2px')
+        .css('vertical-align', 'middle')
+        .append($('<i class="fa fa-arrow-up"></i>'))
+        .attr('title', _('Move up'));
+      
+      const moveDownButton = $('<span class="move-down-row">')
+        .css('cursor', 'pointer')
+        .css('padding', '0 2px')
+        .css('vertical-align', 'middle')
+        .append($('<i class="fa fa-arrow-down"></i>'))
+        .attr('title', _('Move down'));
+      
+      moveUpButton.on('click', function(e) {
+        e.preventDefault();
+        self.moveRow(subFormFields, -1);
+      });
+      
+      moveDownButton.on('click', function(e) {
+        e.preventDefault();
+        self.moveRow(subFormFields, 1);
+      });
+      
+      moveButtons.append(moveUpButton).append(' ').append(moveDownButton);
+      
       if (self.question.display_template) {
-        // For display_template mode: add toggle edit button and remove button
+        // For display_template mode: add toggle edit button, move buttons, and remove button
         const displayButtonCell = $('<td>').css('text-align', 'right').css('vertical-align', 'middle');
         
         const showEditButton = $('<span class="show-edit-row" style="cursor: pointer; padding: 0 2px; vertical-align: middle;">')
@@ -889,6 +920,10 @@ const ArrayFormField = oop.extend(FormFieldInterface, {
           .append($('<i class="fa fa-times"></i>'));
         const removeButtonDisplay = $('<span class="remove-row" style="cursor: pointer; padding: 0 2px; vertical-align: middle;"><i class="fa fa-trash"></i></span>');
         const removeButtonEdit = removeButtonDisplay.clone();
+        
+        // Clone move buttons for display and edit modes
+        const moveButtonsDisplay = moveButtons.clone(true);
+        const moveButtonsEdit = moveButtons.clone(true);
         
         showEditButton.on('click', function(e) {
           e.preventDefault();
@@ -907,20 +942,20 @@ const ArrayFormField = oop.extend(FormFieldInterface, {
         const removeHandler = function(e) {
           e.preventDefault();
           self.removeRow(subFormFields, [editTr, displayTr]);
-          self.emit('change', self.getValue());
         };
         
         removeButtonDisplay.on('click', removeHandler);
         removeButtonEdit.on('click', removeHandler);
         
-        displayButtonCell.append(showEditButton).append(' ').append(removeButtonDisplay);
+        // Add buttons to display row
+        displayButtonCell.append(moveButtonsDisplay).append(' ').append(showEditButton).append(' ').append(removeButtonDisplay);
         displayTr.append(displayButtonCell);
         
         // Add buttons to the edit cell's button container
         const editButtonContainer = $('<div>')
           .css('text-align', 'right')
           .css('margin-top', '10px');
-        editButtonContainer.append(hideEditButton).append(' ').append(removeButtonEdit);
+        editButtonContainer.append(moveButtonsEdit).append(' ').append(hideEditButton).append(' ').append(removeButtonEdit);
         editCell.append(editButtonContainer);
         
         // Initialize display row and show appropriate mode
@@ -934,14 +969,15 @@ const ArrayFormField = oop.extend(FormFieldInterface, {
         self.tbody.append(displayTr);
         self.tbody.append(editTr);
       } else {
-        // Normal mode: just remove button
+        // Normal mode: move buttons and remove button
         const removeButton = $('<span class="remove-row" style="cursor: pointer; vertical-align: middle;"><i class="fa fa-trash"></i></span>');
         removeButton.on('click', function (e) {
           e.preventDefault();
           self.removeRow(subFormFields, editTr);
-          self.emit('change', self.getValue());
         });
-        editTr.append($('<td>').css('vertical-align', 'middle').append(removeButton));
+        const buttonCell = $('<td>').css('vertical-align', 'middle');
+        buttonCell.append(moveButtons).append(' ').append(removeButton);
+        editTr.append(buttonCell);
         self.tbody.append(editTr);
       }
     } else {
@@ -957,7 +993,17 @@ const ArrayFormField = oop.extend(FormFieldInterface, {
     }
     
     self.emptyLine.hide();
-    self.fields.push(subFormFields);
+    
+    // Store field group with row references
+    const fieldGroup = {
+      subFormFields: subFormFields,
+      displayTr: displayTr,
+      editTr: editTr
+    };
+    self.fields.push(fieldGroup);
+    
+    // Update move button states after adding row
+    self.updateMoveButtons();
   },
 
   removeRow: function(subquestion, tr) {
@@ -968,10 +1014,106 @@ const ArrayFormField = oop.extend(FormFieldInterface, {
     } else {
       tr.remove();
     }
-    self.fields.splice(self.fields.indexOf(subquestion), 1);
+    
+    // Find and remove the field group
+    const fieldGroupIndex = self.fields.findIndex(function(group) {
+      return group.subFormFields === subquestion;
+    });
+    if (fieldGroupIndex !== -1) {
+      self.fields.splice(fieldGroupIndex, 1);
+    }
+    
     if (self.fields.length === 0) {
       self.emptyLine.show();
     }
+    
+    // Update move button states after removing row
+    self.updateMoveButtons();
+    self.emit('change', self.getValue());
+  },
+  
+  moveRow: function(subFormFields, direction) {
+    const self = this;
+    
+    // Find current field group index
+    const currentIndex = self.fields.findIndex(function(group) {
+      return group.subFormFields === subFormFields;
+    });
+    
+    if (currentIndex === -1) {
+      return; // Field group not found
+    }
+    
+    const newIndex = currentIndex + direction;
+    
+    if (newIndex < 0 || newIndex >= self.fields.length) {
+      return; // Cannot move beyond boundaries
+    }
+    
+    // Swap array elements
+    const temp = self.fields[currentIndex];
+    self.fields[currentIndex] = self.fields[newIndex];
+    self.fields[newIndex] = temp;
+    
+    // Get the field groups
+    const currentGroup = self.fields[newIndex]; // After swap, current is at new position
+    const targetGroup = self.fields[currentIndex]; // Target is at old position
+    
+    // Move DOM elements
+    if (direction === -1) {
+      // Moving up: insert current rows before target rows
+      if (currentGroup.displayTr) {
+        currentGroup.displayTr.insertBefore(targetGroup.displayTr || targetGroup.editTr);
+      }
+      currentGroup.editTr.insertBefore(targetGroup.displayTr || targetGroup.editTr);
+    } else {
+      // Moving down: insert current rows after target rows
+      const lastTargetRow = targetGroup.editTr;
+      currentGroup.editTr.insertAfter(lastTargetRow);
+      if (currentGroup.displayTr) {
+        currentGroup.displayTr.insertAfter(lastTargetRow);
+      }
+    }
+    
+    // Update button states
+    self.updateMoveButtons();
+    self.emit('change', self.getValue());
+  },
+  
+  updateMoveButtons: function() {
+    const self = this;
+    
+    self.fields.forEach(function(fieldGroup, index) {
+      const isFirst = index === 0;
+      const isLast = index === self.fields.length - 1;
+      
+      // Find move buttons in both display and edit rows
+      const moveButtons = [];
+      
+      if (fieldGroup.displayTr) {
+        moveButtons.push({
+          up: fieldGroup.displayTr.find('.move-up-row'),
+          down: fieldGroup.displayTr.find('.move-down-row')
+        });
+      }
+      
+      moveButtons.push({
+        up: fieldGroup.editTr.find('.move-up-row'),
+        down: fieldGroup.editTr.find('.move-down-row')
+      });
+      
+      // Update button states
+      moveButtons.forEach(function(buttons) {
+        if (buttons.up.length > 0) {
+          buttons.up.css('opacity', isFirst ? '0.3' : '1')
+                    .css('pointer-events', isFirst ? 'none' : 'auto');
+        }
+        if (buttons.down.length > 0) {
+          buttons.down.css('opacity', isLast ? '0.3' : '1')
+                      .css('pointer-events', isLast ? 'none' : 'auto');
+        }
+      });
+    });
   },
   
   updateDisplayRow: function(displayTr, subFormFields) {
@@ -1027,9 +1169,9 @@ const ArrayFormField = oop.extend(FormFieldInterface, {
   getValue: function() {
     const self = this;
     const res = [];
-    self.fields.forEach(function(subquestionGroup) {
+    self.fields.forEach(function(fieldGroup) {
       const row = {};
-      subquestionGroup.forEach(function(subquestion) {
+      fieldGroup.subFormFields.forEach(function(subquestion) {
         row[subquestion.question.id] = subquestion.getValue();
       });
       if (Object.values(row).some(function(value) {
@@ -1077,8 +1219,8 @@ const ArrayFormField = oop.extend(FormFieldInterface, {
 
   disable: function(disabled) {
     const self = this;
-    self.fields.forEach(function(subquestionGroup) {
-      subquestionGroup.forEach(function(subquestion) {
+    self.fields.forEach(function(fieldGroup) {
+      fieldGroup.subFormFields.forEach(function(subquestion) {
         subquestion.disable(disabled);
       });
     });
