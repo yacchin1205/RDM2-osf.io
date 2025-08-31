@@ -915,15 +915,16 @@ const ArrayFormField = oop.extend(FormFieldInterface, {
         const displayButtonCell = $('<td>').css('text-align', 'right').css('vertical-align', 'middle');
         
         const showEditButton = $('<span class="show-edit-row" style="cursor: pointer; padding: 0 2px; vertical-align: middle;">')
-          .append($('<i class="fa fa-pencil"></i>'));
+          .append($('<i class="fa fa-pencil"></i>'))
+          .attr('title', _('Edit'));
         const hideEditButton = $('<span class="hide-edit-row" style="cursor: pointer; padding: 0 5px;">')
-          .append($('<i class="fa fa-times"></i>'));
-        const removeButtonDisplay = $('<span class="remove-row" style="cursor: pointer; padding: 0 2px; vertical-align: middle;"><i class="fa fa-trash"></i></span>');
-        const removeButtonEdit = removeButtonDisplay.clone();
+          .append($('<i class="fa fa-times"></i>'))
+          .attr('title', _('Done'));
+        const removeButtonDisplay = $('<span class="remove-row" style="cursor: pointer; padding: 0 2px; vertical-align: middle;"><i class="fa fa-trash"></i></span>')
+          .attr('title', _('Delete'));
         
-        // Clone move buttons for display and edit modes
+        // Clone move buttons for display mode
         const moveButtonsDisplay = moveButtons.clone(true);
-        const moveButtonsEdit = moveButtons.clone(true);
         
         showEditButton.on('click', function(e) {
           e.preventDefault();
@@ -939,13 +940,10 @@ const ArrayFormField = oop.extend(FormFieldInterface, {
           displayTr.show();
         });
         
-        const removeHandler = function(e) {
+        removeButtonDisplay.on('click', function(e) {
           e.preventDefault();
           self.removeRow(subFormFields, [editTr, displayTr]);
-        };
-        
-        removeButtonDisplay.on('click', removeHandler);
-        removeButtonEdit.on('click', removeHandler);
+        });
         
         // Add buttons to display row
         displayButtonCell.append(moveButtonsDisplay).append(' ').append(showEditButton).append(' ').append(removeButtonDisplay);
@@ -955,7 +953,7 @@ const ArrayFormField = oop.extend(FormFieldInterface, {
         const editButtonContainer = $('<div>')
           .css('text-align', 'right')
           .css('margin-top', '10px');
-        editButtonContainer.append(moveButtonsEdit).append(' ').append(hideEditButton).append(' ').append(removeButtonEdit);
+        editButtonContainer.append(hideEditButton);
         editCell.append(editButtonContainer);
         
         // Initialize display row and show appropriate mode
@@ -970,7 +968,8 @@ const ArrayFormField = oop.extend(FormFieldInterface, {
         self.tbody.append(editTr);
       } else {
         // Normal mode: move buttons and remove button
-        const removeButton = $('<span class="remove-row" style="cursor: pointer; vertical-align: middle;"><i class="fa fa-trash"></i></span>');
+        const removeButton = $('<span class="remove-row" style="cursor: pointer; vertical-align: middle;"><i class="fa fa-trash"></i></span>')
+          .attr('title', _('Delete'));
         removeButton.on('click', function (e) {
           e.preventDefault();
           self.removeRow(subFormFields, editTr);
@@ -983,6 +982,10 @@ const ArrayFormField = oop.extend(FormFieldInterface, {
     } else {
       // Readonly mode
       if (self.question.display_template) {
+        // In readonly mode with display_template, still need an empty cell for alignment
+        const emptyButtonCell = $('<td>');
+        displayTr.append(emptyButtonCell);
+        
         self.updateDisplayRow(displayTr, subFormFields);
         editTr.hide();
         self.tbody.append(displayTr);
@@ -1123,6 +1126,11 @@ const ArrayFormField = oop.extend(FormFieldInterface, {
     }
     if (!self.question.display_template) {
       throw new Error('updateDisplayRow called without display_template');
+    }
+    
+    // Check if button cell exists (should always have at least one td for button column)
+    if (displayTr.find('td').length === 0) {
+      console.warn(logPrefix + 'updateDisplayRow: No button cell found in display row. The caller should add a button cell first.');
     }
     
     // Clear existing cells except button cell
