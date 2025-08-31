@@ -31,6 +31,10 @@ from addons.metadata.suggestions.jalc import (
     valid_jalc_key,
     suggestion_jalc
 )
+from addons.metadata.suggestions.pubmed import (
+    valid_pubmed_key,
+    suggestion_pubmed
+)
 
 import mimetypes
 from api.base.utils import waterbutler_api_url_for
@@ -65,6 +69,8 @@ def valid_suggestion_key(key):
         return True
     elif valid_jalc_key(key):
         return True
+    elif valid_pubmed_key(key):
+        return True
     return False
 
 
@@ -86,6 +92,8 @@ def suggestion_metadata(key, keyword, filepath, node):
         suggestions.extend(suggestion_crossref(key, keyword))
     elif key.startswith('jalc:'):
         suggestions.extend(suggestion_jalc(key, keyword))
+    elif key.startswith('pubmed:'):
+        suggestions.extend(suggestion_pubmed(key, keyword))
     else:
         raise KeyError('Invalid key: {}'.format(key))
     return suggestions
