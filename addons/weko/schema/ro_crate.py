@@ -398,7 +398,22 @@ def _flatten_json_ld(object, counts):
             continue
     return entities
 
-def write_ro_crate_json(user, f, target_index, download_file_names, schema_id, file_metadatas, project_metadatas, node_id):
+
+def _collect_graph_entities(object):
+    graph = []
+    root = object.get('root')
+    if root:
+        graph.append(root)
+    for key, value in object.items():
+        if key == 'root':
+            continue
+        if isinstance(value, list):
+            graph.extend(value)
+        else:
+            graph.append(value)
+    return graph
+
+def write_ro_crate_json(user, f, target_index, download_file_names, schema_id, file_metadatas, project_metadatas, node_id, flatten=True):
     from ..models import RegistrationMetadataMapping
     from urllib.parse import urlparse
     schema = RegistrationSchema.objects.get(_id=schema_id)
@@ -527,6 +542,11 @@ def write_ro_crate_json(user, f, target_index, download_file_names, schema_id, f
                 continue
             type_value = weko_mapping['@type']
             raise ValueError(f'Unexpected type: {type_value}')
+    if flatten:
+        graph_entities = _flatten_json_ld_root(hierarchical_object)
+    else:
+        graph_entities = _collect_graph_entities(hierarchical_object)
+
     json_ld = {
         '@context': [
             'https://w3id.org/ro/crate/1.1/context',
@@ -595,6 +615,6 @@ def write_ro_crate_json(user, f, target_index, download_file_names, schema_id, f
                 'datacite': 'http://datacite.org/schema/kernel-4'
             }
         ],
-        '@graph': _flatten_json_ld_root(hierarchical_object),
+        '@graph': graph_entities,
     }
     json.dump(json_ld, f, indent=2, ensure_ascii=False)
