@@ -1,6 +1,8 @@
 import logging
 from datetime import date
+
 from framework.auth.core import _get_current_user
+
 from .utils import (
     to_msfullname,
     contributors_self_first,
@@ -38,12 +40,9 @@ def suggestion_contributor(key, keyword, node):
     current_user = _get_current_user()
     ordered_users = contributors_self_first(node, current_user=current_user)
     for user in ordered_users:
-        # Use affiliated institutions only
-        org_ja = ''
-        org_en = ''
-        inst = user.affiliated_institutions.first()
-        if inst is not None and inst.name:
-            org_ja = inst.name
+        # Resolve affiliation names with reasonable fallbacks
+        org_ja = _contributor_to_affiliation_name(user, 'ja')
+        org_en = _contributor_to_affiliation_name(user, 'en')
 
         # Current year as nendo for contributor suggestions
         nendo = str(date.today().year)
@@ -119,3 +118,39 @@ def _contributor_to_name_en(user):
         'middle': user.middle_names,
         'first': user.given_name,
     }
+
+
+def _contributor_to_affiliation_name(user, lang):
+    """Provide affiliation name preferring institutions, then jobs/schools."""
+    inst = user.affiliated_institutions.first()
+    if inst is not None and inst.name:
+        return inst.name
+
+    # Try jobs for working contributors
+    jobs = getattr(user, 'jobs', None) or []
+    if jobs:
+        first_job = jobs[0]
+        if lang == 'ja':
+            name = first_job.get('institution_ja', '')
+        else:
+            name = first_job.get('institution', '')
+        if name:
+            return name
+
+    # Fallback to schools (for students, etc.)
+    schools = getattr(user, 'schools', None) or []
+    if schools:
+        for school in schools:
+            if school.get('ongoing'):
+                if lang == 'ja':
+                    name = school.get('institution_ja', '')
+                else:
+                    name = school.get('institution', '')
+                if name:
+                    return name
+        last_school = schools[-1]
+        if lang == 'ja':
+            return last_school.get('institution_ja', '')
+        return last_school.get('institution', '')
+
+    return ''
