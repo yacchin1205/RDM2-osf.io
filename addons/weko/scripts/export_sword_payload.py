@@ -135,6 +135,7 @@ def _generate_payload(config, output_path, fmt, flatten_ro_crate, log_level):
             tmp_dir,
             config['node_id'],
             flatten_ro_crate=flatten_ro_crate,
+            skip_csv_generation=(fmt == 'ro-crate'),
         )
         try:
             if fmt == 'zip':

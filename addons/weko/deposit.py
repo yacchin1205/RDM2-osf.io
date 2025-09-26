@@ -96,6 +96,7 @@ def _build_payload_zip(
     tmp_dir,
     node_id,
     flatten_ro_crate=True,
+    skip_csv_generation=False,
 ):
 
     from .models import RegistrationMetadataMapping
@@ -117,21 +118,23 @@ def _build_payload_zip(
         os.makedirs(os.path.dirname(file_in_bagit_path), exist_ok=True)
         shutil.copyfile(os.path.join(tmp_dir, download_file_name), file_in_bagit_path)
 
-    mapping_def_csv = RegistrationMetadataMapping.objects.filter(
-        registration_schema_id=schema_id,
-        filename__in=['index.csv', None],
-    ).first()
-    if mapping_def_csv is not None:
-        with open(os.path.join(bagit_dir, 'data', 'index.csv'), 'w', encoding='utf8') as f:
-            schema.write_csv(
-                user,
-                f,
-                target_index,
-                download_file_names,
-                schema_id,
-                file_metadatas,
-                project_metadatas,
-            )
+    mapping_def_csv = None
+    if not skip_csv_generation:
+        mapping_def_csv = RegistrationMetadataMapping.objects.filter(
+            registration_schema_id=schema_id,
+            filename__in=['index.csv', None],
+        ).first()
+        if mapping_def_csv is not None:
+            with open(os.path.join(bagit_dir, 'data', 'index.csv'), 'w', encoding='utf8') as f:
+                schema.write_csv(
+                    user,
+                    f,
+                    target_index,
+                    download_file_names,
+                    schema_id,
+                    file_metadatas,
+                    project_metadatas,
+                )
 
     mapping_def_ro_crate_json = RegistrationMetadataMapping.objects.filter(
         registration_schema_id=schema_id,

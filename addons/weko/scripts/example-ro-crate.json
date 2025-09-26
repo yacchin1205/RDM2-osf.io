@@ -1,0 +1,938 @@
+{
+  "@context": [
+    "https://w3id.org/ro/crate/1.1/context",
+    "http://purl.org/wk/v1/wk-context.jsonld",
+    {
+      "ams:analysisType": "https://purl.org/rdm/ontology/analysisType",
+      "ams:descriptionOfExperimentalCondition": "https://purl.org/rdm/ontology/descriptionOfExperimentalCondition",
+      "ams:purposeOfExperiment": "https://purl.org/rdm/ontology/purposeOfExperiment",
+      "ams:analysisOtherType": "https://purl.org/rdm/ontology/analysisOtherType",
+      "ams:anonymousProcessing": "https://purl.org/rdm/ontology/anonymousProcessing",
+      "ams:availabilityOfCommercialUse": "https://purl.org/rdm/ontology/availabilityOfCommercialUse",
+      "ams:conflictOfInterest": "https://purl.org/rdm/ontology/conflictOfInterest",
+      "ams:conflictOfInterestName": "https://purl.org/rdm/ontology/conflictOfInterestName",
+      "ams:consentForProvisionToAThirdParty": "https://purl.org/rdm/ontology/consentForProvisionToAThirdParty",
+      "ams:dataPolicyFree": "https://purl.org/rdm/ontology/dataPolicyFree",
+      "ams:ethicsReviewCommitteeApproval": "https://purl.org/rdm/ontology/ethicsReviewCommitteeApproval",
+      "ams:icIsNo": "https://purl.org/rdm/ontology/icIsNo",
+      "ams:identifier": "https://purl.org/rdm/ontology/identifier",
+      "ams:industrialUse": "https://purl.org/rdm/ontology/industrialUse",
+      "ams:informedConsent": "https://purl.org/rdm/ontology/informedConsent",
+      "ams:license": "https://purl.org/rdm/ontology/license",
+      "ams:namesToBeIncludedInTheAcknowledgments": "https://purl.org/rdm/ontology/namesToBeIncludedInTheAcknowledgments",
+      "ams:necessityOfContactAndPermission": "https://purl.org/rdm/ontology/necessityOfContactAndPermission",
+      "ams:necessityOfIncludingInAcknowledgments": "https://purl.org/rdm/ontology/necessityOfIncludingInAcknowledgments",
+      "ams:otherConditionsOrSpecialNotes": "https://purl.org/rdm/ontology/otherConditionsOrSpecialNotes",
+      "ams:overseasOfferings": "https://purl.org/rdm/ontology/overseasOfferings",
+      "ams:projectId": "https://purl.org/rdm/ontology/projectId",
+      "ams:repository": "https://purl.org/rdm/ontology/repository",
+      "ams:repositoryId": "https://purl.org/rdm/ontology/repositoryId",
+      "ams:repositoryInfo": "https://purl.org/rdm/ontology/repositoryInfo",
+      "ams:targetTypeOfAcquiredData": "https://purl.org/rdm/ontology/targetTypeOfAcquiredData",
+      "ams:existExternalMetadata": "https://purl.org/rdm/ontology/existExternalMetadata",
+      "ams:externalMetadataFiles": "https://purl.org/rdm/ontology/externalMetadataFiles",
+      "rdm:Dataset": "https://purl.org/rdm/ontology/Dataset",
+      "rdm:AccessRights": "https://purl.org/rdm/ontology/AccessRights",
+      "rdm:MetadataDocument": "https://purl.org/rdm/ontology/MetadataDocument",
+      "rdm:field": "https://purl.org/rdm/ontology/field",
+      "rdm:keywords": "https://purl.org/rdm/ontology/keywords",
+      "rdm:metadataFiles": "https://purl.org/rdm/ontology/metadataFiles",
+      "rdm:project": "https://purl.org/rdm/ontology/project",
+      "rdm:name": "https://purl.org/rdm/ontology/name",
+      "dc:type": "http://purl.org/dc/elements/1.1/type",
+      "jpcoar:addtionalType": "https://github.com/JPCOAR/schema/blob/master/2.0/#addtionalType"
+    },
+    {
+      "ams": "https://purl.org/rdm/ontology/"
+    },
+    {
+      "wk": "https://purl.org/rdm/ontology/"
+    },
+    {
+      "rdm": "https://purl.org/rdm/ontology/"
+    },
+    {
+      "odrl": "http://www.w3.org/ns/odrl.jsonld"
+    },
+    {
+      "dc": "http://purl.org/dc/elements/1.1/"
+    },
+    {
+      "jpcoar": "https://github.com/JPCOAR/schema/blob/master/2.0/"
+    },
+    {
+      "datacite": "http://datacite.org/schema/kernel-4"
+    }
+  ],
+  "@graph": [
+    {
+      "wk:feedbackMail": [
+        "example-user@example.org"
+      ],
+      "fundingReference": [
+        {
+          "@id": "_:jpcoar_fundingReference1"
+        }
+      ],
+      "@id": "./",
+      "@type": [
+        "Dataset",
+        "rdm:Dataset"
+      ],
+      "conformsTo": {
+        "@id": "https://w3id.org/ro/crate/1.1"
+      },
+      "datePublished": "2025-09-26",
+      "description": "Primary manuscript",
+      "name": "MAIN ARTICLE",
+      "wk:index": "1000",
+      "wk:publishStatus": "private",
+      "rdm:accessRightsInformation": [
+        {
+          "@id": "_:rdm_AccessRights1"
+        }
+      ],
+      "creator": [
+        {
+          "@id": "_:Person1"
+        }
+      ],
+      "rdm:description": {
+        "@id": "_:Thing1"
+      },
+      "contributor": [
+        {
+          "@id": "_:Organization1"
+        },
+        {
+          "@id": "_:Person2"
+        },
+        {
+          "@id": "_:Organization2"
+        }
+      ],
+      "rdm:licenseInformation": [
+        {
+          "@id": "_:rdm_License1"
+        },
+        {
+          "@id": "_:rdm_License2"
+        },
+        {
+          "@id": "_:rdm_License3"
+        }
+      ],
+      "license": {
+        "@id": "_:rdm_License4"
+      },
+      "rdm:field": [
+        {
+          "@id": "_:Thing2"
+        }
+      ],
+      "dc:type": "experimental data",
+      "rdm:name": {
+        "@id": "_:Thing3"
+      },
+      "hasPart": [
+        {
+          "@id": "files/sample-manuscript.pdf"
+        }
+      ]
+    },
+    {
+      "@type": "Organization",
+      "additionalType": {
+        "@id": "https://github.com/JPCOAR/schema/blob/master/2.0/#ContactPerson"
+      },
+      "name": "National Institute of Informatics TEL: 03-1234-5678 E-Mail: manager@example.com",
+      "rdm:name": [
+        {
+          "@id": "_:PropertyValue11"
+        },
+        {
+          "@id": "_:PropertyValue12"
+        }
+      ],
+      "@id": "_:Organization1"
+    },
+    {
+      "@type": "Organization",
+      "additionalType": {
+        "@id": "https://github.com/JPCOAR/schema/blob/master/2.0/#HostingInstitution"
+      },
+      "name": "National Institute of Informatics",
+      "rdm:name": [
+        {
+          "@id": "_:PropertyValue15"
+        },
+        {
+          "@id": "_:PropertyValue16"
+        }
+      ],
+      "identifier": {
+        "@id": "_:jpcoar_nameIdentifierType2"
+      },
+      "@id": "_:Organization2"
+    },
+    {
+      "@type": "Person",
+      "identifier": [
+        {
+          "@id": "_:jpcoar_nameIdentifierType1"
+        }
+      ],
+      "name": "Taro Manuscript",
+      "rdm:name": [
+        {
+          "@id": "_:PropertyValue7"
+        },
+        {
+          "@id": "_:PropertyValue8"
+        }
+      ],
+      "@id": "_:Person1"
+    },
+    {
+      "@type": "Person",
+      "additionalType": {
+        "@id": "https://github.com/JPCOAR/schema/blob/master/2.0/#DataManager"
+      },
+      "name": "Hanako Manager",
+      "rdm:name": [
+        {
+          "@id": "_:PropertyValue13"
+        },
+        {
+          "@id": "_:PropertyValue14"
+        }
+      ],
+      "@id": "_:Person2"
+    },
+    {
+      "@type": "PropertyValue",
+      "language": "en",
+      "value": "Test Project",
+      "@id": "_:PropertyValue1"
+    },
+    {
+      "@type": "PropertyValue",
+      "language": "ja",
+      "value": "論文本文です",
+      "@id": "_:PropertyValue10"
+    },
+    {
+      "@type": "PropertyValue",
+      "language": "en",
+      "value": "National Institute of Informatics Hitotsubashi TEL: 03-1234-5678 E-Mail: manager@example.com",
+      "@id": "_:PropertyValue11"
+    },
+    {
+      "@type": "PropertyValue",
+      "language": "ja",
+      "value": "国立情報学研究所 一ツ橋 TEL: 03-1234-5678 E-Mail: manager@example.com",
+      "@id": "_:PropertyValue12"
+    },
+    {
+      "@type": "PropertyValue",
+      "language": "en",
+      "value": "Hanako Manager",
+      "@id": "_:PropertyValue13"
+    },
+    {
+      "@type": "PropertyValue",
+      "language": "ja",
+      "value": "管理 花子",
+      "@id": "_:PropertyValue14"
+    },
+    {
+      "@type": "PropertyValue",
+      "language": "en",
+      "value": "National Institute of Informatics",
+      "@id": "_:PropertyValue15"
+    },
+    {
+      "@type": "PropertyValue",
+      "language": "ja",
+      "value": "国立情報学研究所",
+      "@id": "_:PropertyValue16"
+    },
+    {
+      "@type": "PropertyValue",
+      "language": "ja",
+      "value": "",
+      "@id": "_:PropertyValue17"
+    },
+    {
+      "@type": "PropertyValue",
+      "language": "en",
+      "value": "",
+      "@id": "_:PropertyValue18"
+    },
+    {
+      "@type": "PropertyValue",
+      "language": "en",
+      "name": "e-Rad_field",
+      "value": "Life Science",
+      "@id": "_:PropertyValue19"
+    },
+    {
+      "@type": "PropertyValue",
+      "language": "ja",
+      "value": "テストプロジェクト",
+      "@id": "_:PropertyValue2"
+    },
+    {
+      "@type": "PropertyValue",
+      "language": "ja",
+      "name": "e-Rad_field",
+      "value": "ライフサイエンス",
+      "@id": "_:PropertyValue20"
+    },
+    {
+      "@type": "PropertyValue",
+      "language": "en",
+      "value": "MAIN ARTICLE",
+      "@id": "_:PropertyValue21"
+    },
+    {
+      "@type": "PropertyValue",
+      "language": "ja",
+      "value": "主論文",
+      "@id": "_:PropertyValue22"
+    },
+    {
+      "@type": "PropertyValue",
+      "language": "en",
+      "value": "Japan Science and Technology Agency(JST)",
+      "@id": "_:PropertyValue3"
+    },
+    {
+      "@type": "PropertyValue",
+      "language": "ja",
+      "value": "国立研究開発法人科学技術振興機構(JST)",
+      "@id": "_:PropertyValue4"
+    },
+    {
+      "@type": "PropertyValue",
+      "language": "en",
+      "value": "Test Program",
+      "@id": "_:PropertyValue5"
+    },
+    {
+      "@type": "PropertyValue",
+      "language": "ja",
+      "value": "テストプログラム",
+      "@id": "_:PropertyValue6"
+    },
+    {
+      "@type": "PropertyValue",
+      "language": "ja",
+      "value": "論文 太郎",
+      "@id": "_:PropertyValue7"
+    },
+    {
+      "@type": "PropertyValue",
+      "language": "en",
+      "value": "Taro Manuscript",
+      "@id": "_:PropertyValue8"
+    },
+    {
+      "@type": "PropertyValue",
+      "language": "en",
+      "value": "Primary manuscript",
+      "@id": "_:PropertyValue9"
+    },
+    {
+      "@type": "Thing",
+      "value": [
+        {
+          "@id": "_:PropertyValue9"
+        },
+        {
+          "@id": "_:PropertyValue10"
+        }
+      ],
+      "@id": "_:Thing1"
+    },
+    {
+      "@type": "Thing",
+      "value": [
+        {
+          "@id": "_:PropertyValue19"
+        },
+        {
+          "@id": "_:PropertyValue20"
+        }
+      ],
+      "@id": "_:Thing2"
+    },
+    {
+      "@type": "Thing",
+      "value": [
+        {
+          "@id": "_:PropertyValue21"
+        },
+        {
+          "@id": "_:PropertyValue22"
+        }
+      ],
+      "@id": "_:Thing3"
+    },
+    {
+      "@type": "jpcoar:awardNumber",
+      "jpcoar:awardNumberType": "JGN",
+      "value": "JP123456",
+      "@id": "_:jpcoar_awardNumber1"
+    },
+    {
+      "@type": "jpcoar:funderIdentifier",
+      "jpcoar:funderIdentifierType": "e-Rad_funder",
+      "value": "JST",
+      "@id": "_:jpcoar_funderIdentifier1"
+    },
+    {
+      "@type": "jpcoar:fundingReference",
+      "jpcoar:awardNumber": {
+        "@id": "_:jpcoar_awardNumber1"
+      },
+      "jpcoar:awardTitle": [
+        {
+          "@id": "_:PropertyValue1"
+        },
+        {
+          "@id": "_:PropertyValue2"
+        }
+      ],
+      "jpcoar:funderIdentifier": {
+        "@id": "_:jpcoar_funderIdentifier1"
+      },
+      "jpcoar:funderName": [
+        {
+          "@id": "_:PropertyValue3"
+        },
+        {
+          "@id": "_:PropertyValue4"
+        }
+      ],
+      "jpcoar:fundingStreamIdentifier": {
+        "@id": "_:jpcoar_fundingStreamIdentifier1"
+      },
+      "jpcoar:fundingStream": [
+        {
+          "@id": "_:PropertyValue5"
+        },
+        {
+          "@id": "_:PropertyValue6"
+        }
+      ],
+      "@id": "_:jpcoar_fundingReference1"
+    },
+    {
+      "@type": "jpcoar:fundingStreamIdentifier",
+      "jpcoar:fundingStreamIdentifierType": "JGN_fundingStream",
+      "value": "JPTEST",
+      "@id": "_:jpcoar_fundingStreamIdentifier1"
+    },
+    {
+      "@type": "jpcoar:nameIdentifierType",
+      "jpcoar:nameIdentifierScheme": "e-Rad_Researcher",
+      "value": "MANU001",
+      "@id": "_:jpcoar_nameIdentifierType1"
+    },
+    {
+      "@type": "jpcoar:nameIdentifierType",
+      "jpcoar:nameIdentifierScheme": "ROR",
+      "value": "https://ror.org/04ksd4g47",
+      "@id": "_:jpcoar_nameIdentifierType2"
+    },
+    {
+      "@type": "rdm:AccessRights",
+      "rdm:conditionOfAccess": {
+        "@id": "TODO"
+      },
+      "@id": "_:rdm_AccessRights1"
+    },
+    {
+      "@type": "rdm:License",
+      "memo": "TODO",
+      "subitem_rights": "Please cite the authors",
+      "subitem_rights_language": "en",
+      "@id": "_:rdm_License1"
+    },
+    {
+      "@type": "rdm:License",
+      "memo": "TODO",
+      "subitem_rights": "引用時は著者名を明記",
+      "subitem_rights_language": "ja",
+      "@id": "_:rdm_License2"
+    },
+    {
+      "@type": "rdm:License",
+      "ams:dataPolicyFree": "free",
+      "@id": "_:rdm_License3"
+    },
+    {
+      "@type": [
+        "rdm:License",
+        "CreativeWork"
+      ],
+      "name": "",
+      "rdm:name": [
+        {
+          "@id": "_:PropertyValue17"
+        },
+        {
+          "@id": "_:PropertyValue18"
+        }
+      ],
+      "@id": "_:rdm_License4"
+    },
+    {
+      "@type": "File",
+      "encodingFormat": "application/pdf",
+      "name": "sample-manuscript.pdf",
+      "@id": "files/sample-manuscript.pdf"
+    },
+    {
+      "@id": "ro-crate-metadata.json",
+      "@type": "CreativeWork",
+      "about": {
+        "@id": "./"
+      },
+      "conformsTo": {
+        "@id": "https://w3id.org/ro/crate/1.1"
+      }
+    },
+    {
+      "wk:feedbackMail": [
+        "example-user@example.org"
+      ],
+      "fundingReference": [
+        {
+          "@id": "_:jpcoar_fundingReference2"
+        }
+      ],
+      "@id": "#dataset-2",
+      "@type": [
+        "Dataset",
+        "rdm:Dataset"
+      ],
+      "conformsTo": {
+        "@id": "https://w3id.org/ro/crate/1.1"
+      },
+      "datePublished": "2025-09-26",
+      "description": "Supporting dataset",
+      "name": "SUPPORTING DATA",
+      "wk:index": "1000",
+      "wk:publishStatus": "private",
+      "rdm:accessRightsInformation": [
+        {
+          "@id": "_:rdm_AccessRights2"
+        }
+      ],
+      "creator": [
+        {
+          "@id": "_:Person3"
+        }
+      ],
+      "rdm:description": {
+        "@id": "_:Thing4"
+      },
+      "contributor": [
+        {
+          "@id": "_:Organization3"
+        },
+        {
+          "@id": "_:Person4"
+        },
+        {
+          "@id": "_:Organization4"
+        }
+      ],
+      "rdm:licenseInformation": [
+        {
+          "@id": "_:rdm_License5"
+        },
+        {
+          "@id": "_:rdm_License6"
+        },
+        {
+          "@id": "_:rdm_License7"
+        }
+      ],
+      "license": {
+        "@id": "_:rdm_License8"
+      },
+      "rdm:field": [
+        {
+          "@id": "_:Thing5"
+        }
+      ],
+      "dc:type": "experimental data",
+      "rdm:name": {
+        "@id": "_:Thing6"
+      },
+      "hasPart": [
+        {
+          "@id": "files/supporting-data-1.csv"
+        },
+        {
+          "@id": "files/supporting-data-2.csv"
+        }
+      ]
+    },
+    {
+      "@type": "Organization",
+      "additionalType": {
+        "@id": "https://github.com/JPCOAR/schema/blob/master/2.0/#ContactPerson"
+      },
+      "name": "National Institute of Informatics TEL: 03-2345-6789 E-Mail: support@example.com",
+      "rdm:name": [
+        {
+          "@id": "_:PropertyValue33"
+        },
+        {
+          "@id": "_:PropertyValue34"
+        }
+      ],
+      "@id": "_:Organization3"
+    },
+    {
+      "@type": "Organization",
+      "additionalType": {
+        "@id": "https://github.com/JPCOAR/schema/blob/master/2.0/#HostingInstitution"
+      },
+      "name": "National Institute of Informatics",
+      "rdm:name": [
+        {
+          "@id": "_:PropertyValue37"
+        },
+        {
+          "@id": "_:PropertyValue38"
+        }
+      ],
+      "identifier": {
+        "@id": "_:jpcoar_nameIdentifierType4"
+      },
+      "@id": "_:Organization4"
+    },
+    {
+      "@type": "Person",
+      "identifier": [
+        {
+          "@id": "_:jpcoar_nameIdentifierType3"
+        }
+      ],
+      "name": "Taro Data",
+      "rdm:name": [
+        {
+          "@id": "_:PropertyValue29"
+        },
+        {
+          "@id": "_:PropertyValue30"
+        }
+      ],
+      "@id": "_:Person3"
+    },
+    {
+      "@type": "Person",
+      "additionalType": {
+        "@id": "https://github.com/JPCOAR/schema/blob/master/2.0/#DataManager"
+      },
+      "name": "Hanako Support",
+      "rdm:name": [
+        {
+          "@id": "_:PropertyValue35"
+        },
+        {
+          "@id": "_:PropertyValue36"
+        }
+      ],
+      "@id": "_:Person4"
+    },
+    {
+      "@type": "PropertyValue",
+      "language": "en",
+      "value": "Test Project",
+      "@id": "_:PropertyValue23"
+    },
+    {
+      "@type": "PropertyValue",
+      "language": "ja",
+      "value": "テストプロジェクト",
+      "@id": "_:PropertyValue24"
+    },
+    {
+      "@type": "PropertyValue",
+      "language": "en",
+      "value": "Japan Science and Technology Agency(JST)",
+      "@id": "_:PropertyValue25"
+    },
+    {
+      "@type": "PropertyValue",
+      "language": "ja",
+      "value": "国立研究開発法人科学技術振興機構(JST)",
+      "@id": "_:PropertyValue26"
+    },
+    {
+      "@type": "PropertyValue",
+      "language": "en",
+      "value": "Test Program",
+      "@id": "_:PropertyValue27"
+    },
+    {
+      "@type": "PropertyValue",
+      "language": "ja",
+      "value": "テストプログラム",
+      "@id": "_:PropertyValue28"
+    },
+    {
+      "@type": "PropertyValue",
+      "language": "ja",
+      "value": "データ 太郎",
+      "@id": "_:PropertyValue29"
+    },
+    {
+      "@type": "PropertyValue",
+      "language": "en",
+      "value": "Taro Data",
+      "@id": "_:PropertyValue30"
+    },
+    {
+      "@type": "PropertyValue",
+      "language": "en",
+      "value": "Supporting dataset",
+      "@id": "_:PropertyValue31"
+    },
+    {
+      "@type": "PropertyValue",
+      "language": "ja",
+      "value": "論文に関連する根拠データ",
+      "@id": "_:PropertyValue32"
+    },
+    {
+      "@type": "PropertyValue",
+      "language": "en",
+      "value": "National Institute of Informatics Hitotsubashi TEL: 03-2345-6789 E-Mail: support@example.com",
+      "@id": "_:PropertyValue33"
+    },
+    {
+      "@type": "PropertyValue",
+      "language": "ja",
+      "value": "国立情報学研究所 一ツ橋 TEL: 03-2345-6789 E-Mail: support@example.com",
+      "@id": "_:PropertyValue34"
+    },
+    {
+      "@type": "PropertyValue",
+      "language": "en",
+      "value": "Hanako Support",
+      "@id": "_:PropertyValue35"
+    },
+    {
+      "@type": "PropertyValue",
+      "language": "ja",
+      "value": "補助 花子",
+      "@id": "_:PropertyValue36"
+    },
+    {
+      "@type": "PropertyValue",
+      "language": "en",
+      "value": "National Institute of Informatics",
+      "@id": "_:PropertyValue37"
+    },
+    {
+      "@type": "PropertyValue",
+      "language": "ja",
+      "value": "国立情報学研究所",
+      "@id": "_:PropertyValue38"
+    },
+    {
+      "@type": "PropertyValue",
+      "language": "en",
+      "value": "CC0 1.0 Universal",
+      "@id": "_:PropertyValue39"
+    },
+    {
+      "@type": "PropertyValue",
+      "language": "en",
+      "name": "e-Rad_field",
+      "value": "Life Science",
+      "@id": "_:PropertyValue40"
+    },
+    {
+      "@type": "PropertyValue",
+      "language": "ja",
+      "name": "e-Rad_field",
+      "value": "ライフサイエンス",
+      "@id": "_:PropertyValue41"
+    },
+    {
+      "@type": "PropertyValue",
+      "language": "en",
+      "value": "SUPPORTING DATA",
+      "@id": "_:PropertyValue42"
+    },
+    {
+      "@type": "PropertyValue",
+      "language": "ja",
+      "value": "根拠データ",
+      "@id": "_:PropertyValue43"
+    },
+    {
+      "@type": "Thing",
+      "value": [
+        {
+          "@id": "_:PropertyValue31"
+        },
+        {
+          "@id": "_:PropertyValue32"
+        }
+      ],
+      "@id": "_:Thing4"
+    },
+    {
+      "@type": "Thing",
+      "value": [
+        {
+          "@id": "_:PropertyValue40"
+        },
+        {
+          "@id": "_:PropertyValue41"
+        }
+      ],
+      "@id": "_:Thing5"
+    },
+    {
+      "@type": "Thing",
+      "value": [
+        {
+          "@id": "_:PropertyValue42"
+        },
+        {
+          "@id": "_:PropertyValue43"
+        }
+      ],
+      "@id": "_:Thing6"
+    },
+    {
+      "@type": "jpcoar:awardNumber",
+      "jpcoar:awardNumberType": "JGN",
+      "value": "JP123456",
+      "@id": "_:jpcoar_awardNumber2"
+    },
+    {
+      "@type": "jpcoar:funderIdentifier",
+      "jpcoar:funderIdentifierType": "e-Rad_funder",
+      "value": "JST",
+      "@id": "_:jpcoar_funderIdentifier2"
+    },
+    {
+      "@type": "jpcoar:fundingReference",
+      "jpcoar:awardNumber": {
+        "@id": "_:jpcoar_awardNumber2"
+      },
+      "jpcoar:awardTitle": [
+        {
+          "@id": "_:PropertyValue23"
+        },
+        {
+          "@id": "_:PropertyValue24"
+        }
+      ],
+      "jpcoar:funderIdentifier": {
+        "@id": "_:jpcoar_funderIdentifier2"
+      },
+      "jpcoar:funderName": [
+        {
+          "@id": "_:PropertyValue25"
+        },
+        {
+          "@id": "_:PropertyValue26"
+        }
+      ],
+      "jpcoar:fundingStreamIdentifier": {
+        "@id": "_:jpcoar_fundingStreamIdentifier2"
+      },
+      "jpcoar:fundingStream": [
+        {
+          "@id": "_:PropertyValue27"
+        },
+        {
+          "@id": "_:PropertyValue28"
+        }
+      ],
+      "@id": "_:jpcoar_fundingReference2"
+    },
+    {
+      "@type": "jpcoar:fundingStreamIdentifier",
+      "jpcoar:fundingStreamIdentifierType": "JGN_fundingStream",
+      "value": "JPTEST",
+      "@id": "_:jpcoar_fundingStreamIdentifier2"
+    },
+    {
+      "@type": "jpcoar:nameIdentifierType",
+      "jpcoar:nameIdentifierScheme": "e-Rad_Researcher",
+      "value": "DATA001",
+      "@id": "_:jpcoar_nameIdentifierType3"
+    },
+    {
+      "@type": "jpcoar:nameIdentifierType",
+      "jpcoar:nameIdentifierScheme": "ROR",
+      "value": "https://ror.org/04ksd4g47",
+      "@id": "_:jpcoar_nameIdentifierType4"
+    },
+    {
+      "@type": "rdm:AccessRights",
+      "rdm:conditionOfAccess": {
+        "@id": "TODO"
+      },
+      "@id": "_:rdm_AccessRights2"
+    },
+    {
+      "@type": "rdm:License",
+      "memo": "TODO",
+      "subitem_rights": "Refer to the manuscript when citing",
+      "subitem_rights_language": "en",
+      "@id": "_:rdm_License5"
+    },
+    {
+      "@type": "rdm:License",
+      "memo": "TODO",
+      "subitem_rights": "根拠データ引用時は論文を参照",
+      "subitem_rights_language": "ja",
+      "@id": "_:rdm_License6"
+    },
+    {
+      "@type": "rdm:License",
+      "ams:dataPolicyFree": "free",
+      "@id": "_:rdm_License7"
+    },
+    {
+      "@type": [
+        "rdm:License",
+        "CreativeWork"
+      ],
+      "name": "CC0 1.0 Universal",
+      "rdm:name": [
+        {
+          "@id": "_:PropertyValue39"
+        }
+      ],
+      "rdm:url": "https://creativecommons.org/publicdomain/zero/1.0/deed.en",
+      "@id": "_:rdm_License8"
+    },
+    {
+      "@type": "File",
+      "encodingFormat": "text/csv",
+      "name": "supporting-data-1.csv",
+      "@id": "files/supporting-data-1.csv"
+    },
+    {
+      "@type": "File",
+      "encodingFormat": "text/csv",
+      "name": "supporting-data-2.csv",
+      "@id": "files/supporting-data-2.csv"
+    }
+  ]
+}
