@@ -305,6 +305,34 @@ class TestAddonAuth(OsfTestCase):
         res = self.app.get(url, auth=none_auth, expect_errors=True)
         assert_equal(res.status_code, 401)
 
+    @mock.patch('addons.base.views.OSFUser.load')
+    @mock.patch('framework.auth.decorators.Auth.from_kwargs')
+    @mock.patch('addons.base.views.cas.get_client')
+    def test_auth_bearer_token_has_permission(self, mock_cas_client, mock_get_current_user, user_load):
+        attributes = {'lastName': 'inst11', 'firstName': 'admin01', 'accessToken': 'valid_access_token',
+                      'accessTokenScope': {'osf.full_write', 'osf.full_read'}}
+        value = cas.CasResponse(authenticated=True, attributes=attributes, user=self.user)
+        mock_cas_client.return_value = mock.Mock(profile=mock.Mock(return_value=value))
+        mock_get_current_user.return_value = Auth(self.user)
+        user_load.return_value = self.user
+        url = self.build_url()
+        res = self.app.get(url, headers={'Authorization': 'Bearer valid_access_token'}, expect_errors=False)
+        assert_equal(res.status_code, 200)
+
+    @mock.patch('addons.base.views.OSFUser.load')
+    @mock.patch('framework.auth.decorators.Auth.from_kwargs')
+    @mock.patch('addons.base.views.cas.get_client')
+    def test_auth_bearer_token_without_permission(self, mock_cas_client, mock_get_current_user, user_load):
+        attributes = {'lastName': 'inst11', 'firstName': 'admin01', 'accessToken': 'valid_access_token',
+                      'accessTokenScope': {'osf.users.profile_read'}}
+        value = cas.CasResponse(authenticated=True, attributes=attributes, user=self.user)
+        mock_cas_client.return_value = mock.Mock(profile=mock.Mock(return_value=value))
+        mock_get_current_user.return_value = Auth(self.user)
+        user_load.return_value = self.user
+        url = self.build_url()
+        res = self.app.get(url, headers={'Authorization': 'Bearer invalid_access_token'}, expect_errors=True)
+        assert_equal(res.status_code, 403)
+
 
 class TestAddonLogs(OsfTestCase):
 
@@ -2030,14 +2058,20 @@ class TestViewUtils(OsfTestCase):
         addon_dicts = serialize_addons(self.node, self.auth_obj)
 
         enabled_addons = [addon for addon in addon_dicts if addon['enabled']]
-        assert len(enabled_addons) == 2
-        assert enabled_addons[0]['short_name'] == 'github'
-        assert enabled_addons[1]['short_name'] == 'osfstorage'
+        # GRDM-54077: metadata addon is enabled by default, so we expect 3 addons
+        assert len(enabled_addons) == 3
+        enabled_addon_names = [addon['short_name'] for addon in enabled_addons]
+        assert 'github' in enabled_addon_names
+        assert 'osfstorage' in enabled_addon_names
+        assert 'metadata' in enabled_addon_names
 
         default_addons = [addon for addon in addon_dicts if addon['default']]
-        assert len(default_addons) == 2
-        assert default_addons[0]['short_name'] == 'osfstorage'
-        assert default_addons[1]['short_name'] == 'onlyoffice'
+        # GRDM-54077: metadata addon is now a default addon
+        assert len(default_addons) == 3
+        default_addon_names = [addon['short_name'] for addon in default_addons]
+        assert 'osfstorage' in default_addon_names
+        assert 'onlyoffice' in default_addon_names
+        assert 'metadata' in default_addon_names
 
     @mock.patch('addons.github.models.NodeSettings.get_folders', return_value=[])
     def test_include_template_json(self, mock_folders):
@@ -2047,11 +2081,17 @@ class TestViewUtils(OsfTestCase):
         addon_dicts = serialize_addons(self.node, self.auth_obj)
 
         enabled_addons = [addon for addon in addon_dicts if addon['enabled']]
-        assert len(enabled_addons) == 2
-        assert enabled_addons[1]['short_name'] == 'osfstorage'
-        assert enabled_addons[0]['short_name'] == 'github'
-        assert 'node_has_auth' in enabled_addons[0]
-        assert 'valid_credentials' in enabled_addons[0]
+        # GRDM-54077: metadata addon is enabled by default, so we expect 3 addons
+        assert len(enabled_addons) == 3
+
+        enabled_addon_names = [addon['short_name'] for addon in enabled_addons]
+        assert 'github' in enabled_addon_names
+        assert 'osfstorage' in enabled_addon_names
+        assert 'metadata' in enabled_addon_names
+
+        github_addon = next(addon for addon in enabled_addons if addon['short_name'] == 'github')
+        assert 'node_has_auth' in github_addon
+        assert 'valid_credentials' in github_addon
 
     @mock.patch('addons.github.models.NodeSettings.get_folders', return_value=[])
     def test_collect_node_config_js(self, mock_folders):
