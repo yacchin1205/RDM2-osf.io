@@ -126,6 +126,7 @@ INSTALLED_APPS = (
     'addons.binderhub',
     'addons.onedrivebusiness',
     'addons.metadata',
+    'addons.workflow',
     'addons.onlyoffice',
 )
 

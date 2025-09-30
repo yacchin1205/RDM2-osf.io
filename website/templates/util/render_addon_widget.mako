@@ -232,6 +232,162 @@
                     </div>
                 % endif
 
+                % if addon_name == 'workflow':
+                    <div id="workflow-dashboard" class="scripted">
+                        <!-- ko if: loadingRegistrations -->
+                            <div class="text-muted">
+                                <i class="fa fa-spinner fa-spin"></i>
+                                ${_("Loading workflows...")}
+                            </div>
+                        <!-- /ko -->
+
+                        <!-- ko if: registrationError -->
+                            <div class="alert alert-danger" data-bind="text: registrationError"></div>
+                        <!-- /ko -->
+
+                        <!-- ko if: !loadingRegistrations() && !registrationError() -->
+                            <div data-bind="if: activeRegistrations().length">
+                                <!-- ko if: canStartWorkflow -->
+                                    <div class="form-inline m-b-sm">
+                                        <label class="control-label m-r-sm">${_("Launch workflow")}</label>
+                                        <div class="btn-group btn-group-sm">
+                                            <a class="btn btn-primary"
+                                               data-bind="text: selectedRegistrationLabel,
+                                                          attr: { href: selectedRegistrationUrl }"></a>
+                                            <button type="button" class="btn btn-primary dropdown-toggle"
+                                                    data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                                <span class="caret"></span>
+                                                <span class="sr-only">${_("Toggle workflow selection")}</span>
+                                            </button>
+                                            <ul class="dropdown-menu"
+                                                data-bind="foreach: activeRegistrations">
+                                                <li data-bind="css: { active: id === $parent.selectedRegistrationId() }">
+                                                    <a data-bind="text: displayLabel,
+                                                                  attr: { href: $parent.launchUrlFor(id) },
+                                                                  click: $parent.selectRegistration"></a>
+                                                </li>
+                                            </ul>
+                                        </div>
+                                    </div>
+                                    <p class="text-muted">
+                                        ${_("Select a workflow to open the workflow console and start a run.")}
+                                    </p>
+                                <!-- /ko -->
+                                <!-- ko ifnot: canStartWorkflow -->
+                                    <p class="text-muted" data-bind="text: permissionDeniedMessage"></p>
+                                <!-- /ko -->
+                            </div>
+
+                            <p class="text-muted" data-bind="if: !activeRegistrations().length">
+                                ${_("No active workflows are available for this project.")}
+                            </p>
+
+                            <hr />
+
+                            <div class="clearfix m-t-sm">
+                                <h5 class="pull-left">${_("Recent runs")}</h5>
+                                <button type="button" class="btn btn-default btn-xs pull-right"
+                                        data-bind="click: fetchRuns, disable: isRefreshingRuns">
+                                    <i class="fa fa-refresh" data-bind="css: { 'fa-spin': isRefreshingRuns }"></i>
+                                    ${_("Refresh")}
+                                </button>
+                            </div>
+
+                            <!-- ko if: loadingRuns -->
+                                <div class="text-muted">
+                                    <i class="fa fa-spinner fa-spin"></i>
+                                    ${_("Loading runs...")}
+                                </div>
+                            <!-- /ko -->
+
+                            <!-- ko if: runsError -->
+                                <div class="alert alert-danger" data-bind="text: runsError"></div>
+                            <!-- /ko -->
+
+                            <div class="table-responsive" data-bind="if: !loadingRuns() && runs().length">
+                                <table class="table table-condensed table-hover">
+                                    <thead>
+                                        <tr>
+                                            <th>${_("Label")}</th>
+                                            <th>${_("Status")}</th>
+                                            <th>${_("Started")}</th>
+                                            <th>${_("Completed")}</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody data-bind="foreach: runs">
+                                        <tr>
+                                            <td>
+                                                <strong data-bind="text: label || business_key || id"></strong>
+                                                <div class="text-muted" data-bind="text: engine_process_id, visible: engine_process_id"></div>
+                                            </td>
+                                            <td>
+                                                <span class="label" data-bind="css: $parent.runStatusClass($data), text: $parent.runStatusLabel($data)"></span>
+                                            </td>
+                                            <td data-bind="text: $parent.formatDate(started_at || created)"></td>
+                                            <td data-bind="text: $parent.formatDate(completed_at)"></td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            <p class="text-muted" data-bind="if: !loadingRuns() && !runs().length">
+                                ${_("No workflow runs have been recorded yet.")}
+                            </p>
+
+                            <hr />
+
+                            <div class="clearfix m-t-sm">
+                                <h5 class="pull-left">${_("Open tasks")}</h5>
+                                <button type="button" class="btn btn-default btn-xs pull-right"
+                                        data-bind="click: fetchTasks, disable: isRefreshingTasks">
+                                    <i class="fa fa-refresh" data-bind="css: { 'fa-spin': isRefreshingTasks }"></i>
+                                    ${_("Refresh")}
+                                </button>
+                            </div>
+
+                            <!-- ko if: loadingTasks -->
+                                <div class="text-muted">
+                                    <i class="fa fa-spinner fa-spin"></i>
+                                    ${_("Loading tasks...")}
+                                </div>
+                            <!-- /ko -->
+
+                            <!-- ko if: tasksError -->
+                                <div class="alert alert-danger" data-bind="text: tasksError"></div>
+                            <!-- /ko -->
+
+                            <div class="table-responsive" data-bind="if: !loadingTasks() && tasks().length">
+                                <table class="table table-condensed table-hover">
+                                    <thead>
+                                        <tr>
+                                            <th>${_("Task")}</th>
+                                            <th>${_("Assignee")}</th>
+                                            <th>${_("Created")}</th>
+                                            <th>${_("Due")}</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody data-bind="foreach: tasks">
+                                        <tr>
+                                            <td>
+                                                <strong data-bind="text: name || id"></strong>
+                                                <div class="text-muted" data-bind="text: business_key, visible: business_key"></div>
+                                            </td>
+                                            <td data-bind="text: $parent.taskAssignee($data)"></td>
+                                            <td data-bind="text: $parent.formatDate(created)"></td>
+                                            <td data-bind="text: $parent.formatDate(due)"></td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            <p class="text-muted" data-bind="if: !loadingTasks() && !tasks().length">
+                                ${_("No open tasks for this project.")}
+                            </p>
+
+                        <!-- /ko -->
+                    </div>
+                % endif
+
                 </div>
             % else:
                 <div class='addon-config-error p-sm'>

@@ -710,6 +710,8 @@ ${parent.javascript_bottom()}
             canComment: ${ user['can_comment'] | sjson, n },
             canEdit: ${ user['can_edit'] | sjson, n },
             canEditTags: ${ user['can_edit_tags'] | sjson, n },
+            isAdmin: ${ user['is_admin'] | sjson, n },
+            permissions: ${ user['permissions'] | sjson, n },
         },
         node: {
             id: ${node['id'] | sjson, n},

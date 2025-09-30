@@ -1,0 +1,1098 @@
+# -*- coding: utf-8 -*-
+"""Service helpers for workflow registrations and process execution."""
+
+import json
+import logging
+
+from typing import Any, Dict, Iterable, List, Optional, Set, Tuple, TYPE_CHECKING
+
+logger = logging.getLogger(__name__)
+
+from django.db import transaction
+from django.utils import timezone
+from rest_framework import status as http_status
+
+from framework.exceptions import HTTPError
+from osf.utils.permissions import ADMIN, READ, WRITE
+from website import settings as website_settings
+
+from addons.workflow.gateway_client import (
+    WorkflowGatewayClientError,
+    get_gateway_client,
+)
+from addons.workflow.models import (
+    WorkflowActivation,
+    WorkflowDefinitionSnapshot,
+    WorkflowEngine,
+    WorkflowEngineKey,
+    WorkflowExecutorToken,
+    WorkflowRegistration,
+)
+from addons.workflow.token import create_delegation_token, revoke_delegation_token
+from osf.models import ApiOAuth2PersonalToken
+
+if TYPE_CHECKING:
+    from osf.models import AbstractNode, OSFUser
+
+
+_REQUIRED_DEFINITION_FIELDS = {'id', 'key', 'name', 'version'}
+_ALLOWED_KEY_ALGORITHMS = {'RS256', 'RS384', 'RS512', 'ES256', 'ES384', 'ES512'}
+
+
+def import_gateway_public_keys(engine: WorkflowEngine) -> int:
+    """Fetch the gateway keyset and register public keys for the engine."""
+
+    client = get_gateway_client(engine.engine_id)
+    payload = client.get_public_keyset()
+    keys = payload.get('keys')
+    if not isinstance(keys, list):
+        raise HTTPError(
+            http_status.HTTP_502_BAD_GATEWAY,
+            data={'message': 'Workflow gateway returned malformed keyset payload.'},
+        )
+    if not keys:
+        raise HTTPError(
+            http_status.HTTP_502_BAD_GATEWAY,
+            data={'message': 'Workflow gateway did not return any public keys.'},
+        )
+
+    imported = 0
+    with transaction.atomic():
+        for entry in keys:
+            try:
+                kid = entry['kid']
+                algorithm = entry['alg']
+                public_key = entry['public_key']
+            except KeyError as error:
+                raise HTTPError(
+                    http_status.HTTP_502_BAD_GATEWAY,
+                    data={'message': 'Workflow gateway keyset entry missing required fields.'},
+                ) from error
+
+            if algorithm not in _ALLOWED_KEY_ALGORITHMS:
+                raise HTTPError(
+                    http_status.HTTP_400_BAD_REQUEST,
+                    data={'message': f'Unsupported key algorithm "{algorithm}" for kid {kid}.'},
+                )
+
+            WorkflowEngineKey.objects.update_or_create(
+                engine_id=engine.engine_id,
+                kid=kid,
+                defaults={
+                    'algorithm': algorithm,
+                    'public_key': public_key,
+                    'is_active': True,
+                },
+            )
+            imported += 1
+
+    return imported
+
+
+def _validate_payload(payload: Dict[str, Any]) -> None:
+    missing = _REQUIRED_DEFINITION_FIELDS.difference(payload.keys())
+    if missing:
+        raise HTTPError(
+            http_status.HTTP_502_BAD_GATEWAY,
+            data={'message': f'workflow engine response missing fields: {", ".join(sorted(missing))}'},
+        )
+
+
+def _extract_definition_defaults(payload: Dict[str, Any], form_schema: Optional[Any]) -> Dict[str, Any]:
+    defaults: Dict[str, Any] = {
+        'definition_key': payload['key'],
+        'name': payload.get('name') or payload['key'],
+        'version': int(payload.get('version') or 0),
+        'category': payload.get('category') or '',
+        'deployment_id': payload.get('deploymentId') or '',
+        'description': payload.get('description') or '',
+        'form_schema': form_schema if form_schema is not None else {},
+        'definition_metadata': payload,
+    }
+    return defaults
+
+
+def _adapt_form_payload(form_payload: Any) -> Any:
+    if not isinstance(form_payload, dict):
+        return form_payload
+
+    properties = form_payload.get('formProperties')
+    if not isinstance(properties, list) or form_payload.get('fields'):
+        return form_payload
+
+    fields: List[Dict[str, Any]] = []
+    for entry in properties:
+        if not isinstance(entry, dict):
+            continue
+        field_type = str(entry.get('type') or '').lower()
+        field: Dict[str, Any] = {
+            'id': entry.get('id'),
+            'name': entry.get('name'),
+            'type': field_type,
+            'required': entry.get('required', False),
+        }
+        if entry.get('value') is not None:
+            field['value'] = entry['value']
+            field['defaultValue'] = entry['value']
+        enum_values = entry.get('enumValues')
+        if isinstance(enum_values, list) and enum_values:
+            options: List[Dict[str, Any]] = []
+            for item in enum_values:
+                if not isinstance(item, dict):
+                    continue
+                option_value = item.get('id')
+                options.append(
+                    {
+                        'id': option_value,
+                        'name': item.get('name', option_value),
+                        'value': option_value,
+                    }
+                )
+            field['options'] = options
+        fields.append(field)
+
+    adapted = dict(form_payload)
+    adapted['fields'] = fields
+    return adapted
+
+
+def _upsert_definition(
+    engine: WorkflowEngine,
+    payload: Dict[str, Any],
+    form_schema: Optional[Any] = None,
+) -> WorkflowDefinitionSnapshot:
+    _validate_payload(payload)
+    defaults = _extract_definition_defaults(payload, form_schema)
+    snapshot, _ = WorkflowDefinitionSnapshot.objects.update_or_create(
+        engine=engine,
+        definition_id=payload['id'],
+        defaults=defaults,
+    )
+    return snapshot
+
+
+def sync_definition_snapshot(engine_id: str, definition_id: str) -> WorkflowDefinitionSnapshot:
+    """Fetch a process definition from the gateway and persist a snapshot."""
+
+    client = get_gateway_client(engine_id)
+    payload = client.get_process_definition(definition_id)
+    if not isinstance(payload, dict):
+        raise HTTPError(
+            http_status.HTTP_502_BAD_GATEWAY,
+            data={'message': 'workflow engine returned unexpected payload for definition lookup.'},
+        )
+
+    form_schema: Optional[Any]
+    try:
+        form_schema = client.get_process_definition_start_form(definition_id)
+    except WorkflowGatewayClientError as error:
+        if _status_code_from_error(error) == http_status.HTTP_404_NOT_FOUND:
+            form_schema = None
+        else:
+            raise
+
+    if form_schema is not None:
+        form_schema = _adapt_form_payload(form_schema)
+
+    try:
+        engine = WorkflowEngine.objects.get(engine_id=engine_id)
+    except WorkflowEngine.DoesNotExist as error:
+        raise HTTPError(
+            http_status.HTTP_404_NOT_FOUND,
+            data={'message': f'workflow engine not found: {engine_id}'},
+        ) from error
+
+    return _upsert_definition(engine, payload, form_schema)
+
+
+def refresh_definitions(engine_id: str, definitions: Iterable[Dict[str, Any]]) -> None:
+    try:
+        engine = WorkflowEngine.objects.get(engine_id=engine_id)
+    except WorkflowEngine.DoesNotExist as error:
+        raise HTTPError(
+            http_status.HTTP_404_NOT_FOUND,
+            data={'message': f'workflow engine not found: {engine_id}'},
+        ) from error
+
+    for payload in definitions:
+        if not isinstance(payload, dict):
+            continue
+        snapshot_form = None
+        if payload.get('id'):
+            try:
+                snapshot_form = client.get_process_definition_start_form(payload['id'])
+            except WorkflowGatewayClientError as error:
+                status_code = _status_code_from_error(error)
+                if status_code not in {http_status.HTTP_404_NOT_FOUND, http_status.HTTP_400_BAD_REQUEST}:
+                    raise
+                snapshot_form = None
+            else:
+                if snapshot_form is not None:
+                    snapshot_form = _adapt_form_payload(snapshot_form)
+        _upsert_definition(engine, payload, snapshot_form)
+
+
+def _status_code_from_error(error: Exception) -> Optional[int]:
+    code = getattr(error, 'status_code', None)
+    if code is not None:
+        return code
+    return getattr(error, 'code', None)
+
+
+@transaction.atomic
+def upsert_workflow_registration(
+    node: 'AbstractNode',
+    *,
+    engine_id: str,
+    definition_id: str,
+    registered_by: 'OSFUser',
+    token_settings: Optional[Dict[str, Any]] = None,
+    label: Optional[str] = None,
+    description: Optional[str] = None,
+) -> Tuple[WorkflowRegistration, bool]:
+    """Register a workflow definition for a given node."""
+
+    if token_settings is not None and not isinstance(token_settings, dict):
+        raise HTTPError(
+            http_status.HTTP_400_BAD_REQUEST,
+            data={'message': 'token_settings must be an object.'},
+        )
+
+    snapshot = sync_definition_snapshot(engine_id, definition_id)
+
+    defaults = {
+        'registered_by': registered_by,
+        'label': label or snapshot.name,
+        'description': description or snapshot.description,
+        'token_settings': token_settings or {},
+        'is_active': True,
+    }
+
+    registration, created = WorkflowRegistration.objects.get_or_create(
+        node=node,
+        definition=snapshot,
+        defaults=defaults,
+    )
+
+    if not created:
+        if label:
+            registration.label = label
+        if description is not None:
+            registration.description = description
+        if token_settings is not None:
+            registration.token_settings = token_settings
+        registration.is_active = True
+        registration.save()
+
+    activation_defaults = {
+        'activated_by': registered_by,
+        'is_enabled': True,
+    }
+    activation, activation_created = WorkflowActivation.objects.get_or_create(
+        node=node,
+        registration=registration,
+        defaults=activation_defaults,
+    )
+    if not activation_created:
+        update_fields = []
+        if not activation.is_enabled:
+            activation.is_enabled = True
+            update_fields.append('is_enabled')
+        if activation.activated_by_id != registered_by.id:
+            activation.activated_by = registered_by
+            update_fields.append('activated_by')
+        if update_fields:
+            update_fields.append('modified')
+            activation.save(update_fields=update_fields)
+
+    creator_mode = (token_settings or {}).get('creator_mode')
+    if creator_mode and creator_mode != 'none':
+        token_data = create_delegation_token(
+            user=registered_by,
+            role='creator',
+            mode=creator_mode,
+            label=registration.label or '',
+        )
+        delegation_tokens = registration.delegation_tokens or {}
+        delegation_tokens['creator'] = token_data
+        registration.delegation_tokens = delegation_tokens
+        registration.save(update_fields=['delegation_tokens', 'modified'])
+
+    return registration, created
+
+
+def _build_delegation_tokens_payload(
+    activation: WorkflowActivation,
+    started_by: 'OSFUser',
+) -> Dict[str, Dict[str, str]]:
+    """Build delegation tokens payload for Gateway.
+
+    Returns dictionary of role -> token data for Gateway to store.
+    Gateway will generate proxy URLs and MODE variables.
+    """
+    from addons.workflow.token import ALLOWED_TOKEN_ROLES
+
+    merged_settings: Dict[str, Any] = {}
+    if activation.registration.token_settings:
+        merged_settings.update(activation.registration.token_settings)
+
+    merged_tokens: Dict[str, Any] = {}
+    if activation.registration.delegation_tokens:
+        merged_tokens.update(activation.registration.delegation_tokens)
+    if activation.delegation_tokens:
+        merged_tokens.update(activation.delegation_tokens)
+
+    delegation_tokens: Dict[str, Dict[str, str]] = {}
+
+    for role in ALLOWED_TOKEN_ROLES:
+        mode = merged_settings.get(f'{role}_mode', 'none')
+
+        if mode != 'none':
+            if role == 'executor':
+                executor_token = WorkflowExecutorToken.objects.filter(
+                    activation=activation,
+                    user=started_by,
+                ).first()
+
+                needs_new_token = False
+                if executor_token:
+                    pat = ApiOAuth2PersonalToken.objects.filter(_id=executor_token.token_id).first()
+                    if not pat or not pat.is_active:
+                        needs_new_token = True
+                        executor_token.delete()
+                        executor_token = None
+                else:
+                    needs_new_token = True
+
+                if needs_new_token:
+                    token_data = create_delegation_token(
+                        user=started_by,
+                        role='executor',
+                        mode=mode,
+                        label=f'{activation.registration.definition_name} on {activation.node.title}',
+                    )
+                    executor_token = WorkflowExecutorToken(
+                        activation=activation,
+                        user=started_by,
+                        token_id=token_data['token_id'],
+                        token_value=token_data['token_value'],
+                    )
+                    executor_token.save()
+
+                delegation_tokens['executor'] = {
+                    'tokenValue': executor_token.token_value,
+                    'tokenOwner': started_by._id,
+                    'mode': mode,
+                }
+            else:
+                if role not in merged_tokens:
+                    raise ValueError(f'Token mode is {mode} for role {role}, but no token exists')
+                token_data = merged_tokens[role]
+                delegation_tokens[role] = {
+                    'tokenValue': token_data['token_value'],
+                    'tokenOwner': token_data['token_owner'],
+                    'mode': mode,
+                }
+
+    return delegation_tokens
+
+
+def _extract_metadata(instance: Dict[str, Any]) -> Dict[str, Any]:
+    """Extract _RDM_WORKFLOW_METADATA from process instance variables."""
+    process_id = instance['id']
+    variables = instance['variables']
+    for entry in variables:
+        if entry['name'] != '_RDM_WORKFLOW_METADATA':
+            continue
+        raw_value = entry.get('value')
+        parsed = json.loads(raw_value)
+        if not isinstance(parsed, dict):
+            raise ValueError(f'Workflow process instance {process_id} metadata is malformed (expected dict, got {type(parsed).__name__}).')
+        return parsed
+
+    raise ValueError(f'Workflow process instance {process_id} is missing _RDM_WORKFLOW_METADATA.')
+
+
+def _get_visible_activations(
+    node: 'AbstractNode',
+    user: Optional['OSFUser'] = None,
+) -> List[WorkflowActivation]:
+    """Get all workflow activations visible from a node.
+
+    Returns activations directly on the node, plus activations on other nodes
+    that use registrations from this node (if user has write permission).
+
+    Args:
+        node: The node to get activations for
+        user: Optional user for permission checks on shared activations
+
+    Returns:
+        List of visible WorkflowActivation objects
+    """
+    # Direct activations on this node
+    direct_activations = list(
+        WorkflowActivation.objects.filter(
+            node=node,
+            is_enabled=True,
+            registration__is_active=True,
+        ).select_related('node', 'registration__definition__engine')
+    )
+
+    # Shared activations (other nodes using registrations from this node)
+    shared_activations: List[WorkflowActivation] = []
+    registrations_on_node = list(
+        WorkflowRegistration.objects.filter(
+            node=node,
+            is_active=True,
+        ).select_related('definition__engine')
+    )
+
+    if registrations_on_node and (not user or node.has_permission(user, WRITE)):
+        shared_activations = list(
+            WorkflowActivation.objects.filter(
+                registration__in=registrations_on_node,
+                is_enabled=True,
+            ).select_related('node', 'registration__definition__engine')
+        )
+
+    return direct_activations + shared_activations
+
+
+def start_workflow_process(
+    node: 'AbstractNode',
+    *,
+    registration: WorkflowRegistration,
+    activation: WorkflowActivation,
+    started_by: 'OSFUser',
+    business_key: Optional[str] = None,
+    label: Optional[str] = None,
+    variables: Optional[Dict[str, Any]] = None,
+) -> Dict[str, Any]:
+    if activation.node_id != node.id:
+        raise HTTPError(
+            http_status.HTTP_404_NOT_FOUND,
+            data={'message': 'Workflow activation not found for this project.'},
+        )
+
+    if not activation.is_enabled:
+        raise HTTPError(
+            http_status.HTTP_409_CONFLICT,
+            data={'message': 'Workflow activation is disabled.'},
+        )
+
+    if not registration.is_active:
+        raise HTTPError(
+            http_status.HTTP_409_CONFLICT,
+            data={'message': 'Workflow registration is inactive.'},
+        )
+
+    delegation_tokens = _build_delegation_tokens_payload(activation, started_by)
+
+    resolved_business_key = business_key or f'rdm:node:{node._id}:activation:{activation.id}'
+    run_label = label or registration.label or registration.definition_name or registration.definition_key
+    started_at = timezone.now()
+
+    payload = _build_gateway_payload(
+        node_id=node._id,
+        node_title=node.title,
+        registration_id=registration.id,
+        activation_id=activation.id,
+        started_by_id=started_by._id,
+        process_definition_id=registration.process_definition_id,
+        label=run_label,
+        business_key=resolved_business_key,
+        started_at=started_at.isoformat(),
+        delegation_tokens=delegation_tokens,
+        variables=variables,
+    )
+
+    client = get_gateway_client(registration.definition.engine.engine_id)
+    try:
+        response = client.start_process_instance(payload)
+    except WorkflowGatewayClientError as error:
+        raise HTTPError(
+            _status_code_from_error(error),
+            data={
+                'message': 'Workflow engine request failed.',
+                'detail': error.data,
+            },
+        ) from error
+
+    if not isinstance(response, dict):
+        raise HTTPError(
+            http_status.HTTP_502_BAD_GATEWAY,
+            data={'message': 'Workflow engine returned unexpected payload for process start.'},
+        )
+
+    process_instance_id = response.get('id')
+    if not process_instance_id:
+        raise HTTPError(
+            http_status.HTTP_502_BAD_GATEWAY,
+            data={'message': 'Workflow engine response missing process instance ID.'},
+        )
+
+    return {
+        'id': process_instance_id,
+        'status': 'running',
+        'label': run_label,
+        'node_id': node._id,
+        'node_title': node.title,
+        'registration_id': str(registration.id),
+        'activation_id': str(activation.id),
+        'started_by': started_by._id,
+        'started_at': started_at.isoformat(),
+        'business_key': resolved_business_key,
+        'engine_response': response,
+    }
+
+
+def _build_gateway_payload(
+    *,
+    node_id: str,
+    node_title: str,
+    registration_id: int,
+    activation_id: int,
+    started_by_id: str,
+    process_definition_id: str,
+    label: str,
+    business_key: str,
+    started_at: str,
+    delegation_tokens: Dict[str, Dict[str, str]],
+    variables: Optional[List[Dict[str, Any]]],
+) -> Dict[str, Any]:
+    variable_list: List[Dict[str, Any]] = [
+        {'name': 'RDM_NODE_ID', 'type': 'string', 'value': node_id},
+        {'name': 'RDM_REGISTRATION_ID', 'type': 'string', 'value': str(registration_id)},
+        {'name': 'RDM_ACTIVATION_ID', 'type': 'string', 'value': str(activation_id)},
+        {'name': 'RDM_STARTED_BY', 'type': 'string', 'value': started_by_id},
+        {'name': 'RDM_DOMAIN', 'type': 'string', 'value': website_settings.DOMAIN},
+        {'name': 'RDM_API_DOMAIN', 'type': 'string', 'value': website_settings.API_DOMAIN},
+        {'name': 'RDM_WATERBUTLER_URL', 'type': 'string', 'value': website_settings.WATERBUTLER_URL},
+    ]
+
+    if variables:
+        variable_list.extend(variables)
+
+    metadata_payload: Dict[str, Any] = {
+        'node_id': node_id,
+        'node_title': node_title,
+        'registration_id': str(registration_id),
+        'activation_id': str(activation_id),
+        'started_by': started_by_id,
+        'label': label,
+        'business_key': business_key,
+        'started_at': started_at,
+    }
+
+    variable_list.append(
+        {
+            'name': '_RDM_WORKFLOW_METADATA',
+            'type': 'string',
+            'value': json.dumps(metadata_payload),
+        }
+    )
+
+    payload = {
+        'processDefinitionId': process_definition_id,
+        'name': label,
+        'businessKey': business_key,
+        'variables': variable_list,
+        'delegationTokens': delegation_tokens,
+    }
+
+    return payload
+
+
+def cancel_workflow_run(
+    node: 'AbstractNode',
+    process_instance_id: str,
+    *,
+    cancelled_by: 'OSFUser',
+    reason: Optional[str] = None,
+) -> Dict[str, Any]:
+    """Cancel a workflow process instance.
+
+    Args:
+        node: The project node
+        process_instance_id: Flowable process instance ID
+        cancelled_by: User cancelling the process
+        reason: Optional cancellation reason
+
+    Returns:
+        Serialized process instance data
+
+    Raises:
+        HTTPError: If process not found or cannot be cancelled
+    """
+    # Get all activations visible to this node
+    all_activations = _get_visible_activations(node)
+    engine_ids = list({act.registration.definition.engine.engine_id for act in all_activations if act.registration.definition.engine_id})
+
+    if not engine_ids:
+        raise HTTPError(
+            http_status.HTTP_404_NOT_FOUND,
+            data={'message': 'Workflow run not found.'},
+        )
+
+    # Try to find the process instance in available engines by searching each activation
+    for activation in all_activations:
+        activation_node = activation.node
+        if activation_node.is_deleted:
+            continue
+
+        registration = activation.registration
+        engine_id = registration.definition.engine.engine_id
+        business_key = f'rdm:node:{activation_node._id}:activation:{activation.id}'
+
+        client = get_gateway_client(engine_id)
+
+        try:
+            # Search using business_key to filter only this activation's instances
+            response = client.list_process_instances({
+                'businessKey': business_key,
+                'includeProcessVariables': 'true',
+                'size': 100,
+            })
+            instances = response.get('data') if isinstance(response, dict) else []
+
+            if not instances or not isinstance(instances, list):
+                continue
+
+            # Find the specific process instance in the results
+            instance = None
+            for inst in instances:
+                if inst.get('id') == process_instance_id:
+                    instance = inst
+                    break
+
+            if not instance:
+                continue
+
+            # Extract and verify metadata
+            try:
+                metadata = _extract_metadata(instance)
+            except HTTPError as e:
+                logger.warning(
+                    'Skipping process instance due to metadata error: %s',
+                    e.data.get('message'),
+                    extra={'process_id': instance.get('id'), 'node': node._id},
+                )
+                continue
+
+            # Verify node matches
+            node_id = metadata.get('node_id')
+            if node_id != node._id:
+                continue
+
+            # Check if already completed
+            if instance.get('ended'):
+                raise HTTPError(
+                    http_status.HTTP_409_CONFLICT,
+                    data={'message': 'Workflow run has already completed and cannot be cancelled.'},
+                )
+
+            # Terminate the process instance
+            client.terminate_process_instance(process_instance_id, reason=reason)
+
+            # Return the terminated instance info
+            return {
+                'id': process_instance_id,
+                'registration_id': metadata.get('registration_id'),
+                'activation_id': metadata.get('activation_id'),
+                'node_id': metadata['node_id'],
+                'node_title': metadata['node_title'],
+                'engine_id': engine_id,
+                'engine_process_id': process_instance_id,
+                'engine_definition_id': instance.get('processDefinitionId'),
+                'label': metadata['label'],
+                'status': 'cancelled',
+                'business_key': metadata.get('business_key'),
+                'started_at': metadata.get('started_at') or instance.get('startTime'),
+                'completed_at': timezone.now().isoformat(),
+                'started_by': metadata['started_by'],
+                'cancelled_by': cancelled_by._id,
+                'cancel_reason': reason,
+                'created': metadata.get('started_at') or instance.get('startTime'),
+            }
+
+        except WorkflowGatewayClientError as error:
+            if _status_code_from_error(error) == http_status.HTTP_404_NOT_FOUND:
+                continue
+            raise
+
+    raise HTTPError(
+        http_status.HTTP_404_NOT_FOUND,
+        data={'message': 'Workflow run not found.'},
+    )
+
+
+def _serialize_task_payload(
+    task_payload: Dict[str, Any],
+    *,
+    engine_id: str,
+    instance: Dict[str, Any],
+) -> Dict[str, Any]:
+    from addons.workflow.views import STATUS_RUNNING, STATUS_COMPLETED, STATUS_CANCELLED
+
+    metadata = _extract_metadata(instance)
+    process_instance_id = task_payload.get('processInstanceId')
+    end_time = task_payload.get('endTime')
+
+    if end_time:
+        delete_reason = task_payload.get('deleteReason')
+        if delete_reason:
+            task_status = STATUS_CANCELLED
+        else:
+            task_status = STATUS_COMPLETED
+    else:
+        task_status = STATUS_RUNNING
+
+    return {
+        'id': task_payload.get('id'),
+        'name': task_payload.get('name'),
+        'description': task_payload.get('description'),
+        'assignee': task_payload.get('assignee'),
+        'owner': task_payload.get('owner'),
+        'task_status': task_status,
+        'delete_reason': task_payload.get('deleteReason'),
+        'created': task_payload.get('createTime'),
+        'end_time': end_time,
+        'completed': end_time,
+        'due': task_payload.get('dueDate'),
+        'priority': task_payload.get('priority'),
+        'category': task_payload.get('category'),
+        'form_key': task_payload.get('formKey'),
+        'engine_id': engine_id,
+        'process_definition_id': task_payload.get('processDefinitionId'),
+        'process_instance_id': process_instance_id,
+        'business_key': task_payload.get('processInstanceBusinessKey'),
+        'run_id': process_instance_id,
+        'node_id': metadata['node_id'],
+        'node_title': metadata['node_title'],
+        'variables': instance['variables'],
+    }
+
+
+def list_workflow_tasks(
+    node: 'AbstractNode',
+    user: 'OSFUser',
+    *,
+    limit: int = 100,
+    status_filter: Optional[str] = None,
+) -> List[Dict[str, Any]]:
+    all_activations = _get_visible_activations(node, user)
+
+    activation_map: Dict[int, WorkflowActivation] = {}
+    for activation in all_activations:
+        activation_map[activation.id] = activation
+
+    if not activation_map:
+        return []
+
+    # Fetch tasks for each activation
+    all_tasks: List[Dict[str, Any]] = []
+
+    for activation in activation_map.values():
+        activation_node = activation.node
+        if activation_node.is_deleted:
+            continue
+
+        registration = activation.registration
+        engine_id = registration.definition.engine.engine_id
+        business_key = f'rdm:node:{activation_node._id}:activation:{activation.id}'
+
+        client = get_gateway_client(engine_id)
+
+        # Runtime and historic tasks use different parameter names for business key filtering
+        runtime_params = {
+            'processInstanceBusinessKey': business_key,
+            'includeProcessVariables': 'true',
+            'size': limit,
+        }
+        historic_params = {
+            'processBusinessKey': business_key,
+            'includeProcessVariables': 'true',
+            'size': limit,
+        }
+
+        # Fetch both runtime and historic tasks
+        runtime_response = client.list_tasks(runtime_params)
+        runtime_payload = runtime_response.get('data')
+
+        if status_filter == 'active':
+            # Only include runtime (active) tasks
+            payload = runtime_payload or []
+        else:
+            historic_response = client.list_historic_tasks(historic_params)
+            historic_payload = historic_response.get('data')
+
+            # Merge runtime and historic tasks, removing duplicates (prefer runtime for active tasks)
+            task_map: Dict[str, Dict[str, Any]] = {}
+            for entry in (historic_payload or []):
+                task_map[entry['id']] = entry
+            for entry in (runtime_payload or []):
+                task_map[entry['id']] = entry
+
+            payload = list(task_map.values())
+
+        for entry in payload:
+            if not isinstance(entry, dict):
+                continue
+
+            task_id = entry.get('id')
+            process_id = entry.get('processInstanceId')
+
+            metadata = _extract_metadata(entry)
+
+            serialized = _serialize_task_payload(entry, engine_id=engine_id, instance=entry)
+            assignee = entry.get('assignee')
+            from addons.workflow.views import STATUS_RUNNING
+            serialized['can_complete'] = (
+                serialized['task_status'] == STATUS_RUNNING and
+                _can_complete_task(activation_node, user, assignee, metadata)
+            )
+            all_tasks.append(serialized)
+
+            if len(all_tasks) >= limit:
+                break
+        if len(all_tasks) >= limit:
+            break
+
+    all_tasks.sort(key=lambda item: item.get('created') or '', reverse=True)
+    result = all_tasks[:limit]
+    logger.info(f'list_workflow_tasks returning {len(result)} tasks')
+    return result
+
+
+def _fetch_task_from_engines(
+    node: 'AbstractNode',
+    task_id: str,
+    *,
+    engine_id: str,
+) -> Tuple[Dict[str, Any], str, Dict[str, Any]]:
+    client = get_gateway_client(engine_id)
+    task_payload = client.get_task(task_id)
+    if not isinstance(task_payload, dict):
+        raise HTTPError(
+            http_status.HTTP_404_NOT_FOUND,
+            data={'message': 'Workflow task not found.'},
+        )
+
+    process_instance_id = task_payload.get('processInstanceId')
+    if not process_instance_id:
+        raise HTTPError(
+            http_status.HTTP_404_NOT_FOUND,
+            data={'message': 'Workflow task missing process instance.'},
+        )
+
+    # Use list API with 'id' parameter to get instance with variables
+    # Note: GET /process-instances/{id} does not return variables,
+    # but list API with id parameter does
+    instance_response = client.list_process_instances({
+        'id': process_instance_id,
+        'includeProcessVariables': 'true',
+    })
+    instances = instance_response.get('data') if isinstance(instance_response, dict) else []
+    if not instances or not isinstance(instances, list) or len(instances) == 0:
+        raise HTTPError(
+            http_status.HTTP_404_NOT_FOUND,
+            data={'message': 'Workflow process instance not found.'},
+        )
+
+    instance = instances[0]
+    return task_payload, engine_id, instance
+
+
+def _can_complete_task(
+    node: 'AbstractNode',
+    user: 'OSFUser',
+    assignee: Optional[str],
+    metadata: Dict[str, Any],
+) -> bool:
+    """Check if user can complete a task based on flowable:assignee attribute.
+
+    Supports:
+    - empty assignee: anyone with read permission can complete
+    - 'executor': user who started the workflow run
+    - 'creator': WorkflowRegistration project's contributors with write permission
+    - 'manager': project admin
+    - 'contributor': project contributor (read permission)
+    - email address: users with matching username
+    """
+    if not assignee:
+        return node.has_permission(user, READ)
+
+    assignee_lower = assignee.lower()
+
+    if assignee_lower == 'executor':
+        started_by_id = metadata.get('started_by')
+        return user._id == started_by_id
+
+    if assignee_lower == 'creator':
+        registration_id = metadata.get('registration_id')
+        if not registration_id:
+            return False
+        try:
+            registration = WorkflowRegistration.objects.select_related('node').get(id=int(registration_id))
+            return registration.node.has_permission(user, WRITE)
+        except (WorkflowRegistration.DoesNotExist, ValueError):
+            return False
+
+    if assignee_lower == 'manager':
+        return node.has_permission(user, ADMIN)
+
+    if assignee_lower == 'contributor':
+        return node.has_permission(user, READ)
+
+    return user.username == assignee
+
+
+def get_workflow_task(
+    node: 'AbstractNode',
+    task_id: str,
+    user: 'OSFUser',
+    *,
+    engine_id: str,
+    include_form: bool = False,
+) -> Dict[str, Any]:
+    task_payload, engine_id, instance = _fetch_task_from_engines(node, task_id, engine_id=engine_id)
+    client = get_gateway_client(engine_id)
+
+    form_payload: Optional[Dict[str, Any]] = None
+    if include_form:
+        try:
+            form_response = client.get_task_form(task_id)
+            if isinstance(form_response, dict):
+                form_payload = _adapt_form_payload(form_response)
+        except WorkflowGatewayClientError as error:
+            status_code = _status_code_from_error(error)
+            logger.warning(f'get_task_form failed for task_id={task_id}: status={status_code}')
+            if status_code not in {http_status.HTTP_404_NOT_FOUND, http_status.HTTP_400_BAD_REQUEST}:
+                raise
+
+    serialized = _serialize_task_payload(task_payload, engine_id=engine_id, instance=instance)
+    if form_payload is not None:
+        serialized['form'] = form_payload
+
+    metadata = _extract_metadata(instance)
+    assignee = task_payload.get('assignee')
+    serialized['can_complete'] = _can_complete_task(node, user, assignee, metadata)
+
+    return serialized
+
+
+def _normalize_task_variables(variables: Any) -> Optional[List[Dict[str, Any]]]:
+    if variables is None:
+        return None
+    if isinstance(variables, list):
+        return [entry for entry in variables if isinstance(entry, dict)]
+    if isinstance(variables, dict):
+        normalized: List[Dict[str, Any]] = []
+        for name, value in variables.items():
+            normalized.append({'name': name, 'value': value})
+        return normalized
+    raise HTTPError(
+        http_status.HTTP_400_BAD_REQUEST,
+        data={'message': 'variables must be an object or array.'},
+    )
+
+
+def submit_workflow_task_action(
+    node: 'AbstractNode',
+    task_id: str,
+    user: 'OSFUser',
+    *,
+    engine_id: str,
+    action: str,
+    variables: Any = None,
+    assignee: Optional[str] = None,
+) -> Optional[Dict[str, Any]]:
+    task_payload, engine_id, instance = _fetch_task_from_engines(node, task_id, engine_id=engine_id)
+
+    metadata = _extract_metadata(instance)
+    task_assignee = task_payload.get('assignee')
+    if not _can_complete_task(node, user, task_assignee, metadata):
+        raise HTTPError(
+            http_status.HTTP_403_FORBIDDEN,
+            data={'message': 'You are not assigned to this task.'},
+        )
+
+    client = get_gateway_client(engine_id)
+
+    normalized_variables = _normalize_task_variables(variables)
+
+    request_payload: Dict[str, Any] = {'action': action}
+    if normalized_variables:
+        request_payload['variables'] = normalized_variables
+    if assignee:
+        request_payload['assignee'] = assignee
+
+    client.update_task(task_id, request_payload)
+
+    try:
+        return get_workflow_task(node, task_id, user, engine_id=engine_id, include_form=False)
+    except HTTPError as error:
+        if error.code == http_status.HTTP_404_NOT_FOUND:
+            return None
+        raise
+
+
+def deactivate_workflow_activation(activation: WorkflowActivation) -> None:
+    """Deactivate a workflow activation, revoking delegation tokens."""
+    if not activation.is_enabled:
+        return
+
+    update_fields = []
+
+    if activation.delegation_tokens.get('manager'):
+        revoke_delegation_token(activation.delegation_tokens['manager']['token_id'])
+        delegation_tokens = dict(activation.delegation_tokens)
+        del delegation_tokens['manager']
+        activation.delegation_tokens = delegation_tokens
+        update_fields.append('delegation_tokens')
+
+    activation.is_enabled = False
+    update_fields.append('is_enabled')
+    update_fields.append('modified')
+    activation.save(update_fields=update_fields)
+
+
+def deactivate_workflow_registration(registration: WorkflowRegistration) -> None:
+    """Deactivate a workflow registration and its activations, revoking delegation tokens."""
+    if not registration.is_active:
+        return
+
+    update_fields = []
+
+    if registration.delegation_tokens.get('creator'):
+        revoke_delegation_token(registration.delegation_tokens['creator']['token_id'])
+        delegation_tokens = dict(registration.delegation_tokens)
+        del delegation_tokens['creator']
+        registration.delegation_tokens = delegation_tokens
+        update_fields.append('delegation_tokens')
+
+    activations = WorkflowActivation.objects.filter(
+        registration=registration,
+        is_enabled=True
+    )
+    for activation in activations:
+        deactivate_workflow_activation(activation)
+
+    registration.is_active = False
+    update_fields.append('is_active')
+    update_fields.append('modified')
+    registration.save(update_fields=update_fields)
+
+
+def deactivate_workflow_engine(engine: WorkflowEngine) -> None:
+    """Deactivate a workflow engine and all its registrations."""
+    registrations = WorkflowRegistration.objects.filter(
+        definition__engine=engine,
+        is_active=True
+    ).select_related('definition')
+
+    for registration in registrations:
+        deactivate_workflow_registration(registration)
+
+    engine.is_active = False
+    engine.save(update_fields=['is_active', 'modified'])
