@@ -1,0 +1,20 @@
+version: '3.4'
+
+services:
+  elasticsearch:
+    build:
+      context: .github/docker/elasticsearch
+      dockerfile: Dockerfile.ci
+
+  web:
+    env_file:
+      - .github/ci/docker-compose.env
+      - .docker-compose.sharejs.env
+    environment:
+      OSF_DB_HOST: postgres
+      DB_HOST: postgres
+      OSF_DB_PORT: 5432
+      DB_PORT: 5432
+      ELASTIC_URI: elasticsearch:9200
+      ELASTIC6_URI: elasticsearch6:9200
+      BOTO_CONFIG: /dev/null

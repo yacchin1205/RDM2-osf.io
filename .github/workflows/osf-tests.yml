@@ -1,0 +1,27 @@
+name: OSF Tests
+
+on:
+  push:
+    branches:
+      - develop
+      - master
+      - main
+  pull_request:
+
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    strategy:
+      fail-fast: false
+      matrix:
+        test-build: [addons, website, api1_and_js, api2, api3_and_osf]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Run matrix job
+        env:
+          TEST_BUILD: ${{ matrix.test-build }}
+        run: |
+          bash .github/scripts/ci/run-tests.sh "$TEST_BUILD"
