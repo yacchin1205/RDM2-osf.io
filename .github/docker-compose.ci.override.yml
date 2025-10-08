@@ -7,7 +7,7 @@ services:
       dockerfile: Dockerfile.ci
 
   web:
-    image: niicloudoperation/rdm-osf.io:latest
+    image: ${OSF_TEST_IMAGE}
     env_file:
       - .github/ci/docker-compose.env
       - .docker-compose.sharejs.env
@@ -20,7 +20,7 @@ services:
       ELASTIC6_URI: elasticsearch6:9200
       BOTO_CONFIG: /dev/null
   requirements:
-    image: niicloudoperation/rdm-osf.io:latest
+    image: ${OSF_TEST_IMAGE}
     command:
       - /bin/bash
       - -c
