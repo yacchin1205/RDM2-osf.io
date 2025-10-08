@@ -70,7 +70,7 @@ invoke travis_addon_settings
 if [ "$TEST_BUILD" = "addons" ]; then
     cat <<'EOF' > ~/.nodeenvrc
 [nodeenv]
-node = 8.17.0
+node = system
 EOF
     pip3 install --force-reinstall --no-deps pre-commit==1.10.5
     hash -r
