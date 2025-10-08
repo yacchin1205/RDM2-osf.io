@@ -67,6 +67,13 @@ set -euo pipefail
 set -x
 export PATH="/usr/local/bin:/usr/bin:$PATH"
 invoke travis_addon_settings
+# Minimal Ember app shells so send_from_directory returns 200 during tests
+mkdir -p "$HOME/preprints" "$HOME/website/ember_osf_web"
+for ember_stub in "$HOME/preprints/index.html" "$HOME/website/ember_osf_web/index.html"; do
+    if [ ! -f "$ember_stub" ]; then
+        printf '<!doctype html><title>stub</title>' > "$ember_stub"
+    fi
+done
 if [ "$TEST_BUILD" = "addons" ]; then
     cat <<'EOF' > ~/.nodeenvrc
 [nodeenv]
