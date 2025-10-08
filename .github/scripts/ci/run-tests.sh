@@ -1,5 +1,6 @@
 #!/bin/bash
 set -euo pipefail
+set -x
 
 if [ "$#" -ne 1 ]; then
     echo "usage: $0 <TEST_BUILD>" >&2
@@ -22,6 +23,7 @@ trap cleanup EXIT
 
 cp website/settings/local-travis.py website/settings/local.py
 cp api/base/settings/local-travis.py api/base/settings/local.py
+cp tasks/local-dist.py tasks/local.py
 
 python3 <<'PY'
 from pathlib import Path
@@ -58,14 +60,24 @@ for url in "http://localhost:9200/_cluster/health?wait_for_status=yellow" "http:
     fi
 done
 
+compose run --rm requirements
+
 read -r -d '' container_script <<'BASH' || true
 set -euo pipefail
-pip3 install --upgrade pip==21.1.3
-pip3 install invoke==0.13.0
-pip3 install flake8==2.4.0 --force-reinstall --upgrade
+set -x
+export PATH="/usr/local/bin:/usr/bin:$PATH"
 invoke travis_addon_settings
-pip3 install psycopg2==2.7.3 --no-binary psycopg2
-invoke requirements --dev --addons
+if [ "$TEST_BUILD" = "addons" ]; then
+    cat <<'EOF' > ~/.nodeenvrc
+[nodeenv]
+node = 8.17.0
+EOF
+    pip3 install --force-reinstall --no-deps pre-commit==1.10.5
+    hash -r
+fi
+mkdir -p user_key_info
+cp root_cert_verifycate.pem user_key_info/
+netstat -an | grep 'tcp.*LISTEN' || true
 pip3 uninstall uritemplate.py --yes || true
 pip3 install uritemplate.py==0.3.0
 if [ "$TEST_BUILD" = "api1_and_js" ]; then
@@ -76,4 +88,7 @@ BASH
 
 compose run --rm \
     -e TEST_BUILD="$TEST_BUILD" \
+    -e BOWER_ALLOW_ROOT=1 \
+    -e NPM_CONFIG_FORCE=true \
+    -e npm_config_force=true \
     web bash -lc "$container_script"
