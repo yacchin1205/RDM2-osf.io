@@ -2,10 +2,8 @@ name: OSF Tests
 
 on:
   push:
-    branches:
-      - develop
-      - master
-      - main
+    branches-ignore:
+      - '[0-9]*'
   pull_request:
 
 jobs:
@@ -15,13 +13,13 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        test-build: [addons, website, api1_and_js, api2, api3_and_osf]
+        test_build: [addons, website, api1_and_js, api2, api3_and_osf]
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
       - name: Run matrix job
         env:
-          TEST_BUILD: ${{ matrix.test-build }}
+          TEST_BUILD: ${{ matrix.test_build }}
         run: |
           bash .github/scripts/ci/run-tests.sh "$TEST_BUILD"
