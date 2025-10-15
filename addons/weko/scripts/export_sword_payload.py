@@ -104,7 +104,7 @@ def _build_user(config):
     return _StubUser(username=username, fullname=fullname, institution=institution, extra=extra)
 
 
-def _generate_payload(config, output_path, fmt, flatten_ro_crate, log_level):
+def _generate_payload(config, output_path, fmt, flatten_ro_crate, log_level, skip_csv=False):
     init_app(routes=False)
     logging.getLogger().setLevel(log_level)
     logging.getLogger('bagit').setLevel(log_level)
@@ -135,7 +135,7 @@ def _generate_payload(config, output_path, fmt, flatten_ro_crate, log_level):
             tmp_dir,
             config['node_id'],
             flatten_ro_crate=flatten_ro_crate,
-            skip_csv_generation=(fmt == 'ro-crate'),
+            skip_csv_generation=skip_csv or (fmt == 'ro-crate'),
         )
         try:
             if fmt == 'zip':
@@ -176,6 +176,11 @@ def main():
         help='Artifact format to export. Default is zip (BagIt package).'
     )
     parser.add_argument(
+        '--skip-csv',
+        action='store_true',
+        help='Skip index.csv generation when building a zip payload.'
+    )
+    parser.add_argument(
         '--skip-flatten',
         action='store_true',
         help='Skip JSON-LD flattening (only valid with --format=ro-crate).'
@@ -200,8 +205,18 @@ def main():
     if args.skip_flatten and args.format != 'ro-crate':
         parser.error('--skip-flatten can only be used with --format=ro-crate')
 
+    if args.skip_csv and args.format == 'csv':
+        parser.error('--skip-csv cannot be used together with --format=csv')
+
     flatten_ro_crate = not args.skip_flatten
-    _generate_payload(config, args.output, args.format, flatten_ro_crate, log_level)
+    _generate_payload(
+        config,
+        args.output,
+        args.format,
+        flatten_ro_crate,
+        log_level,
+        skip_csv=args.skip_csv,
+    )
 
 
 if __name__ == '__main__':

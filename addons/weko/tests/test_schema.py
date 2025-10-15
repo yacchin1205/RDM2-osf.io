@@ -757,6 +757,7 @@ class TestWEKOSchema(OsfTestCase):
       "name": "TEST DATA",
       "wk:index": "1000",
       "wk:publishStatus": "private",
+      "wk:isSplited": false,
       "rdm:accessRightsInformation": [
         {
           "@id": "_:rdm_AccessRights1"
@@ -1219,8 +1220,25 @@ class TestWEKOSchema(OsfTestCase):
         actual_json = json.loads(buf.getvalue())
         graph = {item['@id']: item for item in actual_json['@graph'] if '@id' in item}
 
-        dataset_primary = graph['./']
-        dataset_supporting = graph['#dataset-2']
+        dataset_root = graph['./']
+        assert_true(dataset_root.get('wk:isSplited'))
+        assert_equal(dataset_root['@type'], 'Dataset')
+        assert_not_in('name', dataset_root)
+        assert_not_in('dc:type', dataset_root)
+
+        part_ids = [part['@id'] for part in dataset_root['hasPart']]
+        assert_equal(len(part_ids), 2)
+        assert_equal(sorted(part_ids), ['#dataset-1', '#dataset-2'])
+
+        items = [graph[part_id] for part_id in part_ids]
+        for item in items:
+            assert_true('@type' not in item)
+
+        dataset_primary = next(item for item in items if item.get('dc:type') == 'manuscript')
+        dataset_supporting = next(item for item in items if item.get('dc:type') == 'experimental data')
+
+        assert_equal(dataset_primary['dc:type'], 'manuscript')
+        assert_equal(dataset_supporting['dc:type'], 'experimental data')
 
         assert_equal(
             [part['@id'] for part in dataset_primary['hasPart']],
@@ -1233,10 +1251,8 @@ class TestWEKOSchema(OsfTestCase):
 
         assert_equal(dataset_primary['name'], 'MAIN ARTICLE')
         assert_equal(dataset_primary['description'], 'Primary manuscript')
-        assert_equal(dataset_primary['dc:type'], 'manuscript')
         assert_equal(dataset_supporting['name'], 'SUPPORTING DATA')
         assert_equal(dataset_supporting['description'], 'Supporting dataset')
-        assert_equal(dataset_supporting['dc:type'], 'experimental data')
 
         def collect_lang_values(thing_ref):
             thing = graph[thing_ref['@id']]
@@ -1285,6 +1301,9 @@ class TestWEKOSchema(OsfTestCase):
         for dataset in (dataset_primary, dataset_supporting):
             for key in expected_reference_keys:
                 assert_references(dataset, key)
+
+        ro_crate_metadata = graph['ro-crate-metadata.json']
+        assert_equal(ro_crate_metadata['about']['@id'], './')
 
         file_entities = {
             entity['@id']: entity

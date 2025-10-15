@@ -1,6 +1,7 @@
 import json
 import logging
 import re
+from copy import deepcopy
 from urllib.parse import urlparse
 
 from osf.models.metaschema import RegistrationSchema
@@ -575,10 +576,13 @@ def write_ro_crate_json(user, f, target_index, download_file_names, schema_id, f
     if not grouped:
         raise ValueError('No file metadata available to build RO-Crate dataset')
 
-    global_graph = []
+    should_split = len(grouped) > 1
+
+    graph_entities = []
     counts = {}
+    dataset_records = []
+    ro_crate_metadata_entity = None
     for index, group in enumerate(grouped):
-        include_ro_crate_metadata = index == 0
         group_object = _build_hierarchical_object(
             user,
             target_index,
@@ -590,43 +594,94 @@ def write_ro_crate_json(user, f, target_index, download_file_names, schema_id, f
             node_id,
         )
 
-        root_id = './' if include_ro_crate_metadata else f'#dataset-{index + 1}'
+        root_id = f'#dataset-{index + 1}' if should_split else './'
         root = group_object.get('root')
         if root is not None:
             root['@id'] = root_id
 
-        ro_crate_metadata = group_object.get('ro_crate_metadata')
-        if include_ro_crate_metadata:
-            if ro_crate_metadata is not None and 'about' in ro_crate_metadata:
+        ro_crate_metadata = group_object.pop('ro_crate_metadata', None)
+        if ro_crate_metadata is not None:
+            if 'about' in ro_crate_metadata:
                 ro_crate_metadata['about']['@id'] = root_id
-        else:
-            group_object.pop('ro_crate_metadata', None)
+            if should_split:
+                if ro_crate_metadata_entity is None:
+                    ro_crate_metadata_entity = deepcopy(ro_crate_metadata)
+            else:
+                graph_entities.append(ro_crate_metadata)
 
         files = group_object.get('file', [])
         for (filename, _), entity in zip(group['download_file_names'], files):
             entity['@id'] = f'files/{filename}'
 
         if flatten:
-            graph_entities = _flatten_json_ld_root(group_object, counts=counts)
+            group_entities = _flatten_json_ld_root(group_object, counts=counts)
         else:
-            graph_entities = _collect_graph_entities(group_object)
+            group_entities = _collect_graph_entities(group_object)
 
         file_ids = [
             entity.get('@id')
-            for entity in graph_entities
+            for entity in group_entities
             if entity.get('@type') == 'File'
         ]
         dataset_entity = next(
-            (entity for entity in graph_entities if entity.get('@id') == root_id),
+            (entity for entity in group_entities if entity.get('@id') == root_id),
             None,
         )
-        if dataset_entity is not None and file_ids:
-            existing_parts = dataset_entity.get('hasPart', [])
-            dataset_entity['hasPart'] = existing_parts + [{'@id': file_id} for file_id in file_ids]
+        assert dataset_entity is not None, f'Dataset entity not generated: {root_id}'
+        dataset_records.append({
+            'entity': dataset_entity,
+            'files': file_ids,
+            'root_id': root_id,
+        })
 
-        global_graph.extend(graph_entities)
+        if should_split:
+            if file_ids:
+                dataset_entity['hasPart'] = [{'@id': file_id} for file_id in file_ids]
+        else:
+            dataset_entity['wk:isSplited'] = False
+            if file_ids:
+                existing_parts = dataset_entity.get('hasPart', [])
+                dataset_entity['hasPart'] = existing_parts + [{'@id': file_id} for file_id in file_ids]
 
-    graph_entities = global_graph
+        graph_entities.extend(group_entities)
+
+    if should_split:
+        for record in dataset_records:
+            dataset_entity = record['entity']
+            dataset_entity.pop('@type', None)
+            dataset_entity.pop('wk:isSplited', None)
+
+        aggregator = {'@id': './', '@type': 'Dataset', 'wk:isSplited': True}
+
+        shared_candidate_keys = {'name', 'description', 'datePublished'}
+        shared_candidate_keys.update(
+            key
+            for record in dataset_records
+            for key in record['entity'].keys()
+            if key.startswith('wk:') and key != 'wk:isSplited'
+        )
+
+        def _is_empty_value(value):
+            return value in (None, '', [], {})
+
+        for key in sorted(shared_candidate_keys):
+            values = [record['entity'].get(key) for record in dataset_records]
+            non_empty_values = [value for value in values if not _is_empty_value(value)]
+            if not non_empty_values:
+                continue
+            reference = non_empty_values[0]
+            if all(value == reference or _is_empty_value(value) for value in values):
+                aggregator[key] = deepcopy(reference)
+
+        aggregator['hasPart'] = [
+            {'@id': record['entity']['@id']}
+            for record in dataset_records
+        ]
+
+        assert ro_crate_metadata_entity is not None, 'ro-crate-metadata.json entity not found'
+        ro_crate_metadata_entity['about']['@id'] = './'
+        graph_entities.append(aggregator)
+        graph_entities.append(ro_crate_metadata_entity)
 
     json_ld = {
         '@context': [
