@@ -85,7 +85,7 @@
         "@type": "string",
         "@createIf": "{% if grdm_file_file_type_value == \"manuscript\" %}{{value}}{% endif %}",
         "metadata.item_30002_relation18[]": {
-            "subitem_relation_type": "isVersionOf",
+            "subitem_relation_type": "{% if grdm_file_version_value == \"VoR\" %}isIdenticalTo{% else %}isVersionOf{% endif %}",
             "subitem_relation_type_id": {
                 "subitem_relation_type_select": "DOI",
                 "subitem_relation_type_id_text": "https://doi.org/{{value}}"
