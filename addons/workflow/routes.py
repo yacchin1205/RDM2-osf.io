@@ -110,6 +110,15 @@ api_routes = {
         ),
         Rule(
             [
+                f'/project/<pid>/{SHORT_NAME}/activations/',
+                f'/project/<pid>/node/<nid>/{SHORT_NAME}/activations/',
+            ],
+            'get',
+            views.list_activations,
+            json_renderer,
+        ),
+        Rule(
+            [
                 f'/project/<pid>/{SHORT_NAME}/registrations/<string:registration_id>/',
                 f'/project/<pid>/node/<nid>/{SHORT_NAME}/registrations/<string:registration_id>/',
             ],

@@ -48,6 +48,8 @@ from osf.utils.permissions import WRITE
 from addons.workflow.services import (
     _extract_metadata,
     _get_visible_activations,
+    activate_workflow_activation,
+    activate_workflow_registration,
     cancel_workflow_run,
     deactivate_workflow_activation,
     deactivate_workflow_engine,
@@ -191,6 +193,12 @@ def _get_engine_or_404(engine_id: str, user) -> WorkflowEngine:
                 node__in=accessible_nodes,
                 definition__engine=engine,
             ).exists()
+            if not has_registration_access:
+                has_registration_access = WorkflowActivation.objects.filter(
+                    node___contributors=user,
+                    node__is_deleted=False,
+                    registration__definition__engine=engine,
+                ).exists()
 
         if not has_institution_access and not has_registration_access:
             logger.info(
@@ -229,11 +237,18 @@ def _get_registration_or_404(registration_id: str, user) -> WorkflowRegistration
             data={'message': 'Workflow registration not found.'},
         )
 
-    if not registration.node.contributors.filter(id=user.id).exists():
-        raise HTTPError(
-            http_status.HTTP_404_NOT_FOUND,
-            data={'message': 'Workflow registration not available.'},
-        )
+    has_direct_access = registration.node.contributors.filter(id=user.id).exists()
+    if not has_direct_access:
+        has_activation_access = WorkflowActivation.objects.filter(
+            registration=registration,
+            node___contributors=user,
+            node__is_deleted=False,
+        ).exists()
+        if not has_activation_access:
+            raise HTTPError(
+                http_status.HTTP_404_NOT_FOUND,
+                data={'message': 'Workflow registration not available.'},
+            )
 
     return registration
 
@@ -329,10 +344,12 @@ def _get_definition_id_from_deployment(client, deployment_name: str, deployment_
 def _serialize_activation(activation: WorkflowActivation) -> Dict[str, Any]:
     return {
         'id': activation._id,
-        'node_id': activation.node._id if activation.node_id else None,
-        'registration_id': activation.registration._id if activation.registration_id else None,
+        'node_id': activation.node._id,
+        'node_title': activation.node.title,
+        'registration_id': activation.registration._id,
+        'registration': _serialize_registration(activation.registration),
         'is_enabled': activation.is_enabled,
-        'activated_by': activation.activated_by._id if activation.activated_by_id else None,
+        'activated_by': activation.activated_by._id,
     }
 
 
@@ -726,33 +743,15 @@ def update_registration(auth, registration_id: str, **kwargs):
         if not isinstance(is_active, bool):
             raise HTTPError(http_status.HTTP_400_BAD_REQUEST, data={'message': 'is_active must be a boolean.'})
 
-        if registration.is_active != is_active:
-            if not is_active:
-                deactivate_workflow_registration(registration)
-            elif is_active:
-                if not registration.definition.engine.is_active:
-                    raise HTTPError(
-                        http_status.HTTP_400_BAD_REQUEST,
-                        data={'message': 'Cannot activate registration: workflow engine is inactive.'},
-                    )
-                update_fields = []
-                creator_mode = registration.token_settings.get('creator_mode')
-                if creator_mode and creator_mode != 'none' and not registration.delegation_tokens.get('creator'):
-                    token_data = create_delegation_token(
-                        user=user,
-                        role='creator',
-                        mode=creator_mode,
-                        label=registration.label or '',
-                    )
-                    delegation_tokens = dict(registration.delegation_tokens)
-                    delegation_tokens['creator'] = token_data
-                    registration.delegation_tokens = delegation_tokens
-                    update_fields.append('delegation_tokens')
-
-                registration.is_active = is_active
-                update_fields.append('is_active')
-                update_fields.append('modified')
-                registration.save(update_fields=update_fields)
+        if is_active:
+            if not registration.definition.engine.is_active:
+                raise HTTPError(
+                    http_status.HTTP_400_BAD_REQUEST,
+                    data={'message': 'Cannot activate registration: workflow engine is inactive.'},
+                )
+            activate_workflow_registration(registration, user)
+        else:
+            deactivate_workflow_registration(registration)
 
     activation = WorkflowActivation.objects.filter(
         node=node,
@@ -792,6 +791,21 @@ def delete_registration(auth, registration_id: str, **kwargs):
     registration.delete()
 
     return {}, http_status.HTTP_204_NO_CONTENT
+
+
+@must_be_valid_project
+@must_be_logged_in
+@must_have_permission('read')
+@must_have_addon(SHORT_NAME, 'node')
+def list_activations(auth, **kwargs):
+    node = kwargs.get('node') or kwargs['project']
+
+    activations = WorkflowActivation.objects.filter(
+        node=node,
+    ).select_related('registration__definition__engine', 'registration__node', 'activated_by')
+
+    data = [_serialize_activation(activation) for activation in activations]
+    return {'data': data}
 
 
 @must_be_valid_project
@@ -852,34 +866,10 @@ def upsert_activation(auth, registration_id: str, **kwargs):
         defaults=defaults,
     )
 
-    if not created:
-        if activation.is_enabled != is_enabled:
-            if not is_enabled:
-                deactivate_workflow_activation(activation)
-            elif is_enabled:
-                update_fields = []
-                manager_mode = registration.token_settings.get('manager_mode')
-                if manager_mode and manager_mode != 'none' and not activation.delegation_tokens.get('manager'):
-                    token_data = create_delegation_token(
-                        user=user,
-                        role='manager',
-                        mode=manager_mode,
-                        label=registration.label or '',
-                    )
-                    delegation_tokens = dict(activation.delegation_tokens)
-                    delegation_tokens['manager'] = token_data
-                    activation.delegation_tokens = delegation_tokens
-                    update_fields.append('delegation_tokens')
-                activation.is_enabled = is_enabled
-                update_fields.append('is_enabled')
-                if activation.activated_by_id != user.id:
-                    activation.activated_by = user
-                    update_fields.append('activated_by')
-                update_fields.append('modified')
-                activation.save(update_fields=update_fields)
-        elif activation.activated_by_id != user.id:
-            activation.activated_by = user
-            activation.save(update_fields=['activated_by', 'modified'])
+    if is_enabled:
+        activate_workflow_activation(activation, user)
+    else:
+        deactivate_workflow_activation(activation)
 
     status = http_status.HTTP_201_CREATED if created else http_status.HTTP_200_OK
     return {

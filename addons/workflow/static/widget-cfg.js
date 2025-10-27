@@ -103,12 +103,12 @@ function WorkflowWidgetViewModel() {
     };
 
     self.activeRegistrations = ko.computed(function() {
-        return self.registrations().filter(function(entry) {
-            return entry && entry.is_active === true && entry.is_enabled === true;
-        }).map(function(entry) {
+        return self.registrations().filter(function(activation) {
+            return activation.is_enabled === true && activation.registration.is_active === true;
+        }).map(function(activation) {
             return {
-                id: String(entry.id),
-                displayLabel: buildDisplayLabel(entry),
+                id: String(activation.registration_id),
+                displayLabel: buildDisplayLabel(activation.registration),
             };
         });
     });
@@ -206,7 +206,7 @@ function WorkflowWidgetViewModel() {
         self.loadingRegistrations(true);
 
         var request = $.ajax({
-            url: self.apiBaseUrl + 'registrations/',
+            url: self.apiBaseUrl + 'activations/',
             type: 'GET',
             dataType: 'json'
         });
@@ -218,11 +218,11 @@ function WorkflowWidgetViewModel() {
         });
 
         request.fail(function(xhr, status, error) {
-            var message = extractErrorMessage(xhr, _('Could not load workflow registrations.'));
+            var message = extractErrorMessage(xhr, _('Could not load workflow activations.'));
             self.registrationError(message);
-            Raven.captureMessage('Failed to load workflow registrations', {
+            Raven.captureMessage('Failed to load workflow activations', {
                 extra: {
-                    url: self.apiBaseUrl + 'registrations/',
+                    url: self.apiBaseUrl + 'activations/',
                     status: status,
                     error: error
                 }

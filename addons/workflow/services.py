@@ -28,7 +28,7 @@ from addons.workflow.models import (
     WorkflowExecutorToken,
     WorkflowRegistration,
 )
-from addons.workflow.token import create_delegation_token, revoke_delegation_token
+from addons.workflow.token import create_delegation_token, revoke_delegation_token, TOKEN_MODE_TO_SCOPE
 from osf.models import ApiOAuth2PersonalToken
 
 if TYPE_CHECKING:
@@ -37,6 +37,21 @@ if TYPE_CHECKING:
 
 _REQUIRED_DEFINITION_FIELDS = {'id', 'key', 'name', 'version'}
 _ALLOWED_KEY_ALGORITHMS = {'RS256', 'RS384', 'RS512', 'ES256', 'ES384', 'ES512'}
+_SCOPE_TO_MODE = {v: k for k, v in TOKEN_MODE_TO_SCOPE.items()}
+
+
+def _get_token_mode(token_data: Optional[Dict[str, Any]]) -> str:
+    """Get mode from delegation token data.
+
+    Args:
+        token_data: Delegation token dict with 'token_id' and 'scope', or None
+
+    Returns:
+        Token mode ('read', 'readwrite', or 'none')
+    """
+    if not token_data or not token_data.get('token_id'):
+        return 'none'
+    return _SCOPE_TO_MODE.get(token_data.get('scope'), 'none')
 
 
 def import_gateway_public_keys(engine: WorkflowEngine) -> int:
@@ -284,6 +299,26 @@ def upsert_workflow_registration(
         registration.is_active = True
         registration.save()
 
+    desired_creator_mode = (token_settings or {}).get('creator_mode') or 'none'
+    current_creator_mode = _get_token_mode(registration.delegation_tokens.get('creator'))
+
+    if desired_creator_mode != current_creator_mode:
+        if current_creator_mode != 'none':
+            revoke_delegation_token(registration.delegation_tokens['creator']['token_id'])
+        delegation_tokens = dict(registration.delegation_tokens)
+        if desired_creator_mode != 'none':
+            token_data = create_delegation_token(
+                user=registered_by,
+                role='creator',
+                mode=desired_creator_mode,
+                label=registration.label or '',
+            )
+            delegation_tokens['creator'] = token_data
+        else:
+            del delegation_tokens['creator']
+        registration.delegation_tokens = delegation_tokens
+        registration.save(update_fields=['delegation_tokens', 'modified'])
+
     activation_defaults = {
         'activated_by': registered_by,
         'is_enabled': True,
@@ -293,30 +328,7 @@ def upsert_workflow_registration(
         registration=registration,
         defaults=activation_defaults,
     )
-    if not activation_created:
-        update_fields = []
-        if not activation.is_enabled:
-            activation.is_enabled = True
-            update_fields.append('is_enabled')
-        if activation.activated_by_id != registered_by.id:
-            activation.activated_by = registered_by
-            update_fields.append('activated_by')
-        if update_fields:
-            update_fields.append('modified')
-            activation.save(update_fields=update_fields)
-
-    creator_mode = (token_settings or {}).get('creator_mode')
-    if creator_mode and creator_mode != 'none':
-        token_data = create_delegation_token(
-            user=registered_by,
-            role='creator',
-            mode=creator_mode,
-            label=registration.label or '',
-        )
-        delegation_tokens = registration.delegation_tokens or {}
-        delegation_tokens['creator'] = token_data
-        registration.delegation_tokens = delegation_tokens
-        registration.save(update_fields=['delegation_tokens', 'modified'])
+    activate_workflow_activation(activation, registered_by)
 
     return registration, created
 
@@ -1037,11 +1049,40 @@ def submit_workflow_task_action(
         raise
 
 
-def deactivate_workflow_activation(activation: WorkflowActivation) -> None:
-    """Deactivate a workflow activation, revoking delegation tokens."""
+def activate_workflow_activation(activation: WorkflowActivation, activated_by: 'OSFUser') -> None:
+    """Activate a workflow activation, creating delegation tokens."""
+    update_fields = []
+
+    manager_mode = activation.registration.token_settings.get('manager_mode')
+    if manager_mode and manager_mode != 'none' and not activation.delegation_tokens.get('manager'):
+        token_data = create_delegation_token(
+            user=activated_by,
+            role='manager',
+            mode=manager_mode,
+            label=activation.registration.label or '',
+        )
+        delegation_tokens = dict(activation.delegation_tokens)
+        delegation_tokens['manager'] = token_data
+        activation.delegation_tokens = delegation_tokens
+        update_fields.append('delegation_tokens')
+
     if not activation.is_enabled:
+        activation.is_enabled = True
+        update_fields.append('is_enabled')
+
+    if activation.activated_by_id != activated_by.id:
+        activation.activated_by = activated_by
+        update_fields.append('activated_by')
+
+    if not update_fields:
         return
 
+    update_fields.append('modified')
+    activation.save(update_fields=update_fields)
+
+
+def deactivate_workflow_activation(activation: WorkflowActivation) -> None:
+    """Deactivate a workflow activation, revoking delegation tokens."""
     update_fields = []
 
     if activation.delegation_tokens.get('manager'):
@@ -1051,10 +1092,43 @@ def deactivate_workflow_activation(activation: WorkflowActivation) -> None:
         activation.delegation_tokens = delegation_tokens
         update_fields.append('delegation_tokens')
 
-    activation.is_enabled = False
-    update_fields.append('is_enabled')
+    if activation.is_enabled:
+        activation.is_enabled = False
+        update_fields.append('is_enabled')
+
+    if not update_fields:
+        return
+
     update_fields.append('modified')
     activation.save(update_fields=update_fields)
+
+
+def activate_workflow_registration(registration: WorkflowRegistration, activated_by: 'OSFUser') -> None:
+    """Activate a workflow registration, creating delegation tokens."""
+    update_fields = []
+
+    creator_mode = registration.token_settings.get('creator_mode')
+    if creator_mode and creator_mode != 'none' and not registration.delegation_tokens.get('creator'):
+        token_data = create_delegation_token(
+            user=activated_by,
+            role='creator',
+            mode=creator_mode,
+            label=registration.label or '',
+        )
+        delegation_tokens = dict(registration.delegation_tokens)
+        delegation_tokens['creator'] = token_data
+        registration.delegation_tokens = delegation_tokens
+        update_fields.append('delegation_tokens')
+
+    if not registration.is_active:
+        registration.is_active = True
+        update_fields.append('is_active')
+
+    if not update_fields:
+        return
+
+    update_fields.append('modified')
+    registration.save(update_fields=update_fields)
 
 
 def deactivate_workflow_registration(registration: WorkflowRegistration) -> None:
