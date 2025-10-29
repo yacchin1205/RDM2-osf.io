@@ -10,7 +10,7 @@ TEMPLATE_PATH = os.path.join(HERE, 'templates')
 class WorkflowAddonAppConfig(BaseAddonAppConfig):
     name = 'addons.workflow'
     label = 'addons_workflow'
-    full_name = 'Workflow Engine Integration'
+    full_name = 'Workflow'
     short_name = 'workflow'
     configs = ['node']
     owners = ['node']
@@ -24,6 +24,8 @@ class WorkflowAddonAppConfig(BaseAddonAppConfig):
         'widget': [],
         'page': [],
     }
+
+    has_page_icon = False
 
     @property
     def routes(self):

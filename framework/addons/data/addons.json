@@ -709,7 +709,7 @@
                 "text": "ONLYOFFICE information will not be registered."
             }
         },
-        "Workflow Engine Integration": {
+        "Workflow": {
             "Permissions": {
                 "status": "none",
                 "text": "The workflow add-on does not change project permissions or external workflow engine access policies."
