@@ -216,6 +216,15 @@ api_routes = {
             views.submit_task_action,
             json_renderer,
         ),
+        Rule(
+            [
+                f'/project/<pid>/{SHORT_NAME}/engines/<string:engine_id>/runs/<string:process_instance_id>/notifications/',
+                f'/project/<pid>/node/<nid>/{SHORT_NAME}/engines/<string:engine_id>/runs/<string:process_instance_id>/notifications/',
+            ],
+            'post',
+            views.workflow_notification,
+            json_renderer,
+        ),
     ],
     'prefix': '/api/v1',
 }

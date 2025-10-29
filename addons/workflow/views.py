@@ -56,6 +56,7 @@ from addons.workflow.services import (
     deactivate_workflow_registration,
     get_workflow_task,
     list_workflow_tasks,
+    send_workflow_notification,
     start_workflow_process,
     submit_workflow_task_action,
     upsert_workflow_registration,
@@ -1369,3 +1370,46 @@ def deactivate_engine(auth, engine_id: str, **kwargs):
     from addons.workflow.gateway_client import get_gateway_client
     get_gateway_client.cache_clear()
     return {}, http_status.HTTP_204_NO_CONTENT
+
+
+@must_be_valid_project
+@must_have_addon(SHORT_NAME, 'node')
+@must_be_logged_in
+@must_have_permission('read')
+def workflow_notification(auth, engine_id: str, process_instance_id: str, **kwargs):
+    """Receive notification from workflow engine."""
+    node = kwargs.get('node') or kwargs['project']
+
+    payload = request.get_json()
+    title = payload['title']
+    body = payload['body']
+    assignees = payload.get('assignees')
+    user_ids = payload.get('user_ids')
+    send_email = payload.get('send_email', False)
+    add_comment = payload.get('add_comment', False)
+
+    client = get_gateway_client(engine_id)
+    # Use list API with 'id' parameter to get instance with variables
+    # Note: GET /process-instances/{id} does not return variables,
+    # but list API with id parameter does
+    instance_response = client.list_process_instances({
+        'id': process_instance_id,
+        'includeProcessVariables': 'true',
+    })
+    response = instance_response['data'][0]
+    metadata = _extract_metadata(response)
+
+    send_workflow_notification(
+        node,
+        process_instance_id,
+        auth=auth,
+        metadata=metadata,
+        title=title,
+        body=body,
+        assignees=assignees,
+        user_ids=user_ids,
+        send_email=send_email,
+        add_comment=add_comment,
+    )
+
+    return {'message': 'Notification sent'}

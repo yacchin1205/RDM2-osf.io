@@ -29,10 +29,11 @@ from addons.workflow.models import (
     WorkflowRegistration,
 )
 from addons.workflow.token import create_delegation_token, revoke_delegation_token, TOKEN_MODE_TO_SCOPE
-from osf.models import ApiOAuth2PersonalToken
+from osf.models import ApiOAuth2PersonalToken, Comment, Guid, OSFUser
+from website.mails import Mail, send_mail
 
 if TYPE_CHECKING:
-    from osf.models import AbstractNode, OSFUser
+    from osf.models import AbstractNode
 
 
 _REQUIRED_DEFINITION_FIELDS = {'id', 'key', 'name', 'version'}
@@ -503,6 +504,7 @@ def start_workflow_process(
     resolved_business_key = business_key or f'rdm:node:{node._id}:activation:{activation.id}'
     run_label = label or registration.label or registration.definition_name or registration.definition_key
     started_at = timezone.now()
+    engine_id = registration.definition.engine.engine_id
 
     payload = _build_gateway_payload(
         node_id=node._id,
@@ -510,6 +512,7 @@ def start_workflow_process(
         registration_id=registration.id,
         activation_id=activation.id,
         started_by_id=started_by._id,
+        engine_id=engine_id,
         process_definition_id=registration.process_definition_id,
         label=run_label,
         business_key=resolved_business_key,
@@ -565,6 +568,7 @@ def _build_gateway_payload(
     registration_id: int,
     activation_id: int,
     started_by_id: str,
+    engine_id: str,
     process_definition_id: str,
     label: str,
     business_key: str,
@@ -577,6 +581,7 @@ def _build_gateway_payload(
         {'name': 'RDM_REGISTRATION_ID', 'type': 'string', 'value': str(registration_id)},
         {'name': 'RDM_ACTIVATION_ID', 'type': 'string', 'value': str(activation_id)},
         {'name': 'RDM_STARTED_BY', 'type': 'string', 'value': started_by_id},
+        {'name': 'RDM_ENGINE_ID', 'type': 'string', 'value': engine_id},
         {'name': 'RDM_DOMAIN', 'type': 'string', 'value': website_settings.DOMAIN},
         {'name': 'RDM_API_DOMAIN', 'type': 'string', 'value': website_settings.API_DOMAIN},
         {'name': 'RDM_WATERBUTLER_URL', 'type': 'string', 'value': website_settings.WATERBUTLER_URL},
@@ -591,6 +596,7 @@ def _build_gateway_payload(
         'registration_id': str(registration_id),
         'activation_id': str(activation_id),
         'started_by': started_by_id,
+        'engine_id': engine_id,
         'label': label,
         'business_key': business_key,
         'started_at': started_at,
@@ -1170,3 +1176,137 @@ def deactivate_workflow_engine(engine: WorkflowEngine) -> None:
 
     engine.is_active = False
     engine.save(update_fields=['is_active', 'modified'])
+
+
+def resolve_workflow_notification_recipients(
+    node: 'AbstractNode',
+    *,
+    metadata: Dict[str, Any],
+    assignees: Optional[List[str]] = None,
+    user_ids: Optional[List[str]] = None,
+) -> Set[OSFUser]:
+    """Resolve notification recipients from assignee roles and user IDs."""
+    if not assignees and not user_ids:
+        raise ValueError('Must specify either assignees or user_ids.')
+
+    recipients: Set[OSFUser] = set()
+
+    if assignees:
+        for role in assignees:
+            if role == 'executor':
+                started_by = metadata['started_by']
+                user = OSFUser.load(started_by)
+                if not user:
+                    raise ValueError(f'Executor user not found: {started_by}')
+                recipients.add(user)
+            elif role == 'manager':
+                activation_id = metadata['activation_id']
+                activation = WorkflowActivation.objects.filter(
+                    id=activation_id
+                ).select_related('activated_by').first()
+                recipients.add(activation.activated_by)
+            elif role == 'creator':
+                registration_id = metadata['registration_id']
+                registration = WorkflowRegistration.objects.filter(
+                    id=registration_id
+                ).select_related('registered_by').first()
+                recipients.add(registration.registered_by)
+            elif role == 'contributor':
+                for contributor in node.contributors.all():
+                    recipients.add(contributor)
+            else:
+                raise ValueError(f'Invalid assignee role: {role}')
+
+    if user_ids:
+        for user_id in user_ids:
+            user = OSFUser.load(user_id)
+            if not user:
+                raise ValueError(f'User not found: {user_id}')
+            recipients.add(user)
+
+    return recipients
+
+
+def send_workflow_notification(
+    node: 'AbstractNode',
+    process_instance_id: str,
+    *,
+    auth,
+    metadata: Dict[str, Any],
+    title: str,
+    body: List[Dict[str, str]],
+    assignees: Optional[List[str]] = None,
+    user_ids: Optional[List[str]] = None,
+    send_email: bool = False,
+    add_comment: bool = False,
+) -> List[str]:
+    """Send workflow notification to users via NodeLog, email, and/or comment."""
+    recipients = resolve_workflow_notification_recipients(
+        node,
+        metadata=metadata,
+        assignees=assignees,
+        user_ids=user_ids,
+    )
+
+    plain_text = None
+    html_text = None
+    for entry in body:
+        content_type = entry['type']
+        content = entry['content']
+        if content_type == 'text/plain':
+            plain_text = content
+        elif content_type == 'text/html':
+            html_text = content
+        else:
+            raise ValueError(f'Invalid body content type: {content_type}')
+
+    if not plain_text:
+        raise ValueError('Body must contain at least one text/plain entry.')
+
+    activation_id = metadata['activation_id']
+    activation = WorkflowActivation.objects.select_related('registration__definition').get(id=activation_id)
+    workflow_name = activation.registration.definition.name
+
+    node.add_log(
+        action='workflow_notification',
+        params={
+            'node': node._id,
+            'process_instance_id': process_instance_id,
+            'title': title,
+            'message': plain_text,
+            'workflow_name': workflow_name,
+        },
+        auth=auth,
+        save=True,
+    )
+
+    if add_comment:
+        target = Guid.load(node._id)
+        comment = Comment(
+            node=node,
+            user=auth.user,
+            content=f'**{title}**\n\n{plain_text}',
+            target=target,
+            root_target=target,
+        )
+        comment.save()
+
+    if send_email:
+        workflow_notification_mail = Mail(
+            tpl_prefix='workflow_notification',
+            subject=title,
+        )
+
+        for recipient in recipients:
+            primary_email = recipient.emails.first().address
+            send_mail(
+                to_addr=primary_email,
+                mail=workflow_notification_mail,
+                title=title,
+                plain_text=plain_text,
+                html_text=html_text,
+                node_title=node.title,
+                node_url=node.absolute_url,
+            )
+
+    return [user._id for user in recipients]
