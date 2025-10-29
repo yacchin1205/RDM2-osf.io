@@ -208,20 +208,14 @@ class WorkflowRegistration(BaseModel):
 
     @property
     def definition_description(self) -> str:
-        if not self.definition_id:
-            return ''
         return self.definition.description
 
     @property
     def definition_form_schema(self):
-        if not self.definition_id:
-            return {}
         return self.definition.form_schema
 
     @property
     def definition_metadata(self):
-        if not self.definition_id:
-            return {}
         return self.definition.definition_metadata
 
     def get_validated_token_settings(self):
