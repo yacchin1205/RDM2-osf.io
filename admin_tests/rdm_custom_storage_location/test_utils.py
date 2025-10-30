@@ -18,6 +18,7 @@ from admin.rdm_custom_storage_location.utils import (
     get_dropboxbusiness_info,
     get_institutional_storage_information
 )
+import mock
 from mock import patch, MagicMock
 from osf_tests.factories import (
     InstitutionFactory,
