@@ -1,5 +1,78 @@
 # Workflow Addon
 
+## Architecture
+
+```mermaid
+graph TB
+    subgraph "Browser"
+        User[Researcher/Administrator]
+    end
+
+    subgraph "Frontend"
+        Ember[RDM-ember-osf-web<br/>Ember.js SPA]
+        KnockoutUI[RDM-osf.io UI<br/>Knockout.js]
+    end
+
+    subgraph "RDM Core"
+        OSF[RDM-osf.io<br/>Django API Server]
+        DB[(PostgreSQL<br/>RDM Database)]
+    end
+
+    subgraph "RDM-flowable-gateway"
+        Gateway[Gateway API<br/>FastAPI / Python]
+        FlowableDB[(PostgreSQL<br/>Flowable Database)]
+        Flowable[Flowable Engine<br/>Workflow Execution Engine]
+    end
+
+    User -->|Operate| Ember
+    User -->|Operate| KnockoutUI
+
+    Ember -->|REST API<br/>Workflow Operations| OSF
+    KnockoutUI -->|Server-side<br/>Rendering| OSF
+
+    OSF -->|Proxy<br/>Workflow API| Gateway
+    OSF -.->|Project<br/>Metadata| DB
+    OSF -.->|Workflow<br/>Registration| DB
+    OSF -.->|Save Comments| DB
+
+    Gateway -->|Workflow Management| Flowable
+    Gateway -.->|Save Delegation Tokens| FlowableDB
+    Flowable -.->|Process State| FlowableDB
+    Flowable -->|API Callback| Gateway
+
+    Gateway -->|Notification API<br/>Callback| OSF
+    OSF -->|Send Email| User
+
+    style Ember fill:#e1f5ff
+    style KnockoutUI fill:#e1f5ff
+    style OSF fill:#fff3e0
+    style Gateway fill:#e8f5e9
+    style Flowable fill:#e8f5e9
+    style User fill:#f3e5f5
+```
+
+### Components
+
+**Frontend:**
+- **RDM-ember-osf-web**: Modern Ember.js SPA for workflow operations
+- **RDM-osf.io UI**: Server-side rendered pages with Knockout.js for project management
+
+**RDM Core:**
+- **RDM-osf.io**: Django-based API server managing projects, metadata, and workflow registrations
+- **PostgreSQL**: Stores project data, workflow registrations, and comments
+
+**RDM-flowable-gateway:**
+- **Gateway API**: FastAPI-based proxy server managing delegation tokens and workflow lifecycle
+- **Flowable Engine**: BPMN workflow execution engine
+- **PostgreSQL**: Stores workflow process states, tasks, and encrypted delegation tokens
+
+### Data Flow
+
+1. **Start Workflow**: User → Ember → RDM-osf.io → Gateway → Flowable Engine
+2. **Execute Process**: Flowable Engine → Flowable DB (saves process state)
+3. **Send Notification**: Flowable Engine → Gateway API (HTTP Task) → RDM-osf.io → User (email)
+4. **Token Management**: Gateway stores encrypted delegation tokens per process instance in a separate database table. This prevents tokens from being stored in Flowable process variables, where they could be easily accessed through the Flowable admin interface or REST API.
+
 ## Notification Endpoint
 
 Workflow engines send notifications to RDM users via email, project comments, and NodeLog:
