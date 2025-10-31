@@ -12,6 +12,7 @@ from mock import patch, MagicMock
 from nose import tools as nt
 from requests import ConnectionError, ReadTimeout, Timeout
 from rest_framework import status
+import time
 
 from addons.metadata.models import FileMetadata
 from addons.nextcloudinstitutions.models import NextcloudInstitutionsProvider
@@ -2975,6 +2976,8 @@ class TestUtilsForRestoreData(AdminTestCase):
 
     # prepare_file_node_for_add_on_storage
     def test_prepare_file_node_for_add_on_storage(self):
+        logger.info('TestUtilsForRestoreData.test_prepare_file_node_for_add_on_storage-1')
+        time.sleep(60)
         logger.info('TestUtilsForRestoreData.test_prepare_file_node_for_add_on_storage')
         file_path = '/folder/test_file.txt'
         test_response_data = {
@@ -2986,22 +2989,29 @@ class TestUtilsForRestoreData(AdminTestCase):
                 }
             }
         }
+        logger.info('Setting up mock for requests.get in test_prepare_file_node_for_add_on_storage')
         test_response = requests.Response()
         test_response.status_code = status.HTTP_200_OK
         test_response._content = json.dumps(test_response_data).encode('utf-8')
         mock_get = MagicMock()
         mock_get.return_value = test_response
+        logger.info('Created mock for requests.get in test_prepare_file_node_for_add_on_storage')
         project = ProjectFactory()
         with patch('requests.get', mock_get):
+            logger.info(f'Starting tests for prepare_file_node_for_add_on_storage for file_path: {file_path}')
             for provider_name in INSTITUTIONAL_STORAGE_ADD_ON_METHOD:
                 # Test for each add-on storages
+                logger.info(f'Testing prepare_file_node_for_add_on_storage for provider: {provider_name}')
                 utils.prepare_file_node_for_add_on_storage(project._id, provider_name, file_path)
+                logger.info(f'Called testing prepare_file_node_for_add_on_storage for provider: {provider_name}')
                 file_node_query_set = BaseFileNode.objects.filter(provider=provider_name, _path=file_path)
                 nt.assert_true(file_node_query_set.exists())
                 file_node = file_node_query_set.first()
                 nt.assert_true(file_node.name)
                 nt.assert_true(file_node.materialized_path)
                 nt.assert_true(file_node.last_touched)
+                logger.info(f'Finished testing prepare_file_node_for_add_on_storage for provider: {provider_name}')
+            logger.info(f'Completed tests for prepare_file_node_for_add_on_storage for file_path: {file_path}')
         logger.info('TestUtilsForRestoreData.test_prepare_file_node_for_add_on_storage completed')
 
     def test_prepare_file_node_for_add_on_storage_bulk_mount_storage(self):
