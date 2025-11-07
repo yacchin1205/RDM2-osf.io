@@ -75,6 +75,8 @@ function WorkflowWidgetViewModel() {
     self.tasksError = ko.observable('');
     self.tasks = ko.observableArray([]);
 
+    self.activeTab = ko.observable('runs');
+
     self.runStatusLabels = {
         queued: _('Queued'),
         running: _('Running'),
@@ -94,6 +96,12 @@ function WorkflowWidgetViewModel() {
     };
 
     self.unassignedLabel = _('Unassigned');
+
+    self.assignedTaskCount = ko.computed(function() {
+        return self.tasks().filter(function(task) {
+            return task.can_complete !== false;
+        }).length;
+    });
 
     self.launchUrlFor = function(registrationId) {
         if (!registrationId || !self.pageUrl) {
@@ -194,6 +202,20 @@ function WorkflowWidgetViewModel() {
         return task.assignee;
     };
 
+    self.canEditTask = function(task) {
+        return task && task.can_complete !== false;
+    };
+
+    self.openTaskInWorkflowPage = function(task) {
+        const hash = '#taskId=' + encodeURIComponent(task.id) +
+                     '&engineId=' + encodeURIComponent(task.engine_id);
+        window.location.href = self.pageUrl + hash;
+    };
+
+    self.setActiveTab = function(tab) {
+        self.activeTab(tab);
+    };
+
     self.fetchRegistrations = function() {
         if (!self.apiBaseUrl) {
             self.registrationError(_('Workflow API is not available for this project.'));
@@ -280,7 +302,7 @@ function WorkflowWidgetViewModel() {
         return request;
     };
 
-    self.fetchTasks = function() {
+    self.fetchTasks = function(autoSelect) {
         if (!self.apiBaseUrl) {
             self.tasksError(_('Workflow API is not available for this project.'));
             self.loadingTasks(false);
@@ -301,6 +323,15 @@ function WorkflowWidgetViewModel() {
         request.done(function(response) {
             var data = response && response.data ? response.data : [];
             self.tasks(data);
+
+            if (autoSelect && data.length > 0) {
+                var hasAssignedTasks = data.some(function(task) {
+                    return task.can_complete !== false;
+                });
+                if (hasAssignedTasks) {
+                    self.activeTab('tasks');
+                }
+            }
         });
 
         request.fail(function(xhr, status, error) {
@@ -333,7 +364,7 @@ function WorkflowWidgetViewModel() {
         }
         $.when(self.fetchRegistrations()).always(function() {
             self.fetchRuns();
-            self.fetchTasks();
+            self.fetchTasks(true);
         });
     };
 }
