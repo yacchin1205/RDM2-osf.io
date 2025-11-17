@@ -10640,6 +10640,15 @@ msgstr "読み書き権限: リソースの閲覧と編集が可能"
 msgid "Read permission: Read-only access to resources"
 msgstr "閲覧権限: リソースを閲覧のみ可能"
 
+msgid "All RDM users"
+msgstr "すべてのRDM利用者"
+
+msgid "Users at this project's institutions"
+msgstr "このプロジェクトと同じ所属機関のユーザー"
+
+msgid "This project's members only"
+msgstr "このプロジェクトのメンバーのみ"
+
 msgid "No active workflow engines are available for this project."
 msgstr "このプロジェクトでは利用可能なワークフローエンジンがありません。"
 
@@ -10798,4 +10807,3 @@ msgstr ""
 "        <li>このアドオンにより、GakuNin RDMプロジェクトは外部サービスに接続されます。このサービスを利用すると、外部サービスの利用規約に拘束されます。GakuNin RDMはサービスおよびその利用について責任を負いません。</li>\n"
 "        <li>このアドオンを利用すると外部サービスにファイルを保存できます。このアドオンに追加したファイルはGakuNin RDM内には保存されません。</li>\n"
 "</ul>\n"
-

@@ -63,6 +63,11 @@ from addons.workflow.services import (
 )
 
 _ALLOWED_ALGORITHMS = {'RS256', 'RS384', 'RS512', 'ES256', 'ES384', 'ES512'}
+_TEMPLATE_VISIBILITY_VALUES = {
+    WorkflowTemplate.VISIBILITY_PROJECT,
+    WorkflowTemplate.VISIBILITY_INSTITUTION,
+    WorkflowTemplate.VISIBILITY_PUBLIC,
+}
 
 # Workflow run status constants
 STATUS_QUEUED = 'queued'
@@ -155,6 +160,45 @@ def _normalize_engine_id(raw: str) -> str:
 
 def _user_institution_ids(user):
     return set(user.affiliated_institutions.values_list('id', flat=True))
+
+
+def _user_can_access_template_via_visibility(user, template: WorkflowTemplate) -> bool:
+    visibility = template.visibility or WorkflowTemplate.VISIBILITY_PROJECT
+
+    if visibility == WorkflowTemplate.VISIBILITY_PUBLIC:
+        return True
+
+    if visibility == WorkflowTemplate.VISIBILITY_INSTITUTION:
+        node_institution_ids = set(template.node.affiliated_institutions.values_list('id', flat=True))
+        if not node_institution_ids:
+            return False
+        return bool(_user_institution_ids(user) & node_institution_ids)
+
+    return False
+
+
+def _normalize_template_visibility(user, raw_visibility: Optional[str]) -> str:
+    visibility = raw_visibility or WorkflowTemplate.VISIBILITY_PROJECT
+    if visibility not in _TEMPLATE_VISIBILITY_VALUES:
+        raise HTTPError(
+            http_status.HTTP_400_BAD_REQUEST,
+            data={'message': 'Invalid workflow template visibility value.'},
+        )
+
+    if visibility == WorkflowTemplate.VISIBILITY_PUBLIC:
+        if not user.is_super_admin:
+            raise HTTPError(
+                http_status.HTTP_403_FORBIDDEN,
+                data={'message': 'Only super administrators can share templates with everyone.'},
+            )
+    elif visibility == WorkflowTemplate.VISIBILITY_INSTITUTION:
+        if not (user.is_super_admin or user.is_institutional_admin):
+            raise HTTPError(
+                http_status.HTTP_403_FORBIDDEN,
+                data={'message': 'Only institutional administrators can share templates with their institution.'},
+            )
+
+    return visibility
 
 
 def _user_has_engine_admin_access(user, engine: WorkflowEngine) -> bool:
@@ -251,7 +295,7 @@ def _get_template_or_404(template_id: str, user) -> WorkflowTemplate:
             node___contributors=user,
             node__is_deleted=False,
         ).exists()
-        if not has_activation_access:
+        if not has_activation_access and not _user_can_access_template_via_visibility(user, template):
             raise HTTPError(
                 http_status.HTTP_404_NOT_FOUND,
                 data={'message': 'Workflow template not available.'},
@@ -446,6 +490,7 @@ def _serialize_template(
         'activation_id': activation._id if activation else None,
         'is_enabled': activation.is_enabled if activation else False,
         'activation_activated_by': activation.activated_by._id if activation and activation.activated_by_id else None,
+        'visibility': template.visibility,
     }
 
 
@@ -562,6 +607,7 @@ def retrieve_engine_key(auth, engine_id: str, kid: str, **kwargs):
 @must_have_addon(SHORT_NAME, 'node')
 def upsert_template(auth, **kwargs):
     node = kwargs.get('node') or kwargs['project']
+    visibility_value: Optional[str] = None
 
     if request.files and 'workflow_zip' in request.files:
         uploaded_file = request.files['workflow_zip']
@@ -575,6 +621,7 @@ def upsert_template(auth, **kwargs):
         label = request.form.get('label')
         description = request.form.get('description')
         token_settings_json = request.form.get('token_settings')
+        raw_visibility = request.form.get('visibility') if request.form else None
 
         if not raw_engine_id:
             raise HTTPError(http_status.HTTP_400_BAD_REQUEST, data={'message': 'engine_id is required.'})
@@ -628,6 +675,9 @@ def upsert_template(auth, **kwargs):
                     data={'message': 'token_settings must be valid JSON.'},
                 ) from error
 
+        if raw_visibility is not None and raw_visibility != '':
+            visibility_value = _normalize_template_visibility(auth.user, raw_visibility)
+
     else:
         try:
             payload = request.get_json(force=True)
@@ -639,6 +689,7 @@ def upsert_template(auth, **kwargs):
         label = payload.get('label')
         description = payload.get('description')
         token_settings = payload.get('token_settings')
+        raw_visibility = payload.get('visibility')
 
         if not raw_engine_id:
             raise HTTPError(http_status.HTTP_400_BAD_REQUEST, data={'message': 'engine_id is required.'})
@@ -652,6 +703,9 @@ def upsert_template(auth, **kwargs):
 
         engine = _get_engine_or_404(engine_id, auth.user)
 
+        if raw_visibility is not None:
+            visibility_value = _normalize_template_visibility(auth.user, raw_visibility)
+
     if token_settings is not None:
         token_settings = validate_token_settings(token_settings)
 
@@ -663,6 +717,7 @@ def upsert_template(auth, **kwargs):
         token_settings=token_settings,
         label=label,
         description=description,
+        visibility=visibility_value,
     )
 
     activation = WorkflowActivation.objects.filter(
@@ -690,9 +745,19 @@ def list_templates(auth, **kwargs):
 
     accessible_nodes = AbstractNode.objects.filter(_contributors=user, is_deleted=False)
 
+    visibility_filter = Q(pk__in=[])
+    visibility_filter |= Q(visibility=WorkflowTemplate.VISIBILITY_PUBLIC)
+    user_institution_ids = _user_institution_ids(user)
+    if user_institution_ids:
+        visibility_filter |= Q(
+            visibility=WorkflowTemplate.VISIBILITY_INSTITUTION,
+            node__affiliated_institutions__in=list(user_institution_ids),
+        )
+
     templates = list(
         WorkflowTemplate.objects.filter(
-            node__in=accessible_nodes,
+            Q(node__in=accessible_nodes) | visibility_filter,
+            node__is_deleted=False,
         )
         .select_related('node', 'definition__engine')
         .distinct()
@@ -1235,7 +1300,13 @@ def list_engines(auth, **kwargs):
     queryset = WorkflowEngine.objects.filter(filters).distinct().select_related('created_by')
 
     data = [_serialize_engine(engine, node_id=node._id) for engine in queryset]
-    return {'data': data}
+    return {
+        'data': data,
+        'meta': {
+            'is_super_admin': bool(user.is_super_admin),
+            'is_institutional_admin': bool(user.is_institutional_admin),
+        },
+    }
 
 
 @must_have_permission('read')

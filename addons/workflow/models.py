@@ -120,6 +120,15 @@ class WorkflowDefinitionSnapshot(BaseModel):
 class WorkflowTemplate(BaseModel):
     """Association between an RDM project and a workflow definition."""
 
+    VISIBILITY_PROJECT = 'project'
+    VISIBILITY_INSTITUTION = 'institution'
+    VISIBILITY_PUBLIC = 'public'
+    VISIBILITY_CHOICES = (
+        (VISIBILITY_PROJECT, 'project'),
+        (VISIBILITY_INSTITUTION, 'institution'),
+        (VISIBILITY_PUBLIC, 'public'),
+    )
+
     node = models.ForeignKey(
         'osf.AbstractNode',
         on_delete=models.CASCADE,
@@ -140,6 +149,11 @@ class WorkflowTemplate(BaseModel):
     token_settings = DateTimeAwareJSONField(default=dict, blank=True)
     delegation_tokens = DateTimeAwareJSONField(default=dict, blank=True)
     is_active = models.BooleanField(default=True)
+    visibility = models.CharField(
+        max_length=32,
+        choices=VISIBILITY_CHOICES,
+        default=VISIBILITY_PROJECT,
+    )
 
     class Meta:
         unique_together = ('node', 'definition')

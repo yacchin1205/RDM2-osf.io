@@ -4629,6 +4629,41 @@ msgid "Definition"
 msgstr "定義"
 
 
+#: addons/workflow/templates/workflow_node_settings.mako:164
+#: addons/workflow/templates/workflow_node_settings.mako:296
+msgid "Visibility"
+msgstr "公開範囲"
+
+
+#: addons/workflow/templates/workflow_node_settings.mako:167
+msgid "This project's members only (default)"
+msgstr "このプロジェクトのメンバーのみ（既定）"
+
+
+#: addons/workflow/templates/workflow_node_settings.mako:168
+msgid "Users at this project's institutions"
+msgstr "このプロジェクトと同じ所属機関のユーザー"
+
+
+#: addons/workflow/templates/workflow_node_settings.mako:169
+msgid "All RDM users"
+msgstr "すべてのRDM利用者"
+
+#: addons/workflow/templates/workflow_node_settings.mako:171
+msgid "Controls who can add this workflow template to their projects."
+msgstr "このワークフローテンプレートをプロジェクトに追加できる範囲を制御します。"
+
+
+#: addons/workflow/templates/workflow_node_settings.mako:172
+msgid "You must be an institutional admin to select \"Users at this project's institutions\"."
+msgstr "「このプロジェクトと同じ所属機関のユーザー」を選択するには機関管理者である必要があります。"
+
+
+#: addons/workflow/templates/workflow_node_settings.mako:173
+msgid "You must be a super admin to select \"All RDM users\"."
+msgstr "「すべてのRDM利用者」を選択するには統合管理者である必要があります。"
+
+
 #: addons/workflow/templates/workflow_node_settings.mako:508
 msgid "Delete Workflow Template"
 msgstr "ワークフローテンプレートを削除"

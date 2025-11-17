@@ -265,6 +265,7 @@ def upsert_workflow_template(
     token_settings: Optional[Dict[str, Any]] = None,
     label: Optional[str] = None,
     description: Optional[str] = None,
+    visibility: Optional[str] = None,
 ) -> Tuple[WorkflowTemplate, bool]:
     """Register a workflow definition for a given node."""
 
@@ -282,6 +283,7 @@ def upsert_workflow_template(
         'description': description or snapshot.description,
         'token_settings': token_settings or {},
         'is_active': True,
+        'visibility': visibility or WorkflowTemplate.VISIBILITY_PROJECT,
     }
 
     template, created = WorkflowTemplate.objects.get_or_create(
@@ -297,6 +299,8 @@ def upsert_workflow_template(
             template.description = description
         if token_settings is not None:
             template.token_settings = token_settings
+        if visibility is not None:
+            template.visibility = visibility
         template.is_active = True
         template.save()
 

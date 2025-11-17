@@ -162,6 +162,8 @@ class WorkflowEngineViewTests(OsfTestCase):
         assert engine_ids == {own_engine.engine_id, shared_engine.engine_id}
         assert other_engine.engine_id not in engine_ids
         assert ownerless_engine.engine_id not in engine_ids
+        assert response.json['meta']['is_super_admin'] is False
+        assert response.json['meta']['is_institutional_admin'] is False
 
     def test_list_engines_applies_same_rules_to_admin(self):
         admin = AuthUserFactory()
@@ -180,6 +182,8 @@ class WorkflowEngineViewTests(OsfTestCase):
         assert engine_ids == {own_engine.engine_id}
         assert other_engine.engine_id not in engine_ids
         assert ownerless_engine.engine_id not in engine_ids
+        assert response.json['meta']['is_super_admin'] is True
+        assert response.json['meta']['is_institutional_admin'] is False
 
     def test_list_engine_definitions_returns_payload(self):
         owner = AuthUserFactory()
@@ -570,10 +574,88 @@ class WorkflowEngineViewTests(OsfTestCase):
         assert guids[definition_id_shared]['is_local'] is False
         assert guids[definition_id_local]['node_id'] == node._id
         assert guids[definition_id_shared]['node_id'] == shared_node._id
+        assert guids[definition_id_local]['visibility'] == WorkflowTemplate.VISIBILITY_PROJECT
+        assert guids[definition_id_shared]['visibility'] == WorkflowTemplate.VISIBILITY_PROJECT
         assert guids[definition_id_local]['is_enabled'] is False
         assert guids[definition_id_shared]['is_enabled'] is False
         assert guids[definition_id_local]['activation_id'] is None
         assert guids[definition_id_shared]['activation_id'] is None
+
+    def test_list_templates_includes_institution_visibility_for_affiliates(self):
+        owner = AuthUserFactory()
+        shared_node = self._create_project_with_workflow(owner)
+        viewer = AuthUserFactory()
+        viewer_node = self._create_project_with_workflow(viewer)
+        institution = InstitutionFactory()
+        owner.affiliated_institutions.add(institution)
+        viewer.affiliated_institutions.add(institution)
+        shared_node.affiliated_institutions.add(institution)
+
+        engine = self._create_engine(owner=owner, institution=institution)
+        definition_id = 'institution-visible-definition'
+        WorkflowDefinitionSnapshot.objects.create(
+            engine=engine,
+            definition_id=definition_id,
+            definition_key='process-def-key',
+            name='Institution Visible Flow',
+            version=1,
+        )
+
+        self.app.post_json(
+            self._template_url(shared_node),
+            {
+                'engine_id': engine.engine_id,
+                'definition_id': definition_id,
+                'label': 'Institution Template',
+                'visibility': WorkflowTemplate.VISIBILITY_INSTITUTION,
+            },
+            auth=owner.auth,
+        )
+
+        response = self.app.get(
+            api_url_for('list_templates', pid=viewer_node._id),
+            auth=viewer.auth,
+        )
+        data = response.json['data']
+        guids = {entry['definition_id']: entry for entry in data}
+        assert definition_id in guids
+        assert guids[definition_id]['visibility'] == WorkflowTemplate.VISIBILITY_INSTITUTION
+
+    def test_list_templates_includes_public_visibility_for_all_users(self):
+        owner = AuthUserFactory()
+        shared_node = self._create_project_with_workflow(owner)
+        viewer = AuthUserFactory()
+        viewer_node = self._create_project_with_workflow(viewer)
+
+        engine = self._create_engine(owner=owner)
+        definition_id = 'public-visible-definition'
+        WorkflowDefinitionSnapshot.objects.create(
+            engine=engine,
+            definition_id=definition_id,
+            definition_key='process-def-key',
+            name='Public Visible Flow',
+            version=1,
+        )
+
+        self.app.post_json(
+            self._template_url(shared_node),
+            {
+                'engine_id': engine.engine_id,
+                'definition_id': definition_id,
+                'label': 'Public Template',
+                'visibility': WorkflowTemplate.VISIBILITY_PUBLIC,
+            },
+            auth=owner.auth,
+        )
+
+        response = self.app.get(
+            api_url_for('list_templates', pid=viewer_node._id),
+            auth=viewer.auth,
+        )
+        data = response.json['data']
+        guids = {entry['definition_id']: entry for entry in data}
+        assert definition_id in guids
+        assert guids[definition_id]['visibility'] == WorkflowTemplate.VISIBILITY_PUBLIC
 
     def test_engine_endpoints_reject_invalid_identifier(self):
         user = AuthUserFactory()

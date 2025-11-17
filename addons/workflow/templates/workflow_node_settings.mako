@@ -42,6 +42,7 @@
                                     <th>${_("Label")}</th>
                                     <th>${_("Definition")}</th>
                                     <th>${_("Engine")}</th>
+                                    <th>${_("Visibility")}</th>
                                     <th>${_("Status")}</th>
                                     <th>${_("Actions")}</th>
                                 </tr>
@@ -59,6 +60,9 @@
                                     </td>
                                     <td>
                                         <span data-bind="text: engine_id"></span>
+                                    </td>
+                                    <td>
+                                        <span data-bind="text: visibilityLabel"></span>
                                     </td>
                                     <td>
                                         <span class="label" data-bind="css: { 'label-success': isActive(), 'label-default': !isActive() }, text: isActive() ? activeLabel : inactiveLabel"></span>
@@ -154,6 +158,19 @@
                         <label class="control-label col-sm-3" for="workflow-description">${_("Description")}</label>
                         <div class="col-sm-9">
                             <textarea id="workflow-description" class="form-control" rows="2" data-bind="value: form.description"></textarea>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="control-label col-sm-3" for="workflow-visibility">${_("Visibility")}</label>
+                        <div class="col-sm-9">
+                            <select id="workflow-visibility" class="form-control" data-bind="value: form.visibility">
+                                <option value="project">${_("This project's members only (default)")}</option>
+                                <option value="institution" data-bind="attr: { disabled: !canShareInstitution() }">${_("Users at this project's institutions")}</option>
+                                <option value="public" data-bind="attr: { disabled: !canSharePublic() }">${_("All RDM users")}</option>
+                            </select>
+                            <p class="help-block">${_("Controls who can add this workflow template to their projects.")}</p>
+                            <p class="help-block text-warning" data-bind="visible: !canShareInstitution()">${_("You must be an institutional admin to select \"Users at this project's institutions\".")}</p>
+                            <p class="help-block text-warning" data-bind="visible: !canSharePublic()">${_("You must be a super admin to select \"All RDM users\".")}</p>
                         </div>
                     </div>
                     <div class="form-group">

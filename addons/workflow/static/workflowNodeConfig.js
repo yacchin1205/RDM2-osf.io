@@ -29,6 +29,16 @@ function formatTokenSettings(tokenSettings) {
     return parts.length ? '🔑 ' + parts.join(' ') : '';
 }
 
+function formatVisibilityLabel(value) {
+    if (value === 'public') {
+        return _('All RDM users');
+    }
+    if (value === 'institution') {
+        return _("Users at this project's institutions");
+    }
+    return _('This project\'s members only');
+}
+
 function postWorkflowTemplateForm(templatesUrl, payload) {
     const formData = new FormData();
     formData.append('workflow_zip', payload.file);
@@ -38,6 +48,9 @@ function postWorkflowTemplateForm(templatesUrl, payload) {
     }
     if (payload.description) {
         formData.append('description', payload.description);
+    }
+    if (payload.visibility) {
+        formData.append('visibility', payload.visibility);
     }
     formData.append('token_settings', JSON.stringify(payload.tokenSettings));
 
@@ -88,6 +101,10 @@ function WorkflowTemplate(data) {
     self.tokenSettingsDisplay = ko.pureComputed(function() {
         return formatTokenSettings(self.token_settings());
     });
+    self.visibility = ko.observable(data.visibility || 'project');
+    self.visibilityLabel = ko.pureComputed(function() {
+        return formatVisibilityLabel(self.visibility());
+    });
 
     self.nodeUrl = self.node_id ? '/' + self.node_id + '/' : null;
     self.localizedScopeLabel = _('This project');
@@ -116,6 +133,7 @@ WorkflowTemplate.prototype.updateFrom = function(payload) {
     this.definition_deployment_id = payload.definition_deployment_id;
     this.activationId = payload.activation_id || null;
     this.token_settings(payload.token_settings);
+    this.visibility(payload.visibility || 'project');
 };
 
 function WorkflowActivation(data, template) {
@@ -215,11 +233,34 @@ function WorkflowNodeSettingsViewModel(options) {
         creatorTokenMode: ko.observable('none'),
         managerTokenMode: ko.observable('none'),
         executorTokenMode: ko.observable('none'),
+        visibility: ko.observable('project'),
     };
 
     self.activateForm = {
         selectedTemplateId: ko.observable(''),
     };
+
+    self.isSuperAdmin = ko.observable(Boolean(options && options.isSuperAdmin));
+    self.isInstitutionalAdmin = ko.observable(Boolean(options && options.isInstitutionalAdmin));
+
+    self.canShareInstitution = ko.pureComputed(function() {
+        return self.isSuperAdmin() || self.isInstitutionalAdmin();
+    });
+    self.canSharePublic = ko.pureComputed(function() {
+        return self.isSuperAdmin();
+    });
+
+    self.enforceVisibilitySelection = function() {
+        const current = self.form.visibility();
+        if (current === 'public' && !self.canSharePublic()) {
+            self.form.visibility('project');
+        } else if (current === 'institution' && !self.canShareInstitution()) {
+            self.form.visibility('project');
+        }
+    };
+
+    self.isSuperAdmin.subscribe(self.enforceVisibilitySelection);
+    self.isInstitutionalAdmin.subscribe(self.enforceVisibilitySelection);
 
     self.hasEngines = ko.computed(function() {
         return self.engines().length > 0;
@@ -307,7 +348,11 @@ function WorkflowNodeSettingsViewModel(options) {
             type: 'GET',
             dataType: 'json',
         }).done(function(response) {
-            const data = response && response.data ? response.data : [];
+            const data = response.data;
+            const meta = response.meta;
+            self.isSuperAdmin(Boolean(meta.is_super_admin));
+            self.isInstitutionalAdmin(Boolean(meta.is_institutional_admin));
+            self.enforceVisibilitySelection();
             const activeEngines = data.filter(function(entry) {
                 return entry && entry.is_active === true;
             });
@@ -426,6 +471,7 @@ function WorkflowNodeSettingsViewModel(options) {
         self.form.creatorTokenMode('none');
         self.form.managerTokenMode('none');
         self.form.executorTokenMode('none');
+        self.form.visibility('project');
         self.errors({});
         const fileInput = document.getElementById('workflow-zip');
         if (fileInput) {
@@ -460,6 +506,8 @@ function WorkflowNodeSettingsViewModel(options) {
         self.errors({});
 
         const creatorMode = self.form.creatorTokenMode();
+        self.enforceVisibilitySelection();
+
         const tokenSettings = {
             creator_mode: creatorMode,
             manager_mode: self.form.managerTokenMode(),
@@ -467,6 +515,7 @@ function WorkflowNodeSettingsViewModel(options) {
         };
         const label = (self.form.label() || '').trim();
         const description = (self.form.description() || '').trim();
+        const visibility = self.form.visibility();
 
         if (creatorMode !== 'none') {
             self.tokenPermissionRequest.creatorMode(creatorMode);
@@ -476,6 +525,7 @@ function WorkflowNodeSettingsViewModel(options) {
                 label: label,
                 description: description,
                 tokenSettings: tokenSettings,
+                visibility: visibility,
             };
             $('#tokenPermissionModal').modal('show');
             return false;
@@ -488,6 +538,7 @@ function WorkflowNodeSettingsViewModel(options) {
             label: label,
             description: description,
             tokenSettings: tokenSettings,
+            visibility: visibility,
         });
 
         return requestPromise
@@ -547,6 +598,7 @@ function WorkflowNodeSettingsViewModel(options) {
             label: payload.label,
             description: payload.description,
             tokenSettings: payload.tokenSettings,
+            visibility: payload.visibility,
         });
 
         return requestPromise
