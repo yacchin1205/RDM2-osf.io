@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 """Token management for workflow delegation."""
 
+import logging
 from typing import Any, Dict
 
 from rest_framework import status as http_status
@@ -8,14 +9,16 @@ from rest_framework import status as http_status
 from framework.exceptions import HTTPError
 from osf.models import ApiOAuth2PersonalToken, ApiOAuth2Scope
 
+logger = logging.getLogger(__name__)
+
 
 ALLOWED_TOKEN_MODES = frozenset({'none', 'read', 'readwrite'})
 ALLOWED_TOKEN_ROLES = frozenset({'creator', 'manager', 'executor'})
 REQUIRED_DELEGATION_FIELDS = frozenset({'token_id', 'token_value', 'scope', 'token_owner'})
 
 TOKEN_MODE_TO_SCOPE = {
-    'read': 'osf.full_read',
-    'readwrite': 'osf.full_write',
+    'read': ['osf.full_read'],
+    'readwrite': ['osf.full_read', 'osf.full_write'],
 }
 
 
@@ -159,13 +162,18 @@ def create_delegation_token(user, role: str, mode: str, label: str = '') -> Dict
             data={'message': f'Invalid mode: {mode}. Must be "read" or "readwrite".'},
         )
 
-    scope_name = TOKEN_MODE_TO_SCOPE[mode]
-    scope = ApiOAuth2Scope.objects.filter(name=scope_name, is_active=True, is_public=True).first()
-    if not scope:
-        raise HTTPError(
-            http_status.HTTP_500_INTERNAL_SERVER_ERROR,
-            data={'message': f'Scope {scope_name} not found or inactive'},
-        )
+    scope_names = TOKEN_MODE_TO_SCOPE[mode]
+
+    scopes = []
+    for scope_name in scope_names:
+        scope = ApiOAuth2Scope.objects.filter(name=scope_name, is_active=True, is_public=True).first()
+        if not scope:
+            logger.error(f'[Workflow Token] Scope not found: {scope_name}')
+            raise HTTPError(
+                http_status.HTTP_500_INTERNAL_SERVER_ERROR,
+                data={'message': f'Scope {scope_name} not found or inactive'},
+            )
+        scopes.append(scope)
 
     token_name = f'Workflow delegation: {role}'
     if label:
@@ -176,7 +184,8 @@ def create_delegation_token(user, role: str, mode: str, label: str = '') -> Dict
         name=token_name,
     )
     token.save()
-    token.scopes.add(scope)
+    for scope in scopes:
+        token.scopes.add(scope)
 
     return {
         'token_id': token._id,

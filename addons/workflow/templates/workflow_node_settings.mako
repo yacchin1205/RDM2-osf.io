@@ -292,7 +292,7 @@
                                                 class="form-control"
                                                 data-bind="options: availableTemplatesForActivation,
                                                            optionsValue: 'id',
-                                                           optionsText: function(item) { return item.label() || item.definition_name || item.definition_id; },
+                                                           optionsText: function(item) { var name = item.label() || item.definition_name || item.definition_id; return item.node_title ? name + ' [' + item.node_title + ']' : name; },
                                                            value: activateForm.selectedTemplateId,
                                                            optionsCaption: '${_("Select a workflow template…")}'"></select>
                                         <p class="help-block">${_("Select a workflow template to activate in this project.")}</p>

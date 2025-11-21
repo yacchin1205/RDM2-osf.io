@@ -28,7 +28,7 @@ from addons.workflow.models import (
     WorkflowExecutorToken,
     WorkflowTemplate,
 )
-from addons.workflow.token import create_delegation_token, revoke_delegation_token, TOKEN_MODE_TO_SCOPE
+from addons.workflow.token import create_delegation_token, revoke_delegation_token
 from osf.models import ApiOAuth2PersonalToken, Comment, Guid, OSFUser
 from website.mails import Mail, send_mail
 
@@ -38,21 +38,6 @@ if TYPE_CHECKING:
 
 _REQUIRED_DEFINITION_FIELDS = {'id', 'key', 'name', 'version'}
 _ALLOWED_KEY_ALGORITHMS = {'RS256', 'RS384', 'RS512', 'ES256', 'ES384', 'ES512'}
-_SCOPE_TO_MODE = {v: k for k, v in TOKEN_MODE_TO_SCOPE.items()}
-
-
-def _get_token_mode(token_data: Optional[Dict[str, Any]]) -> str:
-    """Get mode from delegation token data.
-
-    Args:
-        token_data: Delegation token dict with 'token_id' and 'scope', or None
-
-    Returns:
-        Token mode ('read', 'readwrite', or 'none')
-    """
-    if not token_data or not token_data.get('token_id'):
-        return 'none'
-    return _SCOPE_TO_MODE.get(token_data.get('scope'), 'none')
 
 
 def import_gateway_public_keys(engine: WorkflowEngine) -> int:
@@ -292,7 +277,11 @@ def upsert_workflow_template(
         defaults=defaults,
     )
 
-    if not created:
+    if created:
+        current_creator_mode = 'none'
+    else:
+        current_creator_mode = template.token_settings.get('creator_mode') or 'none'
+
         if label:
             template.label = label
         if description is not None:
@@ -305,7 +294,6 @@ def upsert_workflow_template(
         template.save()
 
     desired_creator_mode = (token_settings or {}).get('creator_mode') or 'none'
-    current_creator_mode = _get_token_mode(template.delegation_tokens.get('creator'))
 
     if desired_creator_mode != current_creator_mode:
         if current_creator_mode != 'none':
@@ -870,9 +858,7 @@ def list_workflow_tasks(
             break
 
     all_tasks.sort(key=lambda item: item.get('created') or '', reverse=True)
-    result = all_tasks[:limit]
-    logger.info(f'list_workflow_tasks returning {len(result)} tasks')
-    return result
+    return all_tasks[:limit]
 
 
 def _fetch_task_from_engines(
