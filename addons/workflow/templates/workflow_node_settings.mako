@@ -62,7 +62,10 @@
                                         <span data-bind="text: engine_id"></span>
                                     </td>
                                     <td>
-                                        <span data-bind="text: visibilityLabel"></span>
+                                        <div data-bind="text: visibilityLabel"></div>
+                                        <div data-bind="if: autoActivate()">
+                                            <small class="text-muted"><i class="fa fa-bolt"></i> ${_("Auto-activate")}</small>
+                                        </div>
                                     </td>
                                     <td>
                                         <span class="label" data-bind="css: { 'label-success': isActive(), 'label-default': !isActive() }, text: isActive() ? activeLabel : inactiveLabel"></span>
@@ -171,6 +174,18 @@
                             <p class="help-block">${_("Controls who can add this workflow template to their projects.")}</p>
                             <p class="help-block text-warning" data-bind="visible: !canShareInstitution()">${_("You must be an institutional admin to select \"Users at this project's institutions\".")}</p>
                             <p class="help-block text-warning" data-bind="visible: !canSharePublic()">${_("You must be a super admin to select \"All RDM users\".")}</p>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="control-label col-sm-3">${_("Auto-activate")}</label>
+                        <div class="col-sm-9">
+                            <div class="checkbox">
+                                <label>
+                                    <input type="checkbox" data-bind="checked: form.autoActivate">
+                                    ${_("Automatically activate this template when the workflow addon is enabled")}
+                                </label>
+                            </div>
+                            <p class="help-block">${_("When enabled, this template will be automatically activated for users who have access to it when they enable the workflow addon on a project.")}</p>
                         </div>
                     </div>
                     <div class="form-group">

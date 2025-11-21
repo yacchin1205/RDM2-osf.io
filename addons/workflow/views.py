@@ -54,6 +54,7 @@ from addons.workflow.services import (
     deactivate_workflow_activation,
     deactivate_workflow_engine,
     deactivate_workflow_template,
+    get_user_accessible_templates,
     get_workflow_task,
     list_workflow_tasks,
     send_workflow_notification,
@@ -487,6 +488,7 @@ def _serialize_template(
         'label': template.label,
         'description': template.description,
         'is_active': template.is_active,
+        'auto_activate': template.auto_activate,
         'activation_id': activation._id if activation else None,
         'is_enabled': activation.is_enabled if activation else False,
         'activation_activated_by': activation.activated_by._id if activation and activation.activated_by_id else None,
@@ -622,6 +624,7 @@ def upsert_template(auth, **kwargs):
         description = request.form.get('description')
         token_settings_json = request.form.get('token_settings')
         raw_visibility = request.form.get('visibility') if request.form else None
+        raw_auto_activate = request.form.get('auto_activate') if request.form else None
 
         if not raw_engine_id:
             raise HTTPError(http_status.HTTP_400_BAD_REQUEST, data={'message': 'engine_id is required.'})
@@ -690,6 +693,7 @@ def upsert_template(auth, **kwargs):
         description = payload.get('description')
         token_settings = payload.get('token_settings')
         raw_visibility = payload.get('visibility')
+        raw_auto_activate = payload.get('auto_activate')
 
         if not raw_engine_id:
             raise HTTPError(http_status.HTTP_400_BAD_REQUEST, data={'message': 'engine_id is required.'})
@@ -709,6 +713,18 @@ def upsert_template(auth, **kwargs):
     if token_settings is not None:
         token_settings = validate_token_settings(token_settings)
 
+    auto_activate_value = None
+    if raw_auto_activate is not None:
+        if isinstance(raw_auto_activate, bool):
+            auto_activate_value = raw_auto_activate
+        elif isinstance(raw_auto_activate, str):
+            auto_activate_value = raw_auto_activate.lower() in ('true', '1', 'yes')
+        else:
+            raise HTTPError(
+                http_status.HTTP_400_BAD_REQUEST,
+                data={'message': 'auto_activate must be a boolean.'},
+            )
+
     template, created = upsert_workflow_template(
         node,
         engine_id=engine.engine_id,
@@ -718,6 +734,7 @@ def upsert_template(auth, **kwargs):
         label=label,
         description=description,
         visibility=visibility_value,
+        auto_activate=auto_activate_value,
     )
 
     activation = WorkflowActivation.objects.filter(
@@ -743,25 +760,7 @@ def list_templates(auth, **kwargs):
     node = kwargs.get('node') or kwargs['project']
     user = auth.user
 
-    accessible_nodes = AbstractNode.objects.filter(_contributors=user, is_deleted=False)
-
-    visibility_filter = Q(pk__in=[])
-    visibility_filter |= Q(visibility=WorkflowTemplate.VISIBILITY_PUBLIC)
-    user_institution_ids = _user_institution_ids(user)
-    if user_institution_ids:
-        visibility_filter |= Q(
-            visibility=WorkflowTemplate.VISIBILITY_INSTITUTION,
-            node__affiliated_institutions__in=list(user_institution_ids),
-        )
-
-    templates = list(
-        WorkflowTemplate.objects.filter(
-            Q(node__in=accessible_nodes) | visibility_filter,
-            node__is_deleted=False,
-        )
-        .select_related('node', 'definition__engine')
-        .distinct()
-    )
+    templates = get_user_accessible_templates(user)
 
     seen_ids = set()
     combined = []
@@ -827,6 +826,13 @@ def update_template(auth, template_id: str, **kwargs):
             activate_workflow_template(template, user)
         else:
             deactivate_workflow_template(template)
+
+    auto_activate = payload.get('auto_activate')
+    if auto_activate is not None:
+        if not isinstance(auto_activate, bool):
+            raise HTTPError(http_status.HTTP_400_BAD_REQUEST, data={'message': 'auto_activate must be a boolean.'})
+        template.auto_activate = auto_activate
+        template.save(update_fields=['auto_activate', 'modified'])
 
     activation = WorkflowActivation.objects.filter(
         node=node,

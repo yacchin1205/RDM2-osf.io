@@ -4,11 +4,12 @@
 import json
 import logging
 
-from typing import Any, Dict, Iterable, List, Optional, Set, Tuple, TYPE_CHECKING
+from typing import Any, Dict, Iterable, List, Optional, Set, Tuple
 
 logger = logging.getLogger(__name__)
 
 from django.db import transaction
+from django.db.models import Q
 from django.utils import timezone
 from rest_framework import status as http_status
 
@@ -29,11 +30,8 @@ from addons.workflow.models import (
     WorkflowTemplate,
 )
 from addons.workflow.token import create_delegation_token, revoke_delegation_token
-from osf.models import ApiOAuth2PersonalToken, Comment, Guid, OSFUser
+from osf.models import AbstractNode, ApiOAuth2PersonalToken, Comment, Guid, OSFUser
 from website.mails import Mail, send_mail
-
-if TYPE_CHECKING:
-    from osf.models import AbstractNode
 
 
 _REQUIRED_DEFINITION_FIELDS = {'id', 'key', 'name', 'version'}
@@ -233,6 +231,39 @@ def refresh_definitions(engine_id: str, definitions: Iterable[Dict[str, Any]]) -
         _upsert_definition(engine, payload, snapshot_form)
 
 
+def get_user_accessible_templates(user: OSFUser, **filters) -> List[WorkflowTemplate]:
+    """Get workflow templates accessible to a user based on visibility rules.
+
+    Args:
+        user: The user to check access for
+        **filters: Additional QuerySet filters to apply
+
+    Returns:
+        List of WorkflowTemplate objects the user can access
+    """
+    accessible_nodes = AbstractNode.objects.filter(_contributors=user, is_deleted=False)
+
+    visibility_filter = Q(pk__in=[])
+    visibility_filter |= Q(visibility=WorkflowTemplate.VISIBILITY_PUBLIC)
+
+    user_institution_ids = set(user.affiliated_institutions.values_list('id', flat=True))
+    if user_institution_ids:
+        visibility_filter |= Q(
+            visibility=WorkflowTemplate.VISIBILITY_INSTITUTION,
+            node__affiliated_institutions__in=list(user_institution_ids),
+        )
+
+    return list(
+        WorkflowTemplate.objects.filter(
+            Q(node__in=accessible_nodes) | visibility_filter,
+            node__is_deleted=False,
+            **filters,
+        )
+        .select_related('node', 'definition__engine')
+        .distinct()
+    )
+
+
 def _status_code_from_error(error: Exception) -> Optional[int]:
     code = getattr(error, 'status_code', None)
     if code is not None:
@@ -251,6 +282,7 @@ def upsert_workflow_template(
     label: Optional[str] = None,
     description: Optional[str] = None,
     visibility: Optional[str] = None,
+    auto_activate: Optional[bool] = None,
 ) -> Tuple[WorkflowTemplate, bool]:
     """Register a workflow definition for a given node."""
 
@@ -269,6 +301,7 @@ def upsert_workflow_template(
         'token_settings': token_settings or {},
         'is_active': True,
         'visibility': visibility or WorkflowTemplate.VISIBILITY_PROJECT,
+        'auto_activate': auto_activate if auto_activate is not None else False,
     }
 
     template, created = WorkflowTemplate.objects.get_or_create(
@@ -290,6 +323,8 @@ def upsert_workflow_template(
             template.token_settings = token_settings
         if visibility is not None:
             template.visibility = visibility
+        if auto_activate is not None:
+            template.auto_activate = auto_activate
         template.is_active = True
         template.save()
 

@@ -26,7 +26,7 @@ function formatTokenSettings(tokenSettings) {
     if (tokenSettings.executor_mode && tokenSettings.executor_mode !== 'none') {
         parts.push('Executor:' + formatTokenMode(tokenSettings.executor_mode));
     }
-    return parts.length ? '🔑 ' + parts.join(' ') : '';
+    return parts.join(' ');
 }
 
 function formatVisibilityLabel(value) {
@@ -51,6 +51,9 @@ function postWorkflowTemplateForm(templatesUrl, payload) {
     }
     if (payload.visibility) {
         formData.append('visibility', payload.visibility);
+    }
+    if (payload.autoActivate !== undefined) {
+        formData.append('auto_activate', payload.autoActivate);
     }
     formData.append('token_settings', JSON.stringify(payload.tokenSettings));
 
@@ -105,6 +108,7 @@ function WorkflowTemplate(data) {
     self.visibilityLabel = ko.pureComputed(function() {
         return formatVisibilityLabel(self.visibility());
     });
+    self.autoActivate = ko.observable(data.auto_activate === true);
 
     self.nodeUrl = self.node_id ? '/' + self.node_id + '/' : null;
     self.localizedScopeLabel = _('This project');
@@ -134,6 +138,7 @@ WorkflowTemplate.prototype.updateFrom = function(payload) {
     this.activationId = payload.activation_id || null;
     this.token_settings(payload.token_settings);
     this.visibility(payload.visibility || 'project');
+    this.autoActivate(payload.auto_activate === true);
 };
 
 function WorkflowActivation(data, template) {
@@ -234,6 +239,7 @@ function WorkflowNodeSettingsViewModel(options) {
         managerTokenMode: ko.observable('none'),
         executorTokenMode: ko.observable('none'),
         visibility: ko.observable('project'),
+        autoActivate: ko.observable(false),
     };
 
     self.activateForm = {
@@ -472,6 +478,7 @@ function WorkflowNodeSettingsViewModel(options) {
         self.form.managerTokenMode('none');
         self.form.executorTokenMode('none');
         self.form.visibility('project');
+        self.form.autoActivate(false);
         self.errors({});
         const fileInput = document.getElementById('workflow-zip');
         if (fileInput) {
@@ -516,6 +523,7 @@ function WorkflowNodeSettingsViewModel(options) {
         const label = (self.form.label() || '').trim();
         const description = (self.form.description() || '').trim();
         const visibility = self.form.visibility();
+        const autoActivate = self.form.autoActivate();
 
         if (creatorMode !== 'none') {
             self.tokenPermissionRequest.creatorMode(creatorMode);
@@ -526,6 +534,7 @@ function WorkflowNodeSettingsViewModel(options) {
                 description: description,
                 tokenSettings: tokenSettings,
                 visibility: visibility,
+                autoActivate: autoActivate,
             };
             $('#tokenPermissionModal').modal('show');
             return false;
@@ -539,6 +548,7 @@ function WorkflowNodeSettingsViewModel(options) {
             description: description,
             tokenSettings: tokenSettings,
             visibility: visibility,
+            autoActivate: autoActivate,
         });
 
         return requestPromise
@@ -599,6 +609,7 @@ function WorkflowNodeSettingsViewModel(options) {
             description: payload.description,
             tokenSettings: payload.tokenSettings,
             visibility: payload.visibility,
+            autoActivate: payload.autoActivate,
         });
 
         return requestPromise

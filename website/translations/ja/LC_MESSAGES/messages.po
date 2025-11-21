@@ -5000,3 +5000,15 @@ msgstr "タスク"
 #: website/templates/util/render_addon_widget.mako:260
 msgid "Toggle workflow selection"
 msgstr "ワークフロー選択を切り替え"
+
+#: addons/workflow/templates/workflow_node_settings.mako:177
+msgid "Auto-activate"
+msgstr "自動有効化"
+
+#: addons/workflow/templates/workflow_node_settings.mako:182
+msgid "Automatically activate this template when the workflow addon is enabled"
+msgstr "ワークフローアドオンが有効化されたときに、このテンプレートを自動的に有効化する"
+
+#: addons/workflow/templates/workflow_node_settings.mako:185
+msgid "When enabled, this template will be automatically activated for users who have access to it when they enable the workflow addon on a project."
+msgstr "有効にすると、このテンプレートにアクセス可能なユーザーがプロジェクトでワークフローアドオンを有効化した際に、このテンプレートが自動的に有効化されます。"

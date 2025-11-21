@@ -30,6 +30,42 @@ class NodeSettings(BaseNodeSettings):
             activations__is_enabled=True,
         )
 
+    def on_add(self):
+        """Auto-activate templates when workflow addon is enabled."""
+        from addons.workflow.services import activate_workflow_activation, get_user_accessible_templates
+
+        node = self.owner
+        if not node:
+            return
+
+        contributors = list(node.contributors.all())
+        if not contributors:
+            return
+
+        seen_template_ids = set()
+        for user in contributors:
+            auto_activate_templates = get_user_accessible_templates(
+                user,
+                is_active=True,
+                auto_activate=True,
+            )
+
+            for template in auto_activate_templates:
+                if template.id in seen_template_ids:
+                    continue
+                seen_template_ids.add(template.id)
+
+                activation, created = WorkflowActivation.objects.get_or_create(
+                    node=node,
+                    template=template,
+                    defaults={
+                        'activated_by': user,
+                        'is_enabled': True,
+                    },
+                )
+                if created or not activation.is_enabled:
+                    activate_workflow_activation(activation, user)
+
 
 class WorkflowEngine(BaseModel):
     """Configuration for a workflow gateway/engine pair."""
@@ -149,6 +185,7 @@ class WorkflowTemplate(BaseModel):
     token_settings = DateTimeAwareJSONField(default=dict, blank=True)
     delegation_tokens = DateTimeAwareJSONField(default=dict, blank=True)
     is_active = models.BooleanField(default=True)
+    auto_activate = models.BooleanField(default=False)
     visibility = models.CharField(
         max_length=32,
         choices=VISIBILITY_CHOICES,
