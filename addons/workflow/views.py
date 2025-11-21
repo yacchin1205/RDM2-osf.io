@@ -834,6 +834,33 @@ def update_template(auth, template_id: str, **kwargs):
         template.auto_activate = auto_activate
         template.save(update_fields=['auto_activate', 'modified'])
 
+    # Handle label, description, and visibility updates
+    update_fields = []
+
+    label = payload.get('label')
+    if label is not None:
+        if not isinstance(label, str) or not label.strip():
+            raise HTTPError(http_status.HTTP_400_BAD_REQUEST, data={'message': 'label must be a non-empty string.'})
+        template.label = label.strip()
+        update_fields.append('label')
+
+    description = payload.get('description')
+    if description is not None:
+        if not isinstance(description, str):
+            raise HTTPError(http_status.HTTP_400_BAD_REQUEST, data={'message': 'description must be a string.'})
+        template.description = description
+        update_fields.append('description')
+
+    visibility = payload.get('visibility')
+    if visibility is not None:
+        normalized_visibility = _normalize_template_visibility(user, visibility)
+        template.visibility = normalized_visibility
+        update_fields.append('visibility')
+
+    if update_fields:
+        update_fields.append('modified')
+        template.save(update_fields=update_fields)
+
     activation = WorkflowActivation.objects.filter(
         node=node,
         template=template,

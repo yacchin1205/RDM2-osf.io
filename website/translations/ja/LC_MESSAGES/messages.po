@@ -4670,11 +4670,6 @@ msgid "Delete Workflow Template"
 msgstr "ワークフローテンプレートを削除"
 
 
-#: addons/workflow/templates/workflow_node_settings.mako:209
-msgid "Display label"
-msgstr "表示ラベル"
-
-
 #: addons/workflow/templates/workflow_node_settings.mako:224
 #: addons/workflow/templates/workflow_node_settings.mako:235
 #: addons/workflow/templates/workflow_node_settings.mako:246
@@ -4693,10 +4688,10 @@ msgstr "このワークフローを有効化すると、プロジェクトリソ
 
 
 #: addons/workflow/templates/workflow_node_settings.mako:43
-#: addons/workflow/templates/workflow_node_settings.mako:98
-#: addons/workflow/templates/workflow_node_settings.mako:287
-msgid "Engine"
-msgstr "エンジン"
+#: addons/workflow/templates/workflow_node_settings.mako:101
+#: addons/workflow/templates/workflow_node_settings.mako:253
+msgid "Workflow Engine"
+msgstr "ワークフローエンジン"
 
 
 #: addons/workflow/templates/workflow_node_settings.mako:243
@@ -4727,9 +4722,9 @@ msgid "Grant Workflow Permissions"
 msgstr "ワークフロー権限の付与"
 
 
-#: addons/workflow/templates/workflow_node_settings.mako:228
-msgid "Grant workflow access using the creator's credentials."
-msgstr "作成者の認証情報を用いてワークフローにアクセス権を与えます。"
+#: addons/workflow/templates/workflow_node_settings.mako:194
+msgid "Grant workflow access using the template creator's credentials."
+msgstr "テンプレート作成者の認証情報を用いてワークフローにアクセス権を与えます。"
 
 
 #: addons/workflow/templates/workflow_node_settings.mako:250
@@ -5012,3 +5007,15 @@ msgstr "ワークフローアドオンが有効化されたときに、このテ
 #: addons/workflow/templates/workflow_node_settings.mako:185
 msgid "When enabled, this template will be automatically activated for users who have access to it when they enable the workflow addon on a project."
 msgstr "有効にすると、このテンプレートにアクセス可能なユーザーがプロジェクトでワークフローアドオンを有効化した際に、このテンプレートが自動的に有効化されます。"
+
+#: addons/workflow/templates/workflow_node_settings.mako:375
+msgid "Edit Workflow Template"
+msgstr "ワークフローテンプレートを編集"
+
+#: addons/workflow/static/workflowNodeConfig.js:871
+msgid "Workflow template updated."
+msgstr "ワークフローテンプレートを更新しました。"
+
+#: addons/workflow/static/workflowNodeConfig.js:876
+msgid "Failed to update workflow template."
+msgstr "ワークフローテンプレートの更新に失敗しました。"

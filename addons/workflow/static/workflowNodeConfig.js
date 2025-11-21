@@ -246,6 +246,16 @@ function WorkflowNodeSettingsViewModel(options) {
         selectedTemplateId: ko.observable(''),
     };
 
+    self.editForm = {
+        templateId: ko.observable(''),
+        label: ko.observable(''),
+        description: ko.observable(''),
+        visibility: ko.observable('project'),
+        autoActivate: ko.observable(false),
+    };
+
+    self.isEditSubmitting = ko.observable(false);
+
     self.isSuperAdmin = ko.observable(Boolean(options && options.isSuperAdmin));
     self.isInstitutionalAdmin = ko.observable(Boolean(options && options.isInstitutionalAdmin));
 
@@ -309,6 +319,16 @@ function WorkflowNodeSettingsViewModel(options) {
         });
         return self.templates().filter(function(reg) {
             return reg.isActive() && activatedIds.indexOf(reg.id) === -1;
+        });
+    });
+
+    self.selectedTemplateForActivation = ko.computed(function() {
+        const selectedId = self.activateForm.selectedTemplateId();
+        if (!selectedId) {
+            return null;
+        }
+        return self.templates().find(function(template) {
+            return template.id === selectedId;
         });
     });
 
@@ -807,6 +827,56 @@ function WorkflowNodeSettingsViewModel(options) {
             });
         }).always(function() {
             self.togglingIds.remove(template.id);
+        });
+    };
+
+    self.openEditModal = function(template) {
+        self.editForm.templateId(template.id);
+        self.editForm.label(template.label());
+        self.editForm.description(template.description());
+        self.editForm.visibility(template.visibility());
+        self.editForm.autoActivate(template.autoActivate());
+        $('#editTemplateModal').modal('show');
+    };
+
+    self.submitEditTemplate = function() {
+        if (self.isEditSubmitting()) {
+            return false;
+        }
+
+        const templateId = self.editForm.templateId();
+        const payload = {
+            label: self.editForm.label(),
+            description: self.editForm.description(),
+            visibility: self.editForm.visibility(),
+            auto_activate: self.editForm.autoActivate(),
+        };
+
+        self.isEditSubmitting(true);
+
+        return $.ajax({
+            url: self.templatesUrl + templateId + '/',
+            method: 'PATCH',
+            contentType: 'application/json',
+            data: JSON.stringify(payload),
+        }).done(function(response) {
+            const data = response && response.data;
+            if (data) {
+                const template = self.templates().find(function(t) {
+                    return t.id === data.id;
+                });
+                if (template) {
+                    template.updateFrom(data);
+                }
+                self.changeMessage(_('Workflow template updated.'), 'text-success');
+            }
+            $('#editTemplateModal').modal('hide');
+        }).fail(function(xhr) {
+            const errorData = xhr.responseJSON || {};
+            const message = errorData.message || _('Failed to update workflow template.');
+            self.changeMessage(message, 'text-danger');
+        }).always(function() {
+            self.isEditSubmitting(false);
         });
     };
 

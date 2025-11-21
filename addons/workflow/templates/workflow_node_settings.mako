@@ -39,9 +39,8 @@
                         <table class="table table-striped table-bordered table-condensed" style="margin-bottom: 0;">
                             <thead>
                                 <tr>
-                                    <th>${_("Label")}</th>
-                                    <th>${_("Definition")}</th>
-                                    <th>${_("Engine")}</th>
+                                    <th>${_("Name")}</th>
+                                    <th>${_("Workflow Engine")}</th>
                                     <th>${_("Visibility")}</th>
                                     <th>${_("Status")}</th>
                                     <th>${_("Actions")}</th>
@@ -53,10 +52,6 @@
                                         <strong data-bind="text: label"></strong>
                                         <div class="text-muted" data-bind="text: description, visible: description"></div>
                                         <div class="text-muted small" data-bind="text: tokenSettingsDisplay, visible: tokenSettingsDisplay"></div>
-                                    </td>
-                                    <td>
-                                        <div data-bind="text: definition_name || definition_id"></div>
-                                        <small class="text-muted" data-bind="text: definition_id"></small>
                                     </td>
                                     <td>
                                         <span data-bind="text: engine_id"></span>
@@ -71,6 +66,11 @@
                                         <span class="label" data-bind="css: { 'label-success': isActive(), 'label-default': !isActive() }, text: isActive() ? activeLabel : inactiveLabel"></span>
                                     </td>
                                     <td class="text-nowrap">
+                                        <button type="button"
+                                                class="btn btn-xs btn-default"
+                                                data-bind="click: $parent.openEditModal">
+                                            <i class="fa fa-pencil"></i> ${_("Edit")}
+                                        </button>
                                         <button type="button"
                                                 class="btn btn-xs btn-default"
                                                 data-bind="click: $parent.toggleTemplateActive,
@@ -103,7 +103,7 @@
                             <div>
                 <form class="form-horizontal" data-bind="submit: submitTemplate">
                     <div class="form-group" data-bind="css: { 'has-error': errors().engineId }">
-                        <label class="control-label col-sm-3" for="workflow-engine-id">${_("Engine")}</label>
+                        <label class="control-label col-sm-3" for="workflow-engine-id">${_("Workflow Engine")}</label>
                         <div class="col-sm-9">
                             <div data-bind="if: isLoadingEngines">
                                 <p class="text-muted">
@@ -152,7 +152,7 @@
                         </div>
                     </div>
                     <div class="form-group">
-                        <label class="control-label col-sm-3" for="workflow-label">${_("Display label")}</label>
+                        <label class="control-label col-sm-3" for="workflow-label">${_("Name")}</label>
                         <div class="col-sm-9">
                             <input id="workflow-label" type="text" class="form-control" data-bind="value: form.label" maxlength="255">
                         </div>
@@ -196,7 +196,7 @@
                                 <option value="read">${_("Use with Read permission")}</option>
                                 <option value="readwrite">${_("Use with ReadWrite permission")}</option>
                             </select>
-                            <p class="help-block">${_("Grant workflow access using the creator's credentials.")}</p>
+                            <p class="help-block">${_("Grant workflow access using the template creator's credentials.")}</p>
                         </div>
                     </div>
                     <div class="form-group">
@@ -254,9 +254,8 @@
                         <table class="table table-striped table-bordered table-condensed" style="margin-bottom: 0;">
                             <thead>
                                 <tr>
-                                    <th>${_("Label")}</th>
-                                    <th>${_("Definition")}</th>
-                                    <th>${_("Engine")}</th>
+                                    <th>${_("Name")}</th>
+                                    <th>${_("Workflow Engine")}</th>
                                     <th>${_("Defined in")}</th>
                                     <th>${_("Actions")}</th>
                                 </tr>
@@ -266,10 +265,6 @@
                                     <td>
                                         <strong data-bind="text: label"></strong>
                                         <div class="text-muted" data-bind="text: description, visible: description"></div>
-                                    </td>
-                                    <td>
-                                        <div data-bind="text: definition_name || definition_id"></div>
-                                        <small class="text-muted" data-bind="text: definition_id"></small>
                                     </td>
                                     <td>
                                         <span data-bind="text: engine_id"></span>
@@ -310,7 +305,12 @@
                                                            optionsText: function(item) { var name = item.label() || item.definition_name || item.definition_id; return item.node_title ? name + ' [' + item.node_title + ']' : name; },
                                                            value: activateForm.selectedTemplateId,
                                                            optionsCaption: '${_("Select a workflow template…")}'"></select>
+                                        <!-- ko if: !selectedTemplateForActivation() -->
                                         <p class="help-block">${_("Select a workflow template to activate in this project.")}</p>
+                                        <!-- /ko -->
+                                        <!-- ko if: selectedTemplateForActivation() && selectedTemplateForActivation().description() -->
+                                        <p class="help-block" data-bind="text: selectedTemplateForActivation().description()"></p>
+                                        <!-- /ko -->
                                     </div>
                                 </div>
                                 <div class="form-group">
@@ -361,6 +361,62 @@
                     <button type="button" class="btn btn-default" data-dismiss="modal">${_("Cancel")}</button>
                     <button type="button" class="btn btn-primary" data-bind="click: confirmTokenPermission">
                         ${_("Grant Permission and Create Template")}
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="editTemplateModal" tabindex="-1" role="dialog">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal"><span>&times;</span></button>
+                    <h4 class="modal-title">${_("Edit Workflow Template")}</h4>
+                </div>
+                <div class="modal-body">
+                    <form class="form-horizontal" data-bind="submit: submitEditTemplate">
+                        <div class="form-group">
+                            <label class="control-label col-sm-3" for="edit-template-label">${_("Name")}</label>
+                            <div class="col-sm-9">
+                                <input id="edit-template-label" type="text" class="form-control" data-bind="value: editForm.label" maxlength="255">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label class="control-label col-sm-3" for="edit-template-description">${_("Description")}</label>
+                            <div class="col-sm-9">
+                                <textarea id="edit-template-description" class="form-control" rows="2" data-bind="value: editForm.description"></textarea>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label class="control-label col-sm-3" for="edit-template-visibility">${_("Visibility")}</label>
+                            <div class="col-sm-9">
+                                <select id="edit-template-visibility" class="form-control" data-bind="value: editForm.visibility">
+                                    <option value="project">${_("This project's members only (default)")}</option>
+                                    <option value="institution" data-bind="attr: { disabled: !canShareInstitution() }">${_("Users at this project's institutions")}</option>
+                                    <option value="public" data-bind="attr: { disabled: !canSharePublic() }">${_("All RDM users")}</option>
+                                </select>
+                                <p class="help-block">${_("Controls who can add this workflow template to their projects.")}</p>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label class="control-label col-sm-3">${_("Auto-activate")}</label>
+                            <div class="col-sm-9">
+                                <div class="checkbox">
+                                    <label>
+                                        <input type="checkbox" data-bind="checked: editForm.autoActivate">
+                                        ${_("Automatically activate this template when the workflow addon is enabled")}
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-default" data-dismiss="modal">${_("Cancel")}</button>
+                    <button type="button" class="btn btn-primary" data-bind="click: submitEditTemplate, disable: isEditSubmitting">
+                        <span data-bind="visible: isEditSubmitting"><i class="fa fa-spinner fa-spin"></i> ${_("Saving")}</span>
+                        <span data-bind="visible: !isEditSubmitting()">${_("Save")}</span>
                     </button>
                 </div>
             </div>
