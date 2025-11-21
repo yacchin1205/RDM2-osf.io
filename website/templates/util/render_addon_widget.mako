@@ -3,7 +3,13 @@
     % if addon_data['complete'] or permissions.WRITE in user['permissions']:
         <div class="panel panel-default" name="${addon_data['short_name']}">
             <div class="panel-heading clearfix">
-                <h3 class="panel-title">${addon_data['full_name']}</h3>
+                <h3 class="panel-title">
+                    % if addon_name == 'workflow':
+                        ${_("Workflow")}
+                    % else:
+                        ${addon_data['full_name']}
+                    % endif
+                </h3>
                 <div class="pull-right">
                     % if addon_data['has_page']:
                         <a href="${node['url']}${addon_data['short_name']}"><i class="fa fa-external-link"></i></a>

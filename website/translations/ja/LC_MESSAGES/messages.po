@@ -3898,6 +3898,7 @@ msgid "Metadata"
 msgstr "メタデータ"
 
 #: website/templates/project/project_header.mako:86
+#: website/templates/util/render_addon_widget.mako:8
 msgid "Workflow"
 msgstr "ワークフロー"
 
@@ -4770,11 +4771,9 @@ msgstr "利用可能なワークフローエンジンがありません。管理
 msgid "No workflows are currently activated."
 msgstr "現在有効化されているワークフローはありません。"
 
-
-#: addons/workflow/templates/workflow_node_settings.mako:89
-msgid "No workflows have been registered in this project yet."
-msgstr "このプロジェクトにはまだワークフローが登録されていません。"
-
+#: addons/workflow/templates/workflow_node_settings.mako:94
+msgid "No workflow templates have been registered in this project yet."
+msgstr "このプロジェクトにはまだワークフローテンプレートが登録されていません。"
 
 #: addons/workflow/templates/workflow_node_settings.mako:141
 msgid "Not allowed for this project"

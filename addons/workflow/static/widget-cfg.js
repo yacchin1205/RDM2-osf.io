@@ -199,7 +199,21 @@ function WorkflowWidgetViewModel() {
         if (!task || !task.assignee) {
             return self.unassignedLabel;
         }
-        return task.assignee;
+        var assignee = task.assignee;
+        var lower = assignee.toLowerCase();
+        if (lower === 'executor') {
+            return _('Workflow starter');
+        }
+        if (lower === 'creator') {
+            return _('Registration project writer');
+        }
+        if (lower === 'manager') {
+            return _('Project admin');
+        }
+        if (lower === 'contributor') {
+            return _('Project contributor');
+        }
+        return assignee;
     };
 
     self.canEditTask = function(task) {

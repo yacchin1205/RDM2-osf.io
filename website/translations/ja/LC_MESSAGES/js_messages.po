@@ -10601,6 +10601,18 @@ msgstr "不明"
 msgid "Unassigned"
 msgstr "未割り当て"
 
+msgid "Workflow starter"
+msgstr "ワークフロー起動者"
+
+msgid "Registration project writer"
+msgstr "登録プロジェクトの書き込み権限者"
+
+msgid "Project admin"
+msgstr "プロジェクト管理者"
+
+msgid "Project contributor"
+msgstr "プロジェクト共同研究者"
+
 msgid "Select a workflow"
 msgstr "ワークフローを選択"
 

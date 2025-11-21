@@ -91,7 +91,7 @@
                         <!-- /ko -->
                         <!-- ko if: !localTemplates().length -->
                         <div class="panel-body">
-                            <span class="text-muted">${_("No workflows have been registered in this project yet.")}</span>
+                            <span class="text-muted">${_("No workflow templates have been registered in this project yet.")}</span>
                         </div>
                         <!-- /ko -->
 
