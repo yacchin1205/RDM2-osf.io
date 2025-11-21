@@ -350,7 +350,7 @@ def _get_definition_id_from_deployment(client, deployment_name: str, deployment_
     Raises:
         HTTPError: If no matching process definition found
     """
-    response = client.list_process_definitions()
+    response = client.list_process_definitions({'latest': 'true', 'size': 100})
     if not isinstance(response, dict):
         raise HTTPError(
             http_status.HTTP_502_BAD_GATEWAY,
