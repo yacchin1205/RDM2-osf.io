@@ -9,7 +9,7 @@
 <h2>{% trans "Workflow Engine Keys" %}</h2>
 
 <p>
-    <a href="{% url 'rdm_workflow:engine-list' institution.id %}">&laquo; {% trans "Back to engine list" %}</a>
+    <a href="{% url 'rdm_workflow:engine-list' institution.id %}">&laquo; {% trans "Back to workflow engine list" %}</a>
 </p>
 
 <div class="panel panel-default">
@@ -136,7 +136,7 @@
                         </tr>
                     {% empty %}
                         <tr>
-                            <td colspan="6" class="text-muted text-center">{% trans "No keys have been registered for this engine." %}</td>
+                            <td colspan="6" class="text-muted text-center">{% trans "No keys have been registered for this workflow engine." %}</td>
                         </tr>
                     {% endfor %}
                 </tbody>

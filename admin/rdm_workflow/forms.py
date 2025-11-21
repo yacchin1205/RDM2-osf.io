@@ -18,6 +18,11 @@ ALGORITHM_CHOICES = (
 
 
 class WorkflowEngineForm(forms.ModelForm):
+    label = forms.CharField(
+        label=_('Name'),
+        widget=forms.TextInput(attrs={'class': 'form-control'}),
+        required=False,
+    )
     gateway_base_url = forms.URLField(
         label=_('Gateway base URL'),
         widget=forms.URLInput(attrs={'class': 'form-control'}),
@@ -48,6 +53,7 @@ class WorkflowEngineForm(forms.ModelForm):
     class Meta:
         model = WorkflowEngine
         fields = [
+            'label',
             'gateway_base_url',
             'signing_kid',
             'verify_ssl',

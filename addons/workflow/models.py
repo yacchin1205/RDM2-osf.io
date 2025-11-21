@@ -71,6 +71,7 @@ class WorkflowEngine(BaseModel):
     """Configuration for a workflow gateway/engine pair."""
 
     engine_id = models.CharField(max_length=255, primary_key=True)
+    label = models.CharField(max_length=255, default='')
     gateway_base_url = models.URLField()
     signing_kid = models.CharField(max_length=255)
     created_by = models.ForeignKey(

@@ -54,7 +54,7 @@
                                         <div class="text-muted small" data-bind="text: tokenSettingsDisplay, visible: tokenSettingsDisplay"></div>
                                     </td>
                                     <td>
-                                        <span data-bind="text: engine_id"></span>
+                                        <span data-bind="text: engine_label"></span>
                                     </td>
                                     <td>
                                         <div data-bind="text: visibilityLabel"></div>
@@ -267,7 +267,7 @@
                                         <div class="text-muted" data-bind="text: description, visible: description"></div>
                                     </td>
                                     <td>
-                                        <span data-bind="text: engine_id"></span>
+                                        <span data-bind="text: engine_label"></span>
                                     </td>
                                     <td>
                                         <a data-bind="visible: nodeUrl, attr: { href: nodeUrl }, text: node_title"></a>

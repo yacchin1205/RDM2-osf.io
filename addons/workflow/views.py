@@ -100,6 +100,7 @@ def require_admin(func):
 def _serialize_engine(engine: WorkflowEngine, node_id: str = None) -> Dict[str, Any]:
     data = {
         'engine_id': engine.engine_id,
+        'label': engine.label,
         'gateway_base_url': engine.gateway_base_url,
         'signing_kid': engine.signing_kid,
         'created_by': engine.created_by._id if engine.created_by else None,
@@ -476,6 +477,7 @@ def _serialize_template(
         'node_title': template.node.title if template.node_id else None,
         'is_local': (template.node_id == current_node_id) if current_node_id is not None else None,
         'engine_id': template.engine_id,
+        'engine_label': template.definition.engine.label,
         'definition_id': template.process_definition_id,
         'definition_key': template.definition_key,
         'definition_name': template.definition_name,
@@ -1411,6 +1413,7 @@ def upsert_engine(auth, **kwargs):
         raise HTTPError(http_status.HTTP_400_BAD_REQUEST, data={'message': 'Invalid JSON payload.'}) from error
 
     raw_engine_id = payload.get('engine_id')
+    label = payload.get('label', '')
     base_url = payload.get('gateway_base_url')
     signing_kid = payload.get('signing_kid')
 
@@ -1438,6 +1441,7 @@ def upsert_engine(auth, **kwargs):
         raise HTTPError(http_status.HTTP_400_BAD_REQUEST, data={'message': f'Unknown signing_kid: {signing_kid}. Configure RDM_TO_WORKFLOW_GATEWAY_KEYS first.'})
 
     defaults = {
+        'label': label,
         'gateway_base_url': base_url,
         'signing_kid': signing_kid,
         'verify_ssl': bool(payload.get('verify_ssl', True)),

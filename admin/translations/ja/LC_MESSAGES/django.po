@@ -4055,8 +4055,8 @@ msgstr "キーID (kid)"
 
 
 #: admin/templates/rdm_workflow/engine_keys.html:12
-msgid "Back to engine list"
-msgstr "エンジン一覧に戻る"
+msgid "Back to workflow engine list"
+msgstr "ワークフローエンジン一覧に戻る"
 
 
 #: admin/templates/rdm_workflow/engine_keys.html:106
@@ -4069,9 +4069,9 @@ msgid "Created by"
 msgstr "作成者"
 
 
-#: admin/templates/rdm_workflow/engine_list.html:113
-msgid "Deactivate this engine?"
-msgstr "このエンジンを無効化しますか？"
+#: admin/templates/rdm_workflow/engine_list.html:127
+msgid "Deactivate this workflow engine?"
+msgstr "このワークフローエンジンを無効化しますか？"
 
 
 #: admin/templates/rdm_workflow/engine_keys.html:127
@@ -4086,13 +4086,8 @@ msgstr "ワークフローエンジンを編集"
 
 
 #: admin/templates/rdm_workflow/engine_edit.html:17
-msgid "Engine Configuration"
-msgstr "エンジン設定"
-
-
-#: admin/templates/rdm_workflow/engine_list.html:82
-msgid "Engine ID"
-msgstr "エンジンID"
+msgid "Workflow Engine Configuration"
+msgstr "ワークフローエンジン設定"
 
 
 #: admin/templates/rdm_workflow/engine_keys.html:47
@@ -4164,8 +4159,8 @@ msgstr "更新日時"
 
 
 #: admin/templates/rdm_workflow/engine_keys.html:139
-msgid "No keys have been registered for this engine."
-msgstr "このエンジンにはまだ鍵が登録されていません。"
+msgid "No keys have been registered for this workflow engine."
+msgstr "このワークフローエンジンにはまだ鍵が登録されていません。"
 
 
 #: admin/templates/rdm_workflow/engine_list.html:135
@@ -4178,9 +4173,9 @@ msgid "Reactivate"
 msgstr "再有効化"
 
 
-#: admin/templates/rdm_workflow/engine_list.html:17
-msgid "Register New Engine"
-msgstr "新しいエンジンを登録"
+#: admin/templates/rdm_workflow/engine_list.html:26
+msgid "Register New Workflow Engine"
+msgstr "新しいワークフローエンジンを登録"
 
 
 #: admin/templates/rdm_workflow/engine_keys.html:39
@@ -4188,14 +4183,14 @@ msgid "Register Public Key"
 msgstr "公開鍵を登録"
 
 
-#: admin/templates/rdm_workflow/engine_list.html:67
-msgid "Register engine"
-msgstr "エンジンを登録"
+#: admin/templates/rdm_workflow/engine_list.html:76
+msgid "Register workflow engine"
+msgstr "ワークフローエンジンを登録"
 
 
-#: admin/templates/rdm_workflow/engine_list.html:12
-msgid "Register external workflow engines that can process BPMN definitions on behalf of GakuNin RDM. Only platform administrators and institutional administrators may manage engines. Registered gateways require at least one public key before project workflows can delegate to them."
-msgstr "GakuNin RDM に代わって BPMN 定義を処理できる外部ワークフローエンジンを登録します。エンジンの管理はプラットフォーム管理者と機関管理者のみが実施できます。プロジェクトのワークフローが委任するには、登録済みゲートウェイに少なくとも1つの公開鍵が必要です。"
+#: admin/templates/rdm_workflow/engine_list.html:21
+msgid "Register external workflow engines that can process BPMN definitions on behalf of GakuNin RDM. Only platform administrators and institutional administrators may manage engines."
+msgstr "GakuNin RDM に代わって BPMN 定義を処理できる外部ワークフローエンジンを登録します。エンジンの管理はプラットフォーム管理者と機関管理者のみが実施できます。"
 
 
 #: admin/templates/rdm_workflow/engine_keys.html:89
@@ -4203,9 +4198,9 @@ msgid "Register key"
 msgstr "鍵を登録"
 
 
-#: admin/templates/rdm_workflow/engine_list.html:75
-msgid "Registered Engines"
-msgstr "登録済みエンジン"
+#: admin/templates/rdm_workflow/engine_list.html:84
+msgid "Registered Workflow Engines"
+msgstr "登録済みワークフローエンジン"
 
 
 #: admin/templates/rdm_workflow/engine_keys.html:97

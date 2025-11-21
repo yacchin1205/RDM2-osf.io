@@ -88,6 +88,7 @@ function WorkflowTemplate(data) {
     self.node_id = data.node_id;
     self.node_title = data.node_title;
     self.engine_id = data.engine_id;
+    self.engine_label = data.engine_label || data.engine_id;
     self.definition_id = data.definition_id;
     self.definition_key = data.definition_key;
     self.definition_name = data.definition_name;
@@ -129,6 +130,7 @@ WorkflowTemplate.prototype.updateFrom = function(payload) {
     this.node_id = payload.node_id;
     this.node_title = payload.node_title;
     this.nodeUrl = this.node_id ? '/' + this.node_id + '/' : null;
+    this.engine_label = payload.engine_label || payload.engine_id;
     this.definition_id = payload.definition_id;
     this.definition_key = payload.definition_key;
     this.definition_name = payload.definition_name;
@@ -151,6 +153,7 @@ function WorkflowActivation(data, template) {
     self.definition_name = template.definition_name;
     self.definition_id = template.definition_id;
     self.engine_id = template.engine_id;
+    self.engine_label = template.engine_label;
     self.node_title = template.node_title;
     self.nodeUrl = template.nodeUrl;
     self.isLocal = template.isLocal;
@@ -383,7 +386,8 @@ function WorkflowNodeSettingsViewModel(options) {
                 return entry && entry.is_active === true;
             });
             activeEngines.forEach(function(entry) {
-                entry.display = entry.engine_id + (entry.gateway_base_url ? ' (' + entry.gateway_base_url + ')' : '');
+                const displayName = entry.label || entry.engine_id;
+                entry.display = displayName + (entry.gateway_base_url ? ' (' + entry.gateway_base_url + ')' : '');
             });
             activeEngines.sort(function(a, b) {
                 return a.display.localeCompare(b.display);
