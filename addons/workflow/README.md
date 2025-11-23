@@ -73,6 +73,25 @@ graph TB
 3. **Send Notification**: Flowable Engine → Gateway API (HTTP Task) → RDM-osf.io → User (email)
 4. **Token Management**: Gateway stores encrypted delegation tokens per process instance in a separate database table. This prevents tokens from being stored in Flowable process variables, where they could be easily accessed through the Flowable admin interface or REST API.
 
+## Workflow Template Deployment
+
+When a workflow template (ZIP file containing BPMN files) is deployed to the Flowable engine, the system automatically selects the appropriate process definition.
+
+Workflow ZIP files can be downloaded from the Apps screen in Flowable Modeler.
+
+### Process Definition Selection
+
+If the ZIP contains multiple BPMN files (e.g., main process and sub-processes), you can specify which is the main process by using a specific process definition key prefix:
+
+- **To designate the main process**: Set the process definition key (the `id` attribute in BPMN XML) starting with `rdm-main-`
+- **If no `rdm-main-` prefix is found**: The first definition in the deployment is used
+
+This allows you to explicitly indicate the main workflow process when your workflow ZIP contains multiple BPMN files.
+
+**Example:**
+- Process definition keys in ZIP: `rdm-main-approval`, `sub-review`, `sub-notify`
+- System selects: `rdm-main-approval` (due to `rdm-main-` prefix)
+
 ## Notification Endpoint
 
 Workflow engines send notifications to RDM users via email, project comments, and NodeLog:

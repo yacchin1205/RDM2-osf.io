@@ -79,6 +79,7 @@ STATUS_CANCELLED = 'cancelled'
 STATUS_UNKNOWN = 'unknown'
 
 SHORT_NAME = 'workflow'
+PREFERRED_PROCESS_KEY_PREFIX = 'rdm-main-'
 
 logger = logging.getLogger(__name__)
 
@@ -338,7 +339,7 @@ def _flatten_form_models_in_zip(zip_content: bytes) -> io.BytesIO:
     return output_buffer
 
 
-def _get_definition_id_from_deployment(client, deployment_name: str, deployment_id: Optional[str] = None) -> str:
+def _get_definition_id_from_deployment(client, deployment_id: str) -> str:
     """Query process definitions to find the definition_id for a deployed workflow.
 
     Args:
@@ -353,44 +354,35 @@ def _get_definition_id_from_deployment(client, deployment_name: str, deployment_
         HTTPError: If no matching process definition found
     """
     response = client.list_process_definitions({'latest': 'true', 'size': 100})
-    if not isinstance(response, dict):
-        raise HTTPError(
-            http_status.HTTP_502_BAD_GATEWAY,
-            data={'message': 'Unexpected response from gateway when querying process definitions.'},
-        )
-
-    definitions = response.get('data')
+    definitions = response['data']
     if not definitions:
         raise HTTPError(
             http_status.HTTP_502_BAD_GATEWAY,
             data={'message': 'No process definitions found after deployment.'},
         )
 
-    if deployment_id:
-        for definition in definitions:
-            if definition.get('deploymentId') == deployment_id:
-                definition_id = definition.get('id')
-                if not definition_id:
-                    raise HTTPError(
-                        http_status.HTTP_502_BAD_GATEWAY,
-                        data={'message': 'Process definition missing id field.'},
-                    )
-                return definition_id
+    def _has_preferred_key(entry: Dict[str, Any]) -> bool:
+        key = entry['key']
+        return key.startswith(PREFERRED_PROCESS_KEY_PREFIX)
 
-    for definition in definitions:
-        name = definition.get('name') or definition.get('definition_name')
-        if name == deployment_name:
-            definition_id = definition.get('id') or definition.get('definition_id')
-            if not definition_id:
-                raise HTTPError(
-                    http_status.HTTP_502_BAD_GATEWAY,
-                    data={'message': 'Process definition missing id field.'},
-                )
-            return definition_id
+    def _select_definition(entries: List[Dict[str, Any]]) -> Optional[Dict[str, Any]]:
+        if not entries:
+            return None
+        for candidate in entries:
+            if _has_preferred_key(candidate):
+                return candidate
+        return entries[0]
+
+    deployment_matches: List[Dict[str, Any]] = [
+        entry for entry in definitions if entry['deploymentId'] == deployment_id
+    ]
+    selection = _select_definition(deployment_matches)
+    if selection:
+        return selection['id']
 
     raise HTTPError(
         http_status.HTTP_404_NOT_FOUND,
-        data={'message': f'No process definition found with name: {deployment_name}'},
+        data={'message': f'No process definition found for deployment: {deployment_id}'},
     )
 
 
@@ -661,13 +653,10 @@ def upsert_template(auth, **kwargs):
         zip_content = uploaded_file.read()
         flattened_zip = _flatten_form_models_in_zip(zip_content)
 
-        try:
-            deployment_response = client.deploy_process_definition(flattened_zip, deployment_name, uploaded_file.filename)
-        except WorkflowGatewayClientError as error:
-            raise error
+        deployment_response = client.deploy_process_definition(flattened_zip, deployment_name, uploaded_file.filename)
 
-        deployment_id = deployment_response.get('id') if isinstance(deployment_response, dict) else None
-        definition_id = _get_definition_id_from_deployment(client, deployment_name, deployment_id)
+        deployment_id = deployment_response['id']
+        definition_id = _get_definition_id_from_deployment(client, deployment_id)
 
         token_settings = None
         if token_settings_json:
