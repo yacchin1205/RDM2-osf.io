@@ -43,6 +43,10 @@ EXTERNAL_EMBER_APPS = {
             'handbook',
         ],
     },
+    'angular_osf': {
+        'server': f'http://{EMBER_DOMAIN}:4300/angular_osf/',
+        'path': '/angular_osf/',
+    },
     'preprints': {
         'server': f'http://{EMBER_DOMAIN}:4201/',
         'path': '/preprints/'

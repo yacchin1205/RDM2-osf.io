@@ -100,6 +100,8 @@ PROXY_EMBER_APPS = False
 # http://docs.python-requests.org/en/master/user/advanced/#timeouts
 EXTERNAL_EMBER_SERVER_TIMEOUT = 3.05
 EXTERNAL_EMBER_APPS = {}
+# Key in EXTERNAL_EMBER_APPS to use as primary frontend
+PRIMARY_WEB_APP = 'ember_osf_web'
 
 LOG_PATH = os.path.join(APP_PATH, 'logs')
 TEMPLATES_PATH = os.path.join(BASE_PATH, 'templates')

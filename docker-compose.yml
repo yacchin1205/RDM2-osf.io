@@ -284,6 +284,27 @@ services:
       - ember_osf_web_dist_vol:/code/dist
     stdin_open: true
 
+  ###############
+  # Angular OSF #
+  ###############
+
+  angular_osf:
+    image: angular-osf:dev
+    command: ['sh', '-c', 'npm run check:config && npx ng serve --configuration docker-local --host 0.0.0.0 --port 4300 --poll 2000 --serve-path /angular_osf/']
+    restart: unless-stopped
+    ports:
+      - 4300:4300
+    depends_on:
+      - api
+      - web
+    environment:
+      - CHOKIDAR_USEPOLLING=true
+      - WATCHPACK_POLLING=true
+      - OSF_URL=http://localhost:5000
+      - OSF_API_URL=http://localhost:8000
+      - OSF_CAS_URL=http://localhost:8080
+    stdin_open: true
+
   #############
   # Preprints #
   #############

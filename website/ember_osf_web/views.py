@@ -3,17 +3,19 @@ import json
 from website import settings
 from framework.status import pop_status_messages
 
-from website.settings import EXTERNAL_EMBER_APPS
+from website.settings import EXTERNAL_EMBER_APPS, PRIMARY_WEB_APP
 
-ember_osf_web_dir = os.path.abspath(os.path.join(os.getcwd(), EXTERNAL_EMBER_APPS['ember_osf_web']['path']))
+primary_app_config = EXTERNAL_EMBER_APPS[PRIMARY_WEB_APP]
+primary_app_dir = os.path.abspath(os.path.join(os.getcwd(), primary_app_config['path']))
 
 routes = [
     '/institutions/',
 ]
 
 def use_ember_app(**kwargs):
+    """Serve the primary web app specified by PRIMARY_WEB_APP setting."""
     from website.views import stream_emberapp
-    resp = stream_emberapp(EXTERNAL_EMBER_APPS['ember_osf_web']['server'], ember_osf_web_dir)
+    resp = stream_emberapp(primary_app_config['server'], primary_app_dir)
     messages = pop_status_messages()
     if messages:
         try:
