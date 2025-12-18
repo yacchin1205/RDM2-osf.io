@@ -80,6 +80,15 @@ class WorkflowGatewayClientTests(TestCase):
         get_gateway_client.cache_clear()
         super().tearDown()
 
+    def test_unknown_signing_key_raises_configuration_error(self):
+        engine = WorkflowEngine.objects.get(engine_id=self.engine_id)
+        engine.signing_kid = 'missing-kid'
+        engine.save(update_fields=['signing_kid'])
+        WorkflowEngine.objects.filter(engine_id=self.engine_id).update(signing_kid='missing-kid')
+
+        with self.assertRaises(WorkflowGatewayConfigurationError):
+            WorkflowGatewayClient(self.engine_id)
+
     def test_missing_adapter_configuration(self):
         WorkflowEngine.objects.all().delete()
         get_gateway_client.cache_clear()
@@ -131,3 +140,18 @@ class WorkflowGatewayClientTests(TestCase):
         data = list_gateways()
         self.assertIn(self.engine_id, data)
         self.assertEqual(data[self.engine_id]['signing_kid'], 'rdm-test-key')
+
+    @mock.patch('addons.workflow.gateway_client.requests.request')
+    def test_request_returns_text_payload_when_not_json(self, mock_request):
+        mock_response = mock.Mock()
+        mock_response.status_code = 200
+        mock_response.headers = {'Content-Type': 'text/plain'}
+        mock_response.content = b'ok'
+        mock_response.text = 'ok'
+        mock_request.return_value = mock_response
+
+        client = get_gateway_client(self.engine_id)
+        result = client._request('GET', '/ping')
+
+        self.assertEqual(result, 'ok')
+        mock_request.assert_called_once()

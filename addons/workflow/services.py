@@ -4,7 +4,7 @@
 import json
 import logging
 
-from typing import Any, Dict, Iterable, List, Optional, Set, Tuple
+from typing import Any, Dict, List, Optional, Set, Tuple
 
 logger = logging.getLogger(__name__)
 
@@ -202,33 +202,6 @@ def sync_definition_snapshot(engine_id: str, definition_id: str) -> WorkflowDefi
         ) from error
 
     return _upsert_definition(engine, payload, form_schema)
-
-
-def refresh_definitions(engine_id: str, definitions: Iterable[Dict[str, Any]]) -> None:
-    try:
-        engine = WorkflowEngine.objects.get(engine_id=engine_id)
-    except WorkflowEngine.DoesNotExist as error:
-        raise HTTPError(
-            http_status.HTTP_404_NOT_FOUND,
-            data={'message': f'workflow engine not found: {engine_id}'},
-        ) from error
-
-    for payload in definitions:
-        if not isinstance(payload, dict):
-            continue
-        snapshot_form = None
-        if payload.get('id'):
-            try:
-                snapshot_form = client.get_process_definition_start_form(payload['id'])
-            except WorkflowGatewayClientError as error:
-                status_code = _status_code_from_error(error)
-                if status_code not in {http_status.HTTP_404_NOT_FOUND, http_status.HTTP_400_BAD_REQUEST}:
-                    raise
-                snapshot_form = None
-            else:
-                if snapshot_form is not None:
-                    snapshot_form = _adapt_form_payload(snapshot_form)
-        _upsert_definition(engine, payload, snapshot_form)
 
 
 def get_user_accessible_templates(user: OSFUser, **filters) -> List[WorkflowTemplate]:
@@ -872,9 +845,6 @@ def list_workflow_tasks(
         for entry in payload:
             if not isinstance(entry, dict):
                 continue
-
-            task_id = entry.get('id')
-            process_id = entry.get('processInstanceId')
 
             metadata = _extract_metadata(entry)
 

@@ -24,7 +24,7 @@ class NodeSettings(BaseNodeSettings):
     def active_templates(self):
         template_model = apps.get_model('addons_workflow', 'WorkflowTemplate')
         if not self.owner_id:
-            return template_model.objects.none()
+            raise RuntimeError('Workflow addon settings must have an owner before querying templates.')
         return template_model.objects.filter(
             activations__node=self.owner,
             activations__is_enabled=True,
@@ -103,7 +103,7 @@ class WorkflowEngine(BaseModel):
         ordering = ('engine_id',)
 
     def __str__(self) -> str:  # pragma: no cover
-        return f"WorkflowEngine(engine_id={self.engine_id})"
+        return f'WorkflowEngine(engine_id={self.engine_id})'
 
     @property
     def resolved_engine_claim_value(self) -> str:
@@ -124,7 +124,7 @@ class WorkflowEngineKey(BaseModel):
         ordering = ('engine_id', 'kid')
 
     def __str__(self) -> str:  # pragma: no cover
-        return f"WorkflowEngineKey(engine_id={self.engine_id}, kid={self.kid})"
+        return f'WorkflowEngineKey(engine_id={self.engine_id}, kid={self.kid})'
 
 
 class WorkflowDefinitionSnapshot(BaseModel):
@@ -151,7 +151,7 @@ class WorkflowDefinitionSnapshot(BaseModel):
 
     def __str__(self) -> str:  # pragma: no cover
         engine_id = self.engine.engine_id if self.engine_id else 'unknown'
-        return f"WorkflowDefinitionSnapshot(engine={engine_id}, definition_id={self.definition_id})"
+        return f'WorkflowDefinitionSnapshot(engine={engine_id}, definition_id={self.definition_id})'
 
 
 class WorkflowTemplate(BaseModel):
@@ -199,7 +199,7 @@ class WorkflowTemplate(BaseModel):
 
     def __str__(self) -> str:  # pragma: no cover
         definition_id = self.definition.definition_id if self.definition_id else 'unknown'
-        return f"WorkflowTemplate(node={self.node_id}, definition={definition_id})"
+        return f'WorkflowTemplate(node={self.node_id}, definition={definition_id})'
 
     @property
     def _id(self) -> str:
@@ -312,7 +312,7 @@ class WorkflowActivation(BaseModel):
         return str(self.id) if self.id is not None else ''
 
     def __str__(self) -> str:  # pragma: no cover
-        return f"WorkflowActivation(node={self.node_id}, template={self.template_id})"
+        return f'WorkflowActivation(node={self.node_id}, template={self.template_id})'
 
     def get_validated_delegation_tokens(self):
         return validate_delegation_tokens(self.delegation_tokens)
@@ -344,4 +344,4 @@ class WorkflowExecutorToken(BaseModel):
         ordering = ('activation', 'user')
 
     def __str__(self) -> str:  # pragma: no cover
-        return f"WorkflowExecutorToken(activation={self.activation_id}, user={self.user_id})"
+        return f'WorkflowExecutorToken(activation={self.activation_id}, user={self.user_id})'

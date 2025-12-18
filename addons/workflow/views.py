@@ -12,7 +12,6 @@ from typing import Any, Dict, List, Optional
 from flask import request
 from rest_framework import status as http_status
 from django.db.models import Q
-from django.utils import timezone
 
 from framework.auth.decorators import must_be_logged_in
 from framework.exceptions import HTTPError
@@ -38,13 +37,8 @@ from addons.workflow.models import (
     WorkflowEngineKey,
     WorkflowTemplate,
 )
-from addons.workflow.token import (
-    create_delegation_token,
-    revoke_delegation_token,
-    validate_token_settings,
-)
+from addons.workflow.token import validate_token_settings
 from osf.models import AbstractNode
-from osf.utils.permissions import WRITE
 from addons.workflow.services import (
     _extract_metadata,
     _get_visible_activations,
@@ -661,7 +655,6 @@ def upsert_template(auth, **kwargs):
         token_settings = None
         if token_settings_json:
             try:
-                import json
                 token_settings = json.loads(token_settings_json)
             except ValueError as error:
                 raise HTTPError(
@@ -1230,7 +1223,7 @@ def list_tasks(auth, **kwargs):
     limit = 100
     if limit_raw:
         if not limit_raw.isdigit():
-            raise HTTPException(
+            raise HTTPError(
                 http_status.HTTP_400_BAD_REQUEST,
                 data={'message': 'limit must be a positive integer.'},
             )

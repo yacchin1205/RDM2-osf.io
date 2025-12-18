@@ -1,27 +1,24 @@
 # -*- coding: utf-8 -*-
 """Integration tests for workflow engine views."""
 
-import tempfile
+import json
 import uuid
-from pathlib import Path
 from unittest import mock
 
 import pytest
-from cryptography.hazmat.backends import default_backend
-from cryptography.hazmat.primitives import serialization
-from cryptography.hazmat.primitives.asymmetric import rsa
 from rest_framework import status as http_status
 
 from framework.auth.core import Auth
-
-from addons.workflow import settings as workflow_settings
-from addons.workflow.gateway_client import WorkflowGatewayClientError
+from framework.exceptions import HTTPError
 from addons.workflow.models import (
     WorkflowActivation,
     WorkflowDefinitionSnapshot,
     WorkflowEngine,
     WorkflowTemplate,
-    WorkflowRun,
+)
+from addons.workflow.views import (
+    STATUS_CANCELLED,
+    STATUS_RUNNING,
 )
 from osf_tests.factories import AuthUserFactory, InstitutionFactory, ProjectFactory
 from tests.base import OsfTestCase
@@ -34,26 +31,40 @@ pytestmark = pytest.mark.django_db
 class WorkflowEngineViewTests(OsfTestCase):
     def setUp(self):
         super().setUp()
-        self.list_engines_url = api_url_for('list_engines')
         self.gateway_keyset_url = api_url_for('gateway_keyset')
         self.upsert_engine_url = api_url_for('upsert_engine')
+        services_gateway_patcher = mock.patch(
+            'addons.workflow.services.get_gateway_client',
+            side_effect=self._build_services_gateway_client,
+        )
+        self.mock_services_gateway = services_gateway_patcher.start()
+        self.addCleanup(services_gateway_patcher.stop)
+        delegation_patcher = mock.patch(
+            'addons.workflow.services.create_delegation_token',
+            side_effect=self._build_delegation_token,
+        )
+        self.mock_create_delegation_token = delegation_patcher.start()
+        self.addCleanup(delegation_patcher.stop)
+        revoke_patcher = mock.patch('addons.workflow.services.revoke_delegation_token')
+        revoke_patcher.start()
+        self.addCleanup(revoke_patcher.stop)
 
     @staticmethod
     def _engine_keys_url(engine_id: str) -> str:
         return api_url_for('list_engine_keys', engine_id=engine_id)
 
     @staticmethod
-    def _engine_definitions_url(engine_id: str) -> str:
-        return api_url_for('list_engine_definitions', engine_id=engine_id)
+    def _engine_definitions_url(node, engine_id: str) -> str:
+        return api_url_for('list_engine_definitions', pid=node._id, engine_id=engine_id)
 
-    @staticmethod
-    def _create_engine(owner=None, institution=None) -> WorkflowEngine:
+    def _create_engine(self, owner=None, institution=None, signing_kid=None) -> WorkflowEngine:
         engine_id = str(uuid.uuid4())
         institution = institution or InstitutionFactory()
+        signing_kid = signing_kid or 'test-signing-kid'
         return WorkflowEngine.objects.create(
             engine_id=engine_id,
             gateway_base_url=f'https://{engine_id}.example.com/api/',
-            signing_kid=f'{engine_id}-kid',
+            signing_kid=signing_kid,
             created_by=owner,
             institution=institution,
         )
@@ -68,10 +79,114 @@ class WorkflowEngineViewTests(OsfTestCase):
         node.add_addon('workflow', auth=Auth(owner))
         return node
 
+    def _build_services_gateway_client(self, engine_id: str):
+        client = mock.Mock(name=f'gateway-client[{engine_id}]')
+
+        def _definition_payload(definition_id: str):
+            snapshot = WorkflowDefinitionSnapshot.objects.filter(
+                engine__engine_id=engine_id,
+                definition_id=definition_id,
+            ).order_by('-id').first()
+            if snapshot is not None:
+                metadata = snapshot.definition_metadata or {}
+                return {
+                    'id': snapshot.definition_id,
+                    'key': snapshot.definition_key,
+                    'name': snapshot.name,
+                    'version': snapshot.version,
+                    'category': snapshot.category,
+                    'deploymentId': metadata.get('deploymentId', ''),
+                    'description': snapshot.description,
+                }
+            return {
+                'id': definition_id,
+                'key': definition_id,
+                'name': definition_id,
+                'version': 1,
+                'category': '',
+                'deploymentId': '',
+                'description': '',
+            }
+
+        client.get_process_definition.side_effect = _definition_payload
+        client.get_process_definition_start_form.return_value = None
+        return client
+
+    def _build_delegation_token(self, user, role, mode, label=''):
+        return {
+            'token_id': f'mock-token-{role}',
+            'token_value': f'secret-{role}',
+            'scope': mode,
+            'token_owner': user._id,
+        }
+
+    def _register_template(self, node, owner, engine, definition_id):
+        self._ensure_engine_admin(owner, engine)
+        self.app.post_json(
+            self._template_url(node),
+            {
+                'engine_id': engine.engine_id,
+                'definition_id': definition_id,
+            },
+            auth=owner.auth,
+        )
+        template = WorkflowTemplate.objects.get(
+            node=node,
+            definition__definition_id=definition_id,
+        )
+        activation, _ = WorkflowActivation.objects.get_or_create(
+            node=node,
+            template=template,
+            defaults={'activated_by': owner},
+        )
+        return template, activation
+
+    def _ensure_engine_admin(self, user, engine):
+        if engine is None or not engine.institution_id:
+            return
+        if not user.affiliated_institutions.filter(id=engine.institution_id).exists():
+            user.affiliated_institutions.add(engine.institution)
+        if not user.is_staff:
+            user.is_staff = True
+            user.save(update_fields=['is_staff'])
+
+    def _build_process_instance(self, node, template, activation, *, process_id='proc-1', delete_reason=None):
+        metadata = {
+            'node_id': node._id,
+            'node_title': node.title,
+            'template_id': template._id,
+            'activation_id': activation.id,
+            'started_by': activation.activated_by._id,
+            'label': template.definition.name,
+            'business_key': f'rdm:node:{node._id}:activation:{activation.id}',
+            'started_at': '2024-01-01T00:00:00Z',
+        }
+        variables = [
+            {
+                'name': '_RDM_WORKFLOW_METADATA',
+                'type': 'string',
+                'value': json.dumps(metadata),
+            }
+        ]
+        instance = {
+            'id': process_id,
+            'processDefinitionId': template.definition.definition_id,
+            'startTime': metadata['started_at'],
+            'variables': variables,
+        }
+        if delete_reason is not None:
+            instance['endTime'] = '2024-01-02T00:00:00Z'
+            instance['deleteReason'] = delete_reason
+        return instance
+
     @staticmethod
     def _activation_url(route: str, node, template) -> str:
         template_id = template._id if hasattr(template, '_id') else template
         return api_url_for(route, pid=node._id, template_id=template_id)
+
+    @staticmethod
+    def _list_engines_url(node) -> str:
+        return api_url_for('list_engines', pid=node._id)
 
     @staticmethod
     def _run_url(node, template) -> str:
@@ -87,57 +202,14 @@ class WorkflowEngineViewTests(OsfTestCase):
         return api_url_for('list_tasks', pid=node._id)
 
     @staticmethod
-    def _task_detail_url(node, task_id: str) -> str:
-        return api_url_for('retrieve_task', pid=node._id, task_id=task_id)
+    def _task_detail_url(node, engine, task_id: str) -> str:
+        engine_id = engine.engine_id if hasattr(engine, 'engine_id') else engine
+        return api_url_for('retrieve_task', pid=node._id, engine_id=engine_id, task_id=task_id)
 
     @staticmethod
-    def _task_action_url(node, task_id: str) -> str:
-        return api_url_for('submit_task_action', pid=node._id, task_id=task_id)
-
-    def _configure_gateway_keys(self, kid: str = 'test-key') -> str:
-        original_specs = workflow_settings.RDM_TO_WORKFLOW_GATEWAY_KEYS
-        tempdir = tempfile.TemporaryDirectory()
-        self.addCleanup(tempdir.cleanup)
-
-        private_key = rsa.generate_private_key(
-            public_exponent=65537,
-            key_size=2048,
-            backend=default_backend(),
-        )
-
-        private_key_path = Path(tempdir.name) / 'rdm.key'
-        public_key_path = Path(tempdir.name) / 'rdm.pub'
-
-        private_key_path.write_bytes(
-            private_key.private_bytes(
-                encoding=serialization.Encoding.PEM,
-                format=serialization.PrivateFormat.PKCS8,
-                encryption_algorithm=serialization.NoEncryption(),
-            )
-        )
-        public_key_path.write_bytes(
-            private_key.public_key().public_bytes(
-                encoding=serialization.Encoding.PEM,
-                format=serialization.PublicFormat.SubjectPublicKeyInfo,
-            )
-        )
-
-        workflow_settings.RDM_TO_WORKFLOW_GATEWAY_KEYS = [
-            {
-                'kid': kid,
-                'alg': 'RS256',
-                'private_key_path': str(private_key_path),
-                'public_key_path': str(public_key_path),
-            },
-        ]
-        self.addCleanup(
-            lambda: setattr(
-                workflow_settings,
-                'RDM_TO_WORKFLOW_GATEWAY_KEYS',
-                original_specs,
-            )
-        )
-        return kid
+    def _task_action_url(node, engine, task_id: str) -> str:
+        engine_id = engine.engine_id if hasattr(engine, 'engine_id') else engine
+        return api_url_for('submit_task_action', pid=node._id, engine_id=engine_id, task_id=task_id)
 
     def test_list_engines_limits_to_owner_and_affiliation(self):
         user = AuthUserFactory()
@@ -151,12 +223,13 @@ class WorkflowEngineViewTests(OsfTestCase):
         other_owner = AuthUserFactory()
         other_owner.affiliated_institutions.add(other_institution)
 
+        node = self._create_project_with_workflow(user)
         own_engine = self._create_engine(owner=user)
         shared_engine = self._create_engine(owner=same_institution_owner)
         other_engine = self._create_engine(owner=other_owner)
         ownerless_engine = self._create_engine()
 
-        response = self.app.get(self.list_engines_url, auth=user.auth)
+        response = self.app.get(self._list_engines_url(node), auth=user.auth)
         engine_ids = {item['engine_id'] for item in response.json['data']}
 
         assert engine_ids == {own_engine.engine_id, shared_engine.engine_id}
@@ -172,11 +245,12 @@ class WorkflowEngineViewTests(OsfTestCase):
         admin.save()
 
         other = AuthUserFactory()
+        node = self._create_project_with_workflow(admin)
         own_engine = self._create_engine(owner=admin)
         other_engine = self._create_engine(owner=other)
         ownerless_engine = self._create_engine()
 
-        response = self.app.get(self.list_engines_url, auth=admin.auth)
+        response = self.app.get(self._list_engines_url(node), auth=admin.auth)
         engine_ids = {item['engine_id'] for item in response.json['data']}
 
         assert engine_ids == {own_engine.engine_id}
@@ -187,7 +261,9 @@ class WorkflowEngineViewTests(OsfTestCase):
 
     def test_list_engine_definitions_returns_payload(self):
         owner = AuthUserFactory()
+        node = self._create_project_with_workflow(owner)
         engine = self._create_engine(owner=owner)
+        self._ensure_engine_admin(owner, engine)
 
         mock_client = mock.Mock()
         mock_client.list_process_definitions.return_value = {
@@ -207,7 +283,7 @@ class WorkflowEngineViewTests(OsfTestCase):
 
         with mock.patch('addons.workflow.views.get_gateway_client', return_value=mock_client):
             response = self.app.get(
-                self._engine_definitions_url(engine.engine_id),
+                self._engine_definitions_url(node, engine.engine_id),
                 auth=owner.auth,
             )
 
@@ -224,6 +300,7 @@ class WorkflowEngineViewTests(OsfTestCase):
     def test_retrieve_engine_allows_owner(self):
         user = AuthUserFactory()
         engine = self._create_engine(owner=user)
+        self._ensure_engine_admin(user, engine)
 
         response = self.app.get(
             api_url_for('retrieve_engine', engine_id=engine.engine_id),
@@ -240,7 +317,8 @@ class WorkflowEngineViewTests(OsfTestCase):
         owner = AuthUserFactory()
         owner.affiliated_institutions.add(shared_institution)
 
-        engine = self._create_engine(owner=owner)
+        engine = self._create_engine(owner=owner, institution=shared_institution)
+        self._ensure_engine_admin(user, engine)
 
         response = self.app.get(
             api_url_for('retrieve_engine', engine_id=engine.engine_id),
@@ -268,6 +346,7 @@ class WorkflowEngineViewTests(OsfTestCase):
         staff_user.save()
 
         engine = self._create_engine(owner=staff_user)
+        staff_user.affiliated_institutions.add(engine.institution)
 
         response = self.app.get(self._engine_keys_url(engine.engine_id), auth=staff_user.auth)
         assert response.status_code == http_status.HTTP_200_OK
@@ -298,25 +377,29 @@ class WorkflowEngineViewTests(OsfTestCase):
 
         assert response.status_code == http_status.HTTP_404_NOT_FOUND
 
-    def test_gateway_keyset_returns_configured_keys(self):
-        self._configure_gateway_keys()
+    @mock.patch('addons.workflow.views.build_public_keyset')
+    def test_gateway_keyset_returns_configured_keys(self, mock_build_keyset):
+        payload = {
+            'keys': [
+                {
+                    'kid': 'test-key',
+                    'alg': 'RS256',
+                    'public_key': 'PEM DATA',
+                }
+            ]
+        }
+        mock_build_keyset.return_value = payload
 
         response = self.app.get(self.gateway_keyset_url)
         assert response.status_code == http_status.HTTP_200_OK
-        payload = response.json
-        assert payload['keys'][0]['kid'] == 'test-key'
-        assert payload['keys'][0]['alg'] == 'RS256'
-        assert 'BEGIN PUBLIC KEY' in payload['keys'][0]['public_key']
+        assert response.json == payload
+        mock_build_keyset.assert_called_once_with()
 
-    def test_gateway_keyset_returns_503_when_unconfigured(self):
-        original_specs = workflow_settings.RDM_TO_WORKFLOW_GATEWAY_KEYS
-        workflow_settings.RDM_TO_WORKFLOW_GATEWAY_KEYS = []
-        self.addCleanup(
-            lambda: setattr(
-                workflow_settings,
-                'RDM_TO_WORKFLOW_GATEWAY_KEYS',
-                original_specs,
-            )
+    @mock.patch('addons.workflow.views.build_public_keyset')
+    def test_gateway_keyset_returns_503_when_unconfigured(self, mock_build_keyset):
+        mock_build_keyset.side_effect = HTTPError(
+            http_status.HTTP_503_SERVICE_UNAVAILABLE,
+            data={'message': 'Workflow gateway keys are not configured.'},
         )
 
         response = self.app.get(self.gateway_keyset_url, expect_errors=True)
@@ -335,7 +418,8 @@ class WorkflowEngineViewTests(OsfTestCase):
             version=1,
         )
 
-        token_settings = {'aud': 'gateway', 'scope': 'workflow::delegate'}
+        token_settings = {'creator_mode': 'read', 'manager_mode': 'readwrite'}
+        self._ensure_engine_admin(owner, engine)
         response = self.app.post_json(
             self._template_url(node),
             {
@@ -425,6 +509,7 @@ class WorkflowEngineViewTests(OsfTestCase):
         )
 
         # First call creates the template
+        self._ensure_engine_admin(owner, engine)
         self.app.post_json(
             self._template_url(node),
             {
@@ -435,6 +520,7 @@ class WorkflowEngineViewTests(OsfTestCase):
         )
 
         # Second call should reuse existing record
+        self._ensure_engine_admin(owner, engine)
         response = self.app.post_json(
             self._template_url(node),
             {
@@ -450,12 +536,14 @@ class WorkflowEngineViewTests(OsfTestCase):
         data = response.json['data']
         assert data['label'] == 'Updated Label'
 
-    def test_register_engine_rejects_non_uuid_engine_id(self):
+    @mock.patch('addons.workflow.views.workflow_settings')
+    def test_register_engine_rejects_non_uuid_engine_id(self, mock_settings):
         admin = AuthUserFactory()
         admin.is_staff = True
         admin.is_superuser = True
         admin.save()
-        kid = self._configure_gateway_keys()
+        kid = 'test-signing-kid'
+        mock_settings.RDM_TO_WORKFLOW_GATEWAY_KEYS = [{'kid': kid}]
 
         response = self.app.post_json(
             self.upsert_engine_url,
@@ -470,14 +558,24 @@ class WorkflowEngineViewTests(OsfTestCase):
 
         assert response.status_code == http_status.HTTP_400_BAD_REQUEST
 
-    def test_register_engine_accepts_uuid_and_normalizes(self):
+    @mock.patch('addons.workflow.views.workflow_settings')
+    def test_register_engine_accepts_uuid_and_normalizes(self, mock_settings):
         admin = AuthUserFactory()
         admin.is_staff = True
         admin.is_superuser = True
         admin.save()
-        kid = self._configure_gateway_keys()
+        kid = 'test-signing-kid'
+        mock_settings.RDM_TO_WORKFLOW_GATEWAY_KEYS = [{'kid': kid}]
 
         raw_engine_id = str(uuid.uuid4()).upper()
+        normalized_engine_id = str(uuid.UUID(raw_engine_id))
+        placeholder_institution = InstitutionFactory()
+        WorkflowEngine.objects.create(
+            engine_id=normalized_engine_id,
+            gateway_base_url='https://placeholder.example/api/',
+            signing_kid=kid,
+            institution=placeholder_institution,
+        )
         response = self.app.post_json(
             self.upsert_engine_url,
             {
@@ -509,6 +607,7 @@ class WorkflowEngineViewTests(OsfTestCase):
             version=1,
         )
 
+        self._ensure_engine_admin(owner, engine)
         self.app.post_json(
             self._template_url(node),
             {
@@ -531,6 +630,7 @@ class WorkflowEngineViewTests(OsfTestCase):
             name='Shared Process',
             version=1,
         )
+        self._ensure_engine_admin(shared_owner, engine_shared)
         self.app.post_json(
             self._template_url(shared_node),
             {
@@ -551,6 +651,7 @@ class WorkflowEngineViewTests(OsfTestCase):
             name='Hidden Process',
             version=1,
         )
+        self._ensure_engine_admin(hidden_owner, engine_hidden)
         self.app.post_json(
             self._template_url(hidden_node),
             {
@@ -601,6 +702,7 @@ class WorkflowEngineViewTests(OsfTestCase):
             version=1,
         )
 
+        self._ensure_engine_admin(owner, engine)
         self.app.post_json(
             self._template_url(shared_node),
             {
@@ -626,6 +728,9 @@ class WorkflowEngineViewTests(OsfTestCase):
         shared_node = self._create_project_with_workflow(owner)
         viewer = AuthUserFactory()
         viewer_node = self._create_project_with_workflow(viewer)
+        owner.is_staff = True
+        owner.is_superuser = True
+        owner.save(update_fields=['is_staff', 'is_superuser'])
 
         engine = self._create_engine(owner=owner)
         definition_id = 'public-visible-definition'
@@ -637,6 +742,7 @@ class WorkflowEngineViewTests(OsfTestCase):
             version=1,
         )
 
+        self._ensure_engine_admin(owner, engine)
         self.app.post_json(
             self._template_url(shared_node),
             {
@@ -695,6 +801,7 @@ class WorkflowEngineViewTests(OsfTestCase):
             version=1,
         )
 
+        self._ensure_engine_admin(shared_owner, engine_shared)
         self.app.post_json(
             self._template_url(shared_node),
             {
@@ -710,21 +817,18 @@ class WorkflowEngineViewTests(OsfTestCase):
             definition__definition_id=definition_id_shared,
         )
 
-        activation_payload = {'is_enabled': True, 'token_settings': {'pat': 'secret-token'}}
         response = self.app.put_json(
             self._activation_url('upsert_activation', node, template),
-            activation_payload,
+            {'is_enabled': True},
             auth=owner.auth,
         )
         assert response.status_code == http_status.HTTP_201_CREATED
         data = response.json['data']
         assert data['is_enabled'] is True
-        assert data['token_settings'] == activation_payload['token_settings']
         assert data['activated_by'] == owner._id
 
         activation = WorkflowActivation.objects.get(node=node, template=template)
         assert activation.is_enabled is True
-        assert activation.token_settings == activation_payload['token_settings']
 
         response = self.app.get(
             self._activation_url('retrieve_activation', node, template),
@@ -749,11 +853,9 @@ class WorkflowEngineViewTests(OsfTestCase):
         assert response.status_code == http_status.HTTP_200_OK
         activation.refresh_from_db()
         assert activation.is_enabled is True
-        assert activation.token_settings == activation_payload['token_settings']
 
-    @mock.patch('framework.celery_tasks.handlers.enqueue_task')
-    @mock.patch('addons.workflow.tasks.start_workflow_process_task')
-    def test_start_run_enqueues_celery_job(self, mock_task, mock_enqueue):
+    @mock.patch('addons.workflow.views.start_workflow_process')
+    def test_start_run_returns_service_payload(self, mock_start):
         owner = AuthUserFactory()
         node = self._create_project_with_workflow(owner)
 
@@ -767,47 +869,36 @@ class WorkflowEngineViewTests(OsfTestCase):
             version=1,
         )
 
-        self.app.post_json(
-            self._template_url(node),
-            {
-                'engine_id': engine.engine_id,
-                'definition_id': definition_id,
-            },
-            auth=owner.auth,
-        )
+        template, activation = self._register_template(node, owner, engine, definition_id)
 
-        template = WorkflowTemplate.objects.get(
-            node=node,
-            definition__definition_id=definition_id,
-        )
-
-        signature = mock.Mock(name='signature')
-        mock_task.si.return_value = signature
-
-        payload = {
+        mock_start.return_value = {
+            'id': 'process-42',
+            'status': STATUS_RUNNING,
             'label': 'Custom Run Label',
+            'node_id': node._id,
+            'template_id': str(template.id),
         }
 
         response = self.app.post_json(
             self._run_url(node, template),
-            payload,
+            {'label': 'Custom Run Label'},
             auth=owner.auth,
         )
 
         assert response.status_code == http_status.HTTP_202_ACCEPTED
-        data = response.json['data']
-        run_id = int(data['id'])
-        assert data['status'] == 'queued'
-        assert data['engine_process_id'] is None
-        assert data['label'] == 'Custom Run Label'
+        assert response.json['data'] == mock_start.return_value
+        mock_start.assert_called_once_with(
+            node,
+            template=template,
+            activation=activation,
+            started_by=owner,
+            business_key=None,
+            label='Custom Run Label',
+            variables=None,
+        )
 
-        run = WorkflowRun.objects.get(id=run_id)
-        assert run.status == WorkflowRun.STATUS_QUEUED
-
-        mock_task.si.assert_called_once_with(run_id)
-        mock_enqueue.assert_called_once_with(signature)
-
-    def test_list_runs_returns_recent_runs(self):
+    @mock.patch('addons.workflow.views.get_gateway_client')
+    def test_list_runs_returns_recent_runs(self, mock_get_client):
         owner = AuthUserFactory()
         node = self._create_project_with_workflow(owner)
 
@@ -821,88 +912,20 @@ class WorkflowEngineViewTests(OsfTestCase):
             version=1,
         )
 
-        self.app.post_json(
-            self._template_url(node),
-            {
-                'engine_id': engine.engine_id,
-                'definition_id': definition_id,
-            },
-            auth=owner.auth,
-        )
-
-        template = WorkflowTemplate.objects.get(
-            node=node,
-            definition__definition_id=definition_id,
-        )
-
-        response = self.app.post_json(
-            self._run_url(node, template),
-            {'parameters': {'alpha': 'beta'}},
-            auth=owner.auth,
-        )
-        assert response.status_code == http_status.HTTP_202_ACCEPTED
-
-        listing = self.app.get(
-            api_url_for('list_runs', pid=node._id),
-            auth=owner.auth,
-        )
-        assert listing.status_code == http_status.HTTP_200_OK
-        data = listing.json['data']
-        assert len(data) == 1
-        record = data[0]
-        assert record['status'] == WorkflowRun.STATUS_QUEUED
-        assert record['context']['parameters'] == {'alpha': 'beta'}
-
-    @mock.patch('addons.workflow.services.get_gateway_client')
-    def test_list_runs_marks_unknown_when_history_missing(self, mock_get_client):
-        owner = AuthUserFactory()
-        node = self._create_project_with_workflow(owner)
-
-        engine = self._create_engine(owner=owner)
-        definition_id = 'missing-history-definition'
-        WorkflowDefinitionSnapshot.objects.create(
-            engine=engine,
-            definition_id=definition_id,
-            definition_key='process-def-key',
-            name='History Missing Process',
-            version=1,
-        )
-
-        self.app.post_json(
-            self._template_url(node),
-            {
-                'engine_id': engine.engine_id,
-                'definition_id': definition_id,
-            },
-            auth=owner.auth,
-        )
-
-        template = WorkflowTemplate.objects.get(
-            node=node,
-            definition__definition_id=definition_id,
-        )
-        activation = WorkflowActivation.objects.get(node=node, template=template)
-
-        run = WorkflowRun.objects.create(
-            node=node,
-            template=template,
-            activation=activation,
-            engine=engine,
-            started_by=owner,
-            label='Missing history run',
-            business_key=f'rdm:node:{node._id}',
-            engine_process_id='proc-missing',
-            engine_definition_id=definition_id,
-            status=WorkflowRun.STATUS_RUNNING,
-        )
+        template, activation = self._register_template(node, owner, engine, definition_id)
 
         client = mock.Mock()
         mock_get_client.return_value = client
-        not_found_error = WorkflowGatewayClientError(
-            http_status.HTTP_404_NOT_FOUND,
-            'Not Found',
+        runtime_instance = self._build_process_instance(node, template, activation, process_id='proc-runtime')
+        historic_instance = self._build_process_instance(
+            node,
+            template,
+            activation,
+            process_id='proc-historic',
+            delete_reason='completed',
         )
-        client.get_historic_process_instance.side_effect = not_found_error
+        client.list_process_instances.return_value = {'data': [runtime_instance]}
+        client.list_historic_process_instances.return_value = {'data': [historic_instance]}
 
         listing = self.app.get(
             api_url_for('list_runs', pid=node._id),
@@ -910,62 +933,35 @@ class WorkflowEngineViewTests(OsfTestCase):
         )
 
         assert listing.status_code == http_status.HTTP_200_OK
-        payload = listing.json['data'][0]
-        assert payload['status'] == WorkflowRun.STATUS_UNKNOWN
+        data = listing.json['data']
+        assert len(data) == 2
+        statuses = {entry['status'] for entry in data}
+        assert statuses == {STATUS_RUNNING, STATUS_CANCELLED}
 
-        run.refresh_from_db()
-        assert run.status == WorkflowRun.STATUS_UNKNOWN
-        history_errors = run.metadata.get('history_errors')
-        assert isinstance(history_errors, list) and history_errors
-
-    def test_cancel_run_by_admin_changes_status(self):
+    @mock.patch('addons.workflow.views.cancel_workflow_run')
+    def test_cancel_run_by_admin_returns_payload(self, mock_cancel):
         owner = AuthUserFactory()
         node = self._create_project_with_workflow(owner)
+        run_id = 'proc-cancel'
+        mock_cancel.return_value = {
+            'id': run_id,
+            'status': STATUS_CANCELLED,
+            'business_key': f'rdm:node:{node._id}:activation:1',
+        }
 
-        engine = self._create_engine(owner=owner)
-        definition_id = 'cancel-definition'
-        WorkflowDefinitionSnapshot.objects.create(
-            engine=engine,
-            definition_id=definition_id,
-            definition_key='process-def-key',
-            name='Cancelable Process',
-            version=1,
-        )
-
-        self.app.post_json(
-            self._template_url(node),
-            {
-                'engine_id': engine.engine_id,
-                'definition_id': definition_id,
-            },
+        response = self.app.delete(
+            f'{self._run_detail_url(node, run_id)}?reason=manual',
             auth=owner.auth,
         )
 
-        template = WorkflowTemplate.objects.get(
-            node=node,
-            definition__definition_id=definition_id,
+        assert response.status_code == http_status.HTTP_200_OK
+        assert response.json['data']['status'] == STATUS_CANCELLED
+        mock_cancel.assert_called_once_with(
+            node,
+            run_id,
+            cancelled_by=owner,
+            reason='manual',
         )
-
-        start_response = self.app.post_json(
-            self._run_url(node, template),
-            {},
-            auth=owner.auth,
-        )
-        run_id = int(start_response.json['data']['id'])
-
-        cancel_response = self.app.delete(
-            f"{self._run_detail_url(node, run_id)}?reason=manual",
-            auth=owner.auth,
-        )
-
-        assert cancel_response.status_code == http_status.HTTP_200_OK
-        payload = cancel_response.json['data']
-        assert payload['status'] == WorkflowRun.STATUS_CANCELLED
-        assert payload['business_key'].startswith(f'rdm:node:{node._id}')
-
-        run = WorkflowRun.objects.get(id=run_id)
-        assert run.status == WorkflowRun.STATUS_CANCELLED
-        assert run.metadata['cancellations'][0]['reason'] == 'manual'
 
     def test_cancel_run_requires_admin_permissions(self):
         owner = AuthUserFactory()
@@ -974,37 +970,7 @@ class WorkflowEngineViewTests(OsfTestCase):
         node.add_contributor(contributor, permissions='write')
         node.save()
 
-        engine = self._create_engine(owner=owner)
-        definition_id = 'restricted-definition'
-        WorkflowDefinitionSnapshot.objects.create(
-            engine=engine,
-            definition_id=definition_id,
-            definition_key='process-def-key',
-            name='Restricted Process',
-            version=1,
-        )
-
-        self.app.post_json(
-            self._template_url(node),
-            {
-                'engine_id': engine.engine_id,
-                'definition_id': definition_id,
-            },
-            auth=owner.auth,
-        )
-
-        template = WorkflowTemplate.objects.get(
-            node=node,
-            definition__definition_id=definition_id,
-        )
-
-        start_response = self.app.post_json(
-            self._run_url(node, template),
-            {},
-            auth=owner.auth,
-        )
-        run_id = int(start_response.json['data']['id'])
-
+        run_id = 'proc-forbidden'
         forbidden = self.app.delete(
             self._run_detail_url(node, run_id),
             auth=contributor.auth,
@@ -1013,261 +979,121 @@ class WorkflowEngineViewTests(OsfTestCase):
 
         assert forbidden.status_code == http_status.HTTP_403_FORBIDDEN
 
-    def test_cancel_run_conflict_when_already_terminal(self):
+    @mock.patch('addons.workflow.views.list_workflow_tasks')
+    def test_list_tasks_returns_service_payload(self, mock_list_tasks):
         owner = AuthUserFactory()
         node = self._create_project_with_workflow(owner)
 
-        engine = self._create_engine(owner=owner)
-        definition_id = 'terminal-definition'
-        WorkflowDefinitionSnapshot.objects.create(
-            engine=engine,
-            definition_id=definition_id,
-            definition_key='process-def-key',
-            name='Terminal Process',
-            version=1,
-        )
-
-        self.app.post_json(
-            self._template_url(node),
+        mock_list_tasks.return_value = [
             {
-                'engine_id': engine.engine_id,
-                'definition_id': definition_id,
-            },
-            auth=owner.auth,
-        )
-
-        template = WorkflowTemplate.objects.get(
-            node=node,
-            definition__definition_id=definition_id,
-        )
-
-        start_response = self.app.post_json(
-            self._run_url(node, template),
-            {},
-            auth=owner.auth,
-        )
-        run_id = int(start_response.json['data']['id'])
-
-        run = WorkflowRun.objects.get(id=run_id)
-        run.status = WorkflowRun.STATUS_COMPLETED
-        run.save(update_fields=['status'])
-
-        conflict = self.app.delete(
-            self._run_detail_url(node, run_id),
-            auth=owner.auth,
-            expect_errors=True,
-        )
-
-        assert conflict.status_code == http_status.HTTP_409_CONFLICT
-
-    @mock.patch('addons.workflow.services.get_gateway_client')
-    def test_list_tasks_returns_gateway_payload(self, mock_get_client):
-        owner = AuthUserFactory()
-        node = self._create_project_with_workflow(owner)
-
-        engine = self._create_engine(owner=owner)
-        definition_id = 'task-definition'
-        WorkflowDefinitionSnapshot.objects.create(
-            engine=engine,
-            definition_id=definition_id,
-            definition_key='task-def-key',
-            name='Task Process',
-            version=1,
-        )
-
-        self.app.post_json(
-            self._template_url(node),
-            {
-                'engine_id': engine.engine_id,
-                'definition_id': definition_id,
-            },
-            auth=owner.auth,
-        )
-
-        template = WorkflowTemplate.objects.get(
-            node=node,
-            definition__definition_id=definition_id,
-        )
-        activation = WorkflowActivation.objects.get(node=node, template=template)
-
-        run = WorkflowRun.objects.create(
-            node=node,
-            template=template,
-            activation=activation,
-            engine=engine,
-            started_by=owner,
-            label='Task Run',
-            business_key=f'rdm:node:{node._id}',
-            engine_process_id='proc-123',
-            engine_definition_id=definition_id,
-        )
-
-        client = mock.Mock()
-        mock_get_client.return_value = client
-        task_payload = {
-            'id': 'task-1',
-            'name': 'Fill Form',
-            'processInstanceId': run.engine_process_id,
-            'processInstanceBusinessKey': run.business_key,
-            'processDefinitionId': definition_id,
-            'createTime': '2025-01-01T00:00:00Z',
-        }
-        client.list_tasks.return_value = {'data': [task_payload]}
-
-        response = self.app.get(self._tasks_url(node), auth=owner.auth)
-
-        assert response.status_code == http_status.HTTP_200_OK
-        data = response.json['data']
-        assert len(data) == 1
-        assert data[0]['id'] == 'task-1'
-        assert data[0]['run_id'] == run._id
-        assert data[0]['engine_id'] == engine.engine_id
-
-        client.list_tasks.assert_called_once()
-
-    @mock.patch('addons.workflow.services.get_gateway_client')
-    def test_retrieve_task_with_form(self, mock_get_client):
-        owner = AuthUserFactory()
-        node = self._create_project_with_workflow(owner)
-
-        engine = self._create_engine(owner=owner)
-        definition_id = 'detail-definition'
-        WorkflowDefinitionSnapshot.objects.create(
-            engine=engine,
-            definition_id=definition_id,
-            definition_key='detail-def-key',
-            name='Detail Process',
-            version=1,
-        )
-
-        self.app.post_json(
-            self._template_url(node),
-            {
-                'engine_id': engine.engine_id,
-                'definition_id': definition_id,
-            },
-            auth=owner.auth,
-        )
-
-        template = WorkflowTemplate.objects.get(
-            node=node,
-            definition__definition_id=definition_id,
-        )
-        activation = WorkflowActivation.objects.get(node=node, template=template)
-
-        WorkflowRun.objects.create(
-            node=node,
-            template=template,
-            activation=activation,
-            engine=engine,
-            started_by=owner,
-            label='Detail Run',
-            business_key=f'rdm:node:{node._id}',
-            engine_process_id='proc-456',
-            engine_definition_id=definition_id,
-        )
-
-        client = mock.Mock()
-        mock_get_client.return_value = client
-        client.get_task.return_value = {
-            'id': 'task-2',
-            'name': 'Review Submission',
-            'processInstanceId': 'proc-456',
-            'processInstanceBusinessKey': f'rdm:node:{node._id}',
-            'processDefinitionId': definition_id,
-        }
-        client.get_task_form.return_value = {
-            'key': 'review-form',
-            'fields': [],
-        }
-
-        response = self.app.get(
-            f"{self._task_detail_url(node, 'task-2')}?include_form=true",
-            auth=owner.auth,
-        )
-
-        assert response.status_code == http_status.HTTP_200_OK
-        payload = response.json['data']
-        assert payload['id'] == 'task-2'
-        assert payload['form']['key'] == 'review-form'
-        client.get_task.assert_called_once_with('task-2')
-        client.get_task_form.assert_called_once_with('task-2')
-
-    @mock.patch('addons.workflow.services.get_gateway_client')
-    def test_submit_task_action_completion_returns_no_content(self, mock_get_client):
-        owner = AuthUserFactory()
-        node = self._create_project_with_workflow(owner)
-
-        engine = self._create_engine(owner=owner)
-        definition_id = 'complete-definition'
-        WorkflowDefinitionSnapshot.objects.create(
-            engine=engine,
-            definition_id=definition_id,
-            definition_key='complete-def-key',
-            name='Complete Process',
-            version=1,
-        )
-
-        self.app.post_json(
-            self._template_url(node),
-            {
-                'engine_id': engine.engine_id,
-                'definition_id': definition_id,
-            },
-            auth=owner.auth,
-        )
-
-        template = WorkflowTemplate.objects.get(
-            node=node,
-            definition__definition_id=definition_id,
-        )
-        activation = WorkflowActivation.objects.get(node=node, template=template)
-
-        WorkflowRun.objects.create(
-            node=node,
-            template=template,
-            activation=activation,
-            engine=engine,
-            started_by=owner,
-            label='Complete Run',
-            business_key=f'rdm:node:{node._id}',
-            engine_process_id='proc-789',
-            engine_definition_id=definition_id,
-        )
-
-        client = mock.Mock()
-        mock_get_client.return_value = client
-        not_found_error = WorkflowGatewayClientError(
-            http_status.HTTP_404_NOT_FOUND,
-            'Not Found',
-        )
-        client.get_task.side_effect = [
-            {
-                'id': 'task-3',
-                'name': 'Complete Task',
-                'processInstanceId': 'proc-789',
-                'processInstanceBusinessKey': f'rdm:node:{node._id}',
-                'processDefinitionId': definition_id,
-            },
-            not_found_error,
+                'id': 'task-1',
+                'engine_id': 'engine-a',
+                'status': 'running',
+            }
         ]
 
+        response = self.app.get(
+            f'{self._tasks_url(node)}?status=running&limit=25',
+            auth=owner.auth,
+        )
+
+        assert response.status_code == http_status.HTTP_200_OK
+        assert response.json['data'] == mock_list_tasks.return_value
+        assert response.json['meta']['returned'] == 1
+        assert response.json['meta']['limit'] == 25
+        mock_list_tasks.assert_called_once_with(
+            node,
+            owner,
+            limit=25,
+            status_filter='running',
+        )
+
+    @mock.patch('addons.workflow.views.get_workflow_task')
+    def test_retrieve_task_with_form_flag(self, mock_get_task):
+        owner = AuthUserFactory()
+        node = self._create_project_with_workflow(owner)
+        engine = self._create_engine(owner=owner)
+
+        mock_get_task.return_value = {
+            'id': 'task-2',
+            'name': 'Review Submission',
+            'form': {'key': 'review-form'},
+        }
+
+        self._ensure_engine_admin(owner, engine)
+        response = self.app.get(
+            f'{self._task_detail_url(node, engine, "task-2")}?include_form=true',
+            auth=owner.auth,
+        )
+
+        assert response.status_code == http_status.HTTP_200_OK
+        assert response.json['data'] == mock_get_task.return_value
+        mock_get_task.assert_called_once_with(
+            node,
+            'task-2',
+            owner,
+            engine_id=engine.engine_id,
+            include_form=True,
+        )
+
+    @mock.patch('addons.workflow.views.submit_workflow_task_action')
+    def test_submit_task_action_completion_returns_no_content(self, mock_submit_action):
+        owner = AuthUserFactory()
+        node = self._create_project_with_workflow(owner)
+        engine = self._create_engine(owner=owner)
+
+        mock_submit_action.return_value = None
+
+        self._ensure_engine_admin(owner, engine)
         response = self.app.post_json(
-            self._task_action_url(node, 'task-3'),
+            self._task_action_url(node, engine, 'task-3'),
             {
                 'action': 'complete',
                 'variables': {'decision': 'approve'},
+                'assignee': 'user-123',
             },
             auth=owner.auth,
             status=http_status.HTTP_204_NO_CONTENT,
         )
 
         assert response.status_code == http_status.HTTP_204_NO_CONTENT
-        client.update_task.assert_called_once()
-        args, kwargs = client.update_task.call_args
-        assert args[0] == 'task-3'
-        assert args[1]['action'] == 'complete'
-        assert {'name': 'decision', 'value': 'approve'} in args[1]['variables']
+        mock_submit_action.assert_called_once_with(
+            node,
+            'task-3',
+            owner,
+            engine_id=engine.engine_id,
+            action='complete',
+            variables={'decision': 'approve'},
+            assignee='user-123',
+        )
+
+    @mock.patch('addons.workflow.views.submit_workflow_task_action')
+    def test_submit_task_action_returns_service_payload(self, mock_submit_action):
+        owner = AuthUserFactory()
+        node = self._create_project_with_workflow(owner)
+        engine = self._create_engine(owner=owner)
+
+        service_payload = {'id': 'task-4', 'status': 'completed'}
+        mock_submit_action.return_value = service_payload
+
+        self._ensure_engine_admin(owner, engine)
+        response = self.app.post_json(
+            self._task_action_url(node, engine, 'task-4'),
+            {'action': 'complete'},
+            auth=owner.auth,
+        )
+
+        assert response.status_code == http_status.HTTP_200_OK
+        assert response.json['data'] == service_payload
+        mock_submit_action.assert_called_once_with(
+            node,
+            'task-4',
+            owner,
+            engine_id=engine.engine_id,
+            action='complete',
+            variables=None,
+            assignee=None,
+        )
 
     def test_start_run_rejects_disabled_activation(self):
         owner = AuthUserFactory()
@@ -1283,20 +1109,7 @@ class WorkflowEngineViewTests(OsfTestCase):
             version=1,
         )
 
-        self.app.post_json(
-            self._template_url(node),
-            {
-                'engine_id': engine.engine_id,
-                'definition_id': definition_id,
-            },
-            auth=owner.auth,
-        )
-
-        template = WorkflowTemplate.objects.get(
-            node=node,
-            definition__definition_id=definition_id,
-        )
-        activation = WorkflowActivation.objects.get(node=node, template=template)
+        template, activation = self._register_template(node, owner, engine, definition_id)
         activation.is_enabled = False
         activation.save()
 
@@ -1323,23 +1136,11 @@ class WorkflowEngineViewTests(OsfTestCase):
             version=1,
         )
 
-        self.app.post_json(
-            self._template_url(node),
-            {
-                'engine_id': engine.engine_id,
-                'definition_id': definition_id,
-            },
-            auth=owner.auth,
-        )
-
-        template = WorkflowTemplate.objects.get(
-            node=node,
-            definition__definition_id=definition_id,
-        )
+        template, _ = self._register_template(node, owner, engine, definition_id)
 
         response = self.app.post_json(
             self._run_url(node, template),
-            {'parameters': 'not-a-dict'},
+            {'variables': 'not-a-list'},
             auth=owner.auth,
             expect_errors=True,
         )

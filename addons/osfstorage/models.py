@@ -294,7 +294,6 @@ class OsfStorageFileNode(BaseFileNode):
         if save:
             self.save()
 
-
     def save(self, *args, **kwargs):
         self._path = ''
         self._materialized_path = ''

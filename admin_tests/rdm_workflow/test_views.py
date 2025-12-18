@@ -41,7 +41,6 @@ class WorkflowEngineAdminTests(AdminTestCase):
             {'kid': 'kid-1', 'alg': 'RS256', 'public_key_path': '/tmp/pub', 'private_key_path': '/tmp/priv'},
         ]
 
-
     def tearDown(self):
         workflow_settings.RDM_TO_WORKFLOW_GATEWAY_KEYS = self._original_specs
         super(WorkflowEngineAdminTests, self).tearDown()
