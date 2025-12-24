@@ -18,7 +18,7 @@
 {% endif %}
 
 <p class="text-muted">
-    {% trans "Register external workflow engines that can process BPMN definitions on behalf of GakuNin RDM. Only platform administrators and institutional administrators may manage engines." %}
+    {% trans "Register external workflow engines. Only Integrated Admins and Institutional Admins may manage engines." %}
 </p>
 
 <div class="panel panel-default">
@@ -106,30 +106,31 @@
                                 {% else %}
                                     {{ engine.engine_id }}
                                 {% endif %}
-                                {% if engine.active_key_count == 0 %}
-                                    <span class="text-danger" title="{% trans 'No active public keys registered' %}">⚠</span>
-                                {% endif %}
                             </td>
-                            <td><a href="{{ engine.gateway_base_url }}" target="_blank" rel="noopener noreferrer">{{ engine.gateway_base_url }}</a></td>
+                            <td>{{ engine.gateway_base_url }}</td>
                             <td>{{ engine.signing_kid }}</td>
                             <td>
                                 {% if engine.is_active %}
-                                    <span class="label label-success">{% trans "Active" %}</span>
+                                    {% if engine.active_key_count == 0 %}
+                                        <span class="label label-warning">{% trans "No keys" %}</span>
+                                    {% else %}
+                                        <span class="label label-success">{% trans "Enabled" %}</span>
+                                    {% endif %}
                                 {% else %}
-                                    <span class="label label-default">{% trans "Inactive" %}</span>
+                                    <span class="label label-default">{% trans "Disabled" %}</span>
                                 {% endif %}
                             </td>
                             <td>{% if engine.created_by %}{{ engine.created_by.get_full_name|default:engine.created_by.username }}{% else %}-{% endif %}</td>
                             <td>
-                                <a class="btn btn-xs btn-default" href="{% url 'rdm_workflow:engine-edit' institution.id engine.engine_id %}">{% trans "Edit" %}</a>
-                                <a class="btn btn-xs btn-default" href="{% url 'rdm_workflow:engine-keys' institution.id engine.engine_id %}">{% trans "Manage keys" %}</a>
+                                <a class="btn btn-xs btn-default" href="{% url 'rdm_workflow:engine-edit' institution.id engine.engine_id %}"><i class="fa fa-pencil"></i> {% trans "Edit" %}</a>
+                                <a class="btn btn-xs btn-default" href="{% url 'rdm_workflow:engine-keys' institution.id engine.engine_id %}"><i class="fa fa-key"></i> {% trans "Manage keys" %}</a>
                                 {% if engine.is_active %}
-                                    <form method="post" style="display:inline" onsubmit="return confirm('{% trans "Deactivate this workflow engine?" %}');">
+                                    <form method="post" style="display:inline" onsubmit="return confirm('{% trans "Disable this workflow engine?" %}');">
                                         {% csrf_token %}
                                         <input type="hidden" name="action" value="deactivate_engine">
                                         <input type="hidden" name="engine_id" value="{{ engine.engine_id }}">
-                                        <button class="btn btn-xs btn-danger" type="submit">
-                                            {% trans "Deactivate" %}
+                                        <button class="btn btn-xs btn-default" type="submit">
+                                            {% trans "Disable" %}
                                         </button>
                                     </form>
                                 {% else %}
@@ -137,8 +138,16 @@
                                         {% csrf_token %}
                                         <input type="hidden" name="action" value="activate_engine">
                                         <input type="hidden" name="engine_id" value="{{ engine.engine_id }}">
-                                        <button class="btn btn-xs btn-success" type="submit">
-                                            {% trans "Reactivate" %}
+                                        <button class="btn btn-xs btn-default" type="submit">
+                                            {% trans "Enable" %}
+                                        </button>
+                                    </form>
+                                    <form method="post" style="display:inline" onsubmit="return confirm('{% trans "Delete this workflow engine? This action cannot be undone." %}');">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="action" value="delete_engine">
+                                        <input type="hidden" name="engine_id" value="{{ engine.engine_id }}">
+                                        <button class="btn btn-xs btn-danger" type="submit">
+                                            <i class="fa fa-trash"></i> {% trans "Delete" %}
                                         </button>
                                     </form>
                                 {% endif %}

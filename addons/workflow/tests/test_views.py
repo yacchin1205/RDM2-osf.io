@@ -837,11 +837,12 @@ class WorkflowEngineViewTests(OsfTestCase):
         assert response.status_code == http_status.HTTP_200_OK
         assert response.json['data']['is_enabled'] is True
 
-        response = self.app.delete(
-            self._activation_url('deactivate_activation', node, template),
+        response = self.app.put_json(
+            self._activation_url('upsert_activation', node, template),
+            {'is_enabled': False},
             auth=owner.auth,
         )
-        assert response.status_code == http_status.HTTP_204_NO_CONTENT
+        assert response.status_code == http_status.HTTP_200_OK
         activation.refresh_from_db()
         assert activation.is_enabled is False
 

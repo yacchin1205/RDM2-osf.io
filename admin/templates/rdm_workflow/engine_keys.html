@@ -25,9 +25,9 @@
             <dt>{% trans "Status" %}</dt>
             <dd>
                 {% if engine.is_active %}
-                    <span class="label label-success">{% trans "Active" %}</span>
+                    <span class="label label-success">{% trans "Enabled" %}</span>
                 {% else %}
-                    <span class="label label-default">{% trans "Inactive" %}</span>
+                    <span class="label label-default">{% trans "Disabled" %}</span>
                 {% endif %}
             </dd>
         </dl>
@@ -118,18 +118,18 @@
                             <td>{{ key.modified }}</td>
                             <td>
                                 {% if key.is_active %}
-                                    <span class="label label-success">{% trans "Active" %}</span>
+                                    <span class="label label-success">{% trans "Enabled" %}</span>
                                 {% else %}
-                                    <span class="label label-default">{% trans "Inactive" %}</span>
+                                    <span class="label label-default">{% trans "Revoked" %}</span>
                                 {% endif %}
                             </td>
                             <td>
-                                <form method="post" style="display:inline" onsubmit="return confirm('{% trans "Deactivate this key?" %}');">
+                                <form method="post" style="display:inline" onsubmit="return confirm('{% trans "Revoke this key? The workflow engine may not be able to access project resources." %}');">
                                     {% csrf_token %}
                                     <input type="hidden" name="action" value="deactivate_key">
                                     <input type="hidden" name="kid" value="{{ key.kid }}">
                                     <button class="btn btn-xs btn-danger" type="submit" {% if not key.is_active %}disabled{% endif %}>
-                                        {% trans "Deactivate" %}
+                                        {% trans "Revoke" %}
                                     </button>
                                 </form>
                             </td>

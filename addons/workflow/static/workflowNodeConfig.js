@@ -89,6 +89,7 @@ function WorkflowTemplate(data) {
     self.node_title = data.node_title;
     self.engine_id = data.engine_id;
     self.engine_label = data.engine_label || data.engine_id;
+    self.engineIsActive = ko.observable(data.engine_is_active !== false);
     self.definition_id = data.definition_id;
     self.definition_key = data.definition_key;
     self.definition_name = data.definition_name;
@@ -99,6 +100,7 @@ function WorkflowTemplate(data) {
     self.description = ko.observable(data.description || '');
     self.isLocal = data.is_local === true;
     self.isActive = ko.observable(data.is_active === true);
+    self.isEffectivelyActive = ko.observable(data.is_effectively_active === true);
     self.isEnabled = ko.observable(data.is_enabled === true);
     self.activationId = data.activation_id || null;
     self.token_settings = ko.observable(data.token_settings);
@@ -110,6 +112,8 @@ function WorkflowTemplate(data) {
         return formatVisibilityLabel(self.visibility());
     });
     self.autoActivate = ko.observable(data.auto_activate === true);
+    self.activations = ko.observableArray(data.activations || []);
+    self.showActivations = ko.observable(false);
 
     self.nodeUrl = self.node_id ? '/' + self.node_id + '/' : null;
     self.localizedScopeLabel = _('This project');
@@ -118,15 +122,36 @@ function WorkflowTemplate(data) {
     self.disabledLabel = _('Disabled');
     self.enableLabel = _('Enable');
     self.disableLabel = _('Disable');
-    self.activeLabel = _('Active');
-    self.inactiveLabel = _('Inactive');
+
+    self.effectiveStatus = ko.pureComputed(function() {
+        return self.isEffectivelyActive() ? 'active' : 'inactive';
+    });
+
+    self.statusLabel = ko.pureComputed(function() {
+        const status = self.effectiveStatus();
+        if (status === 'active') return _('Enabled');
+        return _('Disabled');
+    });
+
+    self.statusClass = ko.pureComputed(function() {
+        const status = self.effectiveStatus();
+        if (status === 'active') return 'label-success';
+        if (status === 'disabled') return 'label-warning';
+        return 'label-default';
+    });
+
+    self.toggleActivations = function() {
+        self.showActivations(!self.showActivations());
+    };
 }
 
 WorkflowTemplate.prototype.updateFrom = function(payload) {
     this.label(payload.label || '');
     this.description(payload.description || '');
     this.isActive(payload.is_active === true);
+    this.isEffectivelyActive(payload.is_effectively_active === true);
     this.isEnabled(payload.is_enabled === true);
+    this.engineIsActive(payload.engine_is_active !== false);
     this.node_id = payload.node_id;
     this.node_title = payload.node_title;
     this.nodeUrl = this.node_id ? '/' + this.node_id + '/' : null;
@@ -141,6 +166,7 @@ WorkflowTemplate.prototype.updateFrom = function(payload) {
     this.token_settings(payload.token_settings);
     this.visibility(payload.visibility || 'project');
     this.autoActivate(payload.auto_activate === true);
+    this.activations(payload.activations || []);
 };
 
 function WorkflowActivation(data, template) {
@@ -157,7 +183,27 @@ function WorkflowActivation(data, template) {
     self.node_title = template.node_title;
     self.nodeUrl = template.nodeUrl;
     self.isLocal = template.isLocal;
+    self.isEnabled = ko.observable(data.is_enabled !== false);
+    self.isEffectivelyActive = ko.observable(data.is_effectively_active === true);
     self.disableLabel = _('Disable');
+    self.deleteLabel = _('Delete');
+
+    self.effectiveStatus = ko.pureComputed(function() {
+        return self.isEffectivelyActive() ? 'active' : 'inactive';
+    });
+
+    self.statusLabel = ko.pureComputed(function() {
+        const status = self.effectiveStatus();
+        if (status === 'active') return _('Enabled');
+        return _('Disabled');
+    });
+
+    self.statusClass = ko.pureComputed(function() {
+        const status = self.effectiveStatus();
+        if (status === 'active') return 'label-success';
+        if (status === 'disabled') return 'label-warning';
+        return 'label-default';
+    });
 }
 
 function WorkflowNodeSettingsViewModel(options) {
@@ -232,6 +278,11 @@ function WorkflowNodeSettingsViewModel(options) {
     self.deleteTemplateRequest = {
         pendingTemplate: ko.observable(null),
     };
+
+    self.deleteActivationRequest = {
+        pendingActivation: ko.observable(null),
+    };
+    self.deletingActivationIds = ko.observableArray([]);
 
     self.form = {
         engineId: ko.observable(''),
@@ -316,12 +367,20 @@ function WorkflowNodeSettingsViewModel(options) {
         });
     });
 
+    self.hasLocalTemplates = ko.computed(function() {
+        return self.localTemplates().length > 0;
+    });
+
+    self.showTemplatesPanel = ko.pureComputed(function() {
+        return self.hasUploadEngines() || self.hasLocalTemplates();
+    });
+
     self.availableTemplatesForActivation = ko.computed(function() {
         const activatedIds = self.activations().map(function(act) {
             return act.template_id;
         });
         return self.templates().filter(function(reg) {
-            return reg.isActive() && activatedIds.indexOf(reg.id) === -1;
+            return reg.isEffectivelyActive() && activatedIds.indexOf(reg.id) === -1;
         });
     });
 
@@ -341,6 +400,10 @@ function WorkflowNodeSettingsViewModel(options) {
 
     self.isDeleting = function(templateId) {
         return self.deletingIds().indexOf(templateId) !== -1;
+    };
+
+    self.isDeletingActivation = function(activationId) {
+        return self.deletingActivationIds().indexOf(activationId) !== -1;
     };
 
     self.form.engineId.subscribe(function() {
@@ -462,7 +525,7 @@ function WorkflowNodeSettingsViewModel(options) {
                 templateMap[reg.id] = reg;
             });
             data.forEach(function(entry) {
-                if (entry.activation_id && entry.is_enabled) {
+                if (entry.activation_id) {
                     const reg = templateMap[entry.id];
                     if (reg) {
                         activations.push(new WorkflowActivation(entry, reg));
@@ -579,7 +642,7 @@ function WorkflowNodeSettingsViewModel(options) {
             .done(function(response) {
                 const data = response && response.data;
                 if (!data) {
-                    self.changeMessage(_('Workflow template created.'), 'text-success');
+                    self.changeMessage(_('Workflow template registered.'), 'text-success');
                     self.fetchTemplates();
                 } else {
                     const existing = self.templates().find(function(item) {
@@ -592,7 +655,7 @@ function WorkflowNodeSettingsViewModel(options) {
                         self.templates.push(new WorkflowTemplate(data));
                     }
                     const created = response && response.created;
-                    const message = created ? _('Workflow template created.') : _('Workflow template updated.');
+                    const message = created ? _('Workflow template registered.') : _('Workflow template updated.');
                     self.changeMessage(message, 'text-success');
                 }
                 self.resetForm();
@@ -640,7 +703,7 @@ function WorkflowNodeSettingsViewModel(options) {
             .done(function(response) {
                 const data = response && response.data;
                 if (!data) {
-                    self.changeMessage(_('Workflow template created.'), 'text-success');
+                    self.changeMessage(_('Workflow template registered.'), 'text-success');
                     self.fetchTemplates();
                 } else {
                     const existing = self.templates().find(function(item) {
@@ -653,7 +716,7 @@ function WorkflowNodeSettingsViewModel(options) {
                         self.templates.push(new WorkflowTemplate(data));
                     }
                     const created = response && response.created;
-                    const message = created ? _('Workflow template created.') : _('Workflow template updated.');
+                    const message = created ? _('Workflow template registered.') : _('Workflow template updated.');
                     self.changeMessage(message, 'text-success');
                 }
                 self.resetForm();
@@ -783,6 +846,69 @@ function WorkflowNodeSettingsViewModel(options) {
         });
     };
 
+    self.enableWorkflow = function(activation) {
+        const url = self.templatesUrl + activation.template_id + '/activation/';
+        self.togglingIds.push(activation.id);
+        return $osf.putJSON(url, {
+            is_enabled: true,
+        }).done(function() {
+            self.fetchTemplates().done(function() {
+                self.changeMessage(_('Workflow activated.'), 'text-success');
+            });
+        }).fail(function(xhr) {
+            const detail = xhr && xhr.responseJSON && xhr.responseJSON.message;
+            const message = detail || _('Failed to activate workflow.');
+            self.changeMessage(message, 'text-danger');
+            $osf.growl('Error', message);
+            Raven.captureMessage('Failed to activate workflow', {
+                extra: {
+                    url: url,
+                    response: xhr && xhr.responseJSON,
+                },
+            });
+        }).always(function() {
+            self.togglingIds.remove(activation.id);
+        });
+    };
+
+    self.deleteActivation = function(activation) {
+        self.deleteActivationRequest.pendingActivation(activation);
+        $('#deleteActivationModal').modal('show');
+    };
+
+    self.confirmDeleteActivation = function() {
+        const activation = self.deleteActivationRequest.pendingActivation();
+        if (!activation) {
+            return;
+        }
+        self.deleteActivationRequest.pendingActivation(null);
+        $('#deleteActivationModal').modal('hide');
+
+        const url = self.templatesUrl + activation.template_id + '/activation/';
+        self.deletingActivationIds.push(activation.id);
+
+        return $.ajax({
+            url: url,
+            type: 'DELETE',
+        }).done(function() {
+            self.activations.remove(activation);
+            self.changeMessage(_('Workflow deleted.'), 'text-success');
+        }).fail(function(xhr) {
+            const detail = xhr && xhr.responseJSON && xhr.responseJSON.message;
+            const message = detail || _('Failed to delete workflow.');
+            self.changeMessage(message, 'text-danger');
+            $osf.growl('Error', message);
+            Raven.captureMessage('Failed to delete workflow activation', {
+                extra: {
+                    url: url,
+                    response: xhr && xhr.responseJSON,
+                },
+            });
+        }).always(function() {
+            self.deletingActivationIds.remove(activation.id);
+        });
+    };
+
     self.toggleTemplateActive = function(template) {
         if (self.isToggling(template.id)) {
             return;
@@ -810,17 +936,15 @@ function WorkflowNodeSettingsViewModel(options) {
                 is_active: newActiveState,
             }),
         }).done(function(response) {
-            const data = response && response.data;
-            if (data) {
-                template.isActive(data.is_active === true);
-                self.changeMessage(
-                    newActiveState ? _('Workflow template enabled.') : _('Workflow template disabled.'),
-                    'text-success'
-                );
-            }
+            const data = response.data;
+            template.isActive(data.is_active === true);
+            template.isEffectivelyActive(data.is_effectively_active === true);
+            self.changeMessage(
+                newActiveState ? _('Workflow template enabled.') : _('Workflow template disabled.'),
+                'text-success'
+            );
         }).fail(function(xhr) {
-            const detail = xhr && xhr.responseJSON && xhr.responseJSON.message;
-            const message = detail || _('Failed to update workflow template.');
+            const message = xhr.responseJSON.message || _('Failed to update workflow template.');
             self.changeMessage(message, 'text-danger');
             $osf.growl('Error', message);
             Raven.captureMessage('Failed to update workflow template', {
@@ -944,14 +1068,12 @@ function WorkflowNodeSettingsViewModel(options) {
                 is_active: true,
             }),
         }).done(function(response) {
-            const data = response && response.data;
-            if (data) {
-                template.isActive(data.is_active === true);
-                self.changeMessage(_('Workflow template enabled.'), 'text-success');
-            }
+            const data = response.data;
+            template.isActive(data.is_active === true);
+            template.isEffectivelyActive(data.is_effectively_active === true);
+            self.changeMessage(_('Workflow template enabled.'), 'text-success');
         }).fail(function(xhr) {
-            const detail = xhr && xhr.responseJSON && xhr.responseJSON.message;
-            const message = detail || _('Failed to update workflow template.');
+            const message = xhr.responseJSON.message || _('Failed to update workflow template.');
             self.changeMessage(message, 'text-danger');
             $osf.growl('Error', message);
             Raven.captureMessage('Failed to update workflow template', {

@@ -18,6 +18,7 @@ from osf.utils.permissions import ADMIN, READ, WRITE
 from website import settings as website_settings
 
 from addons.workflow.gateway_client import (
+    WorkflowGatewayClient,
     WorkflowGatewayClientError,
     get_gateway_client,
 )
@@ -424,6 +425,9 @@ def _get_visible_activations(
     Returns activations directly on the node, plus activations on other nodes
     that use templates from this node (if user has write permission).
 
+    Note: Includes inactive activations so that existing runs and tasks
+    remain visible after deactivation.
+
     Args:
         node: The node to get activations for
         user: Optional user for permission checks on shared activations
@@ -431,12 +435,10 @@ def _get_visible_activations(
     Returns:
         List of visible WorkflowActivation objects
     """
-    # Direct activations on this node
+    # Direct activations on this node (including inactive ones)
     direct_activations = list(
         WorkflowActivation.objects.filter(
             node=node,
-            is_enabled=True,
-            template__is_active=True,
         ).select_related('node', 'template__definition__engine')
     )
 
@@ -445,7 +447,6 @@ def _get_visible_activations(
     templates_on_node = list(
         WorkflowTemplate.objects.filter(
             node=node,
-            is_active=True,
         ).select_related('definition__engine')
     )
 
@@ -453,7 +454,6 @@ def _get_visible_activations(
         shared_activations = list(
             WorkflowActivation.objects.filter(
                 template__in=templates_on_node,
-                is_enabled=True,
             ).select_related('node', 'template__definition__engine')
         )
 
@@ -476,16 +476,10 @@ def start_workflow_process(
             data={'message': 'Workflow activation not found for this project.'},
         )
 
-    if not activation.is_enabled:
+    if not activation.is_effectively_active:
         raise HTTPError(
             http_status.HTTP_409_CONFLICT,
-            data={'message': 'Workflow activation is disabled.'},
-        )
-
-    if not template.is_active:
-        raise HTTPError(
-            http_status.HTTP_409_CONFLICT,
-            data={'message': 'Workflow template is inactive.'},
+            data={'message': 'Workflow is not active.'},
         )
 
     delegation_tokens = _build_delegation_tokens_payload(activation, started_by)
@@ -1072,25 +1066,86 @@ def activate_workflow_activation(activation: WorkflowActivation, activated_by: '
 
 
 def deactivate_workflow_activation(activation: WorkflowActivation) -> None:
-    """Deactivate a workflow activation, revoking delegation tokens."""
-    update_fields = []
+    """Deactivate a workflow activation.
 
-    if activation.delegation_tokens.get('manager'):
-        revoke_delegation_token(activation.delegation_tokens['manager']['token_id'])
-        delegation_tokens = dict(activation.delegation_tokens)
-        del delegation_tokens['manager']
-        activation.delegation_tokens = delegation_tokens
-        update_fields.append('delegation_tokens')
-
-    if activation.is_enabled:
-        activation.is_enabled = False
-        update_fields.append('is_enabled')
-
-    if not update_fields:
+    Deactivation prohibits new workflow runs but preserves access to existing data.
+    Delegation tokens are NOT revoked - they are only revoked on deletion.
+    """
+    if not activation.is_enabled:
         return
 
-    update_fields.append('modified')
-    activation.save(update_fields=update_fields)
+    activation.is_enabled = False
+    activation.save(update_fields=['is_enabled', 'modified'])
+
+
+def has_running_workflows(activation: WorkflowActivation) -> bool:
+    """Check if an activation has any running workflow process instances.
+
+    A process instance is considered running if it exists in Flowable runtime
+    with endTime = null.
+    """
+    engine_id = activation.template.definition.engine.engine_id
+    client = WorkflowGatewayClient(engine_id, allow_inactive=True)
+
+    # business_key format: rdm:node:{node_id}:activation:{activation_id}
+    business_key_pattern = f'%:activation:{activation.id}'
+
+    response = client.list_process_instances({
+        'businessKeyLike': business_key_pattern,
+        'size': 1,
+    })
+
+    return len(response['data']) > 0
+
+
+def can_delete_activation(activation: WorkflowActivation) -> bool:
+    """Check if an activation can be deleted.
+
+    An activation can be deleted when:
+    - It is not active (is_effectively_active=False)
+    - It has no running workflow process instances
+
+    Note: If the activation's node is deleted, we allow deletion regardless of
+    running workflows since there's no way to recover them.
+    """
+    if activation.is_effectively_active:
+        return False
+
+    has_running = has_running_workflows(activation)
+
+    if activation.node.is_deleted:
+        if has_running:
+            logger.warning(
+                'Allowing deletion of activation %s on deleted node %s - running workflows will be orphaned',
+                activation.id,
+                activation.node._id,
+            )
+        return True
+
+    return not has_running
+
+
+def delete_workflow_activation(activation: WorkflowActivation) -> None:
+    """Delete a workflow activation and revoke all delegation tokens.
+
+    This permanently removes the activation. Delegation tokens (manager, executor)
+    are revoked as part of the deletion.
+
+    Raises:
+        ValueError: If the activation cannot be deleted (is active or has running workflows)
+    """
+    if not can_delete_activation(activation):
+        raise ValueError('Cannot delete activation: still active or has running workflows')
+
+    # Revoke manager token
+    if activation.delegation_tokens.get('manager'):
+        revoke_delegation_token(activation.delegation_tokens['manager']['token_id'])
+
+    # Revoke all executor tokens
+    for executor_token in activation.executor_tokens.all():
+        revoke_delegation_token(executor_token.token_id)
+
+    activation.delete()
 
 
 def activate_workflow_template(template: WorkflowTemplate, activated_by: 'OSFUser') -> None:
@@ -1122,44 +1177,112 @@ def activate_workflow_template(template: WorkflowTemplate, activated_by: 'OSFUse
 
 
 def deactivate_workflow_template(template: WorkflowTemplate) -> None:
-    """Deactivate a workflow template and its activations, revoking delegation tokens."""
+    """Deactivate a workflow template.
+
+    Deactivation prohibits new activations but preserves access to existing data.
+    Delegation tokens are NOT revoked - they are only revoked on deletion.
+    """
     if not template.is_active:
         return
 
-    update_fields = []
+    template.is_active = False
+    template.save(update_fields=['is_active', 'modified'])
 
+
+def can_delete_template(template: WorkflowTemplate) -> bool:
+    """Check if a template can be deleted.
+
+    A template can be deleted when:
+    - It is inactive (is_active=False or engine.is_active=False)
+    - All its activations can be deleted (no running workflows)
+    """
+    if template.is_effectively_active:
+        return False
+
+    for activation in template.activations.all():
+        if not can_delete_activation(activation):
+            return False
+
+    return True
+
+
+def delete_workflow_template(template: WorkflowTemplate) -> None:
+    """Delete a workflow template and all its activations.
+
+    This permanently removes the template. All activations and delegation tokens
+    are revoked as part of the deletion.
+
+    Raises:
+        ValueError: If the template cannot be deleted
+    """
+    if not can_delete_template(template):
+        raise ValueError('Cannot delete template: still active or has running workflows')
+
+    # Delete all activations first
+    for activation in template.activations.all():
+        delete_workflow_activation(activation)
+
+    # Revoke creator token
     if template.delegation_tokens.get('creator'):
         revoke_delegation_token(template.delegation_tokens['creator']['token_id'])
-        delegation_tokens = dict(template.delegation_tokens)
-        del delegation_tokens['creator']
-        template.delegation_tokens = delegation_tokens
-        update_fields.append('delegation_tokens')
 
-    activations = WorkflowActivation.objects.filter(
-        template=template,
-        is_enabled=True
-    )
-    for activation in activations:
-        deactivate_workflow_activation(activation)
-
-    template.is_active = False
-    update_fields.append('is_active')
-    update_fields.append('modified')
-    template.save(update_fields=update_fields)
+    template.delete()
 
 
 def deactivate_workflow_engine(engine: WorkflowEngine) -> None:
-    """Deactivate a workflow engine and all its templates."""
-    templates = WorkflowTemplate.objects.filter(
-        definition__engine=engine,
-        is_active=True
-    ).select_related('definition')
+    """Deactivate a workflow engine.
 
-    for template in templates:
-        deactivate_workflow_template(template)
+    Deactivation prohibits new templates but preserves access to existing data.
+    Related templates are NOT automatically deactivated - they become 'disabled'
+    (parent inactive) state.
+    """
+    if not engine.is_active:
+        return
 
     engine.is_active = False
     engine.save(update_fields=['is_active', 'modified'])
+
+
+def can_delete_engine(engine: WorkflowEngine) -> bool:
+    """Check if an engine can be deleted.
+
+    An engine can be deleted when:
+    - It is inactive (is_active=False)
+    - All its templates can be deleted (no running workflows)
+    """
+    if engine.is_active:
+        return False
+
+    for template in WorkflowTemplate.objects.filter(definition__engine=engine):
+        if not can_delete_template(template):
+            return False
+
+    return True
+
+
+def delete_workflow_engine(engine: WorkflowEngine) -> None:
+    """Delete a workflow engine and all its templates.
+
+    This permanently removes the engine. All templates, activations, and
+    delegation tokens are deleted as part of the deletion.
+
+    Raises:
+        ValueError: If the engine cannot be deleted
+    """
+    if not can_delete_engine(engine):
+        raise ValueError('Cannot delete engine: still active or has running workflows')
+
+    # Delete all templates first
+    for template in WorkflowTemplate.objects.filter(definition__engine=engine):
+        delete_workflow_template(template)
+
+    # Delete definition snapshots
+    WorkflowDefinitionSnapshot.objects.filter(engine=engine).delete()
+
+    # Delete engine keys
+    WorkflowEngineKey.objects.filter(engine_id=engine.engine_id).delete()
+
+    engine.delete()
 
 
 def resolve_workflow_notification_recipients(

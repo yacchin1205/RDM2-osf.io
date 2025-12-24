@@ -4647,12 +4647,20 @@ msgstr "このプロジェクトと同じ所属機関のユーザー"
 
 
 #: addons/workflow/templates/workflow_node_settings.mako:169
-msgid "All RDM users"
-msgstr "すべてのRDM利用者"
+msgid "All users"
+msgstr "すべてのユーザー"
+
+#: addons/workflow/templates/workflow_node_settings.mako
+msgid "project(s)"
+msgstr "件のプロジェクト"
+
+#: addons/workflow/templates/workflow_node_settings.mako
+msgid "Activated in:"
+msgstr "有効化されているプロジェクト:"
 
 #: addons/workflow/templates/workflow_node_settings.mako:171
-msgid "Controls who can add this workflow template to their projects."
-msgstr "このワークフローテンプレートをプロジェクトに追加できる範囲を制御します。"
+msgid "Sets who can use this workflow template."
+msgstr "このワークフローテンプレートを利用できるユーザーを設定します。"
 
 
 #: addons/workflow/templates/workflow_node_settings.mako:172
@@ -4660,9 +4668,9 @@ msgid "You must be an institutional admin to select \"Users at this project's in
 msgstr "「このプロジェクトと同じ所属機関のユーザー」を選択するには機関管理者である必要があります。"
 
 
-#: addons/workflow/templates/workflow_node_settings.mako:173
-msgid "You must be a super admin to select \"All RDM users\"."
-msgstr "「すべてのRDM利用者」を選択するには統合管理者である必要があります。"
+#: addons/workflow/templates/workflow_node_settings.mako:211
+msgid "You must be an Integrated Admin to select \"All users\"."
+msgstr "「すべてのユーザー」を選択するには統合管理者である必要があります。"
 
 
 #: addons/workflow/templates/workflow_node_settings.mako:508
@@ -4711,8 +4719,8 @@ msgstr "権限を付与して有効にする"
 
 
 #: addons/workflow/templates/workflow_node_settings.mako:391
-msgid "Grant Permission and Create Template"
-msgstr "権限を付与してテンプレートを作成"
+msgid "Grant Permission and Register Workflow Template"
+msgstr "権限を付与してワークフローテンプレートを登録"
 
 
 #: addons/workflow/templates/workflow_node_settings.mako:368
@@ -4813,18 +4821,18 @@ msgstr "更新"
 
 
 #: addons/workflow/templates/workflow_node_settings.mako:94
-msgid "Create workflow template"
-msgstr "ワークフローテンプレートを作成"
+msgid "Register workflow template"
+msgstr "ワークフローテンプレートを登録"
 
 
 #: addons/workflow/templates/workflow_node_settings.mako:257
-msgid "Create template"
-msgstr "テンプレートを作成"
+msgid "Register workflow template"
+msgstr "ワークフローテンプレートを登録"
 
 
 #: addons/workflow/templates/workflow_node_settings.mako:256
-msgid "Creating template"
-msgstr "テンプレートを作成しています"
+msgid "Registering workflow template"
+msgstr "ワークフローテンプレートを登録しています"
 
 
 #: addons/workflow/templates/workflow_node_settings.mako:340
@@ -4832,14 +4840,6 @@ msgid "Select a workflow template…"
 msgstr "ワークフローテンプレートを選択…"
 
 
-#: addons/workflow/templates/workflow_node_settings.mako:341
-msgid "Select a workflow template to activate in this project."
-msgstr "このプロジェクトで有効化するワークフローテンプレートを選択してください。"
-
-
-#: addons/workflow/templates/workflow_node_settings.mako:116
-msgid "Select the workflow engine that was registered by your administrator."
-msgstr "管理者が登録したワークフローエンジンを選択してください。"
 
 
 #: addons/workflow/templates/workflow_node_settings.mako:375
@@ -5005,8 +5005,8 @@ msgid "Automatically activate this template when the workflow addon is enabled"
 msgstr "ワークフローアドオンが有効化されたときに、このテンプレートを自動的に有効化する"
 
 #: addons/workflow/templates/workflow_node_settings.mako:185
-msgid "When enabled, this template will be automatically activated for users who have access to it when they enable the workflow addon on a project."
-msgstr "有効にすると、このテンプレートにアクセス可能なユーザーがプロジェクトでワークフローアドオンを有効化した際に、このテンプレートが自動的に有効化されます。"
+msgid "When checked, this template will be automatically activated for users who have access to it when they enable the workflow addon on a project."
+msgstr "チェックすると、このテンプレートにアクセス可能なユーザーがプロジェクトでワークフローアドオンを有効化した際に、このテンプレートが自動的に有効化されます。"
 
 #: addons/workflow/templates/workflow_node_settings.mako:375
 msgid "Edit Workflow Template"

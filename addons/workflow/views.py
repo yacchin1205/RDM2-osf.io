@@ -39,15 +39,21 @@ from addons.workflow.models import (
 )
 from addons.workflow.token import validate_token_settings
 from osf.models import AbstractNode
+from osf.utils.permissions import WRITE
 from addons.workflow.services import (
     _extract_metadata,
     _get_visible_activations,
     activate_workflow_activation,
     activate_workflow_template,
+    can_delete_activation,
+    can_delete_engine,
+    can_delete_template,
     cancel_workflow_run,
     deactivate_workflow_activation,
-    deactivate_workflow_engine,
     deactivate_workflow_template,
+    delete_workflow_activation,
+    delete_workflow_engine,
+    delete_workflow_template,
     get_user_accessible_templates,
     get_workflow_task,
     list_workflow_tasks,
@@ -388,6 +394,7 @@ def _serialize_activation(activation: WorkflowActivation) -> Dict[str, Any]:
         'template_id': activation.template._id,
         'template': _serialize_template(activation.template),
         'is_enabled': activation.is_enabled,
+        'is_effectively_active': activation.is_effectively_active,
         'activated_by': activation.activated_by._id,
     }
 
@@ -454,16 +461,21 @@ def _business_key_prefix(node: AbstractNode) -> str:
 def _serialize_template(
     template: WorkflowTemplate,
     *,
-    current_node_id: Optional[int] = None,
+    current_node: Optional['AbstractNode'] = None,
+    current_user: Optional['OSFUser'] = None,
     activation: Optional[WorkflowActivation] = None,
 ) -> Dict[str, Any]:
-    return {
+    engine = template.definition.engine
+    is_local = (template.node_id == current_node.id) if current_node is not None else None
+    has_write = current_node.has_permission(current_user, WRITE) if current_node and current_user else False
+    result = {
         'id': template._id,
         'node_id': template.node._id if template.node_id else None,
         'node_title': template.node.title if template.node_id else None,
-        'is_local': (template.node_id == current_node_id) if current_node_id is not None else None,
+        'is_local': is_local,
         'engine_id': template.engine_id,
-        'engine_label': template.definition.engine.label,
+        'engine_label': engine.label,
+        'engine_is_active': engine.is_active,
         'definition_id': template.process_definition_id,
         'definition_key': template.definition_key,
         'definition_name': template.definition_name,
@@ -476,12 +488,29 @@ def _serialize_template(
         'label': template.label,
         'description': template.description,
         'is_active': template.is_active,
+        'is_effectively_active': template.is_effectively_active,
         'auto_activate': template.auto_activate,
         'activation_id': activation._id if activation else None,
         'is_enabled': activation.is_enabled if activation else False,
         'activation_activated_by': activation.activated_by._id if activation and activation.activated_by_id else None,
         'visibility': template.visibility,
     }
+    # Only include activations list for local templates with write permission
+    if is_local and has_write:
+        activations = []
+        for act in template.activations.select_related('node', 'activated_by').all():
+            if act.node.is_deleted:
+                continue
+            activations.append({
+                'id': act._id,
+                'node_id': act.node._id,
+                'node_title': act.node.title,
+                'is_enabled': act.is_enabled,
+                'is_effectively_active': act.is_effectively_active,
+                'activated_by': act.activated_by._id if act.activated_by_id else None,
+            })
+        result['activations'] = activations
+    return result
 
 
 @must_be_logged_in
@@ -730,7 +759,8 @@ def upsert_template(auth, **kwargs):
     return {
         'data': _serialize_template(
             template,
-            current_node_id=node.id,
+            current_node=node,
+            current_user=auth.user,
             activation=activation,
         ),
         'created': created,
@@ -767,7 +797,8 @@ def list_templates(auth, **kwargs):
     data = [
         _serialize_template(
             reg,
-            current_node_id=node.id,
+            current_node=node,
+            current_user=user,
             activation=activation_map.get(reg.id),
         )
         for reg in combined
@@ -853,7 +884,8 @@ def update_template(auth, template_id: str, **kwargs):
     return {
         'data': _serialize_template(
             template,
-            current_node_id=node.id,
+            current_node=node,
+            current_user=auth.user,
             activation=activation,
         ),
     }
@@ -874,13 +906,19 @@ def delete_template(auth, template_id: str, **kwargs):
             data={'message': 'Cannot delete template from a different project.'},
         )
 
-    if template.is_active:
+    if template.is_effectively_active:
         raise HTTPError(
             http_status.HTTP_400_BAD_REQUEST,
             data={'message': 'Cannot delete active template. Disable it first.'},
         )
 
-    template.delete()
+    if not can_delete_template(template):
+        raise HTTPError(
+            http_status.HTTP_409_CONFLICT,
+            data={'message': 'Cannot delete template with running workflows.'},
+        )
+
+    delete_workflow_template(template)
 
     return {}, http_status.HTTP_204_NO_CONTENT
 
@@ -933,10 +971,10 @@ def upsert_activation(auth, template_id: str, **kwargs):
     user = auth.user
 
     template = _get_template_or_404(template_id, user)
-    if not template.is_active:
+    if not template.is_effectively_active:
         raise HTTPError(
             http_status.HTTP_409_CONFLICT,
-            data={'message': 'Workflow template is inactive.'},
+            data={'message': 'Workflow template is not active.'},
         )
 
     try:
@@ -974,21 +1012,32 @@ def upsert_activation(auth, template_id: str, **kwargs):
 @must_be_logged_in
 @must_have_permission('write')
 @must_have_addon(SHORT_NAME, 'node')
-def deactivate_activation(auth, template_id: str, **kwargs):
+def delete_activation(auth, template_id: str, **kwargs):
     node = kwargs.get('node') or kwargs['project']
     user = auth.user
 
     template = _get_template_or_404(template_id, user)
 
     try:
-        activation = WorkflowActivation.objects.get(node=node, template=template)
+        activation = WorkflowActivation.objects.select_related('template').get(node=node, template=template)
     except WorkflowActivation.DoesNotExist as error:
         raise HTTPError(
             http_status.HTTP_404_NOT_FOUND,
             data={'message': 'Workflow activation not found.'},
         ) from error
 
-    deactivate_workflow_activation(activation)
+    if not can_delete_activation(activation):
+        if activation.is_effectively_active:
+            raise HTTPError(
+                http_status.HTTP_400_BAD_REQUEST,
+                data={'message': 'Cannot delete active activation. Deactivate it first.'},
+            )
+        raise HTTPError(
+            http_status.HTTP_409_CONFLICT,
+            data={'message': 'Cannot delete activation with running workflows.'},
+        )
+
+    delete_workflow_activation(activation)
 
     return {}, http_status.HTTP_204_NO_CONTENT
 
@@ -1461,10 +1510,22 @@ def retrieve_engine(auth, engine_id: str, **kwargs):
 
 @must_be_logged_in
 @require_admin
-def deactivate_engine(auth, engine_id: str, **kwargs):
+def delete_engine(auth, engine_id: str, **kwargs):
     engine = _get_engine_or_404(engine_id, auth.user)
 
-    deactivate_workflow_engine(engine)
+    if engine.is_active:
+        raise HTTPError(
+            http_status.HTTP_400_BAD_REQUEST,
+            data={'message': 'Cannot delete active engine. Deactivate it first.'},
+        )
+
+    if not can_delete_engine(engine):
+        raise HTTPError(
+            http_status.HTTP_409_CONFLICT,
+            data={'message': 'Cannot delete engine with running workflows.'},
+        )
+
+    delete_workflow_engine(engine)
 
     from addons.workflow.gateway_client import get_gateway_client
     get_gateway_client.cache_clear()

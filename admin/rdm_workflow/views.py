@@ -19,7 +19,12 @@ from framework.exceptions import HTTPError
 
 from addons.workflow.models import WorkflowEngine, WorkflowEngineKey
 from osf.models import Institution
-from addons.workflow.services import deactivate_workflow_engine, import_gateway_public_keys
+from addons.workflow.services import (
+    can_delete_engine,
+    deactivate_workflow_engine,
+    delete_workflow_engine,
+    import_gateway_public_keys,
+)
 
 from . import forms
 
@@ -126,6 +131,8 @@ class WorkflowEngineListView(WorkflowInstitutionMixin, TemplateView):
             return self._handle_deactivate(request)
         if action == 'activate_engine':
             return self._handle_activate(request)
+        if action == 'delete_engine':
+            return self._handle_delete(request)
         messages.error(request, _('Unsupported action requested.'))
         return redirect(self._current_url())
 
@@ -212,7 +219,7 @@ class WorkflowEngineListView(WorkflowInstitutionMixin, TemplateView):
 
         messages.success(
             request,
-            _('Workflow engine "%(engine)s" was deactivated.') % {'engine': engine.engine_id},
+            _('Workflow engine "%(engine)s" was disabled.') % {'engine': engine.engine_id},
         )
         return redirect(self._current_url())
 
@@ -229,7 +236,7 @@ class WorkflowEngineListView(WorkflowInstitutionMixin, TemplateView):
         if engine.is_active:
             messages.info(
                 request,
-                _('Workflow engine "%(engine)s" is already active.') % {'engine': engine.engine_id},
+                _('Workflow engine "%(engine)s" is already enabled.') % {'engine': engine.engine_id},
             )
             return redirect(self._current_url())
 
@@ -238,8 +245,40 @@ class WorkflowEngineListView(WorkflowInstitutionMixin, TemplateView):
 
         messages.success(
             request,
-            _('Workflow engine "%(engine)s" was reactivated. Re-register or import keys before delegating workflows.')
+            _('Workflow engine "%(engine)s" was enabled.')
             % {'engine': engine.engine_id},
+        )
+        return redirect(self._current_url())
+
+    def _handle_delete(self, request):
+        engine_id = request.POST.get('engine_id')
+        if not engine_id:
+            messages.error(request, _('Engine identifier is required.'))
+            return redirect(self._current_url())
+
+        engine = get_object_or_404(WorkflowEngine, engine_id=engine_id, institution=self.institution)
+        if not self.engine_belongs_to_context(engine):
+            raise PermissionDenied
+
+        if engine.is_active:
+            messages.error(
+                request,
+                _('Cannot delete active engine. Disable it first.'),
+            )
+            return redirect(self._current_url())
+
+        if not can_delete_engine(engine):
+            messages.error(
+                request,
+                _('Cannot delete engine with running workflows.'),
+            )
+            return redirect(self._current_url())
+
+        delete_workflow_engine(engine)
+
+        messages.success(
+            request,
+            _('Workflow engine "%(engine)s" was deleted.') % {'engine': engine_id},
         )
         return redirect(self._current_url())
 

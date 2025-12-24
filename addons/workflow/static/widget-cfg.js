@@ -112,7 +112,7 @@ function WorkflowWidgetViewModel() {
 
     self.activeTemplates = ko.computed(function() {
         return self.templates().filter(function(activation) {
-            return activation.is_enabled === true && activation.template.is_active === true;
+            return activation.is_effectively_active === true;
         }).map(function(activation) {
             return {
                 id: String(activation.template_id),

@@ -193,3 +193,48 @@ To send a notification from a Flowable workflow, use an Http Task with the follo
 You can also use `RDM_CREATOR_WEB_URL` or `RDM_MANAGER_WEB_URL` depending on which delegation token should be used for authentication.
 
 **Note:** No `Authorization` header is needed - the Gateway automatically adds the delegation token.
+
+## Lifecycle Management
+
+### Component Hierarchy
+
+```
+WorkflowEngine
+  └── WorkflowTemplate (1:N)
+        └── WorkflowActivation (1:N)
+              └── Process Instance (1:N)
+```
+
+### States and Transitions
+
+```
+[Active] ←─(activate)─→ [Inactive] ──(delete)──→ [Deleted]
+```
+
+| State | Description | Transition to next |
+|-------|-------------|-------------------|
+| **Active** | All operations permitted | Deactivate: always allowed |
+| **Inactive** | New activities prohibited, existing data accessible, running process instances continue | Activate: always allowed, Delete: see conditions below |
+| **Deleted** | Permanently removed with all dependents (cascade delete) | - |
+
+### Prohibited Activities when Inactive
+
+| Component | Prohibited |
+|-----------|------------|
+| Engine | New template registration |
+| Template | New activation creation |
+| Activation | New process instance start |
+
+### Delete Conditions
+
+Deletion is only allowed from the Inactive state.
+
+Each process instance has a `business_key` in the format: `rdm:node:{node_id}:activation:{activation_id}`. A process instance is considered **running** if it exists in Flowable with `endTime = null`.
+
+| Component | Can be deleted when... |
+|-----------|------------------------|
+| Activation | No process instances with matching `activation:{id}` in business_key have `endTime = null` in Flowable |
+| Template | All its activations can be deleted |
+| Engine | All its templates can be deleted |
+
+On deletion, all dependent components are cascade-deleted.

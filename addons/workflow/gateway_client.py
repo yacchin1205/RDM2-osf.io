@@ -62,10 +62,13 @@ def _get_key_spec_by_kid(kid: str) -> Dict[str, Any]:
 class WorkflowGatewayClient:
     """Small wrapper around the workflow gateway REST interface."""
 
-    def __init__(self, engine_id: str):
+    def __init__(self, engine_id: str, *, allow_inactive: bool = False):
         self.engine_id = engine_id
         try:
-            engine = WorkflowEngine.objects.get(engine_id=engine_id, is_active=True)
+            if allow_inactive:
+                engine = WorkflowEngine.objects.get(engine_id=engine_id)
+            else:
+                engine = WorkflowEngine.objects.get(engine_id=engine_id, is_active=True)
         except WorkflowEngine.DoesNotExist as error:
             raise WorkflowGatewayConfigurationError(
                 f'Workflow engine not configured or inactive: {engine_id}'

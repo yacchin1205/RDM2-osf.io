@@ -275,6 +275,10 @@ class WorkflowTemplate(BaseModel):
     def definition_metadata(self):
         return self.definition.definition_metadata
 
+    @property
+    def is_effectively_active(self) -> bool:
+        return self.is_active and self.definition.engine.is_active
+
     def get_validated_token_settings(self):
         return validate_token_settings(self.token_settings)
 
@@ -310,6 +314,10 @@ class WorkflowActivation(BaseModel):
     @property
     def _id(self) -> str:
         return str(self.id) if self.id is not None else ''
+
+    @property
+    def is_effectively_active(self) -> bool:
+        return self.is_enabled and self.template.is_effectively_active
 
     def __str__(self) -> str:  # pragma: no cover
         return f'WorkflowActivation(node={self.node_id}, template={self.template_id})'

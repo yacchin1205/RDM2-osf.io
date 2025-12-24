@@ -24,7 +24,7 @@ class WorkflowEngineForm(forms.ModelForm):
         required=False,
     )
     gateway_base_url = forms.URLField(
-        label=_('Gateway base URL'),
+        label=_('Gateway URL'),
         widget=forms.URLInput(attrs={'class': 'form-control'}),
     )
     signing_kid = forms.CharField(
@@ -33,6 +33,7 @@ class WorkflowEngineForm(forms.ModelForm):
     )
     verify_ssl = forms.BooleanField(
         required=False,
+        initial=True,
         label=_('Verify SSL certificate'),
         widget=forms.CheckboxInput(attrs={'class': 'form-check-input'}),
     )

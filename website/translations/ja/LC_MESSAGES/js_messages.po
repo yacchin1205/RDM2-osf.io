@@ -10647,9 +10647,6 @@ msgstr "有効"
 msgid "Disabled"
 msgstr "無効"
 
-msgid "Inactive"
-msgstr "無効"
-
 msgid "Select an engine…"
 msgstr "エンジンを選択…"
 
@@ -10686,8 +10683,8 @@ msgstr "エンジンの選択が必要です。"
 msgid "Workflow ZIP file is required."
 msgstr "ワークフローZIPファイルは必須です。"
 
-msgid "Workflow template created."
-msgstr "ワークフローテンプレートを作成しました。"
+msgid "Workflow template registered."
+msgstr "ワークフローテンプレートを登録しました。"
 
 msgid "Workflow template updated."
 msgstr "ワークフローテンプレートを更新しました。"
@@ -10696,22 +10693,22 @@ msgid "Failed to register workflow."
 msgstr "ワークフローの登録に失敗しました。"
 
 msgid "Workflow activated."
-msgstr "ワークフローを有効化しました。"
+msgstr "ワークフローを有効にしました。"
 
 msgid "Failed to activate workflow."
-msgstr "ワークフローの有効化に失敗しました。"
+msgstr "ワークフローを有効にできませんでした。"
 
 msgid "Workflow deactivated."
-msgstr "ワークフローを無効化しました。"
+msgstr "ワークフローを無効にしました。"
 
 msgid "Failed to deactivate workflow."
-msgstr "ワークフローの無効化に失敗しました。"
+msgstr "ワークフローを無効にできませんでした。"
 
 msgid "Workflow template enabled."
-msgstr "ワークフローテンプレートを利用可能にしました。"
+msgstr "ワークフローテンプレートを有効にしました。"
 
 msgid "Workflow template disabled."
-msgstr "ワークフローテンプレートを利用不可にしました。"
+msgstr "ワークフローテンプレートを無効にしました。"
 
 msgid "Failed to update workflow template."
 msgstr "ワークフローテンプレートの更新に失敗しました。"
@@ -10722,11 +10719,17 @@ msgstr "ワークフローテンプレートを削除しました。"
 msgid "Failed to delete workflow template."
 msgstr "ワークフローテンプレートの削除に失敗しました。"
 
+msgid "Workflow deleted."
+msgstr "ワークフローを削除しました。"
+
+msgid "Failed to delete workflow."
+msgstr "ワークフローの削除に失敗しました。"
+
 msgid "Workflow enabled."
-msgstr "ワークフローを有効化しました。"
+msgstr "ワークフローを有効にしました。"
 
 msgid "Failed to update workflow activation."
-msgstr "ワークフロー有効化の更新に失敗しました。"
+msgstr "ワークフローを有効にできませんでした。"
 
 msgid "No workflow engines are available."
 msgstr "利用可能なワークフローエンジンがありません。"

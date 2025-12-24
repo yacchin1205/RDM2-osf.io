@@ -54,7 +54,7 @@ api_routes = {
         Rule(
             ['/workflow/engines/<string:engine_id>/'],
             'delete',
-            views.deactivate_engine,
+            views.delete_engine,
             json_renderer,
         ),
         Rule(
@@ -159,7 +159,7 @@ api_routes = {
                 f'/project/<pid>/node/<nid>/{SHORT_NAME}/templates/<string:template_id>/activation/',
             ],
             'delete',
-            views.deactivate_activation,
+            views.delete_activation,
             json_renderer,
         ),
         Rule(

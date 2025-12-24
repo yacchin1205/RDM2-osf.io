@@ -21,7 +21,7 @@
 
         <div data-bind="if: !isLoading()">
             <div class="panel-group" style="margin-bottom: 15px;">
-                <!-- ko if: hasUploadEngines -->
+                <!-- ko if: showTemplatesPanel -->
                 <div class="panel panel-default">
                     <div class="panel-heading" style="cursor: pointer;" data-toggle="collapse" data-target="#localWorkflowsPanel" onclick="$(this).find('.toggle-icon').toggleClass('fa-chevron-down fa-chevron-right');">
                         <span style="font-size: 14px;">
@@ -61,9 +61,15 @@
                                         <div data-bind="if: autoActivate()">
                                             <small class="text-muted"><i class="fa fa-bolt"></i> ${_("Auto-activate")}</small>
                                         </div>
+                                        <!-- ko if: activations().length > 0 -->
+                                        <a href="#" data-bind="click: toggleActivations">
+                                            <i class="fa fa-sm" data-bind="css: { 'fa-chevron-right': !showActivations(), 'fa-chevron-down': showActivations() }"></i>
+                                            <span data-bind="text: activations().length"></span> ${_("project(s)")}
+                                        </a>
+                                        <!-- /ko -->
                                     </td>
                                     <td>
-                                        <span class="label" data-bind="css: { 'label-success': isActive(), 'label-default': !isActive() }, text: isActive() ? activeLabel : inactiveLabel"></span>
+                                        <span class="label" data-bind="css: statusClass, text: statusLabel"></span>
                                     </td>
                                     <td class="text-nowrap">
                                         <button type="button"
@@ -71,14 +77,25 @@
                                                 data-bind="click: $parent.openEditModal">
                                             <i class="fa fa-pencil"></i> ${_("Edit")}
                                         </button>
+                                        <!-- ko if: effectiveStatus() === 'active' -->
                                         <button type="button"
                                                 class="btn btn-xs btn-default"
                                                 data-bind="click: $parent.toggleTemplateActive,
                                                            css: { 'disabled': $parent.isToggling(id) },
                                                            attr: { disabled: $parent.isToggling(id) }">
-                                            <span data-bind="text: isActive() ? disableLabel : enableLabel"></span>
+                                            <span data-bind="text: disableLabel"></span>
                                         </button>
-                                        <!-- ko if: !isActive() -->
+                                        <!-- /ko -->
+                                        <!-- ko if: effectiveStatus() === 'disabled' || effectiveStatus() === 'inactive' -->
+                                        <!-- ko if: effectiveStatus() === 'inactive' && engineIsActive() -->
+                                        <button type="button"
+                                                class="btn btn-xs btn-default"
+                                                data-bind="click: $parent.toggleTemplateActive,
+                                                           css: { 'disabled': $parent.isToggling(id) },
+                                                           attr: { disabled: $parent.isToggling(id) }">
+                                            <span data-bind="text: enableLabel"></span>
+                                        </button>
+                                        <!-- /ko -->
                                         <button type="button"
                                                 class="btn btn-xs btn-danger"
                                                 data-bind="click: $parent.deleteTemplate,
@@ -89,6 +106,21 @@
                                         <!-- /ko -->
                                     </td>
                                 </tr>
+                                <!-- ko if: showActivations() && activations().length > 0 -->
+                                <tr>
+                                    <td colspan="5" style="padding-left: 30px; background-color: #f9f9f9;">
+                                        <strong>${_("Activated in:")}</strong>
+                                        <ul class="list-unstyled" style="margin: 5px 0;" data-bind="foreach: activations">
+                                            <li>
+                                                <a data-bind="attr: { href: '/' + node_id + '/' }, text: node_title"></a>
+                                                <!-- ko if: $parent.isActive() -->
+                                                <span class="label label-xs" data-bind="css: { 'label-success': is_enabled, 'label-default': !is_enabled }, text: is_enabled ? _('Enabled') : _('Disabled')"></span>
+                                                <!-- /ko -->
+                                            </li>
+                                        </ul>
+                                    </td>
+                                </tr>
+                                <!-- /ko -->
                             </tbody>
                         </table>
                         <!-- /ko -->
@@ -98,8 +130,9 @@
                         </div>
                         <!-- /ko -->
 
+                        <!-- ko if: hasUploadEngines -->
                         <div class="panel-body" style="background-color: #f9f9f9; border-top: 1px solid #ddd;">
-                            <h5 style="margin-top: 0;"><strong>${_("Create workflow template")}</strong></h5>
+                            <h5 style="margin-top: 0;"><strong>${_("Register workflow template")}</strong></h5>
                             <div>
                 <form class="form-horizontal" data-bind="submit: submitTemplate">
                     <div class="form-group" data-bind="css: { 'has-error': errors().engineId }">
@@ -120,9 +153,6 @@
                                                    optionsText: 'display',
                                                    value: form.engineId,
                                                    optionsCaption: selectEngineCaption"></select>
-                                <p class="help-block">
-                                    ${_("Select the workflow engine that was registered by your administrator.")}
-                                </p>
                             </div>
                             <p class="text-muted" data-bind="visible: !isLoadingEngines() && !hasEngines() && !engineLoadError()">
                                 ${_("No workflow engines are currently available. Please contact your administrator.")}
@@ -169,11 +199,11 @@
                             <select id="workflow-visibility" class="form-control" data-bind="value: form.visibility">
                                 <option value="project">${_("This project's members only (default)")}</option>
                                 <option value="institution" data-bind="attr: { disabled: !canShareInstitution() }">${_("Users at this project's institutions")}</option>
-                                <option value="public" data-bind="attr: { disabled: !canSharePublic() }">${_("All RDM users")}</option>
+                                <option value="public" data-bind="attr: { disabled: !canSharePublic() }">${_("All users")}</option>
                             </select>
-                            <p class="help-block">${_("Controls who can add this workflow template to their projects.")}</p>
+                            <p class="help-block">${_("Sets who can use this workflow template.")}</p>
                             <p class="help-block text-warning" data-bind="visible: !canShareInstitution()">${_("You must be an institutional admin to select \"Users at this project's institutions\".")}</p>
-                            <p class="help-block text-warning" data-bind="visible: !canSharePublic()">${_("You must be a super admin to select \"All RDM users\".")}</p>
+                            <p class="help-block text-warning" data-bind="visible: !canSharePublic()">${_("You must be an Integrated Admin to select \"All users\".")}</p>
                         </div>
                     </div>
                     <div class="form-group">
@@ -185,7 +215,7 @@
                                     ${_("Automatically activate this template when the workflow addon is enabled")}
                                 </label>
                             </div>
-                            <p class="help-block">${_("When enabled, this template will be automatically activated for users who have access to it when they enable the workflow addon on a project.")}</p>
+                            <p class="help-block">${_("When checked, this template will be automatically activated for users who have access to it when they enable the workflow addon on a project.")}</p>
                         </div>
                     </div>
                     <div class="form-group">
@@ -224,8 +254,8 @@
                     <div class="form-group">
                         <div class="col-sm-offset-3 col-sm-9">
                             <button type="submit" class="btn btn-primary" data-bind="disable: isSubmitting">
-                                <span data-bind="visible: isSubmitting"><i class="fa fa-spinner fa-spin"></i> ${_("Creating template")}</span>
-                                <span data-bind="visible: !isSubmitting()">${_("Create template")}</span>
+                                <span data-bind="visible: isSubmitting"><i class="fa fa-spinner fa-spin"></i> ${_("Registering workflow template")}</span>
+                                <span data-bind="visible: !isSubmitting()">${_("Register workflow template")}</span>
                             </button>
                         </div>
                     </div>
@@ -233,6 +263,7 @@
                 </form>
                             </div>
                         </div>
+                        <!-- /ko -->
                     </div>
                 </div>
                 <!-- /ko -->
@@ -257,6 +288,7 @@
                                     <th>${_("Name")}</th>
                                     <th>${_("Workflow Engine")}</th>
                                     <th>${_("Defined in")}</th>
+                                    <th>${_("Status")}</th>
                                     <th>${_("Actions")}</th>
                                 </tr>
                             </thead>
@@ -273,7 +305,11 @@
                                         <a data-bind="visible: nodeUrl, attr: { href: nodeUrl }, text: node_title"></a>
                                         <span data-bind="visible: !nodeUrl, text: isLocal ? 'This project' : 'Shared'"></span>
                                     </td>
+                                    <td>
+                                        <span class="label" data-bind="css: statusClass, text: statusLabel"></span>
+                                    </td>
                                     <td class="text-nowrap">
+                                        <!-- ko if: effectiveStatus() === 'active' -->
                                         <button type="button"
                                                 class="btn btn-xs btn-default"
                                                 data-bind="click: $parent.deactivateWorkflow,
@@ -281,6 +317,25 @@
                                                            attr: { disabled: $parent.isToggling(id) }">
                                             <span data-bind="text: disableLabel"></span>
                                         </button>
+                                        <!-- /ko -->
+                                        <!-- ko if: effectiveStatus() === 'disabled' || effectiveStatus() === 'inactive' -->
+                                        <!-- ko if: effectiveStatus() === 'inactive' && template.isActive() -->
+                                        <button type="button"
+                                                class="btn btn-xs btn-default"
+                                                data-bind="click: $parent.enableWorkflow,
+                                                           css: { 'disabled': $parent.isToggling(id) },
+                                                           attr: { disabled: $parent.isToggling(id) }">
+                                            ${_("Enable")}
+                                        </button>
+                                        <!-- /ko -->
+                                        <button type="button"
+                                                class="btn btn-xs btn-danger"
+                                                data-bind="click: $parent.deleteActivation,
+                                                           css: { 'disabled': $parent.isDeletingActivation(id) },
+                                                           attr: { disabled: $parent.isDeletingActivation(id) }">
+                                            <i class="fa fa-trash"></i> <span data-bind="text: deleteLabel"></span>
+                                        </button>
+                                        <!-- /ko -->
                                     </td>
                                 </tr>
                             </tbody>
@@ -305,9 +360,6 @@
                                                            optionsText: function(item) { var name = item.label() || item.definition_name || item.definition_id; return item.node_title ? name + ' [' + item.node_title + ']' : name; },
                                                            value: activateForm.selectedTemplateId,
                                                            optionsCaption: '${_("Select a workflow template…")}'"></select>
-                                        <!-- ko if: !selectedTemplateForActivation() -->
-                                        <p class="help-block">${_("Select a workflow template to activate in this project.")}</p>
-                                        <!-- /ko -->
                                         <!-- ko if: selectedTemplateForActivation() && selectedTemplateForActivation().description() -->
                                         <p class="help-block" data-bind="text: selectedTemplateForActivation().description()"></p>
                                         <!-- /ko -->
@@ -360,7 +412,7 @@
                 <div class="modal-footer">
                     <button type="button" class="btn btn-default" data-dismiss="modal">${_("Cancel")}</button>
                     <button type="button" class="btn btn-primary" data-bind="click: confirmTokenPermission">
-                        ${_("Grant Permission and Create Template")}
+                        ${_("Grant Permission and Register Workflow Template")}
                     </button>
                 </div>
             </div>
@@ -394,9 +446,9 @@
                                 <select id="edit-template-visibility" class="form-control" data-bind="value: editForm.visibility">
                                     <option value="project">${_("This project's members only (default)")}</option>
                                     <option value="institution" data-bind="attr: { disabled: !canShareInstitution() }">${_("Users at this project's institutions")}</option>
-                                    <option value="public" data-bind="attr: { disabled: !canSharePublic() }">${_("All RDM users")}</option>
+                                    <option value="public" data-bind="attr: { disabled: !canSharePublic() }">${_("All users")}</option>
                                 </select>
-                                <p class="help-block">${_("Controls who can add this workflow template to their projects.")}</p>
+                                <p class="help-block">${_("Sets who can use this workflow template.")}</p>
                             </div>
                         </div>
                         <div class="form-group">
@@ -549,6 +601,33 @@
                 <div class="modal-footer">
                     <button type="button" class="btn btn-default" data-dismiss="modal">${_("Cancel")}</button>
                     <button type="button" class="btn btn-danger" data-bind="click: confirmDeleteTemplate">
+                        <i class="fa fa-trash"></i> ${_("Delete")}
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="deleteActivationModal" tabindex="-1" role="dialog">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal"><span>&times;</span></button>
+                    <h4 class="modal-title">${_("Delete Workflow")}</h4>
+                </div>
+                <div class="modal-body">
+                    <p data-bind="if: deleteActivationRequest.pendingActivation">
+                        ${_("Are you sure you want to delete")}
+                        <strong data-bind="text: deleteActivationRequest.pendingActivation().label"></strong>?
+                    </p>
+                    <div class="alert alert-warning">
+                        <i class="fa fa-exclamation-triangle"></i>
+                        ${_("This action cannot be undone.")}
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-default" data-dismiss="modal">${_("Cancel")}</button>
+                    <button type="button" class="btn btn-danger" data-bind="click: confirmDeleteActivation">
                         <i class="fa fa-trash"></i> ${_("Delete")}
                     </button>
                 </div>
