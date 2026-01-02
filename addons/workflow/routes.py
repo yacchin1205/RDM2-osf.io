@@ -225,6 +225,15 @@ api_routes = {
             views.workflow_notification,
             json_renderer,
         ),
+        Rule(
+            [
+                f'/project/<pid>/{SHORT_NAME}/jobs/<string:job_id>/',
+                f'/project/<pid>/node/<nid>/{SHORT_NAME}/jobs/<string:job_id>/',
+            ],
+            'get',
+            views.get_job_status,
+            json_renderer,
+        ),
     ],
     'prefix': '/api/v1',
 }

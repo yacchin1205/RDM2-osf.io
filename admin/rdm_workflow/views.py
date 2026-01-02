@@ -62,7 +62,7 @@ class WorkflowInstitutionMixin(RdmPermissionMixin, UserPassesTestMixin):
         return self.request.user.affiliated_institutions.filter(id=self.institution.id).exists()
 
     def get_engine_queryset(self):
-        return WorkflowEngine.objects.filter(institution=self.institution).order_by('engine_id')
+        return WorkflowEngine.objects.filter(institution=self.institution).order_by('-modified')
 
     def engine_belongs_to_context(self, engine: WorkflowEngine) -> bool:
         return engine.institution_id == self.institution.id

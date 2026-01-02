@@ -855,8 +855,8 @@ class WorkflowEngineViewTests(OsfTestCase):
         activation.refresh_from_db()
         assert activation.is_enabled is True
 
-    @mock.patch('addons.workflow.views.start_workflow_process')
-    def test_start_run_returns_service_payload(self, mock_start):
+    @mock.patch('addons.workflow.views.start_workflow_process_async')
+    def test_start_run_returns_service_payload(self, mock_start_async):
         owner = AuthUserFactory()
         node = self._create_project_with_workflow(owner)
 
@@ -872,14 +872,6 @@ class WorkflowEngineViewTests(OsfTestCase):
 
         template, activation = self._register_template(node, owner, engine, definition_id)
 
-        mock_start.return_value = {
-            'id': 'process-42',
-            'status': STATUS_RUNNING,
-            'label': 'Custom Run Label',
-            'node_id': node._id,
-            'template_id': str(template.id),
-        }
-
         response = self.app.post_json(
             self._run_url(node, template),
             {'label': 'Custom Run Label'},
@@ -887,16 +879,17 @@ class WorkflowEngineViewTests(OsfTestCase):
         )
 
         assert response.status_code == http_status.HTTP_202_ACCEPTED
-        assert response.json['data'] == mock_start.return_value
-        mock_start.assert_called_once_with(
-            node,
-            template=template,
-            activation=activation,
-            started_by=owner,
-            business_key=None,
-            label='Custom Run Label',
-            variables=None,
-        )
+        assert response.json['data']['job_id'].startswith('wf-')
+        assert response.json['data']['status'] == 'pending'
+        assert 'status_url' in response.json['data']
+        mock_start_async.apply_async.assert_called_once()
+        call_kwargs = mock_start_async.apply_async.call_args
+        assert call_kwargs[1]['args'] == [node._id, template.id, activation.id, owner._id]
+        assert call_kwargs[1]['kwargs'] == {
+            'business_key': None,
+            'label': 'Custom Run Label',
+            'variables': None,
+        }
 
     @mock.patch('addons.workflow.views.get_gateway_client')
     def test_list_runs_returns_recent_runs(self, mock_get_client):
@@ -1037,13 +1030,11 @@ class WorkflowEngineViewTests(OsfTestCase):
             include_form=True,
         )
 
-    @mock.patch('addons.workflow.views.submit_workflow_task_action')
-    def test_submit_task_action_completion_returns_no_content(self, mock_submit_action):
+    @mock.patch('addons.workflow.views.submit_task_action_async')
+    def test_submit_task_action_returns_job_info(self, mock_submit_async):
         owner = AuthUserFactory()
         node = self._create_project_with_workflow(owner)
         engine = self._create_engine(owner=owner)
-
-        mock_submit_action.return_value = None
 
         self._ensure_engine_admin(owner, engine)
         response = self.app.post_json(
@@ -1054,47 +1045,19 @@ class WorkflowEngineViewTests(OsfTestCase):
                 'assignee': 'user-123',
             },
             auth=owner.auth,
-            status=http_status.HTTP_204_NO_CONTENT,
         )
 
-        assert response.status_code == http_status.HTTP_204_NO_CONTENT
-        mock_submit_action.assert_called_once_with(
-            node,
-            'task-3',
-            owner,
-            engine_id=engine.engine_id,
-            action='complete',
-            variables={'decision': 'approve'},
-            assignee='user-123',
-        )
-
-    @mock.patch('addons.workflow.views.submit_workflow_task_action')
-    def test_submit_task_action_returns_service_payload(self, mock_submit_action):
-        owner = AuthUserFactory()
-        node = self._create_project_with_workflow(owner)
-        engine = self._create_engine(owner=owner)
-
-        service_payload = {'id': 'task-4', 'status': 'completed'}
-        mock_submit_action.return_value = service_payload
-
-        self._ensure_engine_admin(owner, engine)
-        response = self.app.post_json(
-            self._task_action_url(node, engine, 'task-4'),
-            {'action': 'complete'},
-            auth=owner.auth,
-        )
-
-        assert response.status_code == http_status.HTTP_200_OK
-        assert response.json['data'] == service_payload
-        mock_submit_action.assert_called_once_with(
-            node,
-            'task-4',
-            owner,
-            engine_id=engine.engine_id,
-            action='complete',
-            variables=None,
-            assignee=None,
-        )
+        assert response.status_code == http_status.HTTP_202_ACCEPTED
+        assert response.json['data']['job_id'].startswith('wf-')
+        assert response.json['data']['status'] == 'pending'
+        assert 'status_url' in response.json['data']
+        mock_submit_async.apply_async.assert_called_once()
+        call_kwargs = mock_submit_async.apply_async.call_args
+        assert call_kwargs[1]['args'] == [node._id, 'task-3', owner._id, engine.engine_id, 'complete']
+        assert call_kwargs[1]['kwargs'] == {
+            'variables': {'decision': 'approve'},
+            'assignee': 'user-123',
+        }
 
     def test_start_run_rejects_disabled_activation(self):
         owner = AuthUserFactory()

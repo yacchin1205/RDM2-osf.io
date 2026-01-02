@@ -23,6 +23,7 @@ from website.project.decorators import (
 )
 from website.ember_osf_web.views import use_ember_app
 
+from framework.celery_tasks import app as celery_app
 from addons.workflow import settings as workflow_settings
 from addons.workflow.engine_keys import get_engine_public_key
 from addons.workflow.keyset import build_public_keyset
@@ -58,10 +59,9 @@ from addons.workflow.services import (
     get_workflow_task,
     list_workflow_tasks,
     send_workflow_notification,
-    start_workflow_process,
-    submit_workflow_task_action,
     upsert_workflow_template,
 )
+from addons.workflow.tasks import start_workflow_process_async, submit_task_action_async
 
 _ALLOWED_ALGORITHMS = {'RS256', 'RS384', 'RS512', 'ES256', 'ES384', 'ES512'}
 _TEMPLATE_VISIBILITY_VALUES = {
@@ -80,6 +80,7 @@ STATUS_UNKNOWN = 'unknown'
 
 SHORT_NAME = 'workflow'
 PREFERRED_PROCESS_KEY_PREFIX = 'rdm-main-'
+WORKFLOW_JOB_PREFIX = 'wf-'
 
 logger = logging.getLogger(__name__)
 
@@ -488,7 +489,7 @@ def _serialize_template(
         'label': template.label,
         'description': template.description,
         'is_active': template.is_active,
-        'is_effectively_active': template.is_effectively_active,
+        'is_effectively_active': activation.is_effectively_active if activation else template.is_effectively_active,
         'auto_activate': template.auto_activate,
         'activation_id': activation._id if activation else None,
         'is_enabled': activation.is_enabled if activation else False,
@@ -1060,6 +1061,12 @@ def start_run(auth, template_id: str, **kwargs):
             data={'message': 'Workflow activation not found.'},
         ) from error
 
+    if not activation.is_effectively_active:
+        raise HTTPError(
+            http_status.HTTP_409_CONFLICT,
+            data={'message': 'Workflow is not active.'},
+        )
+
     try:
         payload = request.get_json(force=True)
     except Exception as error:
@@ -1096,17 +1103,24 @@ def start_run(auth, template_id: str, **kwargs):
             data={'message': 'variables must be an array.'},
         )
 
-    run_info = start_workflow_process(
-        node,
-        template=template,
-        activation=activation,
-        started_by=user,
-        business_key=business_key,
-        label=label,
-        variables=variables,
+    job_id = f'{WORKFLOW_JOB_PREFIX}{uuid.uuid4()}'
+    start_workflow_process_async.apply_async(
+        args=[node._id, template.id, activation.id, user._id],
+        kwargs={
+            'business_key': business_key,
+            'label': label,
+            'variables': variables,
+        },
+        task_id=job_id,
     )
 
-    return {'data': run_info}, http_status.HTTP_202_ACCEPTED
+    return {
+        'data': {
+            'job_id': job_id,
+            'status': 'pending',
+            'status_url': f'/api/v1/project/{node._id}/workflow/jobs/{job_id}/',
+        }
+    }, http_status.HTTP_202_ACCEPTED
 
 
 @must_be_valid_project
@@ -1335,20 +1349,23 @@ def submit_task_action(auth, engine_id: str, task_id: str, **kwargs):
             data={'message': 'action must be a non-empty string.'},
         )
 
-    response = submit_workflow_task_action(
-        node,
-        task_id,
-        auth.user,
-        engine_id=engine_id,
-        action=action,
-        variables=payload.get('variables'),
-        assignee=payload.get('assignee'),
+    job_id = f'{WORKFLOW_JOB_PREFIX}{uuid.uuid4()}'
+    submit_task_action_async.apply_async(
+        args=[node._id, task_id, auth.user._id, engine_id, action],
+        kwargs={
+            'variables': payload.get('variables'),
+            'assignee': payload.get('assignee'),
+        },
+        task_id=job_id,
     )
 
-    if response is None:
-        return {}, http_status.HTTP_204_NO_CONTENT
-
-    return {'data': response}, http_status.HTTP_200_OK
+    return {
+        'data': {
+            'job_id': job_id,
+            'status': 'pending',
+            'status_url': f'/api/v1/project/{node._id}/workflow/jobs/{job_id}/',
+        }
+    }, http_status.HTTP_202_ACCEPTED
 
 
 @must_have_permission('read')
@@ -1556,6 +1573,11 @@ def workflow_notification(auth, engine_id: str, process_instance_id: str, **kwar
         'id': process_instance_id,
         'includeProcessVariables': 'true',
     })
+    if len(instance_response['data']) == 0:
+        raise HTTPError(
+            http_status.HTTP_404_NOT_FOUND,
+            data={'message': 'Process instance not found.'},
+        )
     response = instance_response['data'][0]
     metadata = _extract_metadata(response)
 
@@ -1573,3 +1595,36 @@ def workflow_notification(auth, engine_id: str, process_instance_id: str, **kwar
     )
 
     return {'message': 'Notification sent'}
+
+
+@must_be_valid_project
+@must_be_logged_in
+@must_have_permission('read')
+@must_have_addon(SHORT_NAME, 'node')
+def get_job_status(auth, job_id: str, **kwargs):
+    if not job_id.startswith(WORKFLOW_JOB_PREFIX):
+        raise HTTPError(
+            http_status.HTTP_404_NOT_FOUND,
+            data={'message': 'Job not found.'},
+        )
+
+    aresult = celery_app.AsyncResult(job_id)
+
+    state = aresult.state
+
+    if state == 'PENDING':
+        return {'data': {'status': 'pending'}}
+
+    if state == 'STARTED':
+        return {'data': {'status': 'running'}}
+
+    if state == 'SUCCESS':
+        return {'data': {'status': 'completed'}}
+
+    if state == 'FAILURE':
+        return {'data': {'status': 'failed', 'error': str(aresult.result)}}
+
+    raise HTTPError(
+        http_status.HTTP_500_INTERNAL_SERVER_ERROR,
+        data={'message': f'Unexpected task state: {state}'},
+    )
