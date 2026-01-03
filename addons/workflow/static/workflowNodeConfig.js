@@ -7,6 +7,7 @@ const Raven = require('raven-js');
 const $osf = require('js/osfHelpers');
 const ChangeMessageMixin = require('js/changeMessage');
 const _ = require('js/rdmGettext')._;
+const sprintf = require('agh.sprintf').sprintf;
 
 function formatTokenMode(mode) {
     if (mode === 'readwrite') return 'RW';
@@ -277,10 +278,38 @@ function WorkflowNodeSettingsViewModel(options) {
 
     self.deleteTemplateRequest = {
         pendingTemplate: ko.observable(null),
+        confirmMessage: ko.pureComputed(function() {
+            var template = self.deleteTemplateRequest.pendingTemplate();
+            if (!template) return '';
+            return sprintf(_("Are you sure you want to delete %s?"), '<strong>' + $osf.htmlEscape(template.label()) + '</strong>');
+        }),
+    };
+
+    self.disableTemplateRequest = {
+        pendingTemplate: ko.observable(null),
+        confirmMessage: ko.pureComputed(function() {
+            var template = self.disableTemplateRequest.pendingTemplate();
+            if (!template) return '';
+            return sprintf(_("Are you sure you want to disable %s?"), '<strong>' + $osf.htmlEscape(template.label()) + '</strong>');
+        }),
+    };
+
+    self.disableActivationRequest = {
+        pendingActivation: ko.observable(null),
+        confirmMessage: ko.pureComputed(function() {
+            var activation = self.disableActivationRequest.pendingActivation();
+            if (!activation) return '';
+            return sprintf(_("Are you sure you want to disable %s?"), '<strong>' + $osf.htmlEscape(activation.label) + '</strong>');
+        }),
     };
 
     self.deleteActivationRequest = {
         pendingActivation: ko.observable(null),
+        confirmMessage: ko.pureComputed(function() {
+            var activation = self.deleteActivationRequest.pendingActivation();
+            if (!activation) return '';
+            return sprintf(_("Are you sure you want to delete %s?"), '<strong>' + $osf.htmlEscape(activation.label) + '</strong>');
+        }),
     };
     self.deletingActivationIds = ko.observableArray([]);
 
@@ -822,6 +851,11 @@ function WorkflowNodeSettingsViewModel(options) {
     };
 
     self.deactivateWorkflow = function(activation) {
+        self.disableActivationRequest.pendingActivation(activation);
+        $('#disableActivationModal').modal('show');
+    };
+
+    self._doDeactivateWorkflow = function(activation) {
         const url = self.templatesUrl + activation.template_id + '/activation/';
         self.togglingIds.push(activation.id);
         return $osf.putJSON(url, {
@@ -844,6 +878,13 @@ function WorkflowNodeSettingsViewModel(options) {
         }).always(function() {
             self.togglingIds.remove(activation.id);
         });
+    };
+
+    self.confirmDisableActivation = function() {
+        const activation = self.disableActivationRequest.pendingActivation();
+        $('#disableActivationModal').modal('hide');
+        self.disableActivationRequest.pendingActivation(null);
+        self._doDeactivateWorkflow(activation);
     };
 
     self.enableWorkflow = function(activation) {
@@ -923,8 +964,16 @@ function WorkflowNodeSettingsViewModel(options) {
                 $('#templateEnableTokenPermissionModal').modal('show');
                 return;
             }
+        } else {
+            self.disableTemplateRequest.pendingTemplate(template);
+            $('#disableTemplateModal').modal('show');
+            return;
         }
 
+        self._doToggleTemplateActive(template, newActiveState);
+    };
+
+    self._doToggleTemplateActive = function(template, newActiveState) {
         const url = self.templatesUrl + template.id + '/';
         self.togglingIds.push(template.id);
 
@@ -956,6 +1005,13 @@ function WorkflowNodeSettingsViewModel(options) {
         }).always(function() {
             self.togglingIds.remove(template.id);
         });
+    };
+
+    self.confirmDisableTemplate = function() {
+        const template = self.disableTemplateRequest.pendingTemplate();
+        $('#disableTemplateModal').modal('hide');
+        self.disableTemplateRequest.pendingTemplate(null);
+        self._doToggleTemplateActive(template, false);
     };
 
     self.openEditModal = function(template) {

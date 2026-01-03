@@ -4598,7 +4598,7 @@ msgstr "このワークフローを有効化すると、プロジェクトリソ
 
 #: addons/workflow/templates/workflow_node_settings.mako:518
 msgid "All associated workflow activations and delegation tokens will be revoked and removed."
-msgstr "関連するすべてのワークフロー有効化と委任トークンは失効し削除されます。"
+msgstr "関連するすべてのワークフローと委任トークンは失効し削除されます。"
 
 
 #: addons/workflow/templates/workflow_node_settings.mako:512
@@ -4675,7 +4675,47 @@ msgstr "「すべてのユーザー」を選択するには統合管理者であ
 
 #: addons/workflow/templates/workflow_node_settings.mako:508
 msgid "Delete Workflow Template"
-msgstr "ワークフローテンプレートを削除"
+msgstr "ワークフローテンプレートの削除"
+
+#: addons/workflow/templates/workflow_node_settings.mako
+msgid "Delete Workflow"
+msgstr "ワークフローの削除"
+
+#: addons/workflow/templates/workflow_node_settings.mako:616
+msgid "Disable Workflow Template"
+msgstr "ワークフローテンプレートの無効化"
+
+#: addons/workflow/templates/workflow_node_settings.mako:620
+msgid "When disabled:"
+msgstr "無効にすると："
+
+#: addons/workflow/templates/workflow_node_settings.mako:622
+msgid "This template cannot be used to activate new workflows"
+msgstr "このテンプレートを使って新しいワークフローを有効化できなくなります"
+
+#: addons/workflow/templates/workflow_node_settings.mako:623
+msgid "Existing workflows using this template will be disabled"
+msgstr "このテンプレートを使用している既存のワークフローは無効になります"
+
+#: addons/workflow/templates/workflow_node_settings.mako:624
+msgid "Running workflow processes will continue to execute"
+msgstr "実行中のワークフロープロセスは継続して実行されます"
+
+#: addons/workflow/templates/workflow_node_settings.mako:626
+msgid "You can re-enable this template at any time."
+msgstr "このテンプレートはいつでも再度有効にできます。"
+
+#: addons/workflow/templates/workflow_node_settings.mako:670
+msgid "Disable Workflow"
+msgstr "ワークフローの無効化"
+
+#: addons/workflow/templates/workflow_node_settings.mako:676
+msgid "New workflow processes cannot be started"
+msgstr "新しいワークフロープロセスを開始できなくなります"
+
+#: addons/workflow/templates/workflow_node_settings.mako:679
+msgid "You can re-enable this workflow at any time."
+msgstr "このワークフローはいつでも再度有効にできます。"
 
 
 #: addons/workflow/templates/workflow_node_settings.mako:224
@@ -4853,6 +4893,14 @@ msgstr "このワークフローはあなたに代わって次の操作を行え
 #: addons/workflow/templates/workflow_node_settings.mako:517
 msgid "This action cannot be undone."
 msgstr "この操作は取り消せません。"
+
+#: addons/workflow/templates/workflow_node_settings.mako
+msgid "All workflow process history related to this project will be permanently removed."
+msgstr "このプロジェクトに関連するすべてのワークフロープロセス履歴が完全に削除されます。"
+
+#: addons/workflow/templates/workflow_node_settings.mako
+msgid "If there are running workflow processes, deletion will fail."
+msgstr "実行中のワークフロープロセスがある場合、エラーになります。"
 
 
 #: addons/workflow/templates/workflow_node_settings.mako:371

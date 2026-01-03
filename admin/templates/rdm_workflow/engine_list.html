@@ -125,14 +125,9 @@
                                 <a class="btn btn-xs btn-default" href="{% url 'rdm_workflow:engine-edit' institution.id engine.engine_id %}"><i class="fa fa-pencil"></i> {% trans "Edit" %}</a>
                                 <a class="btn btn-xs btn-default" href="{% url 'rdm_workflow:engine-keys' institution.id engine.engine_id %}"><i class="fa fa-key"></i> {% trans "Manage keys" %}</a>
                                 {% if engine.is_active %}
-                                    <form method="post" style="display:inline" onsubmit="return confirm('{% trans "Disable this workflow engine?" %}');">
-                                        {% csrf_token %}
-                                        <input type="hidden" name="action" value="deactivate_engine">
-                                        <input type="hidden" name="engine_id" value="{{ engine.engine_id }}">
-                                        <button class="btn btn-xs btn-default" type="submit">
-                                            {% trans "Disable" %}
-                                        </button>
-                                    </form>
+                                    <button class="btn btn-xs btn-default" data-toggle="modal" data-target="#deactivateEngineModal-{{ forloop.counter }}">
+                                        {% trans "Disable" %}
+                                    </button>
                                 {% else %}
                                     <form method="post" style="display:inline">
                                         {% csrf_token %}
@@ -142,17 +137,77 @@
                                             {% trans "Enable" %}
                                         </button>
                                     </form>
-                                    <form method="post" style="display:inline" onsubmit="return confirm('{% trans "Delete this workflow engine? This action cannot be undone." %}');">
-                                        {% csrf_token %}
-                                        <input type="hidden" name="action" value="delete_engine">
-                                        <input type="hidden" name="engine_id" value="{{ engine.engine_id }}">
-                                        <button class="btn btn-xs btn-danger" type="submit">
-                                            <i class="fa fa-trash"></i> {% trans "Delete" %}
-                                        </button>
-                                    </form>
+                                    <button class="btn btn-xs btn-danger" data-toggle="modal" data-target="#deleteEngineModal-{{ forloop.counter }}">
+                                        <i class="fa fa-trash"></i> {% trans "Delete" %}
+                                    </button>
                                 {% endif %}
                             </td>
                         </tr>
+                        {% if engine.is_active %}
+                        <div class="modal fade" id="deactivateEngineModal-{{ forloop.counter }}" tabindex="-1" role="dialog">
+                            <div class="modal-dialog" role="document">
+                                <div class="modal-content">
+                                    <div class="modal-header">
+                                        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                                        <h4 class="modal-title">{% trans "Disable Workflow Engine" %}</h4>
+                                    </div>
+                                    <div class="modal-body">
+                                        <p>{% trans "Are you sure you want to disable this workflow engine?" %}</p>
+                                        <p class="text-muted">
+                                            {% trans "When disabled:" %}
+                                        </p>
+                                        <ul class="text-muted">
+                                            <li>{% trans "New workflow templates cannot be registered to this engine" %}</li>
+                                            <li>{% trans "Existing templates will be disabled" %}</li>
+                                            <li>{% trans "Running workflow processes will continue to execute" %}</li>
+                                        </ul>
+                                        <p class="text-muted">
+                                            {% trans "You can re-enable this engine at any time." %}
+                                        </p>
+                                    </div>
+                                    <div class="modal-footer">
+                                        <form method="post" style="display:inline">
+                                            {% csrf_token %}
+                                            <input type="hidden" name="action" value="deactivate_engine">
+                                            <input type="hidden" name="engine_id" value="{{ engine.engine_id }}">
+                                            <button type="button" class="btn btn-default" data-dismiss="modal">{% trans "Cancel" %}</button>
+                                            <button type="submit" class="btn btn-danger" onclick="this.disabled = true; this.form.submit();">{% trans "Disable" %}</button>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+                        {% if not engine.is_active %}
+                        <div class="modal fade" id="deleteEngineModal-{{ forloop.counter }}" tabindex="-1" role="dialog">
+                            <div class="modal-dialog" role="document">
+                                <div class="modal-content">
+                                    <div class="modal-header">
+                                        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                                        <h4 class="modal-title">{% trans "Delete Workflow Engine" %}</h4>
+                                    </div>
+                                    <div class="modal-body">
+                                        <p>{% trans "Are you sure you want to delete this workflow engine?" %}</p>
+                                        <div class="alert alert-danger">
+                                            <i class="fa fa-exclamation-triangle"></i>
+                                            <strong>{% trans "This action cannot be undone." %}</strong>
+                                            <p class="m-t-sm">{% trans "All associated workflow templates and activations will be permanently removed." %}</p>
+                                        </div>
+                                        <p class="text-muted">{% trans "If there are running workflow processes, deletion will fail." %}</p>
+                                    </div>
+                                    <div class="modal-footer">
+                                        <form method="post" style="display:inline">
+                                            {% csrf_token %}
+                                            <input type="hidden" name="action" value="delete_engine">
+                                            <input type="hidden" name="engine_id" value="{{ engine.engine_id }}">
+                                            <button type="button" class="btn btn-default" data-dismiss="modal">{% trans "Cancel" %}</button>
+                                            <button type="submit" class="btn btn-danger" onclick="this.disabled = true; this.form.submit();"><i class="fa fa-trash"></i> {% trans "Delete" %}</button>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
                     {% empty %}
                         <tr>
                             <td colspan="6" class="text-muted text-center">{% trans "No workflow engines have been registered yet." %}</td>

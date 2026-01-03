@@ -493,6 +493,7 @@ def start_workflow_process(
         node_id=node._id,
         node_title=node.title,
         template_id=template.id,
+        template_node_id=template.node._id,
         activation_id=activation.id,
         started_by_id=started_by._id,
         engine_id=engine_id,
@@ -549,6 +550,7 @@ def _build_gateway_payload(
     node_id: str,
     node_title: str,
     template_id: int,
+    template_node_id: str,
     activation_id: int,
     started_by_id: str,
     engine_id: str,
@@ -562,6 +564,7 @@ def _build_gateway_payload(
     variable_list: List[Dict[str, Any]] = [
         {'name': 'RDM_NODE_ID', 'type': 'string', 'value': node_id},
         {'name': 'RDM_TEMPLATE_ID', 'type': 'string', 'value': str(template_id)},
+        {'name': 'RDM_TEMPLATE_NODE_ID', 'type': 'string', 'value': template_node_id},
         {'name': 'RDM_ACTIVATION_ID', 'type': 'string', 'value': str(activation_id)},
         {'name': 'RDM_STARTED_BY', 'type': 'string', 'value': started_by_id},
         {'name': 'RDM_ENGINE_ID', 'type': 'string', 'value': engine_id},

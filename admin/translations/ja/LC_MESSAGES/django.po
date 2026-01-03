@@ -4078,11 +4078,6 @@ msgid "Created by"
 msgstr "作成者"
 
 
-#: admin/templates/rdm_workflow/engine_list.html:127
-msgid "Disable this workflow engine?"
-msgstr "このワークフローエンジンを無効にしますか？"
-
-
 #: admin/templates/rdm_workflow/engine_keys.html:127
 msgid "Revoke this key? The workflow engine may not be able to access project resources."
 msgstr "この鍵を失効させますか？ワークフローエンジンがプロジェクトリソースにアクセスできなくなる可能性があります。"
@@ -4337,10 +4332,6 @@ msgstr "鍵セットのインポートに失敗しました: %(error)s"
 msgid "Keyset import encountered an unexpected error: %(error)s"
 msgstr "鍵セットのインポート中に予期しないエラーが発生しました: %(error)s"
 
-#: admin/templates/rdm_workflow/engine_list.html:144
-msgid "Delete this workflow engine? This action cannot be undone."
-msgstr "このワークフローエンジンを削除しますか？この操作は元に戻せません。"
-
 #: admin/rdm_workflow/views.py:266
 msgid "Cannot delete active engine. Disable it first."
 msgstr "有効なエンジンは削除できません。先に無効にしてください。"
@@ -4352,3 +4343,51 @@ msgstr "実行中のワークフローがあるエンジンは削除できませ
 #: admin/rdm_workflow/views.py:281
 msgid "Workflow engine "%(engine)s" was deleted."
 msgstr "ワークフローエンジン"%(engine)s"を削除しました。"
+
+#: admin/templates/rdm_workflow/engine_list.html:157
+msgid "Disable Workflow Engine"
+msgstr "ワークフローエンジンの無効化"
+
+#: admin/templates/rdm_workflow/engine_list.html:160
+msgid "Are you sure you want to disable this workflow engine?"
+msgstr "このワークフローエンジンを無効にしますか？"
+
+#: admin/templates/rdm_workflow/engine_list.html:162
+msgid "When disabled:"
+msgstr "無効にすると："
+
+#: admin/templates/rdm_workflow/engine_list.html:165
+msgid "New workflow templates cannot be registered to this engine"
+msgstr "このエンジンに新しいワークフローテンプレートを登録できなくなります"
+
+#: admin/templates/rdm_workflow/engine_list.html:166
+msgid "Existing templates will be disabled"
+msgstr "既存のテンプレートは無効になります"
+
+#: admin/templates/rdm_workflow/engine_list.html:167
+msgid "Running workflow processes will continue to execute"
+msgstr "実行中のワークフロープロセスは継続して実行されます"
+
+#: admin/templates/rdm_workflow/engine_list.html:170
+msgid "You can re-enable this engine at any time."
+msgstr "このエンジンはいつでも再度有効にできます。"
+
+#: admin/templates/rdm_workflow/engine_list.html:187
+msgid "Delete Workflow Engine"
+msgstr "ワークフローエンジンの削除"
+
+#: admin/templates/rdm_workflow/engine_list.html:190
+msgid "Are you sure you want to delete this workflow engine?"
+msgstr "このワークフローエンジンを削除しますか？"
+
+#: admin/templates/rdm_workflow/engine_list.html:193
+msgid "This action cannot be undone."
+msgstr "この操作は元に戻せません。"
+
+#: admin/templates/rdm_workflow/engine_list.html:194
+msgid "All associated workflow templates and activations will be permanently removed."
+msgstr "関連するすべてのワークフローテンプレートとワークフローは完全に削除されます。"
+
+#: admin/templates/rdm_workflow/engine_list.html:196
+msgid "If there are running workflow processes, deletion will fail."
+msgstr "実行中のワークフロープロセスがある場合、エラーになります。"

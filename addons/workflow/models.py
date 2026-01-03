@@ -53,6 +53,8 @@ class NodeSettings(BaseNodeSettings):
             for template in auto_activate_templates:
                 if template.id in seen_template_ids:
                     continue
+                if not template.is_effectively_active:
+                    continue
                 seen_template_ids.add(template.id)
 
                 activation, created = WorkflowActivation.objects.get_or_create(

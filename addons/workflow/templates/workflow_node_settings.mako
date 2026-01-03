@@ -588,20 +588,45 @@
                     <h4 class="modal-title">${_("Delete Workflow Template")}</h4>
                 </div>
                 <div class="modal-body">
-                    <p data-bind="if: deleteTemplateRequest.pendingTemplate">
-                        ${_("Are you sure you want to delete")}
-                        <strong data-bind="text: deleteTemplateRequest.pendingTemplate().label"></strong>?
-                    </p>
+                    <p data-bind="html: deleteTemplateRequest.confirmMessage"></p>
                     <div class="alert alert-danger">
                         <i class="fa fa-exclamation-triangle"></i>
                         <strong>${_("This action cannot be undone.")}</strong>
                         <p class="m-t-sm">${_("All associated workflow activations and delegation tokens will be revoked and removed.")}</p>
                     </div>
+                    <p class="text-muted">${_("If there are running workflow processes, deletion will fail.")}</p>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-default" data-dismiss="modal">${_("Cancel")}</button>
                     <button type="button" class="btn btn-danger" data-bind="click: confirmDeleteTemplate">
                         <i class="fa fa-trash"></i> ${_("Delete")}
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="disableTemplateModal" tabindex="-1" role="dialog">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal"><span>&times;</span></button>
+                    <h4 class="modal-title">${_("Disable Workflow Template")}</h4>
+                </div>
+                <div class="modal-body">
+                    <p data-bind="html: disableTemplateRequest.confirmMessage"></p>
+                    <p class="text-muted">${_("When disabled:")}</p>
+                    <ul class="text-muted">
+                        <li>${_("This template cannot be used to activate new workflows")}</li>
+                        <li>${_("Existing workflows using this template will be disabled")}</li>
+                        <li>${_("Running workflow processes will continue to execute")}</li>
+                    </ul>
+                    <p class="text-muted">${_("You can re-enable this template at any time.")}</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-default" data-dismiss="modal">${_("Cancel")}</button>
+                    <button type="button" class="btn btn-danger" data-bind="click: confirmDisableTemplate">
+                        ${_("Disable")}
                     </button>
                 </div>
             </div>
@@ -616,19 +641,44 @@
                     <h4 class="modal-title">${_("Delete Workflow")}</h4>
                 </div>
                 <div class="modal-body">
-                    <p data-bind="if: deleteActivationRequest.pendingActivation">
-                        ${_("Are you sure you want to delete")}
-                        <strong data-bind="text: deleteActivationRequest.pendingActivation().label"></strong>?
-                    </p>
-                    <div class="alert alert-warning">
+                    <p data-bind="html: deleteActivationRequest.confirmMessage"></p>
+                    <div class="alert alert-danger">
                         <i class="fa fa-exclamation-triangle"></i>
-                        ${_("This action cannot be undone.")}
+                        <strong>${_("This action cannot be undone.")}</strong>
+                        <p class="m-t-sm">${_("All workflow process history related to this project will be permanently removed.")}</p>
                     </div>
+                    <p class="text-muted">${_("If there are running workflow processes, deletion will fail.")}</p>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-default" data-dismiss="modal">${_("Cancel")}</button>
                     <button type="button" class="btn btn-danger" data-bind="click: confirmDeleteActivation">
                         <i class="fa fa-trash"></i> ${_("Delete")}
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="disableActivationModal" tabindex="-1" role="dialog">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal"><span>&times;</span></button>
+                    <h4 class="modal-title">${_("Disable Workflow")}</h4>
+                </div>
+                <div class="modal-body">
+                    <p data-bind="html: disableActivationRequest.confirmMessage"></p>
+                    <p class="text-muted">${_("When disabled:")}</p>
+                    <ul class="text-muted">
+                        <li>${_("New workflow processes cannot be started")}</li>
+                        <li>${_("Running workflow processes will continue to execute")}</li>
+                    </ul>
+                    <p class="text-muted">${_("You can re-enable this workflow at any time.")}</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-default" data-dismiss="modal">${_("Cancel")}</button>
+                    <button type="button" class="btn btn-danger" data-bind="click: confirmDisableActivation">
+                        ${_("Disable")}
                     </button>
                 </div>
             </div>

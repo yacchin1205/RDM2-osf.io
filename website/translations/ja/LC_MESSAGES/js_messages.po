@@ -10716,6 +10716,12 @@ msgstr "ワークフローテンプレートを有効にしました。"
 msgid "Workflow template disabled."
 msgstr "ワークフローテンプレートを無効にしました。"
 
+msgid "Are you sure you want to disable %s?"
+msgstr "%sを無効にしますか？"
+
+msgid "Are you sure you want to delete %s?"
+msgstr "%sを削除しますか？"
+
 msgid "Failed to update workflow template."
 msgstr "ワークフローテンプレートの更新に失敗しました。"
 
