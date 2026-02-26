@@ -2202,6 +2202,22 @@
           }
         }
       ]
+    },
+    {
+      "id": "page3",
+      "title": "内部用編集不可メタデータ|Uneditable Internal Metadata",
+      "hide_projectmetadata": true,
+      "concealment_page_navigator": true,
+      "description": "プロジェクトメタデータ・ファイルメタデータのどちらにも表示せずユーザー編集不可とする内部用メタデータ",
+      "questions": [
+        {
+          "qid": "internal:weko-item-id",
+          "type": "string",
+          "format": "text",
+          "pattern": "^[0-9]+$",
+          "required": false
+        }
+      ]
     }
   ]
 }

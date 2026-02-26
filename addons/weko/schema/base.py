@@ -2,6 +2,7 @@ from datetime import datetime
 import json
 import logging
 import re
+from typing import Any, Union
 
 from jinja2 import Environment
 
@@ -9,6 +10,19 @@ from ..mappings.utils import JINJA2_FILTERS
 
 
 logger = logging.getLogger(__name__)
+
+
+def get_weko_item_id(project_metadatas: Any) -> Union[str, None]:
+    '''プロジェクトメタデータから JAIRO Cloud の item_id を取得'''
+    if len(project_metadatas) != 1:
+        raise ValueError('Choose 1 project metadata to export.')
+    project_metadata = project_metadatas[0]
+    if isinstance(project_metadata, str):
+        project_metadata = json.loads(project_metadata)
+    item_id = project_metadata.get('internal:weko-item-id')
+    if item_id and item_id.get('value'):
+        return item_id.get('value')
+    return None
 
 
 def _get_metadata_value(file_metadata_data, item, lang, index):
