@@ -78,7 +78,7 @@
         }
     },
     "additional-funding": {
-        "@type": "array",
+        "@type": "jsonarray",
         "metadata.item_30002_funding_reference21[]": {
             "subitem_funder_identifiers": {
                 "@createIf": "{{ object_funder }}",

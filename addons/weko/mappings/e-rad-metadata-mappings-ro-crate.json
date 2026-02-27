@@ -81,7 +81,7 @@
         }
     },
     "additional-funding": {
-        "@type": "array",
+        "@type": "jsonarray",
         "root.jpcoar:fundingReference[]": {
             ".@type": "PropertyValue",
             "jpcoar:funderIdentifier": {

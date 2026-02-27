@@ -2216,6 +2216,12 @@
           "format": "text",
           "pattern": "^[0-9]+$",
           "required": false
+        },
+        {
+          "qid": "internal:workflow-run-id",
+          "type": "string",
+          "format": "text",
+          "required": false
         }
       ]
     }
