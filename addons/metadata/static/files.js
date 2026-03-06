@@ -293,9 +293,7 @@ function MetadataButtons() {
     );
     self.lastFields = self.lastQuestionPage.fields;
     container.empty();
-    self.lastFields.forEach(function(field) {
-      container.append(field.element);
-    });
+    container.append(self.lastQuestionPage.container);
     self.lastQuestionPage.validateAll();
   }
 
@@ -363,6 +361,7 @@ function MetadataButtons() {
       schema.val(currentSchemaId);
     }
     const group = $('<div></div>').addClass('form-group')
+      .css('margin-bottom', 0)
       .append(label)
       .append(schema);
     return {
@@ -534,9 +533,7 @@ function MetadataButtons() {
         .append(_('Paste from Clipboard'))
         .attr('type', 'button')
         .on('click', self.pasteFromClipboard);
-      dialog.toolbar.append($('<div></div>')
-        .css('display', 'flex')
-        .append(pasteButton));
+      dialog.toolbar.append(pasteButton);
     }
     if (dialog.customHandler) {
       dialog.customHandler.empty();
@@ -1131,9 +1128,7 @@ function MetadataButtons() {
     );
     self.lastFields = self.lastQuestionPage.fields;
     container.empty();
-    self.lastFields.forEach(function(field) {
-      container.append(field.element);
-    });
+    container.append(self.lastQuestionPage.container);
     self.lastQuestionPage.validateAll();
     const message = $('<div></div>');
     if (self.lastQuestionPage.hasValidationError) {
@@ -2208,7 +2203,10 @@ function MetadataButtons() {
     copyToClipboard.on('click', function(event) {
       self.copyToClipboard(event, copyStatus);
     });
-    const toolbar = $('<div></div>');
+    const toolbar = $('<div></div>')
+      .css('display', 'flex')
+      .css('align-items', 'center')
+      .css('margin-bottom', '10px');
     const customHandler = $('<span></span>');
     const container = $('<ul></ul>').css('padding', '0 20px');
     var notice = $('<span></span>');
@@ -2232,6 +2230,8 @@ function MetadataButtons() {
                 .append($('<div class="col-sm-12 metadata-scroll-area"></div>')
                   .css('overflow-y', 'scroll')
                   .css('height', '66vh')
+                  .css('background-color', 'rgb(250, 250, 252)')
+                  .css('padding-top', '12px')
                   .append(container))))
             .append($('<div class="modal-footer"></div>')
               .css('display', 'flex')
@@ -2274,7 +2274,10 @@ function MetadataButtons() {
           $(dialog).modal('hide');
       });
     });
-    const toolbar = $('<div></div>');
+    const toolbar = $('<div></div>')
+      .css('display', 'flex')
+      .css('align-items', 'center')
+      .css('margin-bottom', '10px');
     const container = $('<ul></ul>').css('padding', '0 20px');
     dialog
       .append($('<div class="modal-dialog modal-lg"></div>')
@@ -2289,6 +2292,8 @@ function MetadataButtons() {
                 .append($('<div class="col-sm-12 metadata-scroll-area"></div>')
                   .css('overflow-y', 'scroll')
                   .css('height', '70vh')
+                  .css('background-color', 'rgb(250, 250, 252)')
+                  .css('padding-top', '12px')
                   .append(container))))
             .append($('<div class="modal-footer"></div>')
               .css('display', 'flex')

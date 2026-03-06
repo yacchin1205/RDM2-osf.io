@@ -7,6 +7,9 @@
       "id": "page1",
       "title": "メタデータ登録|Metadata Registration",
       "description": "公的資金による研究データの管理・利活用に関するメタデータの入力画面です。GakuNin RDMをお使いの方は、登録することで資金配分機関へデータ提出するフォーマットでダウンロードできます。|This is the metadata input form for the Management and Utilization of Publicly Funded Research Data. You may download the file in the format that can be submitted to the funding agencies by registering this form.",
+      "ui": {
+        "header": "このメタデータ様式は、「公的資金による研究データの管理・利活用に関する基本的考え方」におけるメタデータの形式に準拠しています。<br><b>[共通]</b> メタデータ様式上、メタデータの入力が必須のフィールドです。<br><b>[リポジトリ]</b> の項目は、リポジトリ登録時指定時に必須になる項目です。|This metadata format conforms to the \"Basic Approach to Management and Utilization of Publicly Funded Research Data.\"<br><b>[Common]</b> Fields required by the metadata format.<br><b>[Repository]</b> Fields required when specifying a repository."
+      },
       "questions": [
         {
           "qid": "japan-grant-number",
@@ -126,6 +129,10 @@
           "qid": "program-name-ja",
           "nav": "プログラム名 (日本語)",
           "title": "プログラム名 (日本語)|Program name (Japanese)",
+          "ui": {
+            "group": { "id": "program-name", "title": "プログラム名|Program name" },
+            "sub_label": "（日本語）|(Japanese)"
+          },
           "type": "string",
           "format": "jgn-program-name-ja",
           "required": false
@@ -134,6 +141,7 @@
           "qid": "program-name-en",
           "nav": "Program name (English)",
           "title": "Program name (English)",
+          "ui": { "group": "program-name", "sub_label": "（English）|(English)" },
           "type": "string",
           "format": "jgn-program-name-en",
           "required": false
@@ -142,6 +150,10 @@
           "qid": "project-name-ja",
           "nav": "プロジェクト名 (日本語)",
           "title": "プロジェクト名 (日本語)|Project name (Japanese)",
+          "ui": {
+            "group": { "id": "project-name", "title": "プロジェクト名|Project name" },
+            "sub_label": "（日本語）|(Japanese)"
+          },
           "type": "string",
           "format": "e-rad-award-title-ja",
           "required": false,
@@ -152,6 +164,7 @@
           "qid": "project-name-en",
           "nav": "Project name (English)",
           "title": "Project name (English)",
+          "ui": { "group": "project-name", "sub_label": "（English）|(English)" },
           "type": "string",
           "format": "e-rad-award-title-en",
           "required": false,
@@ -326,24 +339,34 @@
             {
               "id": "program-name-ja",
               "title": "プログラム名 (日本語)|Program name (Japanese)",
+              "ui": {
+                "group": { "id": "program-name", "title": "プログラム名|Program name" },
+                "sub_label": "（日本語）|(Japanese)"
+              },
               "type": "string",
               "format": "jgn-program-name-ja"
             },
             {
               "id": "program-name-en",
               "title": "Program name (English)",
+              "ui": { "group": "program-name", "sub_label": "（English）|(English)" },
               "type": "string",
               "format": "jgn-program-name-en"
             },
             {
               "id": "project-name-ja",
               "title": "プロジェクト名 (日本語)|Project name (Japanese)",
+              "ui": {
+                "group": { "id": "project-name", "title": "プロジェクト名|Project name" },
+                "sub_label": "（日本語）|(Japanese)"
+              },
               "type": "string",
               "format": "e-rad-award-title-ja"
             },
             {
               "id": "project-name-en",
               "title": "Project name (English)",
+              "ui": { "group": "project-name", "sub_label": "（English）|(English)" },
               "type": "string",
               "format": "e-rad-award-title-en"
             }
@@ -391,12 +414,7 @@
           "format": "text",
           "required": false,
           "space_normalization": true,
-          "suggestion": [
-            {
-              "key": "file-data-number",
-              "button": "入力|Fill"
-            }
-          ],
+          "ui": { "item": { "tags": ["共通|Common"], "width": "narrow", "info": "管理対象データを特定するために付与する番号です。資金配分機関やデータ管理機関から指定がある場合はそれに従ってください。|A number assigned to identify the managed data. Follow any numbering designated by the funding agency or data management institution." } },
           "enabled_if": {
             "grdm-file:file-type": "dataset"
           }
@@ -410,6 +428,7 @@
           "required": false,
           "pattern": "^(https?://doi\\.org/)?10\\.[0-9]{4,}(/[-._;()/:a-zA-Z0-9]+)*$",
           "help": "例: 10.1234/5678|E.g., 10.1234/5678",
+          "ui": { "item": { "placeholder": "10.1234/5678" } },
           "enabled_if": {
             "grdm-file:file-type": "manuscript"
           },
@@ -529,6 +548,11 @@
           "qid": "grdm-file:title-ja",
           "nav": "データの名称または論文表題 (日本語)",
           "title": "データの名称または論文表題 (日本語)|Title (Japanese)",
+          "ui": {
+            "group": { "id": "title", "title": "データの名称または論文表題|Title", "tags": ["共通|Common", "リポジトリ|Repository"], "help": "「日本語」か「English」いずれかのフィールドは入力必須です。|Either the Japanese or English field is required.", "info": "管理対象データの特徴を示す名称を入力してください。「学会資料」、「報告資料」、「測定結果」などの中身の分からない名称は避けてください。|Enter a title that describes the characteristics of the managed data. Avoid vague titles such as \"conference materials\", \"reports\", or \"measurement results\"." },
+            "sub_label": "（日本語）|(Japanese)",
+            "item": { "placeholder": "研究データ管理に関する意識調査" }
+          },
           "type": "string",
           "format": "text",
           "required": false,
@@ -552,6 +576,7 @@
           "qid": "grdm-file:title-en",
           "nav": "Title (English)",
           "title": "Title (English)",
+          "ui": { "group": "title", "sub_label": "（English）|(English)" },
           "type": "string",
           "format": "text",
           "required": false,
@@ -587,6 +612,7 @@
               "title": "e-Rad 研究者番号|e-Rad Researcher Number",
               "type": "string",
               "format": "text",
+              "ui": { "item": { "width": "narrow" } },
               "required": false,
               "pattern": "^[0-9a-zA-Z]*$",
               "help": "e-Rad 研究者番号(半角数字)|e-Rad Researcher Number(single-byte numeric characters)",
@@ -633,6 +659,10 @@
               "type": "object",
               "required": false,
               "required_if": "name-en",
+              "ui": {
+                "group": { "id": "author-name", "title": "名前|Name" },
+                "sub_label": "（日本語）|(Japanese)"
+              },
               "properties": [
                 {
                   "id": "last",
@@ -771,6 +801,10 @@
               "type": "object",
               "required": false,
               "required_if": "name-ja",
+              "ui": {
+                "group": "author-name",
+                "sub_label": "（English）|(English)"
+              },
               "properties": [
                 {
                   "id": "last",
@@ -955,6 +989,7 @@
           "format": "date",
           "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$",
           "help": "例: 2010-01-01|E.g., 2010-01-01",
+          "ui": { "item": { "placeholder": "2010-01-01", "info": "メタデータを公開した日、または更新した日を入力してください。|Enter the date the metadata was published or updated." } },
           "enabled_if": {
             "grdm-file:file-type": "dataset"
           }
@@ -963,6 +998,11 @@
           "qid": "grdm-file:data-description-ja",
           "nav": "データの説明 (日本語)",
           "title": "データの説明 (日本語)|Description (Japanese)",
+          "ui": {
+            "group": { "id": "data-description", "title": "データの説明|Description", "tags": ["共通|Common"], "help": "「日本語」か「English」いずれかのフィールドは入力必須です。|Either the Japanese or English field is required.", "info": "管理対象データ取得時の条件や方法、結果等、当該データの内容を入力してください。|Enter the conditions, methods, results, etc. of data acquisition, and the content of the data." },
+            "sub_label": "（日本語）|(Japanese)",
+            "item": { "placeholder": "〇〇実証においてセンサより撮像したデータであり、道路の画像データ" }
+          },
           "type": "string",
           "format": "textarea",
           "required": false,
@@ -976,6 +1016,7 @@
           "qid": "grdm-file:data-description-en",
           "nav": "Description (English)",
           "title": "Description (English)",
+          "ui": { "group": "data-description", "sub_label": "（English）|(English)" },
           "type": "string",
           "format": "textarea",
           "required": false,
@@ -990,6 +1031,7 @@
           "title": "データの分野|Research field",
           "type": "choose",
           "format": "singleselect",
+          "ui": { "item": { "info": "e-Radで登録したプロジェクトの研究分野（主）に基づき、いずれかを選択してください。データの分野とプロジェクトの研究分野が異なる場合は、データの分野を選択してください。|Select based on the primary research field of the project registered in e-Rad. If the data field differs from the project's research field, select the data's field." } },
           "enabled_if": {
             "grdm-file:file-type": "dataset"
           },
@@ -1052,6 +1094,7 @@
           "title": "データ種別|Data type",
           "type": "choose",
           "format": "singleselect",
+          "ui": { "item": { "tags": ["共通|Common", "リポジトリ|Repository"], "info": "「dataset」またはより具体的な詳細項目の選択を推奨します。|Selecting \"dataset\" or a more specific sub-type is recommended." } },
           "enabled_if": {
             "grdm-file:file-type": "dataset"
           },
@@ -1125,6 +1168,7 @@
           "required": false,
           "pattern": "^[><]?([0-9]+(\\.[0-9]+)?-)?([0-9]+)(\\.[0-9]+)?([A-Za-z]*B)$",
           "help": "例: >100GB, <10GB, 100-10MB|E.g., >100GB, <10GB, 100-10MB",
+          "ui": { "item": { "placeholder": ">100GB, <10GB, 100-10MB", "width": "narrow", "info": "管理対象データの概ねのデータ容量を入力してください。システムからデータ容量の値を出力できる場合は、その値をセットしても構いません。|Enter the approximate data volume of the managed data. If the system can output the exact data volume, you may set the actual value." } },
           "suggestion": [
             {
               "key": "file-size",
@@ -1141,6 +1185,10 @@
           "title": "管理対象データの利活用・提供方針 (有償/無償)|Data utilization and provision policy (free/consideration)",
           "type": "choose",
           "format": "singleselect",
+          "ui": {
+            "group": { "id": "data-policy", "title": "管理対象データの利活用・提供方針|Data utilization and provision policy", "bar": true, "tags": ["共通|Common"], "info": "データ提供者が利用者に求める利用条件（有償/無償、ライセンス、引用方法等）を入力してください。|Enter the terms of use required by the data provider (free/paid, license, citation information, etc.)." },
+            "item": { "widget": "radio" }
+          },
           "options": [
               {
                   "text": "free",
@@ -1160,6 +1208,7 @@
           "qid": "grdm-file:data-policy-license",
           "nav": "管理対象データの利活用・提供方針 (ライセンス)",
           "title": "管理対象データの利活用・提供方針 (ライセンス)|Data utilization and provision policy (License)",
+          "ui": { "group": "data-policy" },
           "required": true,
           "type": "choose",
           "format": "singleselect",
@@ -1285,6 +1334,10 @@
           "qid": "grdm-file:data-policy-cite-ja",
           "nav": "管理対象データの利活用・提供方針 (引用方法等・日本語)",
           "title": "管理対象データの利活用・提供方針 (引用方法等・日本語)|Data utilization and provision policy (citation information, Japanese)",
+          "ui": {
+            "group": { "id": "data-policy-cite", "parent": "data-policy", "title": "引用方法等|Citation information", "help": "「日本語」か「English」いずれかのフィールドは入力必須です。|Either the Japanese or English field is required." },
+            "sub_label": "（日本語）|(Japanese)"
+          },
           "type": "string",
           "format": "textarea",
           "required": false,
@@ -1297,6 +1350,7 @@
           "qid": "grdm-file:data-policy-cite-en",
           "nav": "Data utilization and provision policy (citation information, English)",
           "title": "Data utilization and provision policy (citation information, English)",
+          "ui": { "group": "data-policy-cite", "sub_label": "（English）|(English)" },
           "type": "string",
           "format": "textarea",
           "required": false,
@@ -1311,6 +1365,7 @@
           "title": "アクセス権|Access rights",
           "type": "choose",
           "format": "singleselect",
+          "ui": { "item": { "tags": ["共通|Common"], "info": "管理対象データのアクセス権を選択してください。<br>・公開 (open access): 一般に公開されるデータ<br>・共有 (restricted access): 限定された関係者での利活用を目的として共有されるデータ<br>・非共有・非公開 (metadata only access): 公開も共有もされないデータ<br>・公開期間猶予 (embargoed access): 一定期間後に公開されるデータ。公開予定日の記載が必須です|Select the access rights for the managed data.<br>・Open access: data publicly available<br>・Restricted access: data shared among limited parties<br>・Metadata only access: data neither shared nor published<br>・Embargoed access: data to be published after a certain period. Available Date is required" } },
           "options": [
             {
               "text": "open access",
@@ -1340,6 +1395,7 @@
           "title": "公開予定日 (公開期間猶予の場合)|Publication date (for embargoed access)",
           "type": "string",
           "format": "date",
+          "ui": { "item": { "tags": ["共通|Common"], "placeholder": "2010-01-01" } },
           "required": false,
           "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$",
           "help": "例: 2010-01-01|E.g., 2010-01-01",
@@ -1355,6 +1411,10 @@
           "qid": "grdm-file:repo-information-ja",
           "nav": "リポジトリ情報 (日本語)",
           "title": "リポジトリ情報 (日本語)|Repository information (Japanese)",
+          "ui": {
+            "group": { "id": "repo-information", "title": "リポジトリ情報|Repository information", "tags": ["共通|Common"], "help": "「日本語」か「English」いずれかのフィールドは入力必須です。|Either the Japanese or English field is required.", "info": "現在のリポジトリ情報、あるいはプロジェクト終了後のリポジトリ情報を入力してください。|Enter the current repository information, or the repository information after the project ends." },
+            "sub_label": "（日本語）|(Japanese)"
+          },
           "type": "string",
           "format": "text",
           "required": false,
@@ -1366,6 +1426,7 @@
           "qid": "grdm-file:repo-information-en",
           "nav": "Repository information (English)",
           "title": "Repository information (English)",
+          "ui": { "group": "repo-information", "sub_label": "（English）|(English)" },
           "type": "string",
           "format": "text",
           "required": false,
@@ -1425,6 +1486,7 @@
           "format": "text",
           "pattern": "^[0-9]{4}-[0-9]{2}$",
           "help": "例: 2010-01|E.g., 2010-01",
+          "ui": { "item": { "placeholder": "2010-01", "width": "narrow" } },
           "enabled_if": {
             "grdm-file:file-type": "manuscript"
           },
@@ -1439,6 +1501,7 @@
           "title": "巻|Volume",
           "type": "string",
           "format": "text",
+          "ui": { "item": { "width": "narrow" } },
           "required": false,
           "enabled_if": {
             "grdm-file:file-type": "manuscript"
@@ -1450,6 +1513,7 @@
           "title": "号|Issue",
           "type": "string",
           "format": "text",
+          "ui": { "item": { "width": "narrow" } },
           "required": false,
           "enabled_if": {
             "grdm-file:file-type": "manuscript"
@@ -1461,6 +1525,11 @@
           "title": "掲載ページ (開始)|Page Start",
           "type": "string",
           "format": "text",
+          "ui": {
+            "group": { "id": "pages", "title": "掲載ページ|Pages" },
+            "sub_label": "（開始）|(Start)",
+            "item": { "width": "narrow" }
+          },
           "required": false,
           "enabled_if": {
             "grdm-file:file-type": "manuscript"
@@ -1472,6 +1541,11 @@
           "title": "掲載ページ (終了)|Page End",
           "type": "string",
           "format": "text",
+          "ui": {
+            "group": "pages",
+            "sub_label": "（終了）|(End)",
+            "item": { "width": "narrow" }
+          },
           "required": false,
           "enabled_if": {
             "grdm-file:file-type": "manuscript"
@@ -1483,6 +1557,7 @@
           "title": "査読の有無|Peer reviewed",
           "type": "choose",
           "format": "singleselect",
+          "ui": { "item": { "width": "narrow" } },
           "options": [
             {
               "text": "yes",
@@ -1504,6 +1579,7 @@
           "title": "版情報|Version Information",
           "type": "choose",
           "format": "singleselect",
+          "ui": { "item": { "width": "narrow" } },
           "help": "このファイルが以下のいずれに該当するかを選択:\n出版社版: 早期公開を含む出版社の最終版。\n著者最終稿: 査読を経て出版雑誌に受理された原稿。内容とレイアウトは出版社の投稿様式に沿ったもの。\nプレプリント: 著者が査読に提出した原稿。|Select which of the following this file corresponds to:\nVersion of Record: Publisher's final version, including early release.\nAccepted Manuscript: Manuscript accepted for publication after peer review. Content and layout follow the publisher's submission format.\nAuthor's Original: Manuscript submitted by the author for peer review.",
           "options": [
             {
@@ -1533,10 +1609,11 @@
           "required": false,
           "pattern": "^(https?://)?[-a-zA-Z0-9@:%._\\+~#=]{1,256}\\.[a-zA-Z0-9()]{1,6}\\b([-a-zA-Z0-9()@:%_\\+.~#?&//=]*)$",
           "help": "例: https://example.com/example|E.g., https://example.com/example",
+          "ui": { "item": { "placeholder": "https://example.com/example", "info": "情報がある場合は必ず入力してください。DOIが付与されている場合はDOIリンク、付与されていない場合は管理対象データのランディングページのURLを記入してください。URLが変更された際はメタデータの更新を行ってください。|Enter the DOI link if assigned; otherwise, enter the URL of the landing page. Please update the metadata if the URL changes." } },
           "suggestion": [
             {
               "key": "file-url",
-              "button": "入力|Fill"
+              "button": "GakuNin RDM URL入力|Fill GakuNin RDM URL"
             }
           ],
           "enabled_if": {
@@ -1550,6 +1627,7 @@
           "title": "学術論文を掲載した「機関リポジトリ等の情報基盤」のDOI|DOI of the institutional repository or other information infrastructure where the academic paper is published",
           "pattern": "^(https?://doi\\.org/)?10\\.[0-9]{4,}(/[-._;()/:a-zA-Z0-9]+)*$",
           "help": "例: 10.1234/5678|E.g., 10.1234/5678",
+          "ui": { "item": { "placeholder": "10.1234/5678" } },
           "type": "string",
           "format": "text",
           "required": false,
@@ -1563,6 +1641,7 @@
           "title": "根拠データを掲載した「機関リポジトリ等の情報基盤」のDOI|DOI of the institutional repository or other information infrastructure where the supplemental data is published",
           "pattern": "^(https?://doi\\.org/)?10\\.[0-9]{4,}(/[-._;()/:a-zA-Z0-9]+)*$",
           "help": "例: 10.1234/5678|E.g., 10.1234/5678",
+          "ui": { "item": { "placeholder": "10.1234/5678" } },
           "type": "string",
           "format": "text",
           "required": false,
@@ -1575,6 +1654,7 @@
           "nav": "データ作成者",
           "title": "データ作成者|Creator Name",
           "type": "array",
+          "ui": { "item": { "info": "管理対象データを生み出した研究者の名前を記入してください。日本人の場合は、日本語欄に漢字フルネーム（姓と名の間は空けない）、英語欄に英語フルネーム（姓と名の間は半角で開ける）を入力してください。外国人の場合は、日本語・英語両欄に英語フルネームを入力してください。|Enter the names of the researchers who produced the data. For Japanese, enter kanji full name in the Japanese field (no space between family/given name), English full name in the English field (space-separated). For non-Japanese, enter English full name in both fields." } },
           "required": false,
           "help": "e-Rad 研究者番号(半角数字)|e-Rad Researcher Number(single-byte numeric characters)",
           "enabled_if": {
@@ -1700,6 +1780,10 @@
           "qid": "grdm-file:hosting-inst-ja",
           "nav": "データ管理機関 (日本語)",
           "title": "データ管理機関 (日本語)|Hosting institution (Japanese)",
+          "ui": {
+            "group": { "id": "hosting-inst", "title": "データ管理機関|Hosting institution", "tags": ["共通|Common"], "help": "「日本語」か「English」いずれかのフィールドは入力必須です。|Either the Japanese or English field is required.", "info": "管理対象データを管理する研究開発を行う機関の名称を入力してください。機関名は略称不可です（株式会社、国立大学法人、一般社団法人等の法人格も記載してください）。データ管理者の異動により移管する場合は、データ管理機関を更新してください。|Enter the name of the institution conducting R&D that manages the data. Abbreviations are generally not acceptable (include corporate forms). Update when data is transferred due to reassignment." },
+            "sub_label": "（日本語）|(Japanese)"
+          },
           "type": "string",
           "format": "text",
           "required": false,
@@ -1724,6 +1808,7 @@
           "qid": "grdm-file:hosting-inst-en",
           "nav": "Hosting institution (English)",
           "title": "Hosting institution (English)",
+          "ui": { "group": "hosting-inst", "sub_label": "（English）|(English)" },
           "type": "string",
           "format": "text",
           "required": false,
@@ -1750,6 +1835,7 @@
           "title": "データ管理機関コード|Hosting institution Identifier",
           "type": "string",
           "format": "text",
+          "ui": { "item": { "width": "half", "info": "データ管理機関のResearch Organization Registry (ROR) コードです（https://ror.org/xxxxxxxxx の形式）。|The Research Organization Registry (ROR) code of the hosting institution (format: https://ror.org/xxxxxxxxx)." } },
           "required": false,
           "space_normalization": true,
           "enabled_if": {
@@ -1762,6 +1848,7 @@
           "title": "データ管理者の種類|Type of data manager",
           "type": "choose",
           "format": "singleselect",
+          "ui": { "item": { "widget": "radio" } },
           "options": [
             {
               "text": "individual",
@@ -1784,6 +1871,7 @@
           "title": "データ管理者の e-Rad 研究者番号|Data manager identifier (e-Rad)",
           "type": "string",
           "format": "text",
+          "ui": { "item": { "enabled_if": { "disabled": { "grdm-file:file-type": "dataset" } }, "info": "e-Radの研究者番号を登録している場合、非公開にしたい場合を除き必ず記入してください。研究者番号がない管理者や、管理者が組織の場合は不要です。|Enter the e-Rad researcher number unless you wish to keep it private. Not required for managers without a researcher number or when the manager is an organization." } },
           "required": false,
           "pattern": "^[a-zA-Z0-9]+$",
           "help": "e-Rad 研究者番号(半角数字)|e-Rad Researcher Number(single-byte numeric characters)",
@@ -1839,6 +1927,7 @@
           "title": "データ管理者 (日本語)|Data manager (Japanese)",
           "type": "string",
           "format": "text",
+          "ui": { "item": { "tags": ["共通|Common"], "enabled_if": { "disabled": { "grdm-file:file-type": "dataset" } }, "info": "管理対象データを管理する担当者の名前を入力してください。日本人の場合は、日本語欄に漢字フルネーム（姓と名の間は空けない）、英語欄に英語フルネーム（姓と名の間は半角で開ける）を入力してください。外国人の場合は、日本語・英語両欄に英語フルネームを入力してください。データ管理者の異動により変更する場合は、メタデータを更新してください。|Enter the name of the person who manages the data. For Japanese, enter kanji full name in the Japanese field (no space), English full name in the English field (space-separated). For non-Japanese, enter English full name in both. Update the metadata when the data manager changes." } },
           "required": false,
           "required_if": "grdm-file:data-man-name-en",
           "enabled_if": {
@@ -1893,6 +1982,7 @@
           "title": "Data manager (English)",
           "type": "string",
           "format": "text",
+          "ui": { "item": { "enabled_if": { "disabled": { "grdm-file:file-type": "dataset" } } } },
           "required": false,
           "required_if": "grdm-file:data-man-name-ja",
           "enabled_if": {
@@ -1945,6 +2035,15 @@
           "qid": "grdm-file:data-man-org-ja",
           "nav": "データ管理者の所属組織名 (日本語)",
           "title": "データ管理者の所属組織名 (日本語)|Contact organization of data manager (Japanese)",
+          "ui": {
+            "group": {
+              "id": "data-man-org",
+              "parent": { "id": "data-man-contact", "title": "データ管理者の連絡先|Contact of data manager", "bar": true, "tags": ["共通|Common"], "help": "下記の①②いずれかのフィールドは入力必須です。|Either ① or ② below is required.", "info": "管理者の所属組織名、電話番号、メールアドレス等を記入してください（メールアドレスが必須、他は任意です。メールアドレスがない場合は、所属組織名・住所・電話番号が必須となります）。個人情報保護の観点から、個人ではなく組織の連絡先が望ましいです。|Enter the contact organization name, phone number, email address, etc. (email is required; others are optional. If no email, organization name, address, and phone number are required). Organizational contact information is preferred over personal for privacy reasons." },
+              "title": "データ管理者の所属組織名（①）|Contact organization of data manager (①)"
+            },
+            "sub_label": "（日本語）|(Japanese)",
+            "item": { "placeholder": "〇〇研究所〇〇部門〇〇課" }
+          },
           "type": "string",
           "format": "text",
           "required": false,
@@ -2004,6 +2103,7 @@
           "qid": "grdm-file:data-man-org-en",
           "nav": "Contact organization of data manager (English)",
           "title": "Contact organization of data manager (English)",
+          "ui": { "group": "data-man-org", "sub_label": "（English）|(English)" },
           "type": "string",
           "format": "text",
           "enabled_if": {
@@ -2062,6 +2162,10 @@
           "qid": "grdm-file:data-man-address-ja",
           "nav": "データ管理者の所属機関の連絡先住所 (日本語)",
           "title": "データ管理者の所属機関の連絡先住所 (日本語)|Contact address of data manager (Japanese)",
+          "ui": {
+            "group": { "id": "data-man-address", "parent": "data-man-contact", "title": "データ管理者の所属機関の連絡先住所（②）|Contact address of data manager (②)" },
+            "sub_label": "（日本語）|(Japanese)"
+          },
           "type": "string",
           "format": "text",
           "enabled_if": {
@@ -2085,6 +2189,7 @@
           "qid": "grdm-file:data-man-address-en",
           "nav": "Contact address of data manager (English)",
           "title": "Contact address of data manager (English)",
+          "ui": { "group": "data-man-address", "sub_label": "（English）|(English)" },
           "type": "string",
           "format": "text",
           "enabled_if": {
@@ -2107,7 +2212,8 @@
         {
           "qid": "grdm-file:data-man-tel",
           "nav": "データ管理者の所属機関の連絡先電話番号",
-          "title": "データ管理者の所属機関の連絡先電話番号|Contact phone number of data manager",
+          "title": "データ管理者の所属機関の連絡先電話番号（②）|Contact phone number of data manager (②)",
+          "ui": { "group": "data-man-contact", "item": { "width": "half", "placeholder": "00-0000-0000" } },
           "type": "string",
           "format": "text",
           "enabled_if": {
@@ -2123,7 +2229,8 @@
         {
           "qid": "grdm-file:data-man-email",
           "nav": "データ管理者の所属機関の連絡先メールアドレス",
-          "title": "データ管理者の所属機関の連絡先メールアドレス|Contact mail address of data manager",
+          "title": "データ管理者の所属機関の連絡先メールアドレス（②）|Contact mail address of data manager (②)",
+          "ui": { "group": "data-man-contact", "item": { "width": "half", "placeholder": "sample@univ.ac.jp" } },
           "type": "string",
           "format": "text",
           "enabled_if": {
@@ -2164,6 +2271,10 @@
           "qid": "grdm-file:remarks-ja",
           "nav": "備考 (日本語)",
           "title": "備考 (日本語)|Remarks (Japanese)",
+          "ui": {
+            "group": { "id": "remarks", "title": "備考|Remarks", "info": "FAやデータ管理者等のメモとして使用します。CiNii Research上等で公開の対象にはなりません。|Used as notes for FA, data managers, etc. Not subject to publication on CiNii Research, etc." },
+            "sub_label": "（日本語）|(Japanese)"
+          },
           "type": "string",
           "format": "textarea",
           "required": false
@@ -2172,6 +2283,7 @@
           "qid": "grdm-file:remarks-en",
           "nav": "Remarks (English)",
           "title": "Remarks (English)",
+          "ui": { "group": "remarks", "sub_label": "（English）|(English)" },
           "type": "string",
           "format": "textarea",
           "required": false

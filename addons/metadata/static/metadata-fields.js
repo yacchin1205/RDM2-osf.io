@@ -14,6 +14,7 @@ const $ = require('jquery');
 
 // Style definitions
 const AUTOFILLED_BG_COLOR = '#fffbf0';
+const INPUT_BG_COLOR = 'rgb(250, 250, 252)';
 const $osf = require('js/osfHelpers');
 const fangorn = require('js/fangorn');
 const rdmGettext = require('js/rdmGettext');
@@ -86,7 +87,118 @@ const QuestionPage = oop.defclass({
         self.fields.push(field);
       });
     });
+    self._buildContainer();
     return self.fields;
+  },
+
+  _buildContainer: function() {
+    function ensureGroupContainer(def, groupDefs, groupContainers, rootContainer) {
+      if (groupContainers[def.id]) {
+        return;
+      }
+      var wrapper = $('<div></div>').addClass('metadata-group');
+      // Heading
+      var heading = $('<div></div>')
+        .addClass('metadata-group-heading')
+        .css('margin-bottom', '6px')
+        .css('margin-top', '18px');
+      var title = $('<strong></strong>').text(getLocalizedText(def.title));
+      if (def.parent) {
+        title.css('font-size', '13px');
+      }
+      heading.append(title);
+      if (def.tags) {
+        def.tags.forEach(function(tag) {
+          title.after($('<span></span>')
+            .addClass('label label-default metadata-group-tag')
+            .css('margin-left', '6px')
+            .text(getLocalizedText(tag)));
+        });
+      }
+      if (def.info) {
+        var infoMark = $('<span></span>')
+          .text('\u24D8')
+          .css({ cursor: 'pointer', 'margin-left': '6px', color: '#5bc0de' });
+        infoMark.popover({
+          content: getLocalizedText(def.info),
+          html: true,
+          trigger: 'focus',
+          placement: 'bottom',
+          container: 'body'
+        }).attr('tabindex', '0');
+        heading.append(infoMark);
+      }
+      if (def.help) {
+        heading.append($('<p></p>')
+          .addClass('text-muted')
+          .css('margin', '4px 0 0')
+          .css('font-size', '12px')
+          .html(getLocalizedText(def.help)));
+      }
+      wrapper.append(heading);
+      // Content area
+      var content = $('<div></div>');
+      if (def.bar) {
+        content.css('border-left', '3px solid #ddd')
+          .css('padding-left', '12px');
+      }
+      wrapper.append(content);
+      groupContainers[def.id] = { wrapper: wrapper, content: content, parent: def.parent || null };
+      // Nest under parent or root
+      if (def.parent) {
+        groupContainers[def.parent].content.append(wrapper);
+      } else {
+        rootContainer.append(wrapper);
+      }
+    }
+
+    const self = this;
+    self.container = $('<div></div>');
+
+    // Page-level header note (A-7)
+    (self.schema.pages || []).forEach(function(page) {
+      if (page.ui && page.ui.header) {
+        var header = $('<div></div>')
+          .addClass('metadata-page-header')
+          .css('margin-bottom', '12px')
+          .html(getLocalizedText(page.ui.header));
+        self.container.append(header);
+      }
+    });
+
+    const groupDefs = {};       // groupId -> groupDef
+    const groupContainers = {}; // groupId -> { wrapper, content }
+    self.groupContainers = groupContainers;
+
+    self.fields.forEach(function(field) {
+      const ui = field.question.ui;
+      if (!ui || !ui.group) {
+        self.container.append(field.element);
+        return;
+      }
+      const groupDef = typeof ui.group === 'object' ? ui.group : null;
+      const groupId = groupDef ? groupDef.id : ui.group;
+
+      if (groupDef && !groupDefs[groupId]) {
+        // parent as object: register parent group definition without mutating schema
+        var parentRef = groupDef.parent;
+        if (parentRef && typeof parentRef === 'object') {
+          groupDefs[parentRef.id] = parentRef;
+          parentRef = parentRef.id;
+        }
+        groupDefs[groupId] = { id: groupDef.id, title: groupDef.title, bar: groupDef.bar, tags: groupDef.tags, help: groupDef.help, info: groupDef.info, parent: parentRef };
+      }
+
+      if (!groupContainers[groupId]) {
+        var def = groupDefs[groupId];
+        if (def.parent && !groupContainers[def.parent]) {
+          ensureGroupContainer(groupDefs[def.parent], groupDefs, groupContainers, self.container);
+        }
+        ensureGroupContainer(def, groupDefs, groupContainers, self.container);
+      }
+
+      groupContainers[groupId].content.append(field.element);
+    });
   },
 
   suggestionAutofill: function(suggestion, tree) {
@@ -127,6 +239,26 @@ const QuestionPage = oop.defclass({
       field.showError();
       self._updateEnabledQuestionField(field, self.fields);
     });
+    self._updateGroupVisibility();
+  },
+
+  _updateGroupVisibility: function() {
+    var self = this;
+    // Evaluate leaf groups first, then parents
+    var ids = Object.keys(self.groupContainers);
+    var leaves = ids.filter(function(id) { return !ids.some(function(other) { return self.groupContainers[other].parent === id; }); });
+    var roots = ids.filter(function(id) { return leaves.indexOf(id) === -1; });
+    leaves.concat(roots).forEach(function(groupId) {
+      var container = self.groupContainers[groupId];
+      var hasVisibleChild = container.content.children().toArray().some(function(child) {
+        return $(child).css('display') !== 'none';
+      });
+      if (hasVisibleChild) {
+        container.wrapper.show();
+      } else {
+        container.wrapper.hide();
+      }
+    });
   },
 
   _validateQuestionField: function(questionField, questionFields, options) {
@@ -165,7 +297,18 @@ const QuestionPage = oop.defclass({
     const cond = questionField.question.enabled_if;
     const commonValues = self.options.commonValues;
     const defaultValues = self.options.defaultValues;
-    questionField.updateEnabled(!cond || evaluateCond(cond, questionFields, commonValues, defaultValues));
+    var enabled = !cond || evaluateCond(cond, questionFields, commonValues, defaultValues);
+    var mode = 'hidden';
+    if (!enabled) {
+      var uiEnabledIf = questionField.question.ui && questionField.question.ui.item && questionField.question.ui.item.enabled_if;
+      if (uiEnabledIf && uiEnabledIf.disabled) {
+        var disabledCond = uiEnabledIf.disabled;
+        if (disabledCond === true || evaluateCond(disabledCond, questionFields, commonValues, defaultValues)) {
+          mode = 'disabled';
+        }
+      }
+    }
+    questionField.updateEnabled(enabled, mode);
   },
 });
 
@@ -234,8 +377,14 @@ const QuestionField = oop.extend(Emitter, {
     self.element.append(header);
 
     // construct label
-    const label = $('<label></label>')
-      .text(self.question.title ? getLocalizedText(self.question.title) : self.question.label);
+    const subLabel = self.question.ui && self.question.ui.sub_label;
+    const labelText = subLabel
+      ? getLocalizedText(subLabel)
+      : (self.question.title ? getLocalizedText(self.question.title) : self.question.label);
+    const label = $('<label></label>').text(labelText);
+    if (subLabel) {
+      label.css('font-weight', 'normal');
+    }
     if (self.question.required) {
       label.append($('<span></span>')
         .css('color', 'red')
@@ -243,6 +392,33 @@ const QuestionField = oop.extend(Emitter, {
         .text('*'));
     }
     header.append(label);
+
+    // item tags
+    const itemTags = self.question.ui && self.question.ui.item && self.question.ui.item.tags;
+    if (itemTags) {
+      itemTags.forEach(function(tag) {
+        header.append($('<span></span>')
+          .addClass('label label-default metadata-group-tag')
+          .css('margin-left', '6px')
+          .text(getLocalizedText(tag)));
+      });
+    }
+
+    // info mark
+    const infoText = self.question.ui && self.question.ui.item && self.question.ui.item.info;
+    if (infoText) {
+      var infoMark = $('<span></span>')
+        .text('\u24D8')
+        .css({ cursor: 'pointer', 'margin-left': '6px', color: '#5bc0de' });
+      infoMark.popover({
+        content: getLocalizedText(infoText),
+        html: true,
+        trigger: 'focus',
+        placement: 'bottom',
+        container: 'body'
+      }).attr('tabindex', '0');
+      header.append(infoMark);
+    }
 
     if(self.question.hasOwnProperty('concealment_page') && self.question.concealment_page == "buttonHide"){
       const p = $('<p></p>');
@@ -292,8 +468,25 @@ const QuestionField = oop.extend(Emitter, {
       header.append(clearFormBlock);
     }
 
+    // apply field width
+    const uiItem = self.question.ui && self.question.ui.item;
+    const width = uiItem && uiItem.width;
+    if (width) {
+      var maxWidth = { narrow: '200px', half: '50%', wide: '100%' }[width];
+      if (maxWidth) {
+        self.formField.container.css('max-width', maxWidth);
+      }
+    }
+
+    // construct placeholder (replaces help toggle when present)
+    const placeholder = uiItem && uiItem.placeholder;
+    if (placeholder) {
+      self.formField.container.find('.form-control')
+        .attr('placeholder', getLocalizedText(placeholder));
+    }
+
     // construct help
-    if (self.question.help) {
+    if (self.question.help && !placeholder) {
       self.isDisplayedHelp = false;
       const helpLink = $('<a></a>')
         .addClass('help-toggle-button')
@@ -301,7 +494,7 @@ const QuestionField = oop.extend(Emitter, {
       const helpLinkBlock = $('<p></p>').append(helpLink);
       const help = $('<p></p>')
         .addClass('help-block')
-        .text(getLocalizedText(self.question.help))
+        .html(getLocalizedText(self.question.help))
         .hide();
       helpLink.on('click', function (e) {
         e.preventDefault();
@@ -318,9 +511,19 @@ const QuestionField = oop.extend(Emitter, {
       self.element.append(helpLinkBlock).append(help);
     }
 
-    // construct form field
-    self.element.append(self.formField.container)
+    // construct form field with check mark
+    self.checkMark = $('<i></i>')
+      .addClass('fa fa-check')
+      .css('color', '#5cb85c')
+      .css('margin-left', '8px')
+      .hide();
+    var formRow = $('<div></div>').css('display', 'flex').css('align-items', 'center');
+    formRow.append($('<div></div>').css('flex', '1').append(self.formField.container));
+    formRow.append(self.checkMark);
+    self.element.append(formRow);
+    self._updateCheckMark();
     self.formField.on('change', function(value) {
+      self._updateCheckMark();
       self.emit('change', value);
     });
     self.formField.on('suggestionSelected', function(suggestion, tree) {
@@ -359,11 +562,28 @@ const QuestionField = oop.extend(Emitter, {
     }
   },
 
-  updateEnabled: function(enabled) {
+  _updateCheckMark: function() {
+    const self = this;
+    var value = self.formField.getValue();
+    var hasValue = value != null && value !== '';
+    if (hasValue) {
+      self.checkMark.show();
+    } else {
+      self.checkMark.hide();
+    }
+  },
+
+  updateEnabled: function(enabled, mode) {
     const self = this;
     self.enabled = enabled;
-    if (self.enabled) {
+    if (enabled) {
       self.element.show();
+      self.formField.disable(false);
+      self.element.css('opacity', 1);
+    } else if (mode === 'disabled') {
+      self.element.show();
+      self.formField.disable(true);
+      self.element.css('opacity', 0.5);
     } else {
       self.element.hide();
     }
@@ -383,12 +603,18 @@ function createFormField(question, options, value) {
   } else if (question.format === 'date') {
     formField = new DatePickerFormField(question, options);
   } else if (question.format === 'singleselect') {
-    formField = new SingleSelectFormField(question, options);
+    const widget = question.ui && question.ui.item && question.ui.item.widget;
+    if (widget === 'radio') {
+      formField = new RadioFormField(question, options);
+    } else {
+      formField = new SingleSelectFormField(question, options);
+    }
   } else {
     console.warn(logPrefix + 'Unknown format: ' + question.format);
     formField = new TextFormField(question, options);
   }
   formField.create();
+  formField.container.find('.form-control').css('background-color', '#fff');
   if (value != null && value !== '' || (question.hasOwnProperty('initial_row_addition') && question.initial_row_addition)) {
     try {
       formField.setValue(value);
@@ -763,6 +989,101 @@ const SingleSelectFormField = oop.extend(FormFieldInterface, {
   },
 });
 
+const RadioFormField = oop.extend(FormFieldInterface, {
+  constructor: function(question, options) {
+    const self = this;
+    self.question = question;
+    self.options = options || {};
+    self.container = null;
+    self.inputs = [];
+  },
+
+  create: function() {
+    const self = this;
+    self.container = $('<div></div>');
+    (self.question.options || []).forEach(function(opt) {
+      if (opt.text && opt.text.startsWith('group:')) {
+        return;
+      }
+      const value = opt.text === undefined ? opt : opt.text;
+      const label = opt.text === undefined ? opt : getLocalizedText(opt.tooltip);
+      const name = 'radio-' + self.question.qid.replace(/:/g, '-');
+      const input = $('<input>')
+        .attr('type', 'radio')
+        .attr('name', name)
+        .attr('value', value)
+        .addClass('metadata-radio-input');
+      if (self.options.readonly) {
+        input.attr('disabled', true);
+      }
+      if (opt.default) {
+        input.prop('checked', true);
+      }
+      const labelElem = $('<label></label>')
+        .addClass('metadata-radio-label')
+        .css('margin-right', '1.5em')
+        .append(input)
+        .append(' ' + label);
+      self.container.append(labelElem);
+      self.inputs.push(input);
+      input.on('change', function() {
+        input.css('background-color', '');
+        self.emit('change', value);
+      });
+    });
+  },
+
+  getValue: function() {
+    const self = this;
+    var value = '';
+    self.inputs.forEach(function(input) {
+      if (input.prop('checked')) {
+        value = input.val();
+      }
+    });
+    return value;
+  },
+
+  getDefaultValue: function() {
+    const self = this;
+    var defaultValue = null;
+    (self.question.options || []).forEach(function(opt) {
+      if (opt.default) {
+        defaultValue = opt.text === undefined ? opt : opt.text;
+      }
+    });
+    return defaultValue;
+  },
+
+  setValue: function(value, isAutofilled) {
+    const self = this;
+    const defaultValue = self.getDefaultValue();
+    if (!value && defaultValue) {
+      value = defaultValue;
+    }
+    self.inputs.forEach(function(input) {
+      input.prop('checked', input.val() === value);
+      if (isAutofilled && input.val() === value) {
+        input.closest('label').css('background-color', AUTOFILLED_BG_COLOR);
+      }
+    });
+  },
+
+  reset: function() {
+    const self = this;
+    self.inputs.forEach(function(input) {
+      input.prop('checked', false);
+    });
+  },
+
+  disable: function(disabled) {
+    const self = this;
+    self.inputs.forEach(function(input) {
+      input.attr('disabled', disabled);
+    });
+  },
+});
+
 const ArrayFormField = oop.extend(FormFieldInterface, {
   constructor: function(question, options) {
     const self = this;
@@ -793,6 +1114,7 @@ const ArrayFormField = oop.extend(FormFieldInterface, {
     self.tbody = $('<tbody>').append(self.emptyLine);
 
     const table = $('<table class="table responsive-table responsive-table-xxs">')
+      .css('background-color', INPUT_BG_COLOR)
       .append(thead)
       .append(self.tbody);
     self.container = $('<div>').append(table);
@@ -817,12 +1139,33 @@ const ArrayFormField = oop.extend(FormFieldInterface, {
     const fieldsContainer = $('<div>').css('padding', '10px');
 
     // Add each field with its label in vertical layout
+    var groupContainers = {};
     self.question.properties.forEach(function(prop, index) {
       const fieldWrapper = $('<div>').addClass('form-group');
+      var ui = prop.ui;
+      var groupRef = ui && ui.group;
+      var groupDef = groupRef && typeof groupRef === 'object' ? groupRef : null;
+      var groupId = groupDef ? groupDef.id : groupRef;
 
-      // Create label
-      const fieldLabel = $('<label>')
-        .text(prop.title ? getLocalizedText(prop.title) : prop.label);
+      if (groupDef) {
+        var heading = $('<div>')
+          .css('margin-bottom', '4px')
+          .css('margin-top', '10px')
+          .append($('<strong>').css('font-size', '13px').text(getLocalizedText(groupDef.title)));
+        fieldsContainer.append(heading);
+        var content = $('<div>');
+        fieldsContainer.append(content);
+        groupContainers[groupId] = content;
+      }
+
+      // Create label — use sub_label if grouped, otherwise property title
+      var labelText = (ui && ui.sub_label)
+        ? getLocalizedText(ui.sub_label)
+        : (prop.title ? getLocalizedText(prop.title) : prop.label);
+      const fieldLabel = $('<label>').text(labelText);
+      if (ui && ui.sub_label) {
+        fieldLabel.css('font-weight', 'normal');
+      }
       if (prop.required) {
         fieldLabel.append($('<span>')
           .css('color', 'red')
@@ -831,8 +1174,15 @@ const ArrayFormField = oop.extend(FormFieldInterface, {
       }
 
       fieldWrapper.append(fieldLabel);
+      var propWidth = ui && ui.item && ui.item.width;
+      if (propWidth) {
+        var maxW = { narrow: '200px', half: '50%' }[propWidth];
+        if (maxW) { subFormFields[index].container.css('max-width', maxW); }
+      }
       fieldWrapper.append(subFormFields[index].container);
-      fieldsContainer.append(fieldWrapper);
+
+      var target = groupId ? groupContainers[groupId] : fieldsContainer;
+      target.append(fieldWrapper);
     });
 
     editCell.append(fieldsContainer);
@@ -1285,6 +1635,7 @@ const ObjectFormField = oop.extend(FormFieldInterface, {
     const tbody = $('<tbody>').append(tr);
 
     const table = $('<table class="table responsive-table responsive-table-xxs" style="margin-bottom: 0">')
+      .css('background-color', INPUT_BG_COLOR)
       .append(thead)
       .append(tbody);
     self.container = $('<div>').append(table);
