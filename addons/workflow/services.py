@@ -827,6 +827,8 @@ def list_workflow_tasks(
         response = client.list_tasks({
             'processInstanceBusinessKey': business_key,
             'includeProcessVariables': 'true',
+            'sort': 'createTime',
+            'order': 'desc',
             'size': limit,
         })
         for entry in response['data']:
@@ -846,6 +848,8 @@ def list_workflow_tasks(
             response = client.list_historic_tasks({
                 'processBusinessKey': business_key,
                 'includeProcessVariables': 'true',
+                'sort': 'startTime',
+                'order': 'desc',
                 'size': remaining,
             })
             for entry in response['data']:
