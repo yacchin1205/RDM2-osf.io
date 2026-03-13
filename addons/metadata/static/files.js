@@ -13,6 +13,7 @@ const _ = rdmGettext._;
 const ImportDatasetButton = require('./metadataImportDatasetButton.js');
 
 const QuestionPage = require('./metadata-fields.js').QuestionPage;
+const getLocalizedText = require('./util.js').getLocalizedText;
 const WaterButlerCache = require('./wbcache.js').WaterButlerCache;
 const registrations = require('./registration.js');
 const RegistrationSchemas = registrations.RegistrationSchemas;
@@ -332,8 +333,9 @@ function MetadataButtons() {
   }
 
   self.createSchemaSelector = function(targetItem) {
-    const label = $('<label></label>').text(_('Metadata Schema:'));
-    const schema = $('<select></select>');
+    const label = $('<label></label>').text(_('Schema:'))
+      .css({ 'margin-right': '8px', 'margin-bottom': 0, 'white-space': 'nowrap', 'min-width': '8em', 'text-align': 'right' });
+    const schema = $('<select></select>').addClass('form-control');
     const activeSchemas = (self.registrationSchemas.schemas || [])
       .filter(function(s) {
         return s.attributes.active;
@@ -344,7 +346,7 @@ function MetadataButtons() {
     activeSchemas.forEach(function(s) {
       schema.append($('<option></option>')
         .attr('value', s.id)
-        .text(s.attributes.name));
+        .text(getLocalizedText(s.attributes.schema.ui && s.attributes.schema.ui.label) || s.attributes.name));
     });
     var currentSchemaId = null;
     const activeSchemaIds = activeSchemas.map(function(s) {
@@ -361,7 +363,7 @@ function MetadataButtons() {
       schema.val(currentSchemaId);
     }
     const group = $('<div></div>').addClass('form-group')
-      .css('margin-bottom', 0)
+      .css({ 'margin-bottom': 0, display: 'flex', 'align-items': 'center' })
       .append(label)
       .append(schema);
     return {
@@ -520,10 +522,12 @@ function MetadataButtons() {
         self.findSchemaById(self.currentSchemaId),
         filepath,
         item,
-        {}
+        { variantContainer: variantSlot }
       );
     });
-    dialog.toolbar.append(selector.group);
+    var variantSlot = $('<div>');
+    var selectorColumn = $('<div>').append(selector.group).append(variantSlot);
+    dialog.toolbar.append(selectorColumn);
     if ((context.projectMetadata || {}).editable && !extraMetadata) {
       const pasteButton = $('<button></button>')
         .addClass('btn btn-default')
@@ -563,7 +567,7 @@ function MetadataButtons() {
       self.findSchemaById(self.currentSchemaId),
       filepath,
       item,
-      {}
+      { variantContainer: variantSlot }
     );
     dialog.container.append(fieldContainer);
     dialog.dialog.one('shown.bs.modal', function() {
@@ -653,11 +657,13 @@ function MetadataButtons() {
         self.findSchemaById(self.currentSchemaId),
         filepaths,
         items,
-        Object.assign({multiple: true}, computeValuesForMultipleEdit(self.currentSchemaId))
+        Object.assign({multiple: true, variantContainer: variantSlot}, computeValuesForMultipleEdit(self.currentSchemaId))
       );
     });
     dialog.toolbar.empty();
-    dialog.toolbar.append(selector.group);
+    var variantSlot = $('<div>');
+    var selectorColumn = $('<div>').append(selector.group).append(variantSlot);
+    dialog.toolbar.append(selectorColumn);
 
     // container
     dialog.container.empty();
@@ -668,7 +674,7 @@ function MetadataButtons() {
       self.findSchemaById(self.currentSchemaId),
       filepaths,
       items,
-      Object.assign({multiple: true}, computeValuesForMultipleEdit(self.currentSchemaId))
+      Object.assign({multiple: true, variantContainer: variantSlot}, computeValuesForMultipleEdit(self.currentSchemaId))
     );
     dialog.container.append(fieldContainer);
     dialog.dialog.one('shown.bs.modal', function() {
@@ -2205,7 +2211,7 @@ function MetadataButtons() {
     });
     const toolbar = $('<div></div>')
       .css('display', 'flex')
-      .css('align-items', 'center')
+      .css('align-items', 'flex-end')
       .css('margin-bottom', '10px');
     const customHandler = $('<span></span>');
     const container = $('<ul></ul>').css('padding', '0 20px');
@@ -2230,7 +2236,7 @@ function MetadataButtons() {
                 .append($('<div class="col-sm-12 metadata-scroll-area"></div>')
                   .css('overflow-y', 'scroll')
                   .css('height', '66vh')
-                  .css('background-color', 'rgb(250, 250, 252)')
+                  .css('background-color', '#fff')
                   .css('padding-top', '12px')
                   .append(container))))
             .append($('<div class="modal-footer"></div>')
@@ -2276,7 +2282,7 @@ function MetadataButtons() {
     });
     const toolbar = $('<div></div>')
       .css('display', 'flex')
-      .css('align-items', 'center')
+      .css('align-items', 'flex-end')
       .css('margin-bottom', '10px');
     const container = $('<ul></ul>').css('padding', '0 20px');
     dialog
@@ -2292,7 +2298,7 @@ function MetadataButtons() {
                 .append($('<div class="col-sm-12 metadata-scroll-area"></div>')
                   .css('overflow-y', 'scroll')
                   .css('height', '70vh')
-                  .css('background-color', 'rgb(250, 250, 252)')
+                  .css('background-color', '#fff')
                   .css('padding-top', '12px')
                   .append(container))))
             .append($('<div class="modal-footer"></div>')
