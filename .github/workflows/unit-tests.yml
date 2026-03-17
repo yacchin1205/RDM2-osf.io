@@ -66,5 +66,16 @@ jobs:
         env:
           TEST_BUILD: ${{ matrix.test_build }}
           OSF_TEST_IMAGE: ${{ needs.build-image.outputs.image }}
+          ENABLE_COVERAGE: ${{ github.event_name == 'pull_request' }}
         run: |
           bash .github/scripts/ci/run-tests.sh "$TEST_BUILD"
+
+      - name: Upload coverage artifact
+        if: ${{ github.event_name == 'pull_request' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-${{ matrix.test_build }}
+          path: .coverage.${{ matrix.test_build }}
+          if-no-files-found: error
+          include-hidden-files: true
+          retention-days: 1
