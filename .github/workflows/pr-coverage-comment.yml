@@ -1,0 +1,113 @@
+name: PR Coverage Comment
+
+on:
+  workflow_run:
+    workflows: ["Unit Tests"]
+    types: [completed]
+
+permissions:
+  actions: read
+  contents: read
+  issues: write
+  pull-requests: write
+
+jobs:
+  comment-coverage:
+    if: ${{ github.event.workflow_run.event == 'pull_request' && github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Resolve PR number
+        id: pr
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const pullRequests = context.payload.workflow_run.pull_requests || [];
+            if (!pullRequests.length) {
+              core.setFailed('No pull request was associated with this workflow_run.');
+              return;
+            }
+            core.setOutput('number', String(pullRequests[0].number));
+
+      - name: Checkout tested merge ref
+        uses: actions/checkout@v4
+        with:
+          ref: refs/pull/${{ steps.pr.outputs.number }}/merge
+
+      - name: Download coverage artifacts
+        uses: actions/download-artifact@v4
+        with:
+          github-token: ${{ github.token }}
+          run-id: ${{ github.event.workflow_run.id }}
+          pattern: coverage-*
+          path: coverage-artifacts
+          merge-multiple: true
+
+      - name: Prepare coverage tooling
+        run: |
+          python3 -m pip install --upgrade pip
+          python3 -m pip install coverage==6.5.0
+          sudo ln -sfnT "$GITHUB_WORKSPACE" /code
+
+      - name: Combine coverage data
+        run: |
+          coverage combine coverage-artifacts
+          coverage report --skip-empty --sort=cover > coverage-report.txt
+
+          total_line="$(tail -n 1 coverage-report.txt)"
+          report_lines="$(wc -l < coverage-report.txt | tr -d ' ')"
+
+          {
+            echo '<!-- pr-coverage-comment -->'
+            echo '## Coverage report'
+            echo
+            echo "Workflow: [Unit Tests run](${{ github.event.workflow_run.html_url }})"
+            echo
+            echo "Total: \`$total_line\`"
+            echo
+            echo '<details><summary>Combined coverage report</summary>'
+            echo
+            echo '```text'
+            sed -n '1,25p' coverage-report.txt
+            if [ "$report_lines" -gt 25 ]; then
+              echo "... ($report_lines lines total)"
+            fi
+            echo '```'
+            echo '</details>'
+          } > coverage-comment.md
+
+      - name: Create or update PR comment
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const marker = '<!-- pr-coverage-comment -->';
+            const issue_number = Number('${{ steps.pr.outputs.number }}');
+            const body = fs.readFileSync('coverage-comment.md', 'utf8');
+            const { owner, repo } = context.repo;
+
+            const comments = await github.paginate(github.rest.issues.listComments, {
+              owner,
+              repo,
+              issue_number,
+              per_page: 100,
+            });
+
+            const existing = comments.find(comment =>
+              comment.user.type === 'Bot' && comment.body && comment.body.includes(marker)
+            );
+
+            if (existing) {
+              await github.rest.issues.updateComment({
+                owner,
+                repo,
+                comment_id: existing.id,
+                body,
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner,
+                repo,
+                issue_number,
+                body,
+              });
+            }
