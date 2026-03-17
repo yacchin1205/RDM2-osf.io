@@ -1,4 +1,5 @@
 [run]
+relative_files = true
 omit =
     *tests/*
     */migrations/*
