@@ -207,7 +207,7 @@ class PreprintSerializer(TaxonomizableSerializerMixin, MetricsSerializerMixin, J
 
     has_coi = DisableIfSwitch(
         SLOAN_COI_INPUT,
-        ser.NullBooleanField(required=False),
+        ser.BooleanField(required=False, allow_null=True),
     )
     conflict_of_interest_statement = DisableIfSwitch(
         SLOAN_COI_INPUT,

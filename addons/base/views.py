@@ -5,7 +5,7 @@ import os
 import uuid
 import markupsafe
 import pytz
-from future.moves.urllib.parse import quote
+from urllib.parse import quote
 from django.utils import timezone
 
 from distutils.util import strtobool

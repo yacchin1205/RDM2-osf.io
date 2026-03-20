@@ -9,7 +9,7 @@ import base64
 import math
 
 import dropbox
-from dropbox.dropbox import Dropbox, DropboxTeam
+from dropbox import Dropbox, DropboxTeam
 from dropbox.exceptions import ApiError
 from dropbox.sharing import MemberSelector, AccessLevel
 from dropbox.team import (GroupMembersAddError, GroupMembersRemoveError,

@@ -11,6 +11,7 @@ TEMPLATE_PATH = os.path.join(
 nextcloud_root_folder = generic_root_folder('nextcloud')
 
 class NextcloudAddonAppConfig(BaseAddonAppConfig):
+    default = True
 
     name = 'addons.nextcloud'
     label = 'addons_nextcloud'

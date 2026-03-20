@@ -12,7 +12,7 @@ from django.db.models.functions import Coalesce
 from django.utils import timezone
 from django.views import View
 from django_bulk_update.helper import bulk_update
-from django.utils.translation import ugettext_lazy as _
+from django.utils.translation import gettext_lazy as _
 from django.views.generic import UpdateView, ListView, DeleteView, TemplateView
 
 from admin.base.utils import render_bad_request_response

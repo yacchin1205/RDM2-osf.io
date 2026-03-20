@@ -1,11 +1,11 @@
 import collections
 import re
-from future.moves.urllib.parse import urlparse
+from urllib.parse import urlparse
 
 import furl
 import waffle
-from django.core.urlresolvers import resolve, reverse, NoReverseMatch
 from django.core.exceptions import ImproperlyConfigured
+from django.urls import resolve, reverse, NoReverseMatch
 from distutils.version import StrictVersion
 
 from rest_framework import exceptions, permissions

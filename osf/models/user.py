@@ -2,8 +2,7 @@ import datetime as dt
 import inspect  # noqa
 import logging
 import re
-from urllib.parse import urlparse, parse_qs
-from future.moves.urllib.parse import urljoin, urlencode
+from urllib.parse import urlparse, parse_qs, urljoin, urlencode
 import uuid
 from copy import deepcopy
 from os.path import splitext
@@ -11,7 +10,6 @@ from os.path import splitext
 from flask import Request as FlaskRequest
 from framework import analytics
 from guardian.shortcuts import get_perms
-from past.builtins import basestring
 
 # OSF imports
 import itsdangerous
@@ -573,14 +571,14 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         social_user_fields = {}
         for key, val in self.social.items():
             if val and key in self.SOCIAL_FIELDS:
-                if isinstance(self.SOCIAL_FIELDS[key], basestring):
-                    if isinstance(val, basestring):
+                if isinstance(self.SOCIAL_FIELDS[key], str):
+                    if isinstance(val, str):
                         social_user_fields[key] = self.SOCIAL_FIELDS[key].format(val)
                     else:
                         # Only provide the first url for services where multiple accounts are allowed
                         social_user_fields[key] = self.SOCIAL_FIELDS[key].format(val[0])
                 else:
-                    if isinstance(val, basestring):
+                    if isinstance(val, str):
                         social_user_fields[key] = [val]
                     else:
                         social_user_fields[key] = val
@@ -1095,15 +1093,10 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
                 user_id=self._id,
                 username=self.username
             )
-        except mailchimp_utils.mailchimp.ListNotSubscribedError:
-            pass
-        except mailchimp_utils.mailchimp.InvalidApiKeyError:
-            if not website_settings.ENABLE_EMAIL_SUBSCRIPTIONS:
-                pass
-            else:
-                raise
-        except mailchimp_utils.mailchimp.EmailNotExistsError:
-            pass
+        except mailchimp_utils.OSFError as error:
+            sentry.log_exception(error)
+        except Exception as error:
+            sentry.log_exception(error)
         # Call to `unsubscribe` above saves, and can lead to stale data
         self.reload()
         self.is_disabled = True
@@ -2142,9 +2135,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
 
     class Meta:
         # custom permissions for use in the GakuNin RDM Admin App
-        permissions = (
-            ('view_osfuser', 'Can view user details'),
-        )
+        permissions = ()
 
 @receiver(post_save, sender=OSFUser)
 def add_default_user_addons(sender, instance, created, **kwargs):

@@ -28,6 +28,7 @@ def onedrivebusiness_root_folder(node_settings, auth, **kwargs):
     return [root]
 
 class OneDriveBusinessAddonAppConfig(BaseAddonAppConfig):
+    default = True
 
     name = 'addons.{}'.format(SHORT_NAME)
     label = 'addons_{}'.format(SHORT_NAME)

@@ -11,6 +11,7 @@ TEMPLATE_PATH = os.path.join(
 )
 
 class SwiftAddonAppConfig(BaseAddonAppConfig):
+    default = True
 
     name = 'addons.swift'
     label = 'addons_swift'

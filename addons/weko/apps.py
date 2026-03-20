@@ -16,6 +16,7 @@ NAME = 'addons.weko'
 
 
 class WEKOAddonAppConfig(BaseAddonAppConfig):
+    default = True
 
     name = NAME
     label = 'addons_weko'

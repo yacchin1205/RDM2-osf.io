@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-from future.moves.urllib.parse import urlparse
+from urllib.parse import urlparse
 from rest_framework import status as http_status
 
 from django.core.exceptions import ValidationError

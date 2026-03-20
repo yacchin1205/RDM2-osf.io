@@ -10,6 +10,7 @@ TEMPLATE_PATH = os.path.join(
 )
 
 class DataverseAddonAppConfig(BaseAddonAppConfig):
+    default = True
 
     name = 'addons.dataverse'
     label = 'addons_dataverse'

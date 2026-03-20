@@ -25,10 +25,10 @@ services:
       - /bin/bash
       - -c
       - apk add --no-cache --virtual .build-deps build-base linux-headers python3-dev musl-dev libxml2-dev libxslt-dev postgresql-dev libffi-dev libpng-dev freetype-dev jpeg-dev &&
-        invoke requirements --all &&
-        (python3 -m compileall /usr/lib/python3.6 || true) &&
-        rm -Rf /python3.6/* &&
-        cp -Rf -p /usr/lib/python3.6 /
+        python3 -m invoke requirements --all &&
+        (python3 -m compileall /usr/local/lib/python3.12 || true) &&
+        rm -Rf /python3.12/* &&
+        cp -Rf -p /usr/local/lib/python3.12 /
     environment:
       OSF_DB_HOST: postgres
       DB_HOST: postgres

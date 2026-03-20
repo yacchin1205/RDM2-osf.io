@@ -79,6 +79,7 @@ NODE_SETTINGS_TEMPLATE = os.path.join(
 )
 
 class BitbucketAddonConfig(BaseAddonAppConfig):
+    default = True
 
     name = 'addons.bitbucket'
     label = 'addons_bitbucket'

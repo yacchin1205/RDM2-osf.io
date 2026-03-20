@@ -10,6 +10,7 @@ NODE_SETTINGS_TEMPLATE = os.path.join(HERE, 'templates', 'googledrive_node_setti
 USER_SETTINGS_TEMPLATE = os.path.join(HERE, 'templates', 'googledrive_user_settings.mako')
 
 class GoogleDriveAddonConfig(BaseAddonAppConfig):
+    default = True
 
     name = 'addons.googledrive'
     label = 'addons_googledrive'

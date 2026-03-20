@@ -5,7 +5,7 @@ from flask import request
 from flask import redirect
 import logging
 import requests
-from future.moves.urllib.parse import urljoin, urlencode
+from urllib.parse import urljoin, urlencode
 
 from osf.models.node import AbstractNode
 from framework.sessions import session

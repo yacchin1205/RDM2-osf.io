@@ -10,6 +10,7 @@ TEMPLATE_PATH = os.path.join(
 
 
 class JupyterhubAddonAppConfig(BaseAddonAppConfig):
+    default = True
 
     name = 'addons.jupyterhub'
     label = 'addons_jupyterhub'

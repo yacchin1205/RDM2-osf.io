@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 import os
-from future.moves.urllib.parse import unquote
+from urllib.parse import unquote
 import logging
 
 from django.db import models

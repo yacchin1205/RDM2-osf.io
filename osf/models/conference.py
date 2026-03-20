@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from future.moves.urllib.parse import urljoin
+from urllib.parse import urljoin
 
 from django.db import models
 from osf.models.base import BaseModel, ObjectIDMixin
@@ -90,9 +90,7 @@ class Conference(ObjectIDMixin, BaseModel):
 
     class Meta:
         # custom permissions for use in the GakuNin RDM Admin App
-        permissions = (
-            ('view_conference', 'Can view conference details in the admin app.'),
-        )
+        permissions = ()
 
 
 class MailRecord(ObjectIDMixin, BaseModel):

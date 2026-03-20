@@ -11,6 +11,7 @@ TEMPLATE_PATH = os.path.join(
 )
 
 class S3CompatAddonAppConfig(BaseAddonAppConfig):
+    default = True
 
     name = 'addons.s3compat'
     label = 'addons_s3compat'

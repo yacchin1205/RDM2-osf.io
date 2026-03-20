@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
-from past.builtins import basestring
 import furl
-from future.moves.urllib.parse import urlunsplit, urlsplit, parse_qs, urlencode
+from urllib.parse import urlunsplit, urlsplit, parse_qs, urlencode
 from distutils.version import StrictVersion
 from hashids import Hashids
 
@@ -101,7 +100,7 @@ def get_object_or_error(model_or_qs, query_or_pk=None, request=None, display_nam
         except model_cls.DoesNotExist:
             raise NotFound
 
-    elif isinstance(query_or_pk, basestring):
+    elif isinstance(query_or_pk, str):
         # they passed a 5-char guid as a string
         if issubclass(model_cls, GuidMixin):
             # if it's a subclass of GuidMixin we know it's primary_identifier_name

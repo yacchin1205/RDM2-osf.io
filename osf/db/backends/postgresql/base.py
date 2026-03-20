@@ -1,11 +1,8 @@
-from past.builtins import basestring
 import uuid
 
 import psycopg2
-from django.conf import settings
 from django.db.backends.postgresql.base import \
     DatabaseWrapper as PostgresqlDatabaseWrapper
-from django.db.backends.postgresql.base import utc_tzinfo_factory
 
 
 class server_side_cursors(object):
@@ -20,7 +17,7 @@ class server_side_cursors(object):
         self.itersize = itersize
         if isinstance(qs_or_using_or_connection, QuerySet):
             self.connection = connections[qs_or_using_or_connection.db]
-        elif isinstance(qs_or_using_or_connection, basestring):
+        elif isinstance(qs_or_using_or_connection, str):
             self.connection = connections[qs_or_using_or_connection]
         else:
             self.connection = qs_or_using_or_connection
@@ -62,7 +59,6 @@ class DatabaseWrapper(PostgresqlDatabaseWrapper):
             name='osf.db.backends.postgresql_cursors:{}'.format(
                 uuid.uuid4().hex),
             cursor_factory=psycopg2.extras.DictCursor, )
-        cursor.tzinfo_factory = utc_tzinfo_factory if settings.USE_TZ else None
         cursor.itersize = self.server_side_cursor_itersize
 
         return cursor

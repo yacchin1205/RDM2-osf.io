@@ -10,6 +10,7 @@ NODE_SETTINGS_TEMPLATE = os.path.join(
 )
 
 class ForwardAddonAppConfig(BaseAddonAppConfig):
+    default = True
 
     name = 'addons.forward'
     label = 'addons_forward'

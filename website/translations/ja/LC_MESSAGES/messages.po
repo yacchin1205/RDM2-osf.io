@@ -1363,9 +1363,8 @@ msgid "Image Size:"
 msgstr "画像サイズ"
 
 #: addons/wiki/templates/edit.mako:438
-#, python-format
-msgid "Enter image size (e.g., 300 for pixels, or 50% for percentage)"
-msgstr "画像サイズを入力してください(例：ピクセルの場合は300、パーセンテージの場合は50%)"
+msgid "Enter image size (e.g., 300 for pixels, or 50%% for percentage)"
+msgstr "画像サイズを入力してください(例：ピクセルの場合は300、パーセンテージの場合は50%%)"
 
 #: addons/wiki/templates/edit.mako:439
 msgid "Invalid size format. Use pixels or percentage."

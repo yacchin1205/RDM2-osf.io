@@ -98,6 +98,7 @@ NODE_SETTINGS_TEMPLATE = os.path.join(
 )
 
 class GitHubAddonConfig(BaseAddonAppConfig):
+    default = True
 
     name = 'addons.github'
     label = 'addons_github'

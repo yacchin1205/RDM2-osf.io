@@ -69,7 +69,7 @@ read -r -d '' container_script <<'BASH' || true
 set -euo pipefail
 set -x
 export PATH="/usr/local/bin:/usr/bin:$PATH"
-invoke travis_addon_settings
+python3 -m invoke travis-addon-settings
 # Minimal Ember app shells so send_from_directory returns 200 during tests
 mkdir -p "$HOME/preprints" "$HOME/website/ember_osf_web"
 for ember_stub in "$HOME/preprints/index.html" "$HOME/website/ember_osf_web/index.html"; do
@@ -91,9 +91,9 @@ netstat -an | grep 'tcp.*LISTEN' || true
 pip3 uninstall uritemplate.py --yes || true
 pip3 install uritemplate.py==0.3.0
 if [ "$TEST_BUILD" = "api1_and_js" ]; then
-    invoke assets --dev
+    python3 -m invoke assets --dev
 fi
-invoke "test_travis_${TEST_BUILD}" -n 1
+python3 -m invoke "test-travis-${TEST_BUILD}" -n 1
 BASH
 
 compose run --rm \

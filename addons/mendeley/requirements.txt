@@ -1,1 +1,1 @@
-git+https://github.com/CenterForOpenScience/mendeley-python-sdk.git@add_folders
+git+https://github.com/CenterForOpenScience/mendeley-python-sdk.git@be8a811fa6c3b105d9f5c656cabb6b1ba855ed5b

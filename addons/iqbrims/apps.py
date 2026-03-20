@@ -3,6 +3,7 @@ from addons.base.apps import BaseAddonAppConfig, generic_root_folder
 iqbrims_root_folder = generic_root_folder('iqbrims')
 
 class IQBRIMSAddonConfig(BaseAddonAppConfig):
+    default = True
 
     name = 'addons.iqbrims'
     label = 'addons_iqbrims'

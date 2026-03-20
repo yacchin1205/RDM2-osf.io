@@ -10,7 +10,6 @@ import threading
 
 from django.conf import settings
 from django.utils.deprecation import MiddlewareMixin
-from raven.contrib.django.raven_compat.models import sentry_exception_handler
 import corsheaders.middleware
 
 from framework.postcommit_tasks.handlers import (
@@ -22,6 +21,7 @@ from framework.celery_tasks.handlers import (
     celery_after_request,
     celery_teardown_request,
 )
+from framework.sentry import log_exception
 from .api_globals import api_globals
 from api.base import settings as api_settings
 from waffle.middleware import WaffleMiddleware
@@ -71,7 +71,7 @@ class CeleryTaskMiddleware(MiddlewareMixin):
 
     def process_exception(self, request, exception):
         """If an exception occurs, clear the celery task queue so process_response has nothing."""
-        sentry_exception_handler(request=request)
+        log_exception(exception)
         celery_teardown_request(error=True)
         return None
 
@@ -90,7 +90,7 @@ class DjangoGlobalMiddleware(MiddlewareMixin):
         api_globals.request = request
 
     def process_exception(self, request, exception):
-        sentry_exception_handler(request=request)
+        log_exception(exception)
         api_globals.request = None
         return None
 

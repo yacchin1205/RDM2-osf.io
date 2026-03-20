@@ -33,6 +33,7 @@ def dropboxbusiness_root(addon_config, node_settings, auth, **kwargs):
 
 
 class DropboxBusinessAddonAppConfig(BaseAddonAppConfig):
+    default = True
 
     name = 'addons.dropboxbusiness'
     label = 'addons_dropboxbusiness'

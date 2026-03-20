@@ -8,6 +8,7 @@ TEMPLATE_PATH = os.path.join(HERE, 'templates')
 
 
 class WorkflowAddonAppConfig(BaseAddonAppConfig):
+    default = True
     name = 'addons.workflow'
     label = 'addons_workflow'
     full_name = 'Workflow'

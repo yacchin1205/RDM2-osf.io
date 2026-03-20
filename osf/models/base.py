@@ -13,8 +13,6 @@ from django.db.models.query import QuerySet
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from django_extensions.db.models import TimeStampedModel
-from include import IncludeQuerySet
-from past.builtins import basestring
 
 from osf.utils.caching import cached_property
 from osf.exceptions import ValidationError
@@ -50,7 +48,7 @@ class QuerySetExplainMixin:
     def explain(self, *args):
         extra_arguments = ''
         for item in args:
-            extra_arguments = '{} {}'.format(extra_arguments, item) if isinstance(item, basestring) else extra_arguments
+            extra_arguments = '{} {}'.format(extra_arguments, item) if isinstance(item, str) else extra_arguments
         cursor = connections[self.db].cursor()
         query, params = self.query.sql_with_params()
         cursor.execute('explain analyze verbose %s' % query, params)
@@ -88,7 +86,7 @@ class BaseModel(TimeStampedModel, QuerySetExplainMixin):
     @classmethod
     def load(cls, data, select_for_update=False):
         try:
-            if isinstance(data, basestring):
+            if isinstance(data, str):
                 # Some models (CitationStyle) have an _id that is not a bson
                 # Looking up things by pk will never work with a basestring
                 return cls.objects.get(_id=data) if not select_for_update else cls.objects.filter(_id=data).select_for_update().get()
@@ -281,18 +279,15 @@ class OptionalGuidMixin(BaseIDMixin):
         abstract = True
 
 
-class GuidMixinQuerySet(IncludeQuerySet):
+class GuidMixinQuerySet(QuerySet):
 
     def _filter_or_exclude(self, negate, *args, **kwargs):
-        return super(GuidMixinQuerySet, self)._filter_or_exclude(negate, *args, **kwargs).include('guids')
+        return super(GuidMixinQuerySet, self)._filter_or_exclude(negate, *args, **kwargs).prefetch_related('guids')
 
     def all(self):
         if self._fields:
             return super(GuidMixinQuerySet, self).all()
-        return super(GuidMixinQuerySet, self).all().include('guids')
-
-    def count(self):
-        return super(GuidMixinQuerySet, self.include(None)).count()
+        return super(GuidMixinQuerySet, self).all().prefetch_related('guids')
 
 
 class GuidMixin(BaseIDMixin):

@@ -5,6 +5,7 @@ from addons.base.apps import BaseAddonAppConfig
 HERE = os.path.dirname(os.path.abspath(__file__))
 
 class TwoFactorAddonAppConfig(BaseAddonAppConfig):
+    default = True
 
     name = 'addons.twofactor'
     label = 'addons_twofactor'

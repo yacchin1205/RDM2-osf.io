@@ -7,7 +7,7 @@ import os
 import re
 import shutil
 import tempfile
-from future.moves.urllib.parse import urljoin
+from urllib.parse import urljoin
 from zipfile import ZipFile
 
 import furl

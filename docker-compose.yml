@@ -399,41 +399,41 @@ services:
     command:
       - /bin/bash
       - -c
-      - invoke requirements --all &&
-        (python3 -m compileall /usr/lib/python3.6 || true) &&
-        rm -Rf /python3.6/* &&
-        cp -Rf -p /usr/lib/python3.6 /
+      - python3 -m invoke requirements --all &&
+        (python3 -m compileall /usr/local/lib/python3.12 || true) &&
+        rm -Rf /python3.12/* &&
+        cp -Rf -p /usr/local/lib/python3.12 /
     restart: 'no'
     environment:
       DJANGO_SETTINGS_MODULE: api.base.settings
     volumes:
       - ./:/code:cached
-      - osf_requirements_vol:/python3.6
+      - osf_requirements_vol:/python3.12
 
   assets:
     image: quay.io/centerforopenscience/osf:develop
-    command: invoke assets -dw
+    command: python3 -m invoke assets -dw
     restart: unless-stopped
     environment:
       DJANGO_SETTINGS_MODULE: api.base.settings
       LANG: en_US.UTF-8
     volumes:
       - ./:/code:cached
-      - osf_requirements_vol:/usr/lib/python3.6
+      - osf_requirements_vol:/usr/local/lib/python3.12
       - osf_bower_components_vol:/code/website/static/vendor/bower_components
       - osf_node_modules_vol:/code/node_modules
     stdin_open: true
 
   admin_assets:
     image: quay.io/centerforopenscience/osf:develop
-    command: invoke admin.assets -dw
+    command: python3 -m invoke admin.assets -dw
     restart: unless-stopped
     environment:
       DJANGO_SETTINGS_MODULE: admin.base.settings
       LANG: en_US.UTF-8
     volumes:
       - ./:/code:cached
-      - osf_requirements_vol:/usr/lib/python3.6
+      - osf_requirements_vol:/usr/local/lib/python3.12
       - osf_node_modules_vol:/code/node_modules  # needed due to admin references of ../webpack.<...>.js configurations.
       - osf_bower_components_vol:/code/website/static/vendor/bower_components
       - osf_admin_bower_components_vol:/code/admin/static/vendor/bower_components
@@ -471,7 +471,7 @@ services:
 
   worker:
     image: quay.io/centerforopenscience/osf:develop
-    command: invoke celery_worker
+    command: python3 -m invoke celery-worker
     restart: unless-stopped
     depends_on:
       - postgres
@@ -485,7 +485,7 @@ services:
       - .docker-compose.env
     volumes:
       - ./:/code:cached
-      - osf_requirements_vol:/usr/lib/python3.6
+      - osf_requirements_vol:/usr/local/lib/python3.12
       - osf_bower_components_vol:/code/website/static/vendor/bower_components
       - osf_node_modules_vol:/code/node_modules
 #      - /host_server/user_key_info:/user_key_info
@@ -502,7 +502,7 @@ services:
     - crond &&
       cat ./admin/rdm_statistics/cron.sh | crontab - &&
       (crontab -l; cat admin/rdm_custom_storage_location/cron.sh) | crontab - &&
-      invoke adminserver -h 0.0.0.0
+      python3 -m invoke adminserver -h 0.0.0.0
     restart: unless-stopped
     environment:
       DJANGO_SETTINGS_MODULE: admin.base.settings
@@ -517,7 +517,7 @@ services:
     stdin_open: true
     volumes:
       - ./:/code:cached
-      - osf_requirements_vol:/usr/lib/python3.6
+      - osf_requirements_vol:/usr/local/lib/python3.12
       - osf_bower_components_vol:/code/website/static/vendor/bower_components
       - osf_node_modules_vol:/code/node_modules
       - osf_admin_bower_components_vol:/code/admin/static/vendor/bower_components
@@ -526,7 +526,7 @@ services:
 
   api:
     image: quay.io/centerforopenscience/osf:develop
-    command: invoke apiserver -h 0.0.0.0
+    command: python3 -m invoke apiserver -h 0.0.0.0
     restart: unless-stopped
     ports:
       - 8000:8000
@@ -540,14 +540,14 @@ services:
       - .docker-compose.env
     volumes:
       - ./:/code:cached
-      - osf_requirements_vol:/usr/lib/python3.6
+      - osf_requirements_vol:/usr/local/lib/python3.12
       - osf_bower_components_vol:/code/website/static/vendor/bower_components
       - osf_node_modules_vol:/code/node_modules
     stdin_open: true
 
   web:
     image: quay.io/centerforopenscience/osf:develop
-    command: invoke server -h 0.0.0.0
+    command: python3 -m invoke server -h 0.0.0.0
     restart: unless-stopped
     ports:
       - 5000:5000
@@ -562,7 +562,7 @@ services:
       - .docker-compose.sharejs.env
     volumes:
       - ./:/code:cached
-      - osf_requirements_vol:/usr/lib/python3.6
+      - osf_requirements_vol:/usr/local/lib/python3.12
       - osf_bower_components_vol:/code/website/static/vendor/bower_components
       - osf_node_modules_vol:/code/node_modules
       - ember_osf_web_dist_vol:/ember_osf_web

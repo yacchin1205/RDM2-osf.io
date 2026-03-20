@@ -75,6 +75,7 @@ NODE_SETTINGS_TEMPLATE = os.path.join(HERE, 'templates', 'gitlab_node_settings.m
 USER_SETTINGS_TEMPLATE = os.path.join(HERE, 'templates', 'gitlab_user_settings.mako')
 
 class GitLabAddonConfig(BaseAddonAppConfig):
+    default = True
 
     name = 'addons.gitlab'
     label = 'addons_gitlab'

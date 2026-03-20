@@ -1,5 +1,3 @@
-from include import IncludeManager
-
 from django.apps import apps
 from django.db import models
 from django.utils import timezone
@@ -17,7 +15,7 @@ class NodeLog(ObjectIDMixin, BaseModel):
         'original_node': 'original_node__guids___id'
     }
 
-    objects = IncludeManager()
+    objects = models.Manager()
 
     DATE_FORMAT = '%m/%d/%Y %H:%M UTC'
 

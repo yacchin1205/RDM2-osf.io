@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 import json
 import os
-from future.moves.urllib.parse import urljoin
+from urllib.parse import urljoin
 
 from django.db import models
 import markupsafe

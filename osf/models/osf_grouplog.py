@@ -1,5 +1,3 @@
-from include import IncludeManager
-
 from django.db import models
 from osf.models.base import BaseModel, ObjectIDMixin
 from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
@@ -7,7 +5,7 @@ from website.util import api_v2_url
 
 
 class OSFGroupLog(ObjectIDMixin, BaseModel):
-    objects = IncludeManager()
+    objects = models.Manager()
 
     DATE_FORMAT = '%m/%d/%Y %H:%M UTC'
 

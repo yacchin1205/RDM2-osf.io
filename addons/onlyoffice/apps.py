@@ -10,6 +10,7 @@ TEMPLATE_PATH = os.path.join(
 )
 
 class AddonAppConfig(BaseAddonAppConfig):
+    default = True
 
     short_name = SHORT_NAME
     name = 'addons.{}'.format(SHORT_NAME)

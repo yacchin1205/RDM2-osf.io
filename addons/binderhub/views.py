@@ -10,7 +10,7 @@ from django.core.exceptions import (
 from django.db import transaction
 from flask import request
 import logging
-from future.moves.urllib.parse import urljoin, urlencode
+from urllib.parse import urljoin, urlencode
 
 from . import SHORT_NAME
 from framework.auth.decorators import must_be_logged_in

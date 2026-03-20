@@ -5,7 +5,7 @@ import six
 from django.db import models
 from django.db.models.signals import pre_save, post_save, post_delete
 from django.dispatch import receiver
-from dropbox.dropbox import DropboxTeam
+from dropbox import DropboxTeam
 from dropbox.exceptions import DropboxException
 
 from osf.models.node import Node

@@ -5,6 +5,7 @@ from addons.box.settings import MAX_UPLOAD_SIZE
 box_root_folder = generic_root_folder('box')
 
 class BoxAddonAppConfig(BaseAddonAppConfig):
+    default = True
 
     name = 'addons.box'
     label = 'addons_box'

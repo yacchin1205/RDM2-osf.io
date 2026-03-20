@@ -1,33 +1,33 @@
-FROM node:8-alpine3.9
+FROM python:3.12-alpine3.17
 
 ARG NODE_OPTIONS='--max-old-space-size=4096'
 
 # Source: https://github.com/docker-library/httpd/blob/7976cabe162268bd5ad2d233d61e340447bfc371/2.4/alpine/Dockerfile#L3
 RUN set -x \
-    && addgroup -g 82 -S www-data \
     && adduser -h /var/www -u 82 -D -S -G www-data www-data
 
 RUN apk add --no-cache --virtual .run-deps \
+    gcc \
+    g++ \
+    nodejs \
+    npm \
+    yarn \
     libxslt-dev \
     su-exec \
     bash \
-    python3 \
     git \
     # lxml2
     libxml2 \
     libxslt \
     # psycopg2
-    postgresql-libs \
+    libpq-dev \
     # cryptography
     libffi \
     # gevent
     libev \
     libevent \
     openblas-dev \
-    wkhtmltopdf \
-    xvfb \
     jq \
-    python3-tkinter \
     openssl \
     curl \
     && yarn global add bower
@@ -70,7 +70,7 @@ COPY ./admin/rdm_announcement/requirements.txt ./admin/rdm_announcement/
 COPY ./admin/rdm_statistics/requirements.txt ./admin/rdm_statistics/
 COPY ./addons/metadata/requirements.txt ./addons/metadata/
 
-RUN pip3 install pip==21.1.3
+RUN pip3 install pip==24.0
 
 RUN set -ex \
     && mkdir -p /var/www \
@@ -78,20 +78,19 @@ RUN set -ex \
     && apk add --no-cache --virtual .build-deps \
         build-base \
         linux-headers \
-        python3-dev \
         # lxml2
         musl-dev \
         libxml2-dev \
         libxslt-dev \
         # psycopg2
-        postgresql-dev \
+        libpq-dev \
         # cryptography
         libffi-dev \
         libpng-dev \
         freetype-dev \
         jpeg-dev \
     && pip3 install Cython==0.29.36 \
-    && pip3 install numpy==1.15.4 \
+    && pip3 install numpy==1.26.4 \
     && for reqs_file in \
         /code/requirements.txt \
         /code/requirements/release.txt \
@@ -103,7 +102,7 @@ RUN set -ex \
     && (pip3 uninstall uritemplate.py --yes || true) \
     && pip3 install --no-cache-dir uritemplate.py==0.3.0 \
     # Fix: https://github.com/CenterForOpenScience/osf.io/pull/6783
-    && python3 -m compileall /usr/lib/python3.6 || true \
+    && python3 -m compileall /usr/local/lib/python3.12 || true \
     && apk del .build-deps
 
 # Settings
@@ -182,7 +181,7 @@ RUN \
     # OSF
     yarn install --frozen-lockfile \
     && mkdir -p ./website/static/built/ \
-    && invoke build_js_config_files \
+    && python3 -m invoke build-js-config-files \
     && yarn run webpack-prod \
     # Admin
     && cd ./admin \
@@ -197,7 +196,7 @@ RUN \
 COPY ./ ./
 
 ARG GIT_COMMIT=
-ENV GIT_COMMIT ${GIT_COMMIT}
+ENV GIT_COMMIT=${GIT_COMMIT}
 
 RUN pybabel compile -d ./website/translations
 RUN pybabel compile -D django -d ./admin/translations
@@ -219,4 +218,4 @@ RUN for module in \
     ; done \
     && rm ./website/settings/local.py ./api/base/settings/local.py
 
-CMD ["su-exec", "nobody", "invoke", "--list"]
+CMD ["su-exec", "nobody", "python", "-m", "invoke", "--list"]

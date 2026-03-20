@@ -3,8 +3,6 @@ from __future__ import unicode_literals
 
 from django.db import models
 
-from include import IncludeManager
-
 from osf.models.base import BaseModel, ObjectIDMixin
 from osf.utils.workflows import DefaultStates, DefaultTriggers, ReviewStates, ReviewTriggers
 from osf.utils import permissions
@@ -14,7 +12,7 @@ class BaseAction(ObjectIDMixin, BaseModel):
     class Meta:
         abstract = True
 
-    objects = IncludeManager()
+    objects = models.Manager()
 
     creator = models.ForeignKey('OSFUser', related_name='+', on_delete=models.CASCADE)
 

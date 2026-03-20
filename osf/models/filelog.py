@@ -1,5 +1,3 @@
-from include import IncludeManager
-
 from django.apps import apps
 from django.db import models
 from django.utils import timezone
@@ -9,7 +7,7 @@ from osf.utils.fields import NonNaiveDateTimeField
 
 class FileLog(ObjectIDMixin, BaseModel):
 
-    objects = IncludeManager()
+    objects = models.Manager()
 
     DATE_FORMAT = '%m/%d/%Y %H:%M UTC'
 
@@ -45,7 +43,7 @@ class FileLog(ObjectIDMixin, BaseModel):
     date = NonNaiveDateTimeField(db_index=True, null=True, blank=True, default=timezone.now)
     # TODO build action choices on the fly with the addon stuff
     action = models.CharField(max_length=255, db_index=True)  # , choices=action_choices)
-    user = models.ForeignKey('OSFUser', related_name='filelogs', db_index=True, null=True, blank=True)
+    user = models.ForeignKey('OSFUser', related_name='filelogs', db_index=True, null=True, blank=True, on_delete=models.CASCADE)
     path = models.TextField(null=True)
 
     def __unicode__(self):

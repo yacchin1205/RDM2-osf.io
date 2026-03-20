@@ -11,6 +11,7 @@ TEMPLATE_PATH = os.path.join(
 )
 
 class AzureBlobStorageAddonAppConfig(BaseAddonAppConfig):
+    default = True
 
     name = 'addons.azureblobstorage'
     label = 'addons_azureblobstorage'

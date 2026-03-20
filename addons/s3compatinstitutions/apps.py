@@ -38,6 +38,7 @@ def s3compatinstitutions_root(addon_config, node_settings, auth, **kwargs):
 
 
 class S3CompatInstitutionsAddonAppConfig(BaseAddonAppConfig):
+    default = True
     name = 'addons.{}'.format(SHORT_NAME)
     label = 'addons_{}'.format(SHORT_NAME)
     full_name = FULL_NAME

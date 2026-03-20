@@ -1,5 +1,5 @@
 import logging
-from future.moves.urllib.parse import urljoin
+from urllib.parse import urljoin
 
 from rest_framework import status as http_status
 from flask import request

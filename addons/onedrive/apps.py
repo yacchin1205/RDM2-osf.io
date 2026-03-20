@@ -4,6 +4,7 @@ from addons.onedrive.settings import MAX_UPLOAD_SIZE
 onedrive_root_folder = generic_root_folder('onedrive')
 
 class OneDriveAddonAppConfig(BaseAddonAppConfig):
+    default = True
 
     name = 'addons.onedrive'
     label = 'addons_onedrive'

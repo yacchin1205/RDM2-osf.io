@@ -1,7 +1,7 @@
 import logging
 import datetime
 import html
-from future.moves.urllib.parse import urljoin
+from urllib.parse import urljoin
 
 from django.core.exceptions import ValidationError
 from django.db import models
@@ -70,9 +70,7 @@ class Registration(AbstractNode):
     )
     registered_date = NonNaiveDateTimeField(db_index=True, null=True, blank=True)
 
-    # This is a NullBooleanField because of inheritance issues with using a BooleanField
-    # TODO: Update to BooleanField(default=False, null=True) when Django is updated to >=2.1
-    external_registration = models.NullBooleanField(default=False)
+    external_registration = models.BooleanField(null=True, blank=True, default=False)
     registered_user = models.ForeignKey(OSFUser,
                                         related_name='related_to',
                                         on_delete=models.SET_NULL,
@@ -516,9 +514,7 @@ class Registration(AbstractNode):
 
     class Meta:
         # custom permissions for use in the GakuNin RDM Admin App
-        permissions = (
-            ('view_registration', 'Can view registration details'),
-        )
+        permissions = ()
 
 class DraftRegistrationLog(ObjectIDMixin, BaseModel):
     """ Simple log to show status changes for DraftRegistrations

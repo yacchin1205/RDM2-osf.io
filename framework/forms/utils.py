@@ -1,5 +1,5 @@
 import bleach
-from future.moves.urllib.parse import quote, unquote
+from urllib.parse import quote, unquote
 
 # TODO: Test me @jmcarp
 
