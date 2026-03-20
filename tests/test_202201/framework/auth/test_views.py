@@ -1,7 +1,6 @@
 from __future__ import absolute_import
 from rest_framework import status as http_status
 import pytest
-from nose.tools import assert_equal
 from framework.auth import Auth
 from framework.auth.views import login_and_register_handler
 from website.util import web_url_for

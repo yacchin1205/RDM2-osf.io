@@ -131,17 +131,23 @@ def _test_speedups_disable(request, settings, _test_speedups):
 
 
 @pytest.fixture(scope='function')
-def es6_client():
+def setup_connections():
+    connections.create_connection(hosts=[website_settings.ELASTIC6_URI])
+
+
+@pytest.fixture(scope='function')
+def es6_client(setup_connections):
     return connections.get_connection()
 
 
 @pytest.fixture(scope='function', autouse=True)
-def _es_marker(request, es6_client):
+def _es_marker(request):
     """Clear out all indices and index templates before and after
     tests marked with ``es``.
     """
     marker = request.node.get_closest_marker('es')
     if marker:
+        es6_client = request.getfixturevalue('es6_client')
 
         def teardown_es():
             es6_client.indices.delete(index='*')

@@ -4,7 +4,6 @@ import unittest
 
 import pytest
 from django.core.exceptions import ValidationError
-from nose.tools import *  # PEP8 asserts
 
 from framework.forms.utils import process_payload
 

@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 import unittest
 
-from nose.tools import *  # noqa (PEP8 asserts)
 from flask import Flask
 from webtest_plus import TestApp
 

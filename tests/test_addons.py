@@ -15,7 +15,6 @@ from django.utils import timezone
 from framework.auth import cas, signing
 from framework.auth.core import Auth
 from framework.exceptions import HTTPError
-from nose.tools import *  # noqa
 from tests.base import OsfTestCase, get_default_metaschema
 from api_tests.utils import create_test_file
 from osf_tests.factories import (
@@ -2076,4 +2075,3 @@ class TestViewUtils(OsfTestCase):
         # connect/disconnect from them, think osfstorage, there's no node-cfg for that.
         default_addons = [addon['short_name'] for addon in addon_dicts if addon['default']]
         assert not any('/{}/'.format(addon) in asset_paths for addon in default_addons)
-

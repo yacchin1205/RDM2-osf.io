@@ -2,7 +2,6 @@ from datetime import timedelta
 from rest_framework import status as http_status
 
 from django.utils import timezone
-from nose.tools import *  # noqa (PEP8 asserts)
 
 from framework.auth import campaigns, views as auth_views, cas
 from website.util import web_url_for

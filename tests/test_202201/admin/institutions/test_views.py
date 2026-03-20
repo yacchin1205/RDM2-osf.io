@@ -1,7 +1,6 @@
 import json
 from operator import itemgetter
 from django.urls import reverse
-from nose import tools as nt
 import mock
 import pytest
 from django.test import RequestFactory

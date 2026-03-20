@@ -4,7 +4,6 @@ import jwt
 
 import mock
 import pytest
-from nose.tools import *  # noqa PEP8 asserts
 
 from api.base import settings
 from api.base.settings.defaults import API_BASE

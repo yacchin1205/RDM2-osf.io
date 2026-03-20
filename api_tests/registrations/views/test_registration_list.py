@@ -1,7 +1,6 @@
 import dateutil.relativedelta
 from django.utils import timezone
 import mock
-from nose.tools import *  # noqa:
 import pytest
 
 from future.moves.urllib.parse import urljoin, urlparse

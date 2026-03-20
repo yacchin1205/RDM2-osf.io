@@ -4,7 +4,6 @@ from __future__ import absolute_import
 
 import mock
 import pytest
-from nose.tools import assert_equal
 from django.db import connection, transaction
 from django.test.utils import CaptureQueriesContext
 from osf.models import OSFUser

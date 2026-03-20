@@ -13,7 +13,6 @@ from django.utils import timezone
 
 import mock
 import pytest
-from nose.tools import *  # noqa PEP8 asserts
 
 from framework.auth.core import Auth
 from osf.models import AbstractNode, NodeLog

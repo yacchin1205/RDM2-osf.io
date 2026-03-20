@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 import mock
-from nose.tools import *  # noqa: F403
 import unittest
 
 from framework.auth import Auth

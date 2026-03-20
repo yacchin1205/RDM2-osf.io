@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-from nose.tools import *  # noqa: F403
 import jwe
 import jwt
 import mock

@@ -7,7 +7,6 @@ from __future__ import absolute_import
 import mock
 import pytest
 from framework.auth import Auth
-from nose.tools import *  # noqa PEP8 asserts
 from tests.base import (
     OsfTestCase,
 )

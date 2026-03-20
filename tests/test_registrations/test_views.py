@@ -9,7 +9,6 @@ import pytz
 from django.utils import timezone
 
 import pytest
-from nose.tools import *  # noqa PEP8 asserts
 from waffle.testutils import override_switch
 
 

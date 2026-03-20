@@ -3,7 +3,6 @@ import mock
 import pytest
 from website import mailchimp_utils
 from tests.base import OsfTestCase
-from nose.tools import *  # noqa; PEP8 asserts
 from osf_tests.factories import UserFactory
 import mailchimp
 

@@ -1,7 +1,6 @@
 import mock
 import datetime as dt
 
-from nose.tools import *  # noqa:
 import pytest
 from django.utils import timezone
 from waffle.testutils import override_switch

@@ -3,7 +3,6 @@ import os
 import json
 
 from django.utils import timezone
-from nose.tools import *  # noqa: F403
 
 from api.citations.utils import render_citation
 from osf_tests.factories import UserFactory, PreprintFactory

@@ -9,8 +9,6 @@ import time
 from future.moves.urllib.parse import urlparse, urljoin, parse_qs
 
 import responses
-from nose.tools import *  # noqa
-from nose import tools as nt
 import pytz
 from oauthlib.oauth2 import OAuth2Error
 from requests_oauthlib import OAuth2Session

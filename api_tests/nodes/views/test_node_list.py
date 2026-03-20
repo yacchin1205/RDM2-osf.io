@@ -1,6 +1,5 @@
 import mock
 import pytest
-from nose.tools import *  # noqa:
 
 from django.utils import timezone
 from api.base.settings.defaults import API_BASE, MAX_PAGE_SIZE

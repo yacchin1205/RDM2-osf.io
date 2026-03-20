@@ -1,5 +1,4 @@
 import pytest
-from nose.tools import assert_raises
 
 from framework.celery_tasks import handlers
 from website.project.tasks import on_node_updated

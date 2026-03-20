@@ -5,8 +5,6 @@ import mock
 
 from django.http import HttpRequest
 from django.utils import timezone
-from nose import SkipTest
-from nose.tools import assert_equal, assert_not_equal
 
 from framework.auth import Auth
 from framework.celery_tasks.handlers import celery_teardown_request

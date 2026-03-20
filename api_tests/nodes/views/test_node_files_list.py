@@ -4,7 +4,6 @@ import json
 import furl
 import responses
 from django.utils import timezone
-from nose.tools import *  # noqa:
 
 from framework.auth.core import Auth
 

@@ -9,7 +9,6 @@ from django.utils import timezone
 
 import mock
 import pytest
-from nose.tools import *  # noqa
 
 from tests.base import fake, OsfTestCase
 from osf_tests.factories import (

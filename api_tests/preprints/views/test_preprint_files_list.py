@@ -1,7 +1,6 @@
 from django.utils import timezone
 from django.contrib.contenttypes.models import ContentType
 
-from nose.tools import *  # noqa: F403
 
 from api.base.settings.defaults import API_BASE
 from tests.base import ApiTestCase

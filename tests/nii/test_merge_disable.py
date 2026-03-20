@@ -3,7 +3,6 @@ import mock
 from tests.base import OsfTestCase, fake
 from osf_tests.factories import AuthUserFactory, ProjectFactory, fake_email
 from website.util import api_url_for
-from nose.tools import *  # noqa PEP8 asserts
 from framework.auth.exceptions import MergeDisableError
 from framework.auth import Auth
 

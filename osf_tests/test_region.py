@@ -1,6 +1,5 @@
 import mock
 import pytest
-from nose import tools as nt
 
 from addons.osfstorage.models import Region
 from addons.osfstorage.settings import DEFAULT_REGION_ID

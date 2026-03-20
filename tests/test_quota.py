@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 import datetime
 import mock
-from nose.tools import *  # noqa (PEP8 asserts)
 import pytest
 
 from addons.osfstorage.models import OsfStorageFileNode

@@ -3,7 +3,6 @@ from datetime import datetime
 import mock
 import pytest
 import random
-from nose.tools import *  # noqa:
 
 from api.base.settings.defaults import API_BASE
 from api.nodes.serializers import NodeContributorsCreateSerializer

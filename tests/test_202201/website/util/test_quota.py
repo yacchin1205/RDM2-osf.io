@@ -2,7 +2,6 @@
 import mock
 import pytest
 from addons.osfstorage.models import OsfStorageFileNode
-from nose.tools import *  # noqa (PEP8 asserts)
 from osf.models import (
     FileInfo, UserQuota
 )

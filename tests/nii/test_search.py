@@ -10,7 +10,6 @@ from pprint import pformat as pp
 
 import mock
 import pytest
-from nose.tools import *  # noqa: F403
 
 from framework.auth.core import Auth
 from osf_tests import factories

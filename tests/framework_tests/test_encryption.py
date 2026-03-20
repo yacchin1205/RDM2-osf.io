@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 import unittest
-from nose.tools import *  # noqa
 
 from framework.encryption import encrypt, decrypt, ensure_bytes
 

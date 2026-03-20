@@ -8,7 +8,6 @@ from admin_tests.utilities import setup_log_view
 from django.test import RequestFactory
 from django.urls import reverse
 from django.utils import timezone
-from nose import tools as nt
 from osf.models import AdminLogEntry
 from osf_tests.factories import ProjectFactory, NodeFactory
 from tests.base import AdminTestCase

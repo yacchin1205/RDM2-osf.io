@@ -8,7 +8,6 @@ import json
 from addons.osfstorage.tests.factories import FileVersionFactory
 from django.http import JsonResponse
 from django.test import TestCase
-from nose import tools as nt
 
 from addons.osfstorage.models import Region
 from addons.osfstorage.settings import DEFAULT_REGION_ID

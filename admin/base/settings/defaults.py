@@ -270,9 +270,6 @@ WEBPACK_LOADER = {
     }
 }
 
-TEST_RUNNER = 'django_nose.NoseTestSuiteRunner'
-NOSE_ARGS = ['--verbosity=2']
-
 # Keen.io settings in local.py
 KEEN_PROJECT_ID = osf_settings.KEEN['private']['project_id']
 KEEN_READ_KEY = osf_settings.KEEN['private']['read_key']

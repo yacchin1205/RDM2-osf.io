@@ -2,7 +2,6 @@ import datetime
 
 import mock
 from django.utils import timezone
-from nose.tools import *  # noqa
 from tests.base import fake, OsfTestCase
 from osf_tests.factories import (
     EmbargoFactory, NodeFactory, ProjectFactory,

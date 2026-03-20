@@ -4,7 +4,6 @@ import pytest
 import builtins
 
 from django.db.utils import IntegrityError
-from nose.tools import assert_equal, assert_is_not_none, assert_not_equal, assert_false, assert_raises
 from osf.models.licenses import serialize_node_license_record, serialize_node_license
 from osf.utils.migrations import ensure_licenses
 from osf.exceptions import NodeStateError

@@ -7,7 +7,6 @@ import unittest
 import logging
 import functools
 
-from nose.tools import *  # noqa: F403
 import pytest
 
 from framework.auth.core import Auth

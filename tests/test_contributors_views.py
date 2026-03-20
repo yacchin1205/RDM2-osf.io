@@ -2,7 +2,6 @@
 
 import time
 import datetime
-from nose.tools import *  # noqa; PEP8 asserts
 
 from osf_tests.factories import ProjectFactory, NodeFactory, AuthUserFactory, NodeRequestFactory
 from osf.utils import workflows

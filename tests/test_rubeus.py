@@ -2,7 +2,6 @@
 # encoding: utf-8
 
 import mock
-from nose.tools import *  # noqa: F403
 
 from tests.base import OsfTestCase
 from osf_tests.factories import (UserFactory, ProjectFactory, NodeFactory,

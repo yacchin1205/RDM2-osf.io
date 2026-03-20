@@ -7,7 +7,6 @@ from __future__ import absolute_import
 import pytest
 from django.db import connection
 from django.utils import timezone
-from nose.tools import *  # noqa PEP8 asserts
 from datetime import timedelta
 
 from addons.twofactor.tests import _valid_code

@@ -3,7 +3,6 @@ import datetime
 
 from django.utils import timezone
 
-from nose.tools import *  # noqa
 from tests.base import OsfTestCase
 from osf_tests.factories import (
     EmbargoFactory, ProjectFactory,

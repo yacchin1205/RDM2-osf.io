@@ -1,5 +1,4 @@
 import pytest
-from nose.tools import *  # noqa:
 
 from tests.base import ApiTestCase
 from osf_tests.factories import (

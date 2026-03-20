@@ -6,7 +6,6 @@ Unit tests for analytics logic in framework/analytics/__init__.py
 import mock
 import pytest
 from django.utils import timezone
-from nose.tools import *  # noqa: F403
 
 from datetime import datetime
 

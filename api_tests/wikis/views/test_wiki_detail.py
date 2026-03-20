@@ -4,7 +4,6 @@ import furl
 import pytz
 import datetime
 from future.moves.urllib.parse import urlparse
-from nose.tools import *  # noqa:
 
 from addons.wiki.models import WikiPage
 from addons.wiki.tests.factories import (

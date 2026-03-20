@@ -7,7 +7,6 @@ import pytz
 from dateutil import parser
 from django.utils import timezone
 
-from nose.tools import *  # noqa:
 
 from rest_framework import serializers as ser
 

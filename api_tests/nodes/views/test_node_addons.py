@@ -5,7 +5,6 @@ from json import dumps
 import mock
 import pytest
 import mendeley
-from nose.tools import *  # noqa:
 from github3.repos import Repository
 
 

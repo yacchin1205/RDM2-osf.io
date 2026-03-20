@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-from nose.tools import *  # PEP8 asserts
 from wtforms import Form, Field
 
 from framework.auth import forms

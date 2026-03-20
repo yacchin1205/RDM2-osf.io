@@ -1,6 +1,5 @@
 import pytest
 from api.base.settings.defaults import API_BASE
-from nose import tools as nt
 from osf_tests.factories import InstitutionFactory, AuthUserFactory, InstitutionEntitlementFactory
 
 

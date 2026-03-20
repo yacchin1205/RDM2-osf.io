@@ -2,7 +2,6 @@ from rest_framework import status as http_status
 
 import mock
 import pytest
-from nose.tools import *  # noqa PEP8 asserts
 
 from framework.auth import Auth
 from osf.models import OSFUser

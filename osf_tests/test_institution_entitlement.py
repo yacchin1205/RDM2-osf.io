@@ -1,5 +1,4 @@
 from osf.models.institution_entitlement import InstitutionEntitlement
-from nose import tools as nt
 from .factories import InstitutionFactory, InstitutionEntitlementFactory, AuthUserFactory
 import pytest
 

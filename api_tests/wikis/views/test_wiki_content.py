@@ -1,4 +1,3 @@
-from nose.tools import *  # noqa:
 
 from api.base.settings.defaults import API_BASE
 from addons.wiki.models import WikiPage

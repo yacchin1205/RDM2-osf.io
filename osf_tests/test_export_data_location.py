@@ -1,7 +1,6 @@
 import mock
 import pytest
 from django.test import TestCase
-from nose import tools as nt
 
 from osf_tests.factories import ExportDataLocationFactory
 

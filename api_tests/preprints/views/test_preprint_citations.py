@@ -2,7 +2,6 @@
 from api.base.settings.defaults import API_BASE
 from api.citations.utils import render_citation
 from django.utils import timezone
-from nose.tools import *  # noqa:
 from osf_tests.factories import AuthUserFactory, PreprintFactory
 from tests.base import ApiTestCase
 from osf.utils.permissions import WRITE

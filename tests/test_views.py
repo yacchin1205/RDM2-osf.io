@@ -18,7 +18,6 @@ import uuid
 from flask import request
 import mock
 import pytest
-from nose.tools import *  # noqa PEP8 asserts
 from django.utils import timezone
 from django.apps import apps
 from django.core.exceptions import ValidationError

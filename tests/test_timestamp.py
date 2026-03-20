@@ -7,7 +7,6 @@ import shutil
 from addons.osfstorage import settings as osfstorage_settings
 from api.base import settings as api_settings
 from framework.auth import Auth
-from nose import tools as nt
 from osf.models import RdmUserKey, RdmFileTimestamptokenVerifyResult, Guid
 from osf_tests.factories import ProjectFactory, AuthUserFactory
 from tests.base import ApiTestCase, OsfTestCase

@@ -1,5 +1,4 @@
 import pytest
-from nose.tools import *  # noqa:
 import functools
 
 from framework.auth.core import Auth

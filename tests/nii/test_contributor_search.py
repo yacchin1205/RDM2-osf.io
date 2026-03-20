@@ -1,7 +1,6 @@
 import pytest
 import mock
 
-from nose.tools import *  # noqa PEP8 asserts
 
 from website import settings
 import website.search.search as search

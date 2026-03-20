@@ -8,7 +8,6 @@ from pytz import utc
 from datetime import datetime
 from future.moves.urllib.parse import quote
 
-from nose.tools import *  # noqa:
 import re
 
 from tests.base import ApiTestCase, DbTestCase

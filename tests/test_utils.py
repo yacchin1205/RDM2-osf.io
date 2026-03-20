@@ -10,7 +10,6 @@ import unittest  # noqa
 from django.utils import timezone
 
 from flask import Flask
-from nose.tools import *  # noqa (PEP8 asserts)
 import blinker
 
 from tests.base import OsfTestCase, DbTestCase

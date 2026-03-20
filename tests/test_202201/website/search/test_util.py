@@ -1,4 +1,3 @@
-from nose import tools as nt
 from tests.base import OsfTestCase
 from website.search import util
 from tests.utils import run_celery_tasks

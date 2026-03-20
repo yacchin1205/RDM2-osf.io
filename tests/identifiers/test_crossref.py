@@ -6,7 +6,6 @@ import mock
 import lxml
 import pytest
 import responses
-from nose.tools import *  # noqa
 
 from website import settings
 from website.identifiers.clients import crossref

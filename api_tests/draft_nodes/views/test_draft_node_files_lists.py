@@ -4,7 +4,6 @@ import datetime
 import json
 from django.utils import timezone
 
-from nose.tools import *  # noqa: F403
 
 from framework.auth.core import Auth
 

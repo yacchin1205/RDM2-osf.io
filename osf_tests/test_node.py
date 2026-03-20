@@ -25,7 +25,6 @@ from osf.utils.permissions import READ, WRITE, ADMIN, DEFAULT_CONTRIBUTOR_PERMIS
 # RCOS
 from osf.models.node import set_project_storage_type
 from osf.models.project_storage_type import ProjectStorageType
-from nose.tools import assert_not_in
 from addons.osfstorage.models import NodeSettings
 from api_tests.utils import disconnected_from_listeners
 

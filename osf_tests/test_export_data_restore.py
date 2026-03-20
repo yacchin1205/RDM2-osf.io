@@ -7,7 +7,6 @@ import requests
 from addons.osfstorage.tests.factories import FileVersionFactory
 from django.test import TestCase
 from mock import patch
-from nose import tools as nt
 from rest_framework import status
 
 from addons.osfstorage.models import Region

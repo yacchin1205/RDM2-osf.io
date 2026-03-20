@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-from nose.tools import *  # noqa:
 
 from osf.models import Node, Registration
 from framework.auth.core import Auth

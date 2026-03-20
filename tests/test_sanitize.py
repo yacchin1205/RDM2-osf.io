@@ -2,7 +2,6 @@ import datetime
 import unittest
 
 from django.utils import timezone
-from nose.tools import *  # noqa: F403
 from osf.utils import sanitize
 
 

@@ -11,7 +11,6 @@ from django.utils import timezone
 from django.db import IntegrityError
 from mock import call
 import pytest
-from nose.tools import *  # noqa: F403
 
 from framework.auth import Auth
 from framework.celery_tasks import handlers

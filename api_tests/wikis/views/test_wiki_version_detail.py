@@ -3,7 +3,6 @@ import furl
 import datetime
 import pytz
 from future.moves.urllib.parse import urlparse
-from nose.tools import *  # noqa:
 
 from api.base.settings.defaults import API_BASE
 

@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 """Tests for the permissions module."""
 import unittest
-from nose.tools import *  # PEP8 asserts
 
 from osf.utils import permissions
 

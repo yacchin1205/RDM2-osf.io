@@ -3,7 +3,6 @@ from rest_framework import status as http_status
 
 import mock
 from django.db.models import Q
-from nose.tools import *  # noqa
 
 from tests.base import OsfTestCase
 from osf_tests import factories

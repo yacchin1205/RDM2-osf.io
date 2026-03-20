@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 import pytest
 from django.utils import timezone
-from nose.tools import *  # noqa
 
 from framework.auth.core import Auth
 from osf_tests.factories import (

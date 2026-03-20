@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-from nose.tools import *  # noqa
 
 from django.db import IntegrityError
 

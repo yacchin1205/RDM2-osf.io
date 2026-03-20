@@ -1,6 +1,5 @@
 import mock
 
-from nose.tools import *  # noqa:
 
 from api.base.settings.defaults import API_BASE
 from framework.auth.core import Auth

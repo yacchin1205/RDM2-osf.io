@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 
 import mock
-from nose.tools import *  # noqa (PEP8 asserts)
 
 import hmac
 import hashlib

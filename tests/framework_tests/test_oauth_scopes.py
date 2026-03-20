@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-from nose.tools import assert_in
 from unittest import TestCase
 
 from framework.auth import oauth_scopes

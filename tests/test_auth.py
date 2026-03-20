@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 import unittest
-from nose.tools import *  # noqa; PEP8 asserts
 from webtest_plus import TestApp as WebtestApp  # py.test tries to collect `TestApp`
 import mock
 from future.moves.urllib.parse import urlparse, urljoin, quote

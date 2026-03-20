@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 import unittest
-from nose.tools import *  # PEP8 asserts
 
 from flask import Flask, url_for
 

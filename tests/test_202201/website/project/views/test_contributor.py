@@ -2,7 +2,6 @@ from __future__ import absolute_import
 import json
 import mock
 import pytest
-from nose.tools import *
 from framework.auth import Auth
 from osf.utils import permissions
 from tests.base import (

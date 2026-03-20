@@ -4,7 +4,6 @@ import os
 import json
 import datetime as dt
 from future.moves.urllib.parse import urlparse, urljoin, parse_qs
-from nose.tools import assert_equal, assert_false
 
 from django.db import connection, transaction
 from django.contrib.auth.models import Group

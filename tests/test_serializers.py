@@ -2,7 +2,6 @@
 
 import mock
 import datetime as dt
-from nose.tools import *  # noqa (PEP8 asserts)
 
 import pytest
 from osf_tests.factories import (

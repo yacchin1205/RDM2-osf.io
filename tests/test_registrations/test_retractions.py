@@ -7,7 +7,6 @@ import mock
 import pytest
 from django.utils import timezone
 from django.db import DataError
-from nose.tools import *  # noqa
 
 from framework.auth import Auth
 from framework.exceptions import PermissionsError

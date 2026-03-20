@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-from nose.tools import *  # noqa:
 import mock  # noqa
 import unittest
 import pytest

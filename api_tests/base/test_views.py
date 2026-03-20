@@ -4,8 +4,6 @@ import pkgutil
 
 import mock
 
-from nose import SkipTest
-from nose.tools import *  # noqa:
 
 from api.entitlements.views import LoginAvailability
 from tests.base import ApiTestCase

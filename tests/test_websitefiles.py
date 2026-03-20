@@ -3,7 +3,6 @@ from __future__ import unicode_literals
 from past.builtins import basestring
 import mock
 from django.utils import timezone
-from nose.tools import *  # noqa
 
 from addons.osfstorage.models import OsfStorageFile, OsfStorageFolder, OsfStorageFileNode
 from addons.s3.models import S3File

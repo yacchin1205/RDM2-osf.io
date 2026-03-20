@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 from django.core.exceptions import ValidationError
-from nose.tools import *  # noqa: F403 (PEP8 asserts)
 from osf.exceptions import ValidationValueError
 
 from tests.base import OsfTestCase

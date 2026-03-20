@@ -4,7 +4,6 @@
 import framework
 
 from flask import Flask
-from nose.tools import *  # noqa (PEP8 asserts)
 from website import settings
 from website.app import attach_handlers
 

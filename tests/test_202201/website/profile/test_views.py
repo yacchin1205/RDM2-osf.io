@@ -2,7 +2,6 @@ import json
 
 import mock
 import pytest
-from nose import tools as nt
 from osf.models import UserExtendedData
 from osf_tests.factories import AuthUserFactory
 from tests.base import (fake)

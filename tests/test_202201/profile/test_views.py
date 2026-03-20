@@ -2,7 +2,6 @@ from __future__ import absolute_import
 from rest_framework import status as http_status
 import pytest
 import mock
-from nose.tools import *
 from website.profile.views import _profile_view
 from website.util import api_url_for
 from tests.base import OsfTestCase

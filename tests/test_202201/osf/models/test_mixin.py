@@ -1,5 +1,4 @@
 import pytest
-from nose.tools import assert_not_in
 
 from framework.auth import Auth
 from osf.models import Contributor
