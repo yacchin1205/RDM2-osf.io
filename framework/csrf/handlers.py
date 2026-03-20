@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 from django.conf import settings as api_settings
-from django.middleware.csrf import _get_new_csrf_token, _sanitize_token
+from django.middleware.csrf import _get_new_csrf_string, _unmask_cipher_token
 from framework.auth.core import get_current_user_id
 from flask import request, g
 
@@ -12,7 +12,7 @@ def _get_token():
     except KeyError:
         return None
 
-    csrf_token = _sanitize_token(cookie_token)
+    csrf_token = _unmask_cipher_token(cookie_token)
     if csrf_token != cookie_token:
         # Cookie token needed to be replaced;
         # the cookie needs to be reset.
@@ -24,7 +24,7 @@ def before_request():
     # Reuse token if already set
     csrf_token = _get_token()
     if not csrf_token or g.get('csrf_cookie_needs_reset', False):
-        csrf_token = _get_new_csrf_token()
+        csrf_token = _get_new_csrf_string()
     # Store csrf_token on g so that it can be used in
     # server-rendered forms
     g.csrf_token = csrf_token
