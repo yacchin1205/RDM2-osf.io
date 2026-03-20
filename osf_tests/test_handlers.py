@@ -34,7 +34,7 @@ class TestCeleryHandlers:
         ]
         queue += tasks
 
-        with assert_raises(ValueError):
+        with pytest.raises(ValueError):
             handlers.get_task_from_queue(
                 'website.project.tasks.on_node_updated',
                 predicate=lambda task: task.kwargs['node_id'] == 'woop'

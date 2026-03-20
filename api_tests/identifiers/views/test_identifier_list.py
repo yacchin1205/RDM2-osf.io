@@ -94,13 +94,13 @@ class TestRegistrationIdentifierList:
         categories = [identifier.category for identifier in all_identifiers]
         categories_in_response = [identifier['attributes']['category']
                                   for identifier in data_registration_identifiers]
-        assert_equals(categories_in_response, categories)
+        assert categories_in_response == categories
 
         # test_identifier_list_returns_correct_values
         values = [identifier.value for identifier in all_identifiers]
         values_in_response = [identifier['attributes']['value']
                               for identifier in data_registration_identifiers]
-        assert_equals(values_in_response, values)
+        assert values_in_response == values
 
     def test_identifier_filter_by_category(
             self, app, registration, identifier_registration,
@@ -109,14 +109,7 @@ class TestRegistrationIdentifierList:
         IdentifierFactory(referent=registration, category='nopeid')
         identifiers_for_registration = registration.identifiers
         assert identifiers_for_registration.count() == 2
-        assert_equals(
-            list(
-                identifiers_for_registration.values_list(
-                    'category',
-                    flat=True
-                )
-            ), ['carpid', 'nopeid']
-        )
+        assert list(identifiers_for_registration.values_list('category', flat=True)) == ['carpid', 'nopeid']
 
         filter_url = '{}?filter[category]=carpid'.format(
             url_registration_identifiers)
@@ -209,14 +202,14 @@ class TestNodeIdentifierList:
         categories = [identifier.category for identifier in all_identifiers]
         categories_in_response = [
             identifier['attributes']['category'] for identifier in data_node_identifiers]
-        assert_equals(categories_in_response, categories)
+        assert categories_in_response == categories
 
         # test_identifier_list_returns_correct_values
         values = [identifier.value for identifier in all_identifiers]
         values_in_response = [
             identifier['attributes']['value'] for identifier in data_node_identifiers
         ]
-        assert_equals(values_in_response, values)
+        assert values_in_response == values
 
     def test_identifier_filter_by_category(
             self, app, node, identifier_node, url_node_identifiers):
@@ -224,10 +217,7 @@ class TestNodeIdentifierList:
         identifiers_for_node = Identifier.objects.filter(object_id=node.id)
 
         assert identifiers_for_node.count() == 2
-        assert_equals(
-            [identifier.category for identifier in identifiers_for_node],
-            ['carpid', 'nopeid']
-        )
+        assert [identifier.category for identifier in identifiers_for_node] == ['carpid', 'nopeid']
 
         filter_url = '{}?filter[category]=carpid'.format(url_node_identifiers)
         new_res = app.get(filter_url)
@@ -311,13 +301,13 @@ class TestPreprintIdentifierList:
         categories = all_identifiers.values_list('category', flat=True)
         categories_in_response = [identifier['attributes']['category']
                                   for identifier in data_preprint_identifier]
-        assert_equals(categories_in_response, list(categories))
+        assert categories_in_response == list(categories)
 
         # test_identifier_list_returns_correct_values
         values = all_identifiers.values_list('value', flat=True)
         values_in_response = [identifier['attributes']['value']
                               for identifier in data_preprint_identifier]
-        assert_equals(values_in_response, list(values))
+        assert values_in_response == list(values)
 
     def test_preprint_identifier_list_permissions_unpublished(
             self, app, all_identifiers, user, data_preprint_identifier, preprint, url_preprint_identifier):

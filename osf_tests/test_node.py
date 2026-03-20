@@ -1349,10 +1349,7 @@ class TestContributorMethods:
 
         assert isinstance(user, Contributor) is False
 
-        assert_not_in(
-            project._primary_key,
-            user.unclaimed_records.keys()
-        )
+        assert project._primary_key not in user.unclaimed_records.keys()
 
     def test_cancel_invite_get_identifier_value(self, node, auth):
         # A user is added as a contributor

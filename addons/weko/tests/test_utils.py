@@ -1,3 +1,4 @@
+import pytest
 # -*- coding: utf-8 -*-
 import json
 import logging
@@ -331,7 +332,7 @@ class TestWEKOUtils(OsfTestCase):
         "metadata.pubdate": "{{nowdate}}"
     }
 }'''
-        with assert_raises(ValueError):
+        with pytest.raises(ValueError):
             validate_mapping(json.loads(d.strip()))
 
         d = r'''
@@ -357,5 +358,5 @@ class TestWEKOUtils(OsfTestCase):
         "metadata.pubdate": "{{nowdate}}"
     }
 }'''
-        with assert_raises(ValueError):
+        with pytest.raises(ValueError):
             validate_mapping(json.loads(d.strip()))

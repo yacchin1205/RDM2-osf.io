@@ -26,6 +26,5 @@ class TestAuthLoginAndRegisterLogic(OsfTestCase):
         self.user_auth.save()
         self.auth = Auth(user=self.user_auth)
         data = login_and_register_handler(self.auth)
-        assert_equal(data.get('status_code'), http_status.HTTP_302_FOUND)
-        assert_equal(data.get('next_url'), web_url_for('user_profile',
-                                                       _absolute=True))
+        assert data.get('status_code') == http_status.HTTP_302_FOUND
+        assert data.get('next_url') == web_url_for('user_profile', _absolute=True)

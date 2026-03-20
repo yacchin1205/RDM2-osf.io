@@ -42,7 +42,7 @@ class TestProviderScopes(OsfTestCase):
             self.provider.get_repo_auth_url('test.example')
             self.mock_oauth2_class.assert_called_once()
             call_kwargs = self.mock_oauth2_class.call_args[1]
-            assert_equal(call_kwargs['scope'], scopes)
+            assert call_kwargs['scope'] == scopes
 
     def test_default_scopes_with_callable(self):
         def get_scopes(repo_settings):
@@ -54,4 +54,4 @@ class TestProviderScopes(OsfTestCase):
             self.provider.get_repo_auth_url('test.example')
             self.mock_oauth2_class.assert_called_once()
             call_kwargs = self.mock_oauth2_class.call_args[1]
-            assert_equal(call_kwargs['scope'], ['read', 'write', 'admin'])
+            assert call_kwargs['scope'] == ['read', 'write', 'admin']

@@ -39,18 +39,18 @@ class TestUtils:
         provider_list = get_providers()
         assert provider_list
         provider_list_short_name = [p.short_name for p in provider_list]
-        nt.assert_in('s3', provider_list_short_name, 's3')
-        nt.assert_in('dropboxbusiness', provider_list_short_name, 'dropboxbusiness')
-        nt.assert_in('nextcloudinstitutions', provider_list_short_name, 'nextcloudinstitutions')
-        nt.assert_in('osfstorage', provider_list_short_name, 'osfstorage')
-        nt.assert_in('onedrivebusiness', provider_list_short_name, 'onedrivebusiness')
-        nt.assert_in('swift', provider_list_short_name, 'swift')
-        nt.assert_in('ociinstitutions', provider_list_short_name, 'ociinstitutions')
-        nt.assert_in('s3compat', provider_list_short_name, 's3compat')
-        nt.assert_in('s3compatinstitutions', provider_list_short_name, 's3compatinstitutions')
+        assert 's3' in provider_list_short_name, 's3'
+        assert 'dropboxbusiness' in provider_list_short_name, 'dropboxbusiness'
+        assert 'nextcloudinstitutions' in provider_list_short_name, 'nextcloudinstitutions'
+        assert 'osfstorage' in provider_list_short_name, 'osfstorage'
+        assert 'onedrivebusiness' in provider_list_short_name, 'onedrivebusiness'
+        assert 'swift' in provider_list_short_name, 'swift'
+        assert 'ociinstitutions' in provider_list_short_name, 'ociinstitutions'
+        assert 's3compat' in provider_list_short_name, 's3compat'
+        assert 's3compatinstitutions' in provider_list_short_name, 's3compatinstitutions'
 
         provider_list = get_providers(available_list=[])
-        nt.assert_equal(len(provider_list), 0)
+        assert len(provider_list) == 0
 
         available_list = ['s3', 's3compat']
         provider_list = get_providers(available_list=available_list)
@@ -68,8 +68,8 @@ class TestUtils:
         mock_remove_region_external_account.return_value = None
         response, status = save_s3compatb3_credentials('guid_test', 'My storage', 's3.compat.co.jp',
                                                        'Non-empty-access-key', 'Non-empty-secret-key', 'Cute bucket')
-        nt.assert_equal(response, {'message': 'Saved credentials successfully!!'})
-        nt.assert_equal(status, http_status.HTTP_200_OK)
+        assert response == {'message': 'Saved credentials successfully!!'}
+        assert status == http_status.HTTP_200_OK
 
     def test_wd_info_for_institutions(self):
         for_institution_providers = [
@@ -94,8 +94,8 @@ class TestUtils:
             }
             if provider_name == 's3compatinstitutions':
                 test_wb_settings['encrypt_uploads'] = False
-            nt.assert_equal(wd_credentials, test_wd_credentials)
-            nt.assert_equal(wd_settings, test_wb_settings)
+            assert wd_credentials == test_wd_credentials
+            assert wd_settings == test_wb_settings
 
     def test_add_node_settings_to_projects_bulk_mount_storage(self):
         user = AuthUserFactory()
@@ -203,7 +203,7 @@ class TestStorageInformationUtils(AdminTestCase):
         """Test create_storage_info_template function"""
         result = create_storage_info_template('Test Title', 'Test Value')
         expected = {'field_name': 'Test Title', 'value': 'Test Value'}
-        nt.assert_equal(result, expected)
+        assert result == expected
 
     @mock.patch('admin.rdm_custom_storage_location.utils.get_rdm_addon_option')
     def test_get_institution_addon_info(self, mock_get_rdm_addon_option):
@@ -214,8 +214,8 @@ class TestStorageInformationUtils(AdminTestCase):
             'test_institution_id', 'test_provider'
         )
 
-        nt.assert_equal(external_account, self.mock_external_account)
-        nt.assert_equal(rdm_addon_option, self.mock_rdm_addon_option)
+        assert external_account == self.mock_external_account
+        assert rdm_addon_option == self.mock_rdm_addon_option
         mock_get_rdm_addon_option.assert_called_once_with(
             'test_institution_id', 'test_provider', create=False
         )
@@ -228,7 +228,7 @@ class TestStorageInformationUtils(AdminTestCase):
         expected = {
             'folder': {'field_name': 'Folder', 'value': 'test_folder'}
         }
-        nt.assert_equal(result, expected)
+        assert result == expected
 
     def test_get_s3_info(self):
         """Test get_s3_info function"""
@@ -245,7 +245,7 @@ class TestStorageInformationUtils(AdminTestCase):
             'bucket': {'field_name': 'Bucket', 'value': 'test_bucket'},
             'encrypt_uploads': {'field_name': 'Enable Server Side Encryption', 'value': True}
         }
-        nt.assert_equal(result, expected)
+        assert result == expected
 
     def test_get_s3compat_info(self):
         """Test get_s3compat_info function"""
@@ -266,7 +266,7 @@ class TestStorageInformationUtils(AdminTestCase):
             'bucket': {'field_name': 'Bucket', 'value': 'test_bucket'},
             'encrypt_uploads': {'field_name': 'Enable Server Side Encryption', 'value': True}
         }
-        nt.assert_equal(result, expected)
+        assert result == expected
 
     @mock.patch('admin.rdm_custom_storage_location.utils.get_institution_addon_info')
     def test_get_s3compatinstitutions_info(self, mock_get_institution_addon_info):
@@ -285,7 +285,7 @@ class TestStorageInformationUtils(AdminTestCase):
             'bucket': {'field_name': 'Bucket', 'value': 'test_folder'},
             'encrypt_uploads': {'field_name': 'Enable Server Side Encryption', 'value': True}
         }
-        nt.assert_equal(result, expected)
+        assert result == expected
 
     @mock.patch('admin.rdm_custom_storage_location.utils.get_institution_addon_info')
     def test_get_ociinstitutions_info(self, mock_get_institution_addon_info):
@@ -299,7 +299,7 @@ class TestStorageInformationUtils(AdminTestCase):
             'access_key': {'field_name': 'Access Key', 'value': 'test_display_name'},
             'bucket': {'field_name': 'Bucket', 'value': 'test_folder'}
         }
-        nt.assert_equal(result, expected)
+        assert result == expected
 
     @mock.patch('admin.rdm_custom_storage_location.utils.get_institution_addon_info')
     def test_get_nextcloudinstitutions_info(self, mock_get_institution_addon_info):
@@ -317,7 +317,7 @@ class TestStorageInformationUtils(AdminTestCase):
                 'value': 'test_secret'
             }
         }
-        nt.assert_equal(result, expected)
+        assert result == expected
 
     @mock.patch('admin.rdm_custom_storage_location.utils.get_institution_addon_info')
     def test_get_dropboxbusiness_info(self, mock_get_institution_addon_info):
@@ -329,7 +329,7 @@ class TestStorageInformationUtils(AdminTestCase):
         expected = {
             'authorized_by': {'field_name': 'authorized_by', 'value': 'test_display_name'},
         }
-        nt.assert_equal(result, expected)
+        assert result == expected
 
     def test_get_institutional_storage_information(self):
         """Test get_institutional_storage_information function"""
@@ -356,7 +356,7 @@ class TestStorageInformationUtils(AdminTestCase):
             'bucket': {'field_name': 'Bucket', 'value': 'test_bucket'},
             'encrypt_uploads': {'field_name': 'Enable Server Side Encryption', 'value': True}
         }
-        nt.assert_equal(result, expected)
+        assert result == expected
 
     def test_get_institutional_storage_information_unknown_provider(self):
         """Test get_institutional_storage_information function with unknown provider"""
@@ -378,4 +378,4 @@ class TestStorageInformationUtils(AdminTestCase):
             'unknown_provider', region, InstitutionFactory()
         )
 
-        nt.assert_equal(result, {})
+        assert result == {}

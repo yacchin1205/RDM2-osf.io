@@ -35,5 +35,4 @@ class TestNodeSettings(unittest.TestCase):
         self.node_settings.set_services([('jh1', 'https://jh1.test/')])
         self.node_settings.save()
         # Container was set
-        assert_equal(self.node_settings.get_services(),
-                     [('jh1', 'https://jh1.test/')])
+        assert self.node_settings.get_services() == [('jh1', 'https://jh1.test/')]

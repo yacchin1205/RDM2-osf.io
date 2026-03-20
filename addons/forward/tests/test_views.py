@@ -24,10 +24,7 @@ class TestForward(ForwardAddonTestCase, OsfTestCase):
             ),
         )
         self.project.reload()
-        assert_equal(
-            self.project.logs.count(),
-            log_count + 1
-        )
+        assert self.project.logs.count() == log_count + 1
 
     def test_change_timeout_log_not_added(self):
         log_count = self.project.logs.count()
@@ -38,10 +35,7 @@ class TestForward(ForwardAddonTestCase, OsfTestCase):
             ),
         )
         self.project.reload()
-        assert_equal(
-            self.project.logs.count(),
-            log_count
-        )
+        assert self.project.logs.count() == log_count
 
     @mock.patch.object(settings, 'SPAM_CHECK_ENABLED', True)
     @mock.patch('osf.models.node.Node.do_check_spam')

@@ -25,7 +25,7 @@ class TestMailChimpHelpers(OsfTestCase):
         mock_client.lists.list.return_value = {'data': [{'id': 1, 'list_name': list_name}]}
         list_id = mailchimp_utils.get_list_id_from_name(list_name)
         mock_client.lists.list.assert_called_with(filters={'list_name': list_name})
-        assert_equal(list_id, 1)
+        assert list_id == 1
 
     @mock.patch('website.mailchimp_utils.get_mailchimp_api')
     def test_get_list_name_from_id(self, mock_get_mailchimp_api):
@@ -35,7 +35,7 @@ class TestMailChimpHelpers(OsfTestCase):
         mock_client.lists.list.return_value = {'data': [{'id': list_id, 'name': 'foo'}]}
         list_name = mailchimp_utils.get_list_name_from_id(list_id)
         mock_client.lists.list.assert_called_with(filters={'list_id': list_id})
-        assert_equal(list_name, 'foo')
+        assert list_name == 'foo'
 
     @mock.patch('website.mailchimp_utils.get_mailchimp_api')
     def test_subscribe_called_with_correct_arguments(self, mock_get_mailchimp_api):
@@ -69,7 +69,7 @@ class TestMailChimpHelpers(OsfTestCase):
         mailchimp_utils.subscribe_mailchimp(list_name, user._id)
         handlers.celery_teardown_request()
         user.reload()
-        assert_false(user.mailchimp_mailing_lists[list_name])
+        assert not user.mailchimp_mailing_lists[list_name]
 
     @mock.patch('website.mailchimp_utils.get_mailchimp_api')
     def test_unsubscribe_called_with_correct_arguments(self, mock_get_mailchimp_api):

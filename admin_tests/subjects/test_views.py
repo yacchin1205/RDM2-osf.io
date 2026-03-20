@@ -1,3 +1,4 @@
+import pytest
 from nose import tools as nt
 from django.test import RequestFactory
 from django.urls import reverse
@@ -21,7 +22,7 @@ class TestSubjectListView(AdminTestCase):
         request = RequestFactory().get(self.url)
         request.user = user
 
-        with nt.assert_raises(PermissionDenied):
+        with pytest.raises(PermissionDenied):
             self.plain_view.as_view()(request)
 
     def test_correct_view_permissions(self):
@@ -35,7 +36,7 @@ class TestSubjectListView(AdminTestCase):
         request.user = user
 
         response = self.plain_view.as_view()(request)
-        nt.assert_equal(response.status_code, 200)
+        assert response.status_code == 200
 
 
 class TestSubjectUpdateView(AdminTestCase):
@@ -50,7 +51,7 @@ class TestSubjectUpdateView(AdminTestCase):
         request = RequestFactory().get(self.url)
         request.user = user
 
-        with nt.assert_raises(PermissionDenied):
+        with pytest.raises(PermissionDenied):
             self.plain_view.as_view()(request, pk=self.subject.pk)
 
     def test_correct_view_permissions(self):
@@ -63,4 +64,4 @@ class TestSubjectUpdateView(AdminTestCase):
         request.user = user
 
         response = self.plain_view.as_view()(request, pk=self.subject.pk)
-        nt.assert_equal(response.status_code, 200)
+        assert response.status_code == 200

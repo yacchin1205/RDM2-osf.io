@@ -37,16 +37,16 @@ class TestSaveCredentials(AdminTestCase):
             'no_pro': 'osfstorage',
         })
 
-        nt.assert_equals(response.status_code, http_status.HTTP_400_BAD_REQUEST)
-        nt.assert_in('Provider is missing.', response.content.decode())
+        assert response.status_code == http_status.HTTP_400_BAD_REQUEST
+        assert 'Provider is missing.' in response.content.decode()
 
     def test_success(self):
         response = self.view_post({
             'provider_short_name': 'osfstorage',
         })
 
-        nt.assert_equals(response.status_code, http_status.HTTP_200_OK)
-        nt.assert_in('NII storage was set successfully', response.content.decode())
+        assert response.status_code == http_status.HTTP_200_OK
+        assert 'NII storage was set successfully' in response.content.decode()
 
     def test_success_cleanup_account(self):
         region = RegionFactory(_id=self.institution._id)
@@ -60,23 +60,19 @@ class TestSaveCredentials(AdminTestCase):
             'provider_short_name': 'osfstorage',
         })
 
-        nt.assert_equals(response.status_code, http_status.HTTP_200_OK)
-        nt.assert_in('NII storage was set successfully', response.content.decode())
+        assert response.status_code == http_status.HTTP_200_OK
+        assert 'NII storage was set successfully' in response.content.decode()
 
-        nt.assert_false(RegionExternalAccount.objects.filter(region=region).exists())
-        nt.assert_false(ExternalAccount.objects.filter(id=external_account.id).exists())
+        assert not RegionExternalAccount.objects.filter(region=region).exists()
+        assert not ExternalAccount.objects.filter(id=external_account.id).exists()
         default_storage = Region.objects.first()
         #inst_storage = Region.objects.filter(id=region.id).first()
         inst_storage = Region.objects.get(id=region.id)
-        nt.assert_equals(inst_storage.name, default_storage.name)
-        nt.assert_equals(inst_storage.waterbutler_credentials,
-                         default_storage.waterbutler_credentials)
-        nt.assert_equals(inst_storage.waterbutler_settings,
-                         default_storage.waterbutler_settings)
-        nt.assert_equals(inst_storage.waterbutler_url,
-                         default_storage.waterbutler_url)
-        nt.assert_equals(inst_storage.mfr_url,
-                         default_storage.mfr_url)
+        assert inst_storage.name == default_storage.name
+        assert inst_storage.waterbutler_credentials == default_storage.waterbutler_credentials
+        assert inst_storage.waterbutler_settings == default_storage.waterbutler_settings
+        assert inst_storage.waterbutler_url == default_storage.waterbutler_url
+        assert inst_storage.mfr_url == default_storage.mfr_url
 
     def test_success_superuser(self):
         self.user.affiliated_institutions.clear()
@@ -86,5 +82,5 @@ class TestSaveCredentials(AdminTestCase):
             'provider_short_name': 'osfstorage',
         })
 
-        nt.assert_equals(response.status_code, http_status.HTTP_200_OK)
-        nt.assert_in('NII storage was set successfully', response.content.decode())
+        assert response.status_code == http_status.HTTP_200_OK
+        assert 'NII storage was set successfully' in response.content.decode()

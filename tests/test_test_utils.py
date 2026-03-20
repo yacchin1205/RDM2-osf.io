@@ -1,3 +1,4 @@
+import pytest
 # -*- coding: utf-8 -*-
 import mock
 import unittest
@@ -30,7 +31,8 @@ class TestUtilsTests(OsfTestCase):
         def dont_add_log(self):
             pass
         wrapped = test_utils.assert_logs(NodeLog.UPDATED_FIELDS, 'node')(dont_add_log)
-        assert_raises(AssertionError, lambda: wrapped(self))
+        with pytest.raises(AssertionError):
+            wrapped(self)
 
     def test_assert_logs_stacked(self):
 
@@ -58,4 +60,5 @@ class TestUtilsTests(OsfTestCase):
         def add_log(self):
             self.node.add_log(NodeLog.UPDATED_FIELDS, {}, auth=self.auth)
         wrapped = test_utils.assert_not_logs(NodeLog.UPDATED_FIELDS, 'node')(add_log)
-        assert_raises(AssertionError, lambda: wrapped(self))
+        with pytest.raises(AssertionError):
+            wrapped(self)

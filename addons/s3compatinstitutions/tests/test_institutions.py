@@ -96,4 +96,4 @@ class TestNonTargetInstitutionalNodeSettings(StorageTestCase):
             'prefix': self.node_settings.root_prefix,
             'encrypt_uploads': settings.ENCRYPT_UPLOADS,
         }
-        assert_equal(wb_settings, expected)
+        assert wb_settings == expected

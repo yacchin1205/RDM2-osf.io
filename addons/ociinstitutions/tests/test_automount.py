@@ -90,10 +90,10 @@ class TestOCIinstitutions(unittest.TestCase):
             self.option.save()
 
     def test_ociinstitutions_default_is_not_allowed(self):
-        assert_false(self.option.is_allowed)
+        assert not self.option.is_allowed
         self._new_project()
         result = self.project.get_addon(NAME)
-        assert_equal(result, None)
+        assert result == None
 
     def test_ociinstitutions_no_eppn(self):
         self.user.eppn = None
@@ -101,28 +101,28 @@ class TestOCIinstitutions(unittest.TestCase):
         self._allow()
         self._new_project()
         result = self.project.get_addon(NAME)
-        assert_equal(result, None)
+        assert result == None
 
     def test_ociinstitutions_no_institution(self):
         self.user.affiliated_institutions.clear()
         self._allow()
         self._new_project()
         result = self.project.get_addon(NAME)
-        assert_equal(result, None)
+        assert result == None
 
     def test_ociinstitutions_no_addon_option(self):
         self._allow()
         self.option.delete()
         self._new_project()
         result = self.project.get_addon(NAME)
-        assert_equal(result, None)
+        assert result == None
 
     def test_ociinstitutions_automount(self):
         self._allow()
         self._new_project()
         result = self.project.get_addon(NAME)
-        assert_true(isinstance(result, NodeSettings))
-        assert_equal(result.folder_name, self._expected_folder_name)
+        assert isinstance(result, NodeSettings)
+        assert result.folder_name == self._expected_folder_name
 
     def test_ociinstitutions_automount_with_basefolder(self):
         base_folder = six.u('GRDM_project_bucket')
@@ -131,8 +131,8 @@ class TestOCIinstitutions(unittest.TestCase):
         self.option.save()
         self._new_project()
         result = self.project.get_addon(NAME)
-        assert_true(isinstance(result, NodeSettings))
-        assert_equal(result.folder_name, self._expected_folder_name)
+        assert isinstance(result, NodeSettings)
+        assert result.folder_name == self._expected_folder_name
 
     def test_ociinstitutions_rename(self):
         self._allow()
@@ -141,6 +141,6 @@ class TestOCIinstitutions(unittest.TestCase):
             self.project.title = self.project.title + '_new'
             self.project.save()
         result = self.project.get_addon(NAME)
-        assert_true(isinstance(result, NodeSettings))
+        assert isinstance(result, NodeSettings)
         # not changed
-        assert_equal(result.folder_name, self._expected_folder_name)
+        assert result.folder_name == self._expected_folder_name

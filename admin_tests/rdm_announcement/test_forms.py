@@ -32,8 +32,8 @@ class TestPreviewForm(AdminTestCase):
         twitter_body = self.random_body(141)
         mod_data.update({'body': twitter_body, 'announcement_type': 'SNS (Twitter)'})
         form = PreviewForm(data=mod_data)
-        nt.assert_false(form.is_valid())
-        nt.assert_in('Body should be at most 140 characters', form.errors['__all__'])
+        assert not form.is_valid()
+        assert 'Body should be at most 140 characters' in form.errors['__all__']
 
     '''
     def test_clean_from_push_okay(self):

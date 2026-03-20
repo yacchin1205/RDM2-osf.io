@@ -1,3 +1,4 @@
+import pytest
 # -*- coding: utf-8 -*-
 import copy
 import csv
@@ -75,110 +76,36 @@ class TestWEKOSchema(OsfTestCase):
         buf.seek(0)
         reader = csv.reader(buf)
         lines = list(reader)
-        assert_equal(len(lines), 6)
-        assert_equal(lines[0], [
-            '#ItemType',
-            'デフォルトアイテムタイプ（フル）(30002)',
-            'https://localhost:8443/items/jsonschema/30002',
-        ])
+        assert len(lines) == 6
+        assert lines[0] == ['#ItemType', 'デフォルトアイテムタイプ（フル）(30002)', 'https://localhost:8443/items/jsonschema/30002']
         props = _transpose(lines[1::])[::-1]
 
-        assert_equal(
-            props.pop(),
-            ['.publish_status', '.PUBLISH_STATUS', '', 'Required', 'private'],
-        )
-        assert_equal(
-            props.pop(),
-            ['.metadata.path[0]', '.IndexID[0]', '', 'Allow Multiple', '1000'],
-        )
-        assert_equal(
-            props.pop(),
-            ['.pos_index[0]', '.POS_INDEX[0]', '', 'Allow Multiple', 'TITLE'],
-        )
-        assert_equal(
-            props.pop(),
-            ['.file_path[0]', '.ファイルパス[0]', '', 'Allow Multiple', 'files/test.jpg'],
-        )
+        assert props.pop() == ['.publish_status', '.PUBLISH_STATUS', '', 'Required', 'private']
+        assert props.pop() == ['.metadata.path[0]', '.IndexID[0]', '', 'Allow Multiple', '1000']
+        assert props.pop() == ['.pos_index[0]', '.POS_INDEX[0]', '', 'Allow Multiple', 'TITLE']
+        assert props.pop() == ['.file_path[0]', '.ファイルパス[0]', '', 'Allow Multiple', 'files/test.jpg']
         feedback_mail = props.pop()
-        assert_equal(
-            feedback_mail[:-1],
-            ['.feedback_mail[0]', '', '', ''],
-        )
-        assert_true(
-            re.match(r'[^@]+@[^@]+\.[^@]+', feedback_mail[-1])
-        )
-        assert_equal(
-            props.pop(),
-            ['.metadata.item_30002_file35[0].accessrole', '', '', '', 'open_no'],
-        )
-        assert_equal(
-            props.pop(),
-            ['.metadata.item_30002_file35[0].displaytype', '', '', '', 'preview'],
-        )
-        assert_equal(
-            props.pop(),
-            ['.metadata.item_30002_file35[0].filename', '', '', '', 'test.jpg'],
-        )
-        assert_equal(
-            props.pop(),
-            ['.metadata.item_30002_file35[0].format', '', '', '', 'image/jpeg'],
-        )
+        assert feedback_mail[:-1] == ['.feedback_mail[0]', '', '', '']
+        assert re.match('[^@]+@[^@]+\\.[^@]+', feedback_mail[-1])
+        assert props.pop() == ['.metadata.item_30002_file35[0].accessrole', '', '', '', 'open_no']
+        assert props.pop() == ['.metadata.item_30002_file35[0].displaytype', '', '', '', 'preview']
+        assert props.pop() == ['.metadata.item_30002_file35[0].filename', '', '', '', 'test.jpg']
+        assert props.pop() == ['.metadata.item_30002_file35[0].format', '', '', '', 'image/jpeg']
         pub_date = props.pop()
-        assert_equal(
-            pub_date[:-1],
-            ['.metadata.pubdate', '', '', ''],
-        )
-        assert_true(
-            re.match(r'[0-9]+\-[0-9]+\-[0-9]+', pub_date[-1])
-        )
-        assert_equal(
-            props.pop(),
-            ['.metadata.item_30002_description9[0].subitem_description', '', '', '', '日本語説明'],
-        )
-        assert_equal(
-            props.pop(),
-            ['.metadata.item_30002_description9[0].subitem_description_language', '', '', '', 'ja'],
-        )
-        assert_equal(
-            props.pop(),
-            ['.metadata.item_30002_description9[0].subitem_description_type', '', '', '', 'Abstract'],
-        )
-        assert_equal(
-            props.pop(),
-            ['.metadata.item_30002_resource_type13.resourcetype', '', '', '', 'dataset'],
-        )
-        assert_equal(
-            props.pop(),
-            ['.metadata.item_30002_title0[0].subitem_title', '', '', '', 'ENGLISH TITLE'],
-        )
-        assert_equal(
-            props.pop(),
-            ['.metadata.item_30002_title0[0].subitem_title_language', '', '', '', 'en'],
-        )
-        assert_equal(
-            props.pop(),
-            ['#.id', '#ID', '#', '#', ''],
-        )
-        assert_equal(
-            props.pop(),
-            ['.uri', 'URI', '', '', ''],
-        )
-        assert_equal(
-            props.pop(),
-            ['.cnri', '.CNRI', '', '', ''],
-        )
-        assert_equal(
-            props.pop(),
-            ['.doi_ra', '.DOI_RA', '', '', ''],
-        )
-        assert_equal(
-            props.pop(),
-            ['.doi', '.DOI', '', '', ''],
-        )
-        assert_equal(
-            props.pop(),
-            ['.edit_mode', 'Keep/Upgrade Version', '', 'Required', 'Keep'],
-        )
+        assert pub_date[:-1] == ['.metadata.pubdate', '', '', '']
+        assert re.match('[0-9]+\\-[0-9]+\\-[0-9]+', pub_date[-1])
+        assert props.pop() == ['.metadata.item_30002_description9[0].subitem_description', '', '', '', '日本語説明']
+        assert props.pop() == ['.metadata.item_30002_description9[0].subitem_description_language', '', '', '', 'ja']
+        assert props.pop() == ['.metadata.item_30002_description9[0].subitem_description_type', '', '', '', 'Abstract']
+        assert props.pop() == ['.metadata.item_30002_resource_type13.resourcetype', '', '', '', 'dataset']
+        assert props.pop() == ['.metadata.item_30002_title0[0].subitem_title', '', '', '', 'ENGLISH TITLE']
+        assert props.pop() == ['.metadata.item_30002_title0[0].subitem_title_language', '', '', '', 'en']
+        assert props.pop() == ['#.id', '#ID', '#', '#', '']
+        assert props.pop() == ['.uri', 'URI', '', '', '']
+        assert props.pop() == ['.cnri', '.CNRI', '', '', '']
+        assert props.pop() == ['.doi_ra', '.DOI_RA', '', '', '']
+        assert props.pop() == ['.doi', '.DOI', '', '', '']
+        assert props.pop() == ['.edit_mode', 'Keep/Upgrade Version', '', 'Required', 'Keep']
 
     def test_write_csv_full(self):
         buf = io.StringIO()
@@ -259,317 +186,87 @@ class TestWEKOSchema(OsfTestCase):
         buf.seek(0)
         reader = csv.reader(buf)
         lines = list(reader)
-        assert_equal(len(lines), 6)
+        assert len(lines) == 6
         logger.info(repr(lines))
-        assert_equal(lines[0], [
-            '#ItemType',
-            'デフォルトアイテムタイプ（フル）(30002)',
-            'https://localhost:8443/items/jsonschema/30002',
-        ])
+        assert lines[0] == ['#ItemType', 'デフォルトアイテムタイプ（フル）(30002)', 'https://localhost:8443/items/jsonschema/30002']
         props = _transpose(lines[1::])[::-1]
 
-        assert_equal(
-            props.pop(),
-            ['.publish_status', '.PUBLISH_STATUS', '', 'Required', 'private'],
-        )
-        assert_equal(
-            props.pop(),
-            ['.metadata.path[0]', '.IndexID[0]', '', 'Allow Multiple', '1000'],
-        )
-        assert_equal(
-            props.pop(),
-            ['.pos_index[0]', '.POS_INDEX[0]', '', 'Allow Multiple', 'TITLE'],
-        )
-        assert_equal(
-            props.pop(),
-            ['.file_path[0]', '.ファイルパス[0]', '', 'Allow Multiple', 'files/test.jpg'],
-        )
+        assert props.pop() == ['.publish_status', '.PUBLISH_STATUS', '', 'Required', 'private']
+        assert props.pop() == ['.metadata.path[0]', '.IndexID[0]', '', 'Allow Multiple', '1000']
+        assert props.pop() == ['.pos_index[0]', '.POS_INDEX[0]', '', 'Allow Multiple', 'TITLE']
+        assert props.pop() == ['.file_path[0]', '.ファイルパス[0]', '', 'Allow Multiple', 'files/test.jpg']
         feedback_mail = props.pop()
-        assert_equal(
-            feedback_mail[:-1],
-            ['.feedback_mail[0]', '', '', ''],
-        )
-        assert_true(
-            re.match(r'[^@]+@[^@]+\.[^@]+', feedback_mail[-1])
-        )
-        assert_equal(
-            props.pop(),
-            ['.metadata.item_30002_file35[0].accessrole', '', '', '', 'open_login'],
-        )
-        assert_equal(
-            props.pop(),
-            ['.metadata.item_30002_file35[0].displaytype', '', '', '', 'preview'],
-        )
-        assert_equal(
-            props.pop(),
-            ['.metadata.item_30002_file35[0].filename', '', '', '', 'test.jpg'],
-        )
-        assert_equal(
-            props.pop(),
-            ['.metadata.item_30002_file35[0].format', '', '', '', 'image/jpeg'],
-        )
+        assert feedback_mail[:-1] == ['.feedback_mail[0]', '', '', '']
+        assert re.match('[^@]+@[^@]+\\.[^@]+', feedback_mail[-1])
+        assert props.pop() == ['.metadata.item_30002_file35[0].accessrole', '', '', '', 'open_login']
+        assert props.pop() == ['.metadata.item_30002_file35[0].displaytype', '', '', '', 'preview']
+        assert props.pop() == ['.metadata.item_30002_file35[0].filename', '', '', '', 'test.jpg']
+        assert props.pop() == ['.metadata.item_30002_file35[0].format', '', '', '', 'image/jpeg']
         pub_date = props.pop()
-        assert_equal(
-            pub_date[:-1],
-            ['.metadata.pubdate', '', '', ''],
-        )
-        assert_true(
-            re.match(r'[0-9]+\-[0-9]+\-[0-9]+', pub_date[-1])
-        )
-        assert_equal(
-            props.pop(),
-            ['.metadata.item_30002_access_rights4.subitem_access_right', '', '', '', 'restricted access'],
-        )
-        assert_equal(
-            props.pop(),
-            ['.metadata.item_30002_creator2[0].creatorNames[0].creatorName', '', '', '', '情報太郎'],
-        )
-        assert_equal(
-            props.pop(),
-            ['.metadata.item_30002_creator2[0].creatorNames[0].creatorNameLang', '', '', '', 'ja'],
-        )
-        assert_equal(
-            props.pop(),
-            ['.metadata.item_30002_creator2[0].creatorNames[1].creatorName', '', '', '', 'Taro Joho'],
-        )
-        assert_equal(
-            props.pop(),
-            ['.metadata.item_30002_creator2[0].creatorNames[1].creatorNameLang', '', '', '', 'en'],
-        )
-        assert_equal(
-            props.pop(),
-            ['.metadata.item_30002_creator2[0].nameIdentifiers[0].nameIdentifierScheme', '', '', '', 'e-Rad_Researcher'],
-        )
-        assert_equal(
-            props.pop(),
-            ['.metadata.item_30002_creator2[0].nameIdentifiers[0].nameIdentifierURI', '', '', '', '22222'],
-        )
-        assert_equal(
-            props.pop(),
-            ['.metadata.item_30002_description9[0].subitem_description', '', '', '', 'TEST DESCRIPTION'],
-        )
-        assert_equal(
-            props.pop(),
-            ['.metadata.item_30002_description9[0].subitem_description_language', '', '', '', 'en'],
-        )
-        assert_equal(
-            props.pop(),
-            ['.metadata.item_30002_description9[0].subitem_description_type', '', '', '', 'Abstract'],
-        )
-        assert_equal(
-            props.pop(),
-            ['.metadata.item_30002_description9[1].subitem_description', '', '', '', 'テスト説明'],
-        )
-        assert_equal(
-            props.pop(),
-            ['.metadata.item_30002_description9[1].subitem_description_language', '', '', '', 'ja'],
-        )
-        assert_equal(
-            props.pop(),
-            ['.metadata.item_30002_description9[1].subitem_description_type', '', '', '', 'Abstract'],
-        )
-        assert_equal(
-            props.pop(),
-            ['.metadata.item_30002_contributor3[0].contributorNames[0].contributorName', '', '', '', 'National Institute of Informatics Hitotsubashi TEL: XX-XXXX-XXXX E-Mail: dummy@test.rcos.nii.ac.jp'],
-        )
-        assert_equal(
-            props.pop(),
-            ['.metadata.item_30002_contributor3[0].contributorNames[0].lang', '', '', '', 'en'],
-        )
-        assert_equal(
-            props.pop(),
-            ['.metadata.item_30002_contributor3[0].contributorNames[0].nameType', '', '', '', 'Organizational'],
-        )
-        assert_equal(
-            props.pop(),
-            ['.metadata.item_30002_contributor3[0].contributorType', '', '', '', 'ContactPerson'],
-        )
-        assert_equal(
-            props.pop(),
-            ['.metadata.item_30002_contributor3[0].contributorNames[1].contributorName', '', '', '', '国立情報学研究所 一ツ橋 TEL: XX-XXXX-XXXX E-Mail: dummy@test.rcos.nii.ac.jp'],
-        )
-        assert_equal(
-            props.pop(),
-            ['.metadata.item_30002_contributor3[0].contributorNames[1].lang', '', '', '', 'ja'],
-        )
-        assert_equal(
-            props.pop(),
-            ['.metadata.item_30002_contributor3[0].contributorNames[1].nameType', '', '', '', 'Organizational'],
-        )
-        assert_equal(
-            props.pop(),
-            ['.metadata.item_30002_contributor3[1].contributorNames[0].contributorName', '', '', '', 'Hanako Joho'],
-        )
-        assert_equal(
-            props.pop(),
-            ['.metadata.item_30002_contributor3[1].contributorNames[0].lang', '', '', '', 'en'],
-        )
-        assert_equal(
-            props.pop(),
-            ['.metadata.item_30002_contributor3[1].contributorType', '', '', '', 'DataManager'],
-        )
-        assert_equal(
-            props.pop(),
-            ['.metadata.item_30002_contributor3[1].contributorNames[1].contributorName', '', '', '', '情報花子'],
-        )
-        assert_equal(
-            props.pop(),
-            ['.metadata.item_30002_contributor3[1].contributorNames[1].lang', '', '', '', 'ja'],
-        )
-        assert_equal(
-            props.pop(),
-            ['.metadata.item_30002_contributor3[1].nameIdentifiers[0].nameIdentifierScheme', '', '', '', 'e-Rad_Researcher'],
-        )
-        assert_equal(
-            props.pop(),
-            ['.metadata.item_30002_contributor3[1].nameIdentifiers[0].nameIdentifierURI', '', '', '', '11111'],
-        )
-        assert_equal(
-            props.pop(),
-            ['.metadata.item_30002_rights6[0].subitem_rights', '', '', '', 'Test for license'],
-        )
-        assert_equal(
-            props.pop(),
-            ['.metadata.item_30002_rights6[0].subitem_rights_language', '', '', '', 'en'],
-        )
-        assert_equal(
-            props.pop(),
-            ['.metadata.item_30002_rights6[1].subitem_rights', '', '', '', 'ライセンスのテスト'],
-        )
-        assert_equal(
-            props.pop(),
-            ['.metadata.item_30002_rights6[1].subitem_rights_language', '', '', '', 'ja'],
-        )
-        assert_equal(
-            props.pop(),
-            ['.metadata.item_30002_rights6[2].subitem_rights', '', '', '', '無償'],
-        )
-        assert_equal(
-            props.pop(),
-            ['.metadata.item_30002_rights6[2].subitem_rights_language', '', '', '', 'ja'],
-        )
-        assert_equal(
-            props.pop(),
-            ['.metadata.item_30002_rights6[3].subitem_rights', '', '', '', 'free'],
-        )
-        assert_equal(
-            props.pop(),
-            ['.metadata.item_30002_rights6[3].subitem_rights_language', '', '', '', 'en'],
-        )
-        assert_equal(
-            props.pop(),
-            ['.metadata.item_30002_rights6[4].subitem_rights', '', '', '', 'CC0 1.0 Universal'],
-        )
-        assert_equal(
-            props.pop(),
-            ['.metadata.item_30002_rights6[4].subitem_rights_language', '', '', '', 'en'],
-        )
-        assert_equal(
-            props.pop(),
-            [
-                '.metadata.item_30002_rights6[4].subitem_rights_resource',
-                '',
-                '',
-                '',
-                'https://creativecommons.org/publicdomain/zero/1.0/deed.en',
-            ],
-        )
-        assert_equal(
-            props.pop(),
-            ['.metadata.item_30002_subject8[0].subitem_subject', '', '', '', 'Life Science'],
-        )
-        assert_equal(
-            props.pop(),
-            ['.metadata.item_30002_subject8[0].subitem_subject_language', '', '', '', 'en'],
-        )
-        assert_equal(
-            props.pop(),
-            ['.metadata.item_30002_subject8[0].subitem_subject_scheme', '', '', '', 'e-Rad_field'],
-        )
-        assert_equal(
-            props.pop(),
-            ['.metadata.item_30002_subject8[1].subitem_subject', '', '', '', 'ライフサイエンス'],
-        )
-        assert_equal(
-            props.pop(),
-            ['.metadata.item_30002_subject8[1].subitem_subject_language', '', '', '', 'ja'],
-        )
-        assert_equal(
-            props.pop(),
-            ['.metadata.item_30002_subject8[1].subitem_subject_scheme', '', '', '', 'e-Rad_field'],
-        )
-        assert_equal(
-            props.pop(),
-            ['.metadata.item_30002_resource_type13.resourcetype', '', '', '', 'experimental data'],
-        )
-        assert_equal(
-            props.pop(),
-            ['.metadata.item_30002_contributor3[2].contributorNames[0].contributorName', '', '', '', 'National Institute of Informatics'],
-        )
-        assert_equal(
-            props.pop(),
-            ['.metadata.item_30002_contributor3[2].contributorNames[0].lang', '', '', '', 'en'],
-        )
-        assert_equal(
-            props.pop(),
-            ['.metadata.item_30002_contributor3[2].contributorType', '', '', '', 'HostingInstitution'],
-        )
-        assert_equal(
-            props.pop(),
-            ['.metadata.item_30002_contributor3[2].nameIdentifiers[0].nameIdentifierScheme', '', '', '', 'ROR'],
-        )
-        assert_equal(
-            props.pop(),
-            ['.metadata.item_30002_contributor3[2].nameIdentifiers[0].nameIdentifierURI', '', '', '', 'https://ror.org/04ksd4g47'],
-        )
-        assert_equal(
-            props.pop(),
-            ['.metadata.item_30002_contributor3[2].contributorNames[1].contributorName', '', '', '', '国立情報学研究所'],
-        )
-        assert_equal(
-            props.pop(),
-            ['.metadata.item_30002_contributor3[2].contributorNames[1].lang', '', '', '', 'ja'],
-        )
-        assert_equal(
-            props.pop(),
-            ['.metadata.item_30002_title0[0].subitem_title', '', '', '', 'TEST DATA'],
-        )
-        assert_equal(
-            props.pop(),
-            ['.metadata.item_30002_title0[0].subitem_title_language', '', '', '', 'en'],
-        )
-        assert_equal(
-            props.pop(),
-            ['.metadata.item_30002_title0[1].subitem_title', '', '', '', 'テストデータ'],
-        )
-        assert_equal(
-            props.pop(),
-            ['.metadata.item_30002_title0[1].subitem_title_language', '', '', '', 'ja'],
-        )
-        assert_equal(
-            props.pop(),
-            ['#.id', '#ID', '#', '#', ''],
-        )
-        assert_equal(
-            props.pop(),
-            ['.uri', 'URI', '', '', ''],
-        )
-        assert_equal(
-            props.pop(),
-            ['.cnri', '.CNRI', '', '', ''],
-        )
-        assert_equal(
-            props.pop(),
-            ['.doi_ra', '.DOI_RA', '', '', ''],
-        )
-        assert_equal(
-            props.pop(),
-            ['.doi', '.DOI', '', '', ''],
-        )
-        assert_equal(
-            props.pop(),
-            ['.edit_mode', 'Keep/Upgrade Version', '', 'Required', 'Keep'],
-        )
+        assert pub_date[:-1] == ['.metadata.pubdate', '', '', '']
+        assert re.match('[0-9]+\\-[0-9]+\\-[0-9]+', pub_date[-1])
+        assert props.pop() == ['.metadata.item_30002_access_rights4.subitem_access_right', '', '', '', 'restricted access']
+        assert props.pop() == ['.metadata.item_30002_creator2[0].creatorNames[0].creatorName', '', '', '', '情報太郎']
+        assert props.pop() == ['.metadata.item_30002_creator2[0].creatorNames[0].creatorNameLang', '', '', '', 'ja']
+        assert props.pop() == ['.metadata.item_30002_creator2[0].creatorNames[1].creatorName', '', '', '', 'Taro Joho']
+        assert props.pop() == ['.metadata.item_30002_creator2[0].creatorNames[1].creatorNameLang', '', '', '', 'en']
+        assert props.pop() == ['.metadata.item_30002_creator2[0].nameIdentifiers[0].nameIdentifierScheme', '', '', '', 'e-Rad_Researcher']
+        assert props.pop() == ['.metadata.item_30002_creator2[0].nameIdentifiers[0].nameIdentifierURI', '', '', '', '22222']
+        assert props.pop() == ['.metadata.item_30002_description9[0].subitem_description', '', '', '', 'TEST DESCRIPTION']
+        assert props.pop() == ['.metadata.item_30002_description9[0].subitem_description_language', '', '', '', 'en']
+        assert props.pop() == ['.metadata.item_30002_description9[0].subitem_description_type', '', '', '', 'Abstract']
+        assert props.pop() == ['.metadata.item_30002_description9[1].subitem_description', '', '', '', 'テスト説明']
+        assert props.pop() == ['.metadata.item_30002_description9[1].subitem_description_language', '', '', '', 'ja']
+        assert props.pop() == ['.metadata.item_30002_description9[1].subitem_description_type', '', '', '', 'Abstract']
+        assert props.pop() == ['.metadata.item_30002_contributor3[0].contributorNames[0].contributorName', '', '', '', 'National Institute of Informatics Hitotsubashi TEL: XX-XXXX-XXXX E-Mail: dummy@test.rcos.nii.ac.jp']
+        assert props.pop() == ['.metadata.item_30002_contributor3[0].contributorNames[0].lang', '', '', '', 'en']
+        assert props.pop() == ['.metadata.item_30002_contributor3[0].contributorNames[0].nameType', '', '', '', 'Organizational']
+        assert props.pop() == ['.metadata.item_30002_contributor3[0].contributorType', '', '', '', 'ContactPerson']
+        assert props.pop() == ['.metadata.item_30002_contributor3[0].contributorNames[1].contributorName', '', '', '', '国立情報学研究所 一ツ橋 TEL: XX-XXXX-XXXX E-Mail: dummy@test.rcos.nii.ac.jp']
+        assert props.pop() == ['.metadata.item_30002_contributor3[0].contributorNames[1].lang', '', '', '', 'ja']
+        assert props.pop() == ['.metadata.item_30002_contributor3[0].contributorNames[1].nameType', '', '', '', 'Organizational']
+        assert props.pop() == ['.metadata.item_30002_contributor3[1].contributorNames[0].contributorName', '', '', '', 'Hanako Joho']
+        assert props.pop() == ['.metadata.item_30002_contributor3[1].contributorNames[0].lang', '', '', '', 'en']
+        assert props.pop() == ['.metadata.item_30002_contributor3[1].contributorType', '', '', '', 'DataManager']
+        assert props.pop() == ['.metadata.item_30002_contributor3[1].contributorNames[1].contributorName', '', '', '', '情報花子']
+        assert props.pop() == ['.metadata.item_30002_contributor3[1].contributorNames[1].lang', '', '', '', 'ja']
+        assert props.pop() == ['.metadata.item_30002_contributor3[1].nameIdentifiers[0].nameIdentifierScheme', '', '', '', 'e-Rad_Researcher']
+        assert props.pop() == ['.metadata.item_30002_contributor3[1].nameIdentifiers[0].nameIdentifierURI', '', '', '', '11111']
+        assert props.pop() == ['.metadata.item_30002_rights6[0].subitem_rights', '', '', '', 'Test for license']
+        assert props.pop() == ['.metadata.item_30002_rights6[0].subitem_rights_language', '', '', '', 'en']
+        assert props.pop() == ['.metadata.item_30002_rights6[1].subitem_rights', '', '', '', 'ライセンスのテスト']
+        assert props.pop() == ['.metadata.item_30002_rights6[1].subitem_rights_language', '', '', '', 'ja']
+        assert props.pop() == ['.metadata.item_30002_rights6[2].subitem_rights', '', '', '', '無償']
+        assert props.pop() == ['.metadata.item_30002_rights6[2].subitem_rights_language', '', '', '', 'ja']
+        assert props.pop() == ['.metadata.item_30002_rights6[3].subitem_rights', '', '', '', 'free']
+        assert props.pop() == ['.metadata.item_30002_rights6[3].subitem_rights_language', '', '', '', 'en']
+        assert props.pop() == ['.metadata.item_30002_rights6[4].subitem_rights', '', '', '', 'CC0 1.0 Universal']
+        assert props.pop() == ['.metadata.item_30002_rights6[4].subitem_rights_language', '', '', '', 'en']
+        assert props.pop() == ['.metadata.item_30002_rights6[4].subitem_rights_resource', '', '', '', 'https://creativecommons.org/publicdomain/zero/1.0/deed.en']
+        assert props.pop() == ['.metadata.item_30002_subject8[0].subitem_subject', '', '', '', 'Life Science']
+        assert props.pop() == ['.metadata.item_30002_subject8[0].subitem_subject_language', '', '', '', 'en']
+        assert props.pop() == ['.metadata.item_30002_subject8[0].subitem_subject_scheme', '', '', '', 'e-Rad_field']
+        assert props.pop() == ['.metadata.item_30002_subject8[1].subitem_subject', '', '', '', 'ライフサイエンス']
+        assert props.pop() == ['.metadata.item_30002_subject8[1].subitem_subject_language', '', '', '', 'ja']
+        assert props.pop() == ['.metadata.item_30002_subject8[1].subitem_subject_scheme', '', '', '', 'e-Rad_field']
+        assert props.pop() == ['.metadata.item_30002_resource_type13.resourcetype', '', '', '', 'experimental data']
+        assert props.pop() == ['.metadata.item_30002_contributor3[2].contributorNames[0].contributorName', '', '', '', 'National Institute of Informatics']
+        assert props.pop() == ['.metadata.item_30002_contributor3[2].contributorNames[0].lang', '', '', '', 'en']
+        assert props.pop() == ['.metadata.item_30002_contributor3[2].contributorType', '', '', '', 'HostingInstitution']
+        assert props.pop() == ['.metadata.item_30002_contributor3[2].nameIdentifiers[0].nameIdentifierScheme', '', '', '', 'ROR']
+        assert props.pop() == ['.metadata.item_30002_contributor3[2].nameIdentifiers[0].nameIdentifierURI', '', '', '', 'https://ror.org/04ksd4g47']
+        assert props.pop() == ['.metadata.item_30002_contributor3[2].contributorNames[1].contributorName', '', '', '', '国立情報学研究所']
+        assert props.pop() == ['.metadata.item_30002_contributor3[2].contributorNames[1].lang', '', '', '', 'ja']
+        assert props.pop() == ['.metadata.item_30002_title0[0].subitem_title', '', '', '', 'TEST DATA']
+        assert props.pop() == ['.metadata.item_30002_title0[0].subitem_title_language', '', '', '', 'en']
+        assert props.pop() == ['.metadata.item_30002_title0[1].subitem_title', '', '', '', 'テストデータ']
+        assert props.pop() == ['.metadata.item_30002_title0[1].subitem_title_language', '', '', '', 'ja']
+        assert props.pop() == ['#.id', '#ID', '#', '#', '']
+        assert props.pop() == ['.uri', 'URI', '', '', '']
+        assert props.pop() == ['.cnri', '.CNRI', '', '', '']
+        assert props.pop() == ['.doi_ra', '.DOI_RA', '', '', '']
+        assert props.pop() == ['.doi', '.DOI', '', '', '']
+        assert props.pop() == ['.edit_mode', 'Keep/Upgrade Version', '', 'Required', 'Keep']
 
     def test_write_ro_crate_json_full(self):
         buf = io.StringIO()
@@ -1212,7 +909,7 @@ class TestWEKOSchema(OsfTestCase):
         expected_json = json.loads(expected)
         actual_json['@graph'] = sorted(actual_json['@graph'], key=lambda entry: entry['@id'])
         expected_json['@graph'] = sorted(expected_json['@graph'], key=lambda entry: entry['@id'])
-        assert_equal(actual_json, expected_json)
+        assert actual_json == expected_json
 
     def test_write_ro_crate_json_without_funder_ror(self):
         buf = io.StringIO()
@@ -1274,10 +971,10 @@ class TestWEKOSchema(OsfTestCase):
         graph_items = actual_json.get('@graph', [])
         funder_identifiers = [item for item in graph_items if item.get('@type') == 'jpcoar:funderIdentifier']
         logger.info(f'DEBUG: funder_identifiers={funder_identifiers}')
-        assert_equal(len(funder_identifiers), 0, 'funderIdentifier should not be created for FDMA (no ROR ID)')
+        assert len(funder_identifiers) == 0, 'funderIdentifier should not be created for FDMA (no ROR ID)'
         # But fundingReference should still exist with funderName
         funding_refs = [item for item in graph_items if item.get('@type') == 'PropertyValue' and 'jpcoar:funderName' in str(item)]
-        assert_true(len(funding_refs) > 0, 'fundingReference with funderName should still be created')
+        assert len(funding_refs) > 0
 
     def test_write_ro_crate_json_grouped_supporting_files(self):
         buf = io.StringIO()
@@ -1323,22 +1020,22 @@ class TestWEKOSchema(OsfTestCase):
                 logger.info(f'Dataset {part_id} keys: {list(graph[part_id].keys())}')
 
         dataset_root = graph['./']
-        assert_true(dataset_root.get('wk:isSplited'))
-        assert_equal(dataset_root['@type'], 'Dataset')
-        assert_not_in('name', dataset_root)
-        assert_not_in('dc:type', dataset_root)
+        assert dataset_root.get('wk:isSplited')
+        assert dataset_root['@type'] == 'Dataset'
+        assert 'name' not in dataset_root
+        assert 'dc:type' not in dataset_root
 
         part_ids = [part['@id'] for part in dataset_root['hasPart']]
-        assert_equal(len(part_ids), 3)
-        assert_equal(sorted(part_ids), ['#dataset-1', '#dataset-2', '#dataset-3'])
+        assert len(part_ids) == 3
+        assert sorted(part_ids) == ['#dataset-1', '#dataset-2', '#dataset-3']
 
         datasets = [graph[part_id] for part_id in part_ids]
         for dataset in datasets:
-            assert_true('@type' not in dataset)
+            assert '@type' not in dataset
 
         def dereference(reference):
-            assert_true(isinstance(reference, dict) and '@id' in reference)
-            assert_in(reference['@id'], graph)
+            assert isinstance(reference, dict) and '@id' in reference
+            assert reference['@id'] in graph
             return graph[reference['@id']]
 
         def property_entities(entity, key):
@@ -1351,7 +1048,7 @@ class TestWEKOSchema(OsfTestCase):
 
         def scalar_property_value(entity, key):
             values = property_entities(entity, key)
-            assert_true(values)
+            assert values
             return values[0]['value']
 
         def collect_lang_map(entity, key):
@@ -1369,47 +1066,44 @@ class TestWEKOSchema(OsfTestCase):
             if scalar_property_value(dataset, 'dc:type') == 'experimental data'
         ]
 
-        assert_equal(scalar_property_value(dataset_primary, 'dc:type'), 'journal article')
-        assert_equal(len(datasets_supporting), 2)
+        assert scalar_property_value(dataset_primary, 'dc:type') == 'journal article'
+        assert len(datasets_supporting) == 2
         for dataset_supporting in datasets_supporting:
-            assert_equal(scalar_property_value(dataset_supporting, 'dc:type'), 'experimental data')
+            assert scalar_property_value(dataset_supporting, 'dc:type') == 'experimental data'
 
-        assert_equal(
-            [part['@id'] for part in dataset_primary['hasPart']],
-            ['files/sample-manuscript.pdf']
-        )
+        assert [part['@id'] for part in dataset_primary['hasPart']] == ['files/sample-manuscript.pdf']
         # Each supporting dataset now has only one file
         supporting_files = sorted([
             part['@id']
             for dataset_supporting in datasets_supporting
             for part in dataset_supporting['hasPart']
         ])
-        assert_equal(supporting_files, ['files/supporting-data-1.csv', 'files/supporting-data-2.csv'])
+        assert supporting_files == ['files/supporting-data-1.csv', 'files/supporting-data-2.csv']
 
-        assert_equal(dataset_primary['name'], 'MAIN ARTICLE')
-        assert_equal(dataset_primary['description'], 'Primary manuscript')
+        assert dataset_primary['name'] == 'MAIN ARTICLE'
+        assert dataset_primary['description'] == 'Primary manuscript'
 
         # Both supporting datasets have the same metadata
         for dataset_supporting in datasets_supporting:
-            assert_equal(dataset_supporting['name'], 'SUPPORTING DATA')
-            assert_equal(dataset_supporting['description'], 'Supporting dataset')
+            assert dataset_supporting['name'] == 'SUPPORTING DATA'
+            assert dataset_supporting['description'] == 'Supporting dataset'
 
         name_langs_primary = collect_lang_map(dataset_primary, 'dc:title')
-        assert_equal(name_langs_primary['en'], 'MAIN ARTICLE')
-        assert_equal(name_langs_primary['ja'], '主論文')
+        assert name_langs_primary['en'] == 'MAIN ARTICLE'
+        assert name_langs_primary['ja'] == '主論文'
 
         # Check first supporting dataset (they have identical metadata)
         name_langs_support = collect_lang_map(datasets_supporting[0], 'dc:title')
-        assert_equal(name_langs_support['en'], 'SUPPORTING DATA')
-        assert_equal(name_langs_support['ja'], '根拠データ')
+        assert name_langs_support['en'] == 'SUPPORTING DATA'
+        assert name_langs_support['ja'] == '根拠データ'
 
         desc_langs_support = collect_lang_map(datasets_supporting[0], 'datacite:description')
-        assert_equal(desc_langs_support['en'], 'Supporting dataset')
-        assert_equal(desc_langs_support['ja'], '論文に関連する根拠データ')
+        assert desc_langs_support['en'] == 'Supporting dataset'
+        assert desc_langs_support['ja'] == '論文に関連する根拠データ'
 
         def assert_references(dataset, key):
             values = property_entities(dataset, key)
-            assert_true(values, f'Key \'{key}\' not found or empty in dataset {dataset.get("@id", "unknown")}')
+            assert values
 
         # Common fields for both manuscript and dataset
         common_reference_keys = [
@@ -1439,7 +1133,7 @@ class TestWEKOSchema(OsfTestCase):
             assert_references(dataset_supporting, 'jpcoar:relation')
 
         ro_crate_metadata = graph['ro-crate-metadata.json']
-        assert_equal(ro_crate_metadata['about']['@id'], './')
+        assert ro_crate_metadata['about']['@id'] == './'
 
         file_entities = {
             entity['@id']: entity
@@ -1447,44 +1141,37 @@ class TestWEKOSchema(OsfTestCase):
             if entity.get('@type') == 'File'
         }
 
-        assert_equal(
-            set(file_entities.keys()),
-            {
-                'files/sample-manuscript.pdf',
-                'files/supporting-data-1.csv',
-                'files/supporting-data-2.csv',
-            }
-        )
-        assert_equal(file_entities['files/sample-manuscript.pdf']['jpcoar:mimeType'], 'application/pdf')
-        assert_equal(file_entities['files/sample-manuscript.pdf']['jpcoar:format'], 'preview')
-        assert_equal(file_entities['files/supporting-data-1.csv']['jpcoar:mimeType'], 'text/csv')
-        assert_equal(file_entities['files/supporting-data-1.csv']['jpcoar:format'], 'preview')
-        assert_equal(file_entities['files/supporting-data-2.csv']['jpcoar:mimeType'], 'text/csv')
-        assert_equal(file_entities['files/supporting-data-2.csv']['jpcoar:format'], 'preview')
+        assert set(file_entities.keys()) == {'files/sample-manuscript.pdf', 'files/supporting-data-1.csv', 'files/supporting-data-2.csv'}
+        assert file_entities['files/sample-manuscript.pdf']['jpcoar:mimeType'] == 'application/pdf'
+        assert file_entities['files/sample-manuscript.pdf']['jpcoar:format'] == 'preview'
+        assert file_entities['files/supporting-data-1.csv']['jpcoar:mimeType'] == 'text/csv'
+        assert file_entities['files/supporting-data-1.csv']['jpcoar:format'] == 'preview'
+        assert file_entities['files/supporting-data-2.csv']['jpcoar:mimeType'] == 'text/csv'
+        assert file_entities['files/supporting-data-2.csv']['jpcoar:format'] == 'preview'
 
         # Manuscript has links to both supporting datasets
         itemlinks_primary = property_entities(dataset_primary, 'wk:itemLinks')
-        assert_equal(len(itemlinks_primary), 2)
+        assert len(itemlinks_primary) == 2
         for link in itemlinks_primary:
-            assert_equal(link['@type'], 'PropertyValue')
-            assert_equal(link['value'], 'isSupplementedBy')
-            assert_in(link['identifier'], [ds['@id'] for ds in datasets_supporting])
+            assert link['@type'] == 'PropertyValue'
+            assert link['value'] == 'isSupplementedBy'
+            assert link['identifier'] in [ds['@id'] for ds in datasets_supporting]
 
         # Each supporting dataset has a link back to the manuscript
         for dataset_supporting in datasets_supporting:
             itemlinks_supporting = property_entities(dataset_supporting, 'wk:itemLinks')
-            assert_equal(len(itemlinks_supporting), 1)
-            assert_equal(itemlinks_supporting[0]['@type'], 'PropertyValue')
-            assert_equal(itemlinks_supporting[0]['value'], 'isSupplementTo')
-            assert_equal(itemlinks_supporting[0]['identifier'], dataset_primary['@id'])
+            assert len(itemlinks_supporting) == 1
+            assert itemlinks_supporting[0]['@type'] == 'PropertyValue'
+            assert itemlinks_supporting[0]['value'] == 'isSupplementTo'
+            assert itemlinks_supporting[0]['identifier'] == dataset_primary['@id']
 
         version_entities = property_entities(dataset_primary, 'oaire:version')
-        assert_equal(len(version_entities), 1)
+        assert len(version_entities) == 1
         version = version_entities[0]
-        assert_equal(version['@type'], 'PropertyValue')
-        assert_equal(version['value'], 'AM')
-        assert_equal(version['rdf:resource'], 'http://purl.org/coar/version/c_ab4af688f83e57aa')
-        assert_equal(version['itemReviewed'], 'Peer reviewed')
+        assert version['@type'] == 'PropertyValue'
+        assert version['value'] == 'AM'
+        assert version['rdf:resource'] == 'http://purl.org/coar/version/c_ab4af688f83e57aa'
+        assert version['itemReviewed'] == 'Peer reviewed'
 
         # Test jpcoar:relation relationType for AM version (should be isVersionOf)
         relation_entities = property_entities(dataset_primary, 'jpcoar:relation')
@@ -1494,15 +1181,15 @@ class TestWEKOSchema(OsfTestCase):
              if rel.get('jpcoar:relationType') in ['isVersionOf', 'isIdenticalTo']),
             None
         )
-        assert_true(doi_relation is not None, 'DOI relation not found in jpcoar:relation')
-        assert_equal(doi_relation['jpcoar:relationType'], 'isVersionOf')  # AM version should use isVersionOf
+        assert doi_relation is not None
+        assert doi_relation['jpcoar:relationType'] == 'isVersionOf'
 
         # Verify the related identifier contains the DOI
         related_id_entities = property_entities(doi_relation, 'jpcoar:relatedIdentifier')
-        assert_equal(len(related_id_entities), 1)
+        assert len(related_id_entities) == 1
         related_id = related_id_entities[0]
-        assert_equal(related_id['identifierType'], 'DOI')
-        assert_true('10.1234/example.manuscript.2025' in related_id['value'])
+        assert related_id['identifierType'] == 'DOI'
+        assert '10.1234/example.manuscript.2025' in related_id['value']
 
     def test_manuscript_relation_type_vor(self):
         """Test jpcoar:relation relationType for VoR version manuscripts (should be isIdenticalTo)"""
@@ -1579,7 +1266,7 @@ class TestWEKOSchema(OsfTestCase):
 
         # Get jpcoar:relation entities
         relation_entities = property_entities(dataset_root, 'jpcoar:relation')
-        assert_true(len(relation_entities) > 0, 'No jpcoar:relation found')
+        assert len(relation_entities) > 0
 
         # Find the DOI relation
         doi_relation = next(
@@ -1587,29 +1274,29 @@ class TestWEKOSchema(OsfTestCase):
              if rel.get('jpcoar:relationType') in ['isVersionOf', 'isIdenticalTo']),
             None
         )
-        assert_true(doi_relation is not None, 'DOI relation not found')
-        assert_equal(doi_relation['jpcoar:relationType'], 'isIdenticalTo')  # VoR version should use isIdenticalTo
+        assert doi_relation is not None
+        assert doi_relation['jpcoar:relationType'] == 'isIdenticalTo'
 
         # Verify the related identifier contains the VoR DOI
         related_id_entities = property_entities(doi_relation, 'jpcoar:relatedIdentifier')
-        assert_equal(len(related_id_entities), 1)
+        assert len(related_id_entities) == 1
         related_id = related_id_entities[0]
-        assert_equal(related_id['identifierType'], 'DOI')
-        assert_true('10.1234/example.vor.2025' in related_id['value'])
+        assert related_id['identifierType'] == 'DOI'
+        assert '10.1234/example.vor.2025' in related_id['value']
 
         # Verify author affiliation (jpcoar:affiliation)
         creator_entities = property_entities(dataset_root, 'jpcoar:creator')
-        assert_true(len(creator_entities) > 0, 'No jpcoar:creator found')
+        assert len(creator_entities) > 0
         creator = creator_entities[0]
         affiliation_entities = property_entities(creator, 'jpcoar:affiliation')
-        assert_equal(len(affiliation_entities), 1, 'Expected 1 affiliation entity')
+        assert len(affiliation_entities) == 1, 'Expected 1 affiliation entity'
         aff = affiliation_entities[0]
-        assert_equal(aff['@type'], 'Organization')
+        assert aff['@type'] == 'Organization'
         aff_name_entities = property_entities(aff, 'jpcoar:affiliationName')
-        assert_equal(len(aff_name_entities), 2, 'Expected 2 affiliationName entries (ja and en)')
+        assert len(aff_name_entities) == 2, 'Expected 2 affiliationName entries (ja and en)'
         affiliation_names = [(n['value'], n['language']) for n in aff_name_entities]
-        assert_true(('テスト大学', 'ja') in affiliation_names, 'Japanese affiliation name not found')
-        assert_true(('Test University', 'en') in affiliation_names, 'English affiliation name not found')
+        assert ('テスト大学', 'ja') in affiliation_names
+        assert ('Test University', 'en') in affiliation_names
 
     def test_write_csv_manuscript_version_am(self):
         """Test CSV output for manuscript with version type AM and peer reviewed status"""
@@ -1691,18 +1378,18 @@ class TestWEKOSchema(OsfTestCase):
 
         for prop in props_list:
             if '.metadata.item_30002_version_type15.subitem_version_type' in prop[0]:
-                assert_equal(prop[-1], 'AM')
+                assert prop[-1] == 'AM'
                 version_type_found = True
             elif '.metadata.item_30002_version_type15.subitem_version_resource' in prop[0]:
-                assert_equal(prop[-1], 'http://purl.org/coar/version/c_ab4af688f83e57aa')
+                assert prop[-1] == 'http://purl.org/coar/version/c_ab4af688f83e57aa'
                 version_resource_found = True
             elif '.metadata.item_30002_version_type15.subitem_peer_reviewed' in prop[0]:
-                assert_equal(prop[-1], 'Peer reviewed')
+                assert prop[-1] == 'Peer reviewed'
                 peer_reviewed_found = True
 
-        assert_true(version_type_found, 'subitem_version_type not found in CSV')
-        assert_true(version_resource_found, 'subitem_version_resource not found in CSV')
-        assert_true(peer_reviewed_found, 'subitem_peer_reviewed not found in CSV')
+        assert version_type_found
+        assert version_resource_found
+        assert peer_reviewed_found
 
     def test_manuscript_file_access_rights_defaults_to_open_access(self):
         """Test that manuscript files default to open_access when grdm-file:access-rights is not set"""
@@ -1768,15 +1455,11 @@ class TestWEKOSchema(OsfTestCase):
             entity for entity in actual_json['@graph']
             if entity.get('@type') == 'File'
         ]
-        assert_equal(len(file_entities), 1)
+        assert len(file_entities) == 1
         file_entity = file_entities[0]
 
         # Manuscript should default to open_access when access-rights is not set
-        assert_equal(
-            file_entity.get('dcterms:accessRights'),
-            'open_access',
-            'Manuscript file should default to open_access when grdm-file:access-rights is not set'
-        )
+        assert file_entity.get('dcterms:accessRights') == 'open_access', 'Manuscript file should default to open_access when grdm-file:access-rights is not set'
 
     def test_dataset_file_access_rights_defaults_to_open_no(self):
         """Test that dataset files default to open_no when grdm-file:access-rights is not set"""
@@ -1834,15 +1517,11 @@ class TestWEKOSchema(OsfTestCase):
             entity for entity in actual_json['@graph']
             if entity.get('@type') == 'File'
         ]
-        assert_equal(len(file_entities), 1)
+        assert len(file_entities) == 1
         file_entity = file_entities[0]
 
         # Dataset should default to open_no when access-rights is not set
-        assert_equal(
-            file_entity.get('dcterms:accessRights'),
-            'open_no',
-            'Dataset file should default to open_no when grdm-file:access-rights is not set'
-        )
+        assert file_entity.get('dcterms:accessRights') == 'open_no', 'Dataset file should default to open_no when grdm-file:access-rights is not set'
 
     def test_write_ro_crate_json_mebyo_empty_files(self):
         """Test that MEBYO schema can generate RO-Crate without files (metadata only).
@@ -1905,18 +1584,18 @@ class TestWEKOSchema(OsfTestCase):
         graph = {item['@id']: item for item in actual_json['@graph'] if '@id' in item}
 
         # Root dataset entity should exist
-        assert_in('./', graph, 'Root dataset entity should exist')
+        assert './' in graph, 'Root dataset entity should exist'
         root = graph['./']
-        assert_equal(root['@type'], ['Dataset', 'rdm:Dataset'])
+        assert root['@type'] == ['Dataset', 'rdm:Dataset']
 
         # ro-crate-metadata.json entity should exist
-        assert_in('ro-crate-metadata.json', graph, 'RO-Crate metadata entity should exist')
+        assert 'ro-crate-metadata.json' in graph, 'RO-Crate metadata entity should exist'
         ro_crate_meta = graph['ro-crate-metadata.json']
-        assert_equal(ro_crate_meta['about']['@id'], './')
+        assert ro_crate_meta['about']['@id'] == './'
 
         # Project metadata should be reflected
-        assert_equal(root['name'], 'Test Dataset')
-        assert_equal(root['description'], 'Description of experiment purpose')
+        assert root['name'] == 'Test Dataset'
+        assert root['description'] == 'Description of experiment purpose'
 
     def test_write_ro_crate_json_mebyo_with_additional_metadata_files(self):
         """Test MEBYO schema with choose-additional-metadata containing files.
@@ -2002,41 +1681,37 @@ class TestWEKOSchema(OsfTestCase):
         graph = {item['@id']: item for item in actual_json['@graph'] if '@id' in item}
 
         # Root dataset entity should exist
-        assert_in('./', graph, 'Root dataset entity should exist')
+        assert './' in graph, 'Root dataset entity should exist'
         root = graph['./']
-        assert_equal(root['@type'], ['Dataset', 'rdm:Dataset'])
+        assert root['@type'] == ['Dataset', 'rdm:Dataset']
 
         # ro-crate-metadata.json entity should exist
-        assert_in('ro-crate-metadata.json', graph, 'RO-Crate metadata entity should exist')
+        assert 'ro-crate-metadata.json' in graph, 'RO-Crate metadata entity should exist'
         ro_crate_meta = graph['ro-crate-metadata.json']
-        assert_equal(ro_crate_meta['about']['@id'], './')
+        assert ro_crate_meta['about']['@id'] == './'
 
         # Project metadata should be reflected
-        assert_equal(root['name'], 'Mebyo DB Metadata Test')
-        assert_equal(root['description'], 'test purpose')
+        assert root['name'] == 'Mebyo DB Metadata Test'
+        assert root['description'] == 'test purpose'
 
         # hasPart should contain File reference
-        assert_in('hasPart', root)
+        assert 'hasPart' in root
         has_part = root['hasPart']
-        assert_true(isinstance(has_part, list))
+        assert isinstance(has_part, list)
 
         # hasPart should not contain duplicates
         has_part_ids = [part['@id'] for part in has_part]
-        assert_equal(
-            len(has_part_ids),
-            len(set(has_part_ids)),
-            f'hasPart contains duplicate entries: {has_part_ids}'
-        )
+        assert len(has_part_ids) == len(set(has_part_ids)), f'hasPart contains duplicate entries: {has_part_ids}'
 
         # File entity should exist with name as string (not list)
         file_entities = [
             item for item in actual_json['@graph']
             if item.get('@type') == 'File'
         ]
-        assert_true(len(file_entities) > 0, 'File entity should exist')
+        assert len(file_entities) > 0
         file_entity = file_entities[0]
-        assert_equal(file_entity['name'], 'text1.csv')
-        assert_true(isinstance(file_entity['name'], str), 'File name should be a string')
+        assert file_entity['name'] == 'text1.csv'
+        assert isinstance(file_entity['name'], str)
 
     def test_write_ro_crate_json_erad_requires_files(self):
         """Test that e-Rad schema (公的資金) requires files and raises error when empty.
@@ -2064,7 +1739,7 @@ class TestWEKOSchema(OsfTestCase):
         }
 
         # Should raise ValueError because e-Rad schema requires files
-        with assert_raises(ValueError) as context:
+        with pytest.raises(ValueError) as context:
             schema.write_ro_crate_json(
                 self.user,
                 buf,
@@ -2076,8 +1751,4 @@ class TestWEKOSchema(OsfTestCase):
                 node_id
             )
 
-        assert_in(
-            'No file metadata available',
-            str(context.exception),
-            'Error message should indicate missing file metadata'
-        )
+        assert 'No file metadata available' in str(context.exception), 'Error message should indicate missing file metadata'

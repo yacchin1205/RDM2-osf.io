@@ -22,8 +22,8 @@ class TestMakeReportAsCsv(OsfTestCase):
         }
         schema = {'pages': []}
         filename, result = make_report_as_csv(format, data, schema)
-        assert_equal(filename, 'report.csv')
-        assert_equal(result, 'TEST')
+        assert filename == 'report.csv'
+        assert result == 'TEST'
 
     def test_complex_name(self):
         format = RegistrationReportFormat.objects.create(
@@ -36,8 +36,8 @@ class TestMakeReportAsCsv(OsfTestCase):
         }
         schema = {'pages': []}
         filename, result = make_report_as_csv(format, data, schema)
-        assert_equal(filename, 'report.csv')
-        assert_equal(result, 'TEST')
+        assert filename == 'report.csv'
+        assert result == 'TEST'
 
     def test_quoted(self):
         format = RegistrationReportFormat.objects.create(
@@ -50,8 +50,8 @@ class TestMakeReportAsCsv(OsfTestCase):
         }
         schema = {'pages': []}
         filename, result = make_report_as_csv(format, data, schema)
-        assert_equal(filename, 'report.csv')
-        assert_equal(result, '"TEST,DATA"')
+        assert filename == 'report.csv'
+        assert result == '"TEST,DATA"'
 
     def test_choose_tooltip(self):
         format = RegistrationReportFormat.objects.create(
@@ -87,5 +87,5 @@ class TestMakeReportAsCsv(OsfTestCase):
             }
         ]}
         filename, result = make_report_as_csv(format, data, schema)
-        assert_equal(filename, 'report.csv')
-        assert_equal(result, '2,二|two,二,two,,')
+        assert filename == 'report.csv'
+        assert result == '2,二|two,二,two,,'

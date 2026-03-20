@@ -135,8 +135,8 @@ class TestNodeChanges(AdminTestCase):
 
     def test_change_embargo_date(self):
 
-        assert_false(self.registration.embargo)
-        assert_true(self.registration.is_public)
+        assert not self.registration.embargo
+        assert self.registration.is_public
 
         # Note: Date comparisons accept a difference up to a day because embargoes start at midnight
 
@@ -146,20 +146,20 @@ class TestNodeChanges(AdminTestCase):
 
         # Make sure once embargo is set, registration is made private
         self.registration.reload()
-        assert_false(self.registration.is_public)
+        assert not self.registration.is_public
 
         # Update an embargo end date
         change_embargo_date(self.registration, self.user, self.date_valid2)
         assert_almost_equal(self.registration.embargo.end_date, self.date_valid2, delta=datetime.timedelta(days=1))
 
         # Test invalid dates
-        with assert_raises(ValidationError):
+        with pytest.raises(ValidationError):
             change_embargo_date(self.registration, self.user, self.date_too_late)
-        with assert_raises(ValidationError):
+        with pytest.raises(ValidationError):
             change_embargo_date(self.registration, self.user, self.date_too_soon)
 
         # Test that checks user has permission
-        with assert_raises(PermissionDenied):
+        with pytest.raises(PermissionDenied):
             change_embargo_date(self.registration, UserFactory(), self.date_valid)
 
         assert_almost_equal(self.registration.embargo.end_date, self.date_valid2, delta=datetime.timedelta(days=1))

@@ -1,3 +1,4 @@
+import pytest
 import json
 import hmac
 import hashlib
@@ -31,7 +32,7 @@ class TestHookVerify(OsfTestCase):
 
     def test_verify_no_secret(self):
         self.node_settings.hook_secret = None
-        with assert_raises(HookError):
+        with pytest.raises(HookError):
             utils.verify_hook_signature(self.node_settings, {}, {})
 
     def test_verify_valid(self):
@@ -50,7 +51,7 @@ class TestHookVerify(OsfTestCase):
             assert 0
 
     def test_verify_invalid(self):
-        with assert_raises(HookError):
+        with pytest.raises(HookError):
             utils.verify_hook_signature(
                 self.node_settings,
                 HOOK_PAYLOAD,

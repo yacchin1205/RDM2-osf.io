@@ -51,19 +51,19 @@ class TestInstitutionDefaultStorage(AdminTestCase):
 
     def test_unauthorized(self):
         self.request.user = AnonymousUser()
-        nt.assert_false(self.view.test_func())
+        assert not self.view.test_func()
 
     def test_normal_user_login(self):
         self.request.user.is_active = True
         self.request.user.is_registered = True
-        nt.assert_false(self.view.test_func())
+        assert not self.view.test_func()
 
     def test_admin_login(self):
         self.request.user.is_active = True
         self.request.user.is_registered = True
         self.request.user.is_superuser = False
         self.request.user.is_staff = True
-        nt.assert_true(self.view.test_func())
+        assert self.view.test_func()
 
     def test_admin_login_having_institution_id(self):
         self.request.user.is_active = True
@@ -71,7 +71,7 @@ class TestInstitutionDefaultStorage(AdminTestCase):
         self.request.user.is_superuser = False
         self.request.user.is_staff = True
         self.view.kwargs = {'institution_id': 1}
-        nt.assert_false(self.view.test_func())
+        assert not self.view.test_func()
 
     def test_super_login(self):
         self.request.user.is_active = True
@@ -79,18 +79,18 @@ class TestInstitutionDefaultStorage(AdminTestCase):
         self.request.user.is_superuser = True
         self.request.user.affiliated_institutions.clear()
         self.view.kwargs = {'institution_id': 1}
-        nt.assert_true(self.view.test_func())
+        assert self.view.test_func()
 
     def test_super_login_missing_institution_id(self):
         self.request.user.is_active = True
         self.request.user.is_registered = True
         self.request.user.is_superuser = True
         self.request.user.affiliated_institutions.clear()
-        nt.assert_false(self.view.test_func())
+        assert not self.view.test_func()
 
     def test_get(self, *args, **kwargs):
         res = self.view.get(self.request, *args, **kwargs)
-        nt.assert_equal(res.status_code, 200)
+        assert res.status_code == 200
 
     def test_get_superuser(self, *args, **kwargs):
         self.request.user.is_active = True
@@ -99,19 +99,19 @@ class TestInstitutionDefaultStorage(AdminTestCase):
         self.request.user.affiliated_institutions.clear()
         kwargs = {**kwargs, 'institution_id': self.institution1.id}
         res = self.view.get(self.request, *args, **kwargs)
-        nt.assert_equal(res.status_code, 200)
+        assert res.status_code == 200
 
     def test_get_institution_not_found(self, *args, **kwargs):
         self.request.user.affiliated_institutions.clear()
-        with nt.assert_raises(Http404):
+        with pytest.raises(Http404):
             self.view.get(self.request, *args, **kwargs)
 
     def test_get_without_custom_storage(self, *args, **kwargs):
         res = self.view.get(self.request, *args, **kwargs)
         for addon in res.context_data['providers']:
-            nt.assert_true(type(addon).__name__ in self.addon_type_dict)
-        nt.assert_equal(res.context_data['region'], self.default_region)
-        nt.assert_equal(res.context_data['selected_provider_short_name'], 'osfstorage')
+            assert type(addon).__name__ in self.addon_type_dict
+        assert res.context_data['region'] == self.default_region
+        assert res.context_data['selected_provider_short_name'] == 'osfstorage'
 
     def test_get_custom_storage(self, *args, **kwargs):
         self.us = RegionFactory()
@@ -119,27 +119,25 @@ class TestInstitutionDefaultStorage(AdminTestCase):
         self.us.save()
         res = self.view.get(self.request, *args, **kwargs)
         for addon in res.context_data['providers']:
-            nt.assert_true(type(addon).__name__ in self.addon_type_dict)
-        nt.assert_equal(res.context_data['region'], self.us)
-        nt.assert_equal(res.context_data['selected_provider_short_name'], res.context_data['region'].waterbutler_settings['storage']['provider'])
+            assert type(addon).__name__ in self.addon_type_dict
+        assert res.context_data['region'] == self.us
+        assert res.context_data['selected_provider_short_name'] == res.context_data['region'].waterbutler_settings['storage']['provider']
 
     def test_get_storage_information(self, *args, **kwargs):
         res = self.view.get(self.request, *args, **kwargs)
-        nt.assert_equal(res.context_data['region'], self.default_region)
-        nt.assert_equal(res.context_data['selected_provider_full_name'], 'NII Storage')
-        nt.assert_equal(res.context_data['storage'], {
-            'folder': {'field_name': 'Folder', 'value': self.default_region.waterbutler_settings.get('storage', {}).get('folder')}
-        })
-        nt.assert_true(res.context_data['disable_view_setting_info'])
+        assert res.context_data['region'] == self.default_region
+        assert res.context_data['selected_provider_full_name'] == 'NII Storage'
+        assert res.context_data['storage'] == {'folder': {'field_name': 'Folder', 'value': self.default_region.waterbutler_settings.get('storage', {}).get('folder')}}
+        assert res.context_data['disable_view_setting_info']
 
     @mock.patch('admin.rdm_custom_storage_location.utils.get_institutional_storage_information')
     def test_get_storage_information_exception(self, mock_get_institutional_storage_information, *args, **kwargs):
         mock_get_institutional_storage_information.side_effect = Exception('test exception')
         res = self.view.get(self.request, *args, **kwargs)
-        nt.assert_equal(res.context_data['region'], self.default_region)
-        nt.assert_equal(res.context_data['selected_provider_full_name'], 'NII Storage')
-        nt.assert_equal(res.context_data['storage'], {})
-        nt.assert_true(res.context_data['disable_view_setting_info'])
+        assert res.context_data['region'] == self.default_region
+        assert res.context_data['selected_provider_full_name'] == 'NII Storage'
+        assert res.context_data['storage'] == {}
+        assert res.context_data['disable_view_setting_info']
 
 
 class TestInstitutionalStorageListView(AdminTestCase):
@@ -152,27 +150,27 @@ class TestInstitutionalStorageListView(AdminTestCase):
 
     def test_unauthorized(self):
         self.request.user = AnonymousUser()
-        nt.assert_false(self.view.test_func())
+        assert not self.view.test_func()
 
     def test_admin_login(self):
         self.user.is_superuser = False
         self.user.is_staff = True
-        nt.assert_false(self.view.test_func())
+        assert not self.view.test_func()
 
     def test_superuser_login(self):
         self.user.is_superuser = True
-        nt.assert_true(self.view.test_func())
+        assert self.view.test_func()
 
     def test_get_queryset(self):
         institution = InstitutionFactory()
         res = self.view.get_queryset()
-        nt.assert_equal(len(res), 1)
-        nt.assert_equal(res[0], institution)
+        assert len(res) == 1
+        assert res[0] == institution
 
     def test_get_context_data(self):
         self.view.object_list = self.view.get_queryset()
         res = self.view.get_context_data()
-        nt.assert_is_not_none(res)
+        assert res is not None
 
 
 @pytest.mark.feature_202210
@@ -196,16 +194,16 @@ class TestIconView(AdminTestCase):
         self.user.delete()
 
     def test_login_user(self):
-        nt.assert_true(self.view.test_func())
+        assert self.view.test_func()
 
     def test_valid_get(self, *args, **kwargs):
         self.view.kwargs = {'addon_name': 's3'}
         res = self.view.get(self.request, *args, **self.view.kwargs)
-        nt.assert_equal(res.status_code, 200)
+        assert res.status_code == 200
 
     def test_invalid_get(self, *args, **kwargs):
         self.view.kwargs = {'addon_name': 'invalidprovider'}
-        with nt.assert_raises(Http404):
+        with pytest.raises(Http404):
             self.view.get(self.request, *args, **self.view.kwargs)
 
 
@@ -229,18 +227,18 @@ class TestPermissionTestConnection(AdminTestCase):
 
     def test_unauthorized(self):
         self.user = AnonymousUser()
-        with nt.assert_raises(PermissionDenied):
+        with pytest.raises(PermissionDenied):
             self.view_post({})
 
     def test_normal_user(self):
-        with nt.assert_raises(PermissionDenied):
+        with pytest.raises(PermissionDenied):
             self.view_post({})
 
     def test_staff_without_institution(self):
         self.user.is_staff = True
         self.user.save()
 
-        with nt.assert_raises(PermissionDenied):
+        with pytest.raises(PermissionDenied):
             self.view_post({})
 
     def test_staff_with_institution(self):
@@ -249,7 +247,7 @@ class TestPermissionTestConnection(AdminTestCase):
         self.user.save()
 
         response = self.view_post({})
-        nt.assert_is_instance(response, HttpResponse)
+        assert isinstance(response, HttpResponse)
 
     def test_staff_with_other_institution(self):
         institution = InstitutionFactory()
@@ -258,7 +256,7 @@ class TestPermissionTestConnection(AdminTestCase):
         self.user.affiliated_institutions.add(institution)
         self.user.save()
 
-        with nt.assert_raises(PermissionDenied):
+        with pytest.raises(PermissionDenied):
             self.view_post({})
 
     def test_superuser(self):
@@ -304,18 +302,18 @@ class TestPermissionSaveCredentials(AdminTestCase):
 
     def test_unauthorized(self):
         self.user = AnonymousUser()
-        with nt.assert_raises(PermissionDenied):
+        with pytest.raises(PermissionDenied):
             self.view_post({})
 
     def test_normal_user(self):
-        with nt.assert_raises(PermissionDenied):
+        with pytest.raises(PermissionDenied):
             self.view_post({})
 
     def test_staff_without_institution(self):
         self.user.is_staff = True
         self.user.save()
 
-        with nt.assert_raises(PermissionDenied):
+        with pytest.raises(PermissionDenied):
             self.view_post({})
 
     def test_staff_with_institution(self):
@@ -324,7 +322,7 @@ class TestPermissionSaveCredentials(AdminTestCase):
         self.user.save()
 
         response = self.view_post({})
-        nt.assert_is_instance(response, HttpResponse)
+        assert isinstance(response, HttpResponse)
 
     def test_staff_with_other_institution(self):
         institution = InstitutionFactory()
@@ -333,7 +331,7 @@ class TestPermissionSaveCredentials(AdminTestCase):
         self.user.affiliated_institutions.add(institution)
         self.user.save()
 
-        with nt.assert_raises(PermissionDenied):
+        with pytest.raises(PermissionDenied):
             self.view_post({})
 
     def test_superuser(self):
@@ -378,18 +376,18 @@ class TestPermissionFetchCredentialsView(AdminTestCase):
 
     def test_unauthorized(self):
         self.user = AnonymousUser()
-        with nt.assert_raises(PermissionDenied):
+        with pytest.raises(PermissionDenied):
             self.view_post({})
 
     def test_normal_user(self):
-        with nt.assert_raises(PermissionDenied):
+        with pytest.raises(PermissionDenied):
             self.view_post({})
 
     def test_staff_without_institution(self):
         self.user.is_staff = True
         self.user.save()
 
-        with nt.assert_raises(PermissionDenied):
+        with pytest.raises(PermissionDenied):
             self.view_post({})
 
     def test_staff_with_institution(self):
@@ -398,7 +396,7 @@ class TestPermissionFetchCredentialsView(AdminTestCase):
         self.user.save()
 
         response = self.view_post({})
-        nt.assert_is_instance(response, HttpResponse)
+        assert isinstance(response, HttpResponse)
 
         response = self.view_post({'provider_short_name': 'test'})
         self.assertEquals(response.status_code, 400)
@@ -411,7 +409,7 @@ class TestPermissionFetchCredentialsView(AdminTestCase):
         self.user.affiliated_institutions.add(institution)
         self.user.save()
 
-        with nt.assert_raises(PermissionDenied):
+        with pytest.raises(PermissionDenied):
             self.view_post({})
 
     def test_superuser(self):
@@ -457,18 +455,18 @@ class TestPermissionFetchTemporaryToken(AdminTestCase):
 
     def test_unauthorized(self):
         self.user = AnonymousUser()
-        with nt.assert_raises(PermissionDenied):
+        with pytest.raises(PermissionDenied):
             self.view_post({})
 
     def test_normal_user(self):
-        with nt.assert_raises(PermissionDenied):
+        with pytest.raises(PermissionDenied):
             self.view_post({})
 
     def test_staff_without_institution(self):
         self.user.is_staff = True
         self.user.save()
 
-        with nt.assert_raises(PermissionDenied):
+        with pytest.raises(PermissionDenied):
             self.view_post({})
 
     def test_staff_with_institution(self):
@@ -477,7 +475,7 @@ class TestPermissionFetchTemporaryToken(AdminTestCase):
         self.user.save()
 
         response = self.view_post({})
-        nt.assert_is_instance(response, HttpResponse)
+        assert isinstance(response, HttpResponse)
 
     def test_staff_with_other_institution(self):
         institution = InstitutionFactory()
@@ -486,7 +484,7 @@ class TestPermissionFetchTemporaryToken(AdminTestCase):
         self.user.affiliated_institutions.add(institution)
         self.user.save()
 
-        with nt.assert_raises(PermissionDenied):
+        with pytest.raises(PermissionDenied):
             self.view_post({})
 
     def test_superuser(self):
@@ -531,18 +529,18 @@ class TestPermissionRemoveTemporaryAuthData(AdminTestCase):
 
     def test_unauthorized(self):
         self.user = AnonymousUser()
-        with nt.assert_raises(PermissionDenied):
+        with pytest.raises(PermissionDenied):
             self.view_post({})
 
     def test_normal_user(self):
-        with nt.assert_raises(PermissionDenied):
+        with pytest.raises(PermissionDenied):
             self.view_post({})
 
     def test_staff_without_institution(self):
         self.user.is_staff = True
         self.user.save()
 
-        with nt.assert_raises(PermissionDenied):
+        with pytest.raises(PermissionDenied):
             self.view_post({})
 
     def test_staff_with_institution(self):
@@ -551,7 +549,7 @@ class TestPermissionRemoveTemporaryAuthData(AdminTestCase):
         self.user.save()
 
         response = self.view_post({})
-        nt.assert_is_instance(response, HttpResponse)
+        assert isinstance(response, HttpResponse)
 
     def test_staff_with_other_institution(self):
         institution = InstitutionFactory()
@@ -560,7 +558,7 @@ class TestPermissionRemoveTemporaryAuthData(AdminTestCase):
         self.user.affiliated_institutions.add(institution)
         self.user.save()
 
-        with nt.assert_raises(PermissionDenied):
+        with pytest.raises(PermissionDenied):
             self.view_post({})
 
     def test_superuser(self):
@@ -612,18 +610,18 @@ class TestPermissionUserMapView(AdminTestCase):
     # POST
     def test_post_unauthorized(self):
         self.user = AnonymousUser()
-        with nt.assert_raises(PermissionDenied):
+        with pytest.raises(PermissionDenied):
             self.view_post({})
 
     def test_post_normal_user(self):
-        with nt.assert_raises(PermissionDenied):
+        with pytest.raises(PermissionDenied):
             self.view_post({})
 
     def test_post_staff_without_institution(self):
         self.user.is_staff = True
         self.user.save()
 
-        with nt.assert_raises(PermissionDenied):
+        with pytest.raises(PermissionDenied):
             self.view_post({})
 
     def test_post_staff_with_institution(self):
@@ -632,7 +630,7 @@ class TestPermissionUserMapView(AdminTestCase):
         self.user.save()
 
         response = self.view_post({})
-        nt.assert_is_instance(response, HttpResponse)
+        assert isinstance(response, HttpResponse)
 
     def test_post_staff_with_other_institution(self):
         institution = InstitutionFactory()
@@ -641,7 +639,7 @@ class TestPermissionUserMapView(AdminTestCase):
         self.user.affiliated_institutions.add(institution)
         self.user.save()
 
-        with nt.assert_raises(PermissionDenied):
+        with pytest.raises(PermissionDenied):
             self.view_post({})
 
     def test_post_superuser(self):
@@ -669,18 +667,18 @@ class TestPermissionUserMapView(AdminTestCase):
     # GET
     def test_get_unauthorized(self):
         self.user = AnonymousUser()
-        with nt.assert_raises(PermissionDenied):
+        with pytest.raises(PermissionDenied):
             self.view_get({})
 
     def test_get_normal_user(self):
-        with nt.assert_raises(PermissionDenied):
+        with pytest.raises(PermissionDenied):
             self.view_get({})
 
     def test_get_staff_without_institution(self):
         self.user.is_staff = True
         self.user.save()
 
-        with nt.assert_raises(PermissionDenied):
+        with pytest.raises(PermissionDenied):
             self.view_get({})
 
     def test_get_staff_with_institution(self):
@@ -689,7 +687,7 @@ class TestPermissionUserMapView(AdminTestCase):
         self.user.save()
 
         response = self.view_get({})
-        nt.assert_is_instance(response, HttpResponse)
+        assert isinstance(response, HttpResponse)
 
     def test_get_staff_with_other_institution(self):
         institution = InstitutionFactory()
@@ -698,7 +696,7 @@ class TestPermissionUserMapView(AdminTestCase):
         self.user.affiliated_institutions.add(institution)
         self.user.save()
 
-        with nt.assert_raises(PermissionDenied):
+        with pytest.raises(PermissionDenied):
             self.view_get({})
 
     def test_get_superuser(self):

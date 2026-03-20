@@ -49,18 +49,18 @@ class TestNodeSettings(unittest.TestCase):
     def test_set_invalid_file_metadata(self, mock_update_file_metadata):
         with pytest.raises(ValueError):
             self.node_settings.set_file_metadata('osfstorage/', {})
-        assert_false(mock_update_file_metadata.called)
+        assert not mock_update_file_metadata.called
         with pytest.raises(ValueError):
             self.node_settings.set_file_metadata('osfstorage/', {
                 'path': 'osfstorage/',
             })
-        assert_false(mock_update_file_metadata.called)
+        assert not mock_update_file_metadata.called
         with pytest.raises(ValueError):
             self.node_settings.set_file_metadata('osfstorage/', {
                 'path': 'osfstorage/',
                 'items': [],
             })
-        assert_false(mock_update_file_metadata.called)
+        assert not mock_update_file_metadata.called
         with pytest.raises(ValueError):
             self.node_settings.set_file_metadata('osfstorage/', {
                 'path': 'osfstorage/',
@@ -69,7 +69,7 @@ class TestNodeSettings(unittest.TestCase):
                     {}
                 ],
             })
-        assert_false(mock_update_file_metadata.called)
+        assert not mock_update_file_metadata.called
         with pytest.raises(ValueError):
             self.node_settings.set_file_metadata('osfstorage/', {
                 'path': 'osfstorage/',
@@ -80,7 +80,7 @@ class TestNodeSettings(unittest.TestCase):
                     }
                 ],
             })
-        assert_false(mock_update_file_metadata.called)
+        assert not mock_update_file_metadata.called
         with pytest.raises(ValueError):
             self.node_settings.set_file_metadata('osfstorage/', {
                 'path': 'osfstorage/',
@@ -92,7 +92,7 @@ class TestNodeSettings(unittest.TestCase):
                     }
                 ],
             })
-        assert_false(mock_update_file_metadata.called)
+        assert not mock_update_file_metadata.called
         with pytest.raises(ValueError):
             self.node_settings.set_file_metadata('osfstorage/', {
                 'path': 'osfstorage/',
@@ -107,7 +107,7 @@ class TestNodeSettings(unittest.TestCase):
                     }
                 ],
             })
-        assert_false(mock_update_file_metadata.called)
+        assert not mock_update_file_metadata.called
         self.node_settings.set_file_metadata('osfstorage/', {
             'path': 'osfstorage/',
             'folder': True,
@@ -122,7 +122,7 @@ class TestNodeSettings(unittest.TestCase):
                     }
             ],
         })
-        assert_true(mock_update_file_metadata.called)
+        assert mock_update_file_metadata.called
 
     def test_set_valid_folder_file_metadata(self):
         self.node_settings.set_file_metadata('osfstorage/', {
@@ -157,16 +157,10 @@ class TestNodeSettings(unittest.TestCase):
                 },
             ],
         }
-        assert_equal(
-            remove_fields(
-                self.node_settings.get_file_metadata_for_path('osfstorage/'),
-                fields=['modified', 'created'],
-            ),
-            metadata
-        )
-        assert_equal(self.node_settings.get_file_metadatas(), [metadata])
+        assert remove_fields(self.node_settings.get_file_metadata_for_path('osfstorage/'), fields=['modified', 'created']) == metadata
+        assert self.node_settings.get_file_metadatas() == [metadata]
         last_log = self.node.logs.latest()
-        assert_equal(last_log.action, 'metadata_file_added')
+        assert last_log.action == 'metadata_file_added'
 
     @mock.patch.object(FileMetadata, 'resolve_urlpath')
     def test_set_valid_file_metadata(self, mock_resolve_urlpath):
@@ -203,16 +197,10 @@ class TestNodeSettings(unittest.TestCase):
                 },
             ],
         }
-        assert_equal(
-            remove_fields(
-                self.node_settings.get_file_metadata_for_path('osfstorage/'),
-                fields=['modified', 'created'],
-            ),
-            metadata
-        )
-        assert_equal(metadatas, [metadata])
+        assert remove_fields(self.node_settings.get_file_metadata_for_path('osfstorage/'), fields=['modified', 'created']) == metadata
+        assert metadatas == [metadata]
         last_log = self.node.logs.latest()
-        assert_equal(last_log.action, 'metadata_file_added')
+        assert last_log.action == 'metadata_file_added'
 
     @mock.patch.object(FileMetadata, 'resolve_urlpath')
     def test_update_file_metadata(self, mock_resolve_urlpath):
@@ -264,18 +252,12 @@ class TestNodeSettings(unittest.TestCase):
                 },
             ],
         }
-        assert_equal(
-            remove_fields(
-                self.node_settings.get_file_metadata_for_path('osfstorage/'),
-                fields=['modified', 'created'],
-            ),
-            metadata,
-        )
-        assert_true('modified' in self.node_settings.get_file_metadata_for_path('osfstorage/'))
-        assert_true('created' in self.node_settings.get_file_metadata_for_path('osfstorage/'))
-        assert_equal(metadatas, [metadata])
+        assert remove_fields(self.node_settings.get_file_metadata_for_path('osfstorage/'), fields=['modified', 'created']) == metadata
+        assert 'modified' in self.node_settings.get_file_metadata_for_path('osfstorage/')
+        assert 'created' in self.node_settings.get_file_metadata_for_path('osfstorage/')
+        assert metadatas == [metadata]
         last_log = self.node.logs.latest()
-        assert_equal(last_log.action, 'metadata_file_updated')
+        assert last_log.action == 'metadata_file_updated'
 
     @mock.patch('website.search.search.update_file_metadata')
     def test_delete_file_metadata(self, mock_update_file_metadata):
@@ -300,14 +282,11 @@ class TestNodeSettings(unittest.TestCase):
         )
         self.node_settings.save()
         metadatas = self.node_settings.get_file_metadatas()
-        assert_equal(
-            self.node_settings.get_file_metadata_for_path('osfstorage/'),
-            None
-        )
-        assert_equal(metadatas, [])
+        assert self.node_settings.get_file_metadata_for_path('osfstorage/') == None
+        assert metadatas == []
         last_log = self.node.logs.latest()
-        assert_equal(last_log.action, 'metadata_file_deleted')
-        assert_true(mock_update_file_metadata.called)
+        assert last_log.action == 'metadata_file_deleted'
+        assert mock_update_file_metadata.called
 
     @mock.patch('website.search.search.update_file_metadata')
     @mock.patch('addons.metadata.models.FileMetadata.resolve_urlpath')
@@ -349,40 +328,12 @@ class TestNodeSettings(unittest.TestCase):
             },
             auth=Auth(self.user)
         )
-        assert_equal(
-            self.node_settings.get_file_metadata_for_path('osfstorage/testfile'),
-            None,
-        )
-        assert_true(
-            'created' in self.node_settings.get_file_metadata_for_path('osfstorage/testfile2')
-        )
-        assert_true(
-            'modified' in self.node_settings.get_file_metadata_for_path('osfstorage/testfile2')
-        )
-        assert_equal(
-            remove_fields(
-                self.node_settings.get_file_metadata_for_path('osfstorage/testfile2'),
-                fields=['created', 'modified'],
-            ),
-            {
-                'generated': False,
-                'path': 'osfstorage/testfile2',
-                'folder': False,
-                'hash': '1234567890',
-                'urlpath': '/testFileGUID/',
-                'items': [
-                    {
-                        'active': True,
-                        'schema': 'xxxx',
-                        'data': {
-                            'test': True,
-                        },
-                    },
-                ],
-            },
-        )
+        assert self.node_settings.get_file_metadata_for_path('osfstorage/testfile') == None
+        assert 'created' in self.node_settings.get_file_metadata_for_path('osfstorage/testfile2')
+        assert 'modified' in self.node_settings.get_file_metadata_for_path('osfstorage/testfile2')
+        assert remove_fields(self.node_settings.get_file_metadata_for_path('osfstorage/testfile2'), fields=['created', 'modified']) == {'generated': False, 'path': 'osfstorage/testfile2', 'folder': False, 'hash': '1234567890', 'urlpath': '/testFileGUID/', 'items': [{'active': True, 'schema': 'xxxx', 'data': {'test': True}}]}
         last_log = self.node.logs.latest()
-        assert_equal(last_log.action, 'metadata_file_deleted')
+        assert last_log.action == 'metadata_file_deleted'
 
     @mock.patch('website.search.search.update_file_metadata')
     @mock.patch('addons.metadata.models.FileMetadata.resolve_urlpath')
@@ -410,18 +361,9 @@ class TestNodeSettings(unittest.TestCase):
             },
             auth=Auth(self.user)
         )
-        assert_equal(
-            self.node_settings.get_file_metadata_for_path('osfstorage/testfile'),
-            None,
-        )
-        assert_equal(
-            self.node_without_metadata.logs.latest().action,
-            'project_created'
-        )
-        assert_equal(
-            self.node.logs.latest().action,
-            'project_created'
-        )
+        assert self.node_settings.get_file_metadata_for_path('osfstorage/testfile') == None
+        assert self.node_without_metadata.logs.latest().action == 'project_created'
+        assert self.node.logs.latest().action == 'project_created'
 
     @mock.patch('website.search.search.update_file_metadata')
     @mock.patch('addons.metadata.models.FileMetadata.resolve_urlpath')
@@ -463,42 +405,14 @@ class TestNodeSettings(unittest.TestCase):
             },
             auth=Auth(self.user)
         )
-        assert_equal(
-            self.node_with_metadata_settings.get_file_metadata_for_path('osfstorage/testfile'),
-            None,
-        )
-        assert_true(
-            'created' in self.node_settings.get_file_metadata_for_path('osfstorage/testfile')
-        )
-        assert_true(
-            'modified' in self.node_settings.get_file_metadata_for_path('osfstorage/testfile')
-        )
-        assert_equal(
-            remove_fields(
-                self.node_settings.get_file_metadata_for_path('osfstorage/testfile'),
-                fields=['created', 'modified'],
-            ),
-            {
-                'generated': False,
-                'path': 'osfstorage/testfile',
-                'folder': False,
-                'hash': '1234567890',
-                'urlpath': '/testFileGUID/',
-                'items': [
-                    {
-                        'active': True,
-                        'schema': 'xxxx',
-                        'data': {
-                            'test': True,
-                        },
-                    },
-                ],
-            },
-        )
+        assert self.node_with_metadata_settings.get_file_metadata_for_path('osfstorage/testfile') == None
+        assert 'created' in self.node_settings.get_file_metadata_for_path('osfstorage/testfile')
+        assert 'modified' in self.node_settings.get_file_metadata_for_path('osfstorage/testfile')
+        assert remove_fields(self.node_settings.get_file_metadata_for_path('osfstorage/testfile'), fields=['created', 'modified']) == {'generated': False, 'path': 'osfstorage/testfile', 'folder': False, 'hash': '1234567890', 'urlpath': '/testFileGUID/', 'items': [{'active': True, 'schema': 'xxxx', 'data': {'test': True}}]}
         last_log = self.node.logs.latest()
-        assert_equal(last_log.action, 'metadata_file_added')
+        assert last_log.action == 'metadata_file_added'
         last_log = self.node_with_metadata.logs.latest()
-        assert_equal(last_log.action, 'metadata_file_deleted')
+        assert last_log.action == 'metadata_file_deleted'
 
         self.node_with_metadata_settings.update_file_metadata_for(
             NodeLog.FILE_MOVED,
@@ -516,42 +430,14 @@ class TestNodeSettings(unittest.TestCase):
             },
             auth=Auth(self.user)
         )
-        assert_equal(
-            self.node_settings.get_file_metadata_for_path('osfstorage/testfile'),
-            None,
-        )
-        assert_true(
-            'created' in self.node_with_metadata_settings.get_file_metadata_for_path('osfstorage/test/testfile'),
-        )
-        assert_true(
-            'modified' in self.node_with_metadata_settings.get_file_metadata_for_path('osfstorage/test/testfile'),
-        )
-        assert_equal(
-            remove_fields(
-                self.node_with_metadata_settings.get_file_metadata_for_path('osfstorage/test/testfile'),
-                fields=['created', 'modified'],
-            ),
-            {
-                'generated': False,
-                'path': 'osfstorage/test/testfile',
-                'folder': False,
-                'hash': '1234567890',
-                'urlpath': '/testFileGUID/',
-                'items': [
-                    {
-                        'active': True,
-                        'schema': 'xxxx',
-                        'data': {
-                            'test': True,
-                        },
-                    },
-                ],
-            },
-        )
+        assert self.node_settings.get_file_metadata_for_path('osfstorage/testfile') == None
+        assert 'created' in self.node_with_metadata_settings.get_file_metadata_for_path('osfstorage/test/testfile')
+        assert 'modified' in self.node_with_metadata_settings.get_file_metadata_for_path('osfstorage/test/testfile')
+        assert remove_fields(self.node_with_metadata_settings.get_file_metadata_for_path('osfstorage/test/testfile'), fields=['created', 'modified']) == {'generated': False, 'path': 'osfstorage/test/testfile', 'folder': False, 'hash': '1234567890', 'urlpath': '/testFileGUID/', 'items': [{'active': True, 'schema': 'xxxx', 'data': {'test': True}}]}
         last_log = self.node.logs.latest()
-        assert_equal(last_log.action, 'metadata_file_deleted')
+        assert last_log.action == 'metadata_file_deleted'
         last_log = self.node_with_metadata.logs.latest()
-        assert_equal(last_log.action, 'metadata_file_added')
+        assert last_log.action == 'metadata_file_added'
 
     @mock.patch('website.search.search.update_file_metadata')
     @mock.patch('addons.metadata.models.FileMetadata.resolve_urlpath')
@@ -593,46 +479,12 @@ class TestNodeSettings(unittest.TestCase):
             },
             auth=Auth(self.user)
         )
-        assert_equal(
-            self.node_settings.get_file_metadata_for_path('osfstorage/test/testfile'),
-            None,
-        )
-        assert_true(
-            'created' in self.node_with_metadata_settings.get_file_metadata_for_path('osfstorage/test/testfile')
-        )
-        assert_true(
-            'modified' in self.node_with_metadata_settings.get_file_metadata_for_path('osfstorage/test/testfile')
-        )
-        assert_equal(
-            remove_fields(
-                self.node_with_metadata_settings.get_file_metadata_for_path('osfstorage/test/testfile'),
-                fields=['created', 'modified'],
-            ),
-            {
-                'generated': False,
-                'path': 'osfstorage/test/testfile',
-                'folder': False,
-                'hash': '1234567890',
-                'urlpath': '/testFileGUID/',
-                'items': [
-                    {
-                        'active': True,
-                        'schema': 'xxxx',
-                        'data': {
-                            'test': True,
-                        },
-                    },
-                ],
-            },
-        )
-        assert_equal(
-            self.node_with_metadata.logs.latest().action,
-            'metadata_file_added'
-        )
-        assert_equal(
-            self.node.logs.latest().action,
-            'metadata_file_deleted'
-        )
+        assert self.node_settings.get_file_metadata_for_path('osfstorage/test/testfile') == None
+        assert 'created' in self.node_with_metadata_settings.get_file_metadata_for_path('osfstorage/test/testfile')
+        assert 'modified' in self.node_with_metadata_settings.get_file_metadata_for_path('osfstorage/test/testfile')
+        assert remove_fields(self.node_with_metadata_settings.get_file_metadata_for_path('osfstorage/test/testfile'), fields=['created', 'modified']) == {'generated': False, 'path': 'osfstorage/test/testfile', 'folder': False, 'hash': '1234567890', 'urlpath': '/testFileGUID/', 'items': [{'active': True, 'schema': 'xxxx', 'data': {'test': True}}]}
+        assert self.node_with_metadata.logs.latest().action == 'metadata_file_added'
+        assert self.node.logs.latest().action == 'metadata_file_deleted'
 
         self.node_settings.update_file_metadata_for(
             NodeLog.FILE_MOVED,
@@ -650,46 +502,12 @@ class TestNodeSettings(unittest.TestCase):
             },
             auth=Auth(self.user)
         )
-        assert_equal(
-            self.node_with_metadata_settings.get_file_metadata_for_path('osfstorage/test/testfile'),
-            None,
-        )
-        assert_true(
-            'created' in self.node_settings.get_file_metadata_for_path('osfstorage/test1/test/testfile'),
-        )
-        assert_true(
-            'modified' in self.node_settings.get_file_metadata_for_path('osfstorage/test1/test/testfile'),
-        )
-        assert_equal(
-            remove_fields(
-                self.node_settings.get_file_metadata_for_path('osfstorage/test1/test/testfile'),
-                fields=['created', 'modified'],
-            ),
-            {
-                'generated': False,
-                'path': 'osfstorage/test1/test/testfile',
-                'folder': False,
-                'hash': '1234567890',
-                'urlpath': '/testFileGUID/',
-                'items': [
-                    {
-                        'active': True,
-                        'schema': 'xxxx',
-                        'data': {
-                            'test': True,
-                        },
-                    },
-                ],
-            },
-        )
-        assert_equal(
-            self.node_with_metadata.logs.latest().action,
-            'metadata_file_deleted'
-        )
-        assert_equal(
-            self.node.logs.latest().action,
-            'metadata_file_added'
-        )
+        assert self.node_with_metadata_settings.get_file_metadata_for_path('osfstorage/test/testfile') == None
+        assert 'created' in self.node_settings.get_file_metadata_for_path('osfstorage/test1/test/testfile')
+        assert 'modified' in self.node_settings.get_file_metadata_for_path('osfstorage/test1/test/testfile')
+        assert remove_fields(self.node_settings.get_file_metadata_for_path('osfstorage/test1/test/testfile'), fields=['created', 'modified']) == {'generated': False, 'path': 'osfstorage/test1/test/testfile', 'folder': False, 'hash': '1234567890', 'urlpath': '/testFileGUID/', 'items': [{'active': True, 'schema': 'xxxx', 'data': {'test': True}}]}
+        assert self.node_with_metadata.logs.latest().action == 'metadata_file_deleted'
+        assert self.node.logs.latest().action == 'metadata_file_added'
 
     @mock.patch('website.search.search.update_file_metadata')
     @mock.patch('addons.metadata.models.FileMetadata.resolve_urlpath')
@@ -731,46 +549,12 @@ class TestNodeSettings(unittest.TestCase):
             },
             auth=Auth(self.user)
         )
-        assert_equal(
-            self.node_settings.get_file_metadata_for_path('osfstorage/test/'),
-            None,
-        )
-        assert_true(
-            'created' in self.node_with_metadata_settings.get_file_metadata_for_path('osfstorage/test/')
-        )
-        assert_true(
-            'modified' in self.node_with_metadata_settings.get_file_metadata_for_path('osfstorage/test/')
-        )
-        assert_equal(
-            remove_fields(
-                self.node_with_metadata_settings.get_file_metadata_for_path('osfstorage/test/'),
-                fields=['created', 'modified'],
-            ),
-            {
-                'generated': False,
-                'path': 'osfstorage/test/',
-                'folder': True,
-                'hash': '1234567890',
-                'urlpath': '/testFileGUID/',
-                'items': [
-                    {
-                        'active': True,
-                        'schema': 'xxxx',
-                        'data': {
-                            'test': True,
-                        },
-                    },
-                ],
-            },
-        )
-        assert_equal(
-            self.node_with_metadata.logs.latest().action,
-            'metadata_file_added'
-        )
-        assert_equal(
-            self.node.logs.latest().action,
-            'metadata_file_deleted'
-        )
+        assert self.node_settings.get_file_metadata_for_path('osfstorage/test/') == None
+        assert 'created' in self.node_with_metadata_settings.get_file_metadata_for_path('osfstorage/test/')
+        assert 'modified' in self.node_with_metadata_settings.get_file_metadata_for_path('osfstorage/test/')
+        assert remove_fields(self.node_with_metadata_settings.get_file_metadata_for_path('osfstorage/test/'), fields=['created', 'modified']) == {'generated': False, 'path': 'osfstorage/test/', 'folder': True, 'hash': '1234567890', 'urlpath': '/testFileGUID/', 'items': [{'active': True, 'schema': 'xxxx', 'data': {'test': True}}]}
+        assert self.node_with_metadata.logs.latest().action == 'metadata_file_added'
+        assert self.node.logs.latest().action == 'metadata_file_deleted'
 
         self.node_settings.update_file_metadata_for(
             NodeLog.FILE_MOVED,
@@ -788,46 +572,12 @@ class TestNodeSettings(unittest.TestCase):
             },
             auth=Auth(self.user)
         )
-        assert_equal(
-            self.node_with_metadata_settings.get_file_metadata_for_path('osfstorage/test/'),
-            None,
-        )
-        assert_true(
-            'created' in self.node_settings.get_file_metadata_for_path('osfstorage/test1/test/')
-        )
-        assert_true(
-            'modified' in self.node_settings.get_file_metadata_for_path('osfstorage/test1/test/')
-        )
-        assert_equal(
-            remove_fields(
-                self.node_settings.get_file_metadata_for_path('osfstorage/test1/test/'),
-                fields=['created', 'modified'],
-            ),
-            {
-                'generated': False,
-                'path': 'osfstorage/test1/test/',
-                'folder': True,
-                'hash': '1234567890',
-                'urlpath': '/testFileGUID/',
-                'items': [
-                    {
-                        'active': True,
-                        'schema': 'xxxx',
-                        'data': {
-                            'test': True,
-                        },
-                    },
-                ],
-            },
-        )
-        assert_equal(
-            self.node_with_metadata.logs.latest().action,
-            'metadata_file_deleted'
-        )
-        assert_equal(
-            self.node.logs.latest().action,
-            'metadata_file_added'
-        )
+        assert self.node_with_metadata_settings.get_file_metadata_for_path('osfstorage/test/') == None
+        assert 'created' in self.node_settings.get_file_metadata_for_path('osfstorage/test1/test/')
+        assert 'modified' in self.node_settings.get_file_metadata_for_path('osfstorage/test1/test/')
+        assert remove_fields(self.node_settings.get_file_metadata_for_path('osfstorage/test1/test/'), fields=['created', 'modified']) == {'generated': False, 'path': 'osfstorage/test1/test/', 'folder': True, 'hash': '1234567890', 'urlpath': '/testFileGUID/', 'items': [{'active': True, 'schema': 'xxxx', 'data': {'test': True}}]}
+        assert self.node_with_metadata.logs.latest().action == 'metadata_file_deleted'
+        assert self.node.logs.latest().action == 'metadata_file_added'
 
 class TestFileMetadata(unittest.TestCase):
 
@@ -848,7 +598,7 @@ class TestFileMetadata(unittest.TestCase):
             folder=False,
             project=self.node_settings,
         )
-        with assert_raises(IntegrityError):
+        with pytest.raises(IntegrityError):
             # Force to create duplicated metadata
             FileMetadata.objects.create(
                 path='osfstorage/',

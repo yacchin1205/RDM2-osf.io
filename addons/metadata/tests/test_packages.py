@@ -103,18 +103,18 @@ def _get_ro_crate_from(zip_path):
 
 def _assert_dict_matches(value, expected_with_patterns):
     for k, v in expected_with_patterns.items():
-        assert_true(k in value, f'Key not found: {k} in {value}')
+        assert k in value
         if isinstance(v, dict):
             _assert_dict_matches(value[k], v)
         elif isinstance(v, list):
-            assert_equals(len(value[k]), len(v), f'Length mismatch: {len(value[k])} != {len(v)} (expected {v})')
+            assert len(value[k]) == len(v), f'Length mismatch: {len(value[k])} != {len(v)} (expected {v})'
             for i, e in enumerate(v):
                 _assert_dict_matches(value[k][i], e)
         elif hasattr(v, 'match'):
             # v is a regular expression
-            assert_true(v.match(value[k]), f'Unexpected value: {value[k]} (expected {v})')
+            assert v.match(value[k])
         else:
-            assert_equals(value[k], v, f'Unexpected value: {value[k]} (expected {v})')
+            assert value[k] == v, f'Unexpected value: {value[k]} (expected {v})'
 
 class TestExportAndImport(OsfTestCase):
 
@@ -354,158 +354,23 @@ class TestExportAndImport(OsfTestCase):
         rocrate.download_to(zip_path)
 
         json_entities = _get_ro_crate_from(zip_path)
-        assert_equals(json_entities['@context'], [
-            'https://w3id.org/ro/crate/1.1/context',
-            'https://w3id.org/ro/terms/workflow-run',
-            'https://purl.org/gakunin-rdm/project/0.1',
-        ])
-        assert_equals(
-            [e['@id'] for e in json_entities['@graph']],
-            [
-                './',
-                'ro-crate-metadata.json',
-                'root/osfstorage/sample/file_in_folder',
-                'root/osfstorage/sample/sub_folder/file_in_sub_folder',
-                './root/osfstorage/sample/sub_folder/',
-                '#./root/osfstorage/sample/sub_folder/#0',
-                '#metadata-schema-公的資金による研究データのメタデータ登録-3',
-                './root/osfstorage/sample/empty/',
-                './root/osfstorage/sample/',
-                'root/osfstorage/file_in_root',
-                '#root/osfstorage/file_in_root#0',
-                '#root-osfstorage',
-                '#root-metadata',
-                '#root',
-                '#creator0'
-            ],
-        )
-        assert_equals(remove_fields(_find_entity_by_id(json_entities, './'), fields=['datePublished']), {
-            '@id': './',
-            '@type': 'Dataset',
-            'hasPart': [
-                {'@id': 'root/osfstorage/sample/file_in_folder'},
-                {'@id': 'root/osfstorage/sample/sub_folder/file_in_sub_folder'},
-                {'@id': './root/osfstorage/sample/sub_folder/'},
-                {'@id': './root/osfstorage/sample/empty/'},
-                {'@id': './root/osfstorage/sample/'},
-                {'@id': 'root/osfstorage/file_in_root'},
-            ]
-        })
-        assert_true('datePublished' in _find_entity_by_id(json_entities, './'))
-        assert_equals(remove_fields(
-            _find_entity_by_id(json_entities, 'root/osfstorage/file_in_root'),
-            fields=['rdmURL'],
-        ), {
-            '@id': 'root/osfstorage/file_in_root',
-            '@type': 'File',
-            'contentSize': '9',
-            'dateCreated': None,
-            'dateModified': None,
-            'encodingFormat': None,
-            'keywords': [],
-            'name': 'file_in_root'
-        })
-        assert_true('rdmURL' in _find_entity_by_id(json_entities, 'root/osfstorage/file_in_root'))
-        assert_equals(remove_fields(
-            _find_entity_by_id(json_entities, '#root/osfstorage/file_in_root#0'),
-            fields=['dateCreated', 'dateModified'],
-        ), {
-            '@id': '#root/osfstorage/file_in_root#0',
-            '@type': 'RDMFileMetadata',
-            'about': {
-                '@id': 'root/osfstorage/file_in_root'
-            },
-            'encodingFormat': 'application/json',
-            'rdmSchema': {
-                '@id': '#metadata-schema-\u516c\u7684\u8cc7\u91d1\u306b\u3088\u308b\u7814\u7a76\u30c7\u30fc\u30bf\u306e\u30e1\u30bf\u30c7\u30fc\u30bf\u767b\u9332-3'
-            },
-            'text': "{\"test\": true}",
-            'version': 'active'
-        })
-        assert_equals(_find_entity_by_id(json_entities, '#metadata-schema-\u516c\u7684\u8cc7\u91d1\u306b\u3088\u308b\u7814\u7a76\u30c7\u30fc\u30bf\u306e\u30e1\u30bf\u30c7\u30fc\u30bf\u767b\u9332-3'), {
-            '@id': '#metadata-schema-\u516c\u7684\u8cc7\u91d1\u306b\u3088\u308b\u7814\u7a76\u30c7\u30fc\u30bf\u306e\u30e1\u30bf\u30c7\u30fc\u30bf\u767b\u9332-3',
-            '@type': 'RDMMetadataSchema',
-            'name': '\u516c\u7684\u8cc7\u91d1\u306b\u3088\u308b\u7814\u7a76\u30c7\u30fc\u30bf\u306e\u30e1\u30bf\u30c7\u30fc\u30bf\u767b\u9332',
-            'version': 3
-        })
-        assert_equals(_find_entity_by_id(json_entities, 'ro-crate-metadata.json'), {
-            '@id': 'ro-crate-metadata.json',
-            '@type': 'CreativeWork',
-            'about': {
-                '@id': './'
-            },
-            'conformsTo': {
-                '@id': 'https://w3id.org/ro/crate/1.1'
-            }
-        })
-        assert_equals(_find_entity_by_id(json_entities, '#root-osfstorage'), {
-            '@id': '#root-osfstorage',
-            '@type': 'RDMAddon',
-            'about': {
-                '@id': '#root'
-            },
-            'description': 'NII Storage',
-            'hasPart': [
-                {'@id': './root/osfstorage/sample/'},
-                {'@id': 'root/osfstorage/file_in_root'},
-            ],
-            'name': 'osfstorage'
-        })
-        assert_equals(_find_entity_by_id(json_entities, '#root-metadata'), {
-            '@id': '#root-metadata',
-            '@type': 'RDMAddon',
-            'about': {
-                '@id': '#root'
-            },
-            'description': 'Metadata',
-            'name': 'metadata'
-        })
-        assert_equals(remove_fields(
-            _find_entity_by_id(json_entities, '#root'),
-            fields=['dateCreated', 'dateModified', 'name'],
-        ), {
-            '@id': '#root',
-            '@type': 'RDMProject',
-            'about': {
-                '@id': './'
-            },
-            'category': 'project',
-            'contributor': [
-                {
-                    '@id': '#creator0'
-                }
-            ],
-            'creator': {
-                '@id': '#creator0'
-            },
-            'description': 'TEST_DESCRIPTION',
-            'hasPart': [],
-            'keywords': [
-                'Test Node'
-            ],
-        })
-        assert_true('dateCreated' in _find_entity_by_id(json_entities, '#root'))
-        assert_true('dateModified' in _find_entity_by_id(json_entities, '#root'))
-        assert_true('name' in _find_entity_by_id(json_entities, '#root'))
+        assert json_entities['@context'] == ['https://w3id.org/ro/crate/1.1/context', 'https://w3id.org/ro/terms/workflow-run', 'https://purl.org/gakunin-rdm/project/0.1']
+        assert [e['@id'] for e in json_entities['@graph']] == ['./', 'ro-crate-metadata.json', 'root/osfstorage/sample/file_in_folder', 'root/osfstorage/sample/sub_folder/file_in_sub_folder', './root/osfstorage/sample/sub_folder/', '#./root/osfstorage/sample/sub_folder/#0', '#metadata-schema-公的資金による研究データのメタデータ登録-3', './root/osfstorage/sample/empty/', './root/osfstorage/sample/', 'root/osfstorage/file_in_root', '#root/osfstorage/file_in_root#0', '#root-osfstorage', '#root-metadata', '#root', '#creator0']
+        assert remove_fields(_find_entity_by_id(json_entities, './'), fields=['datePublished']) == {'@id': './', '@type': 'Dataset', 'hasPart': [{'@id': 'root/osfstorage/sample/file_in_folder'}, {'@id': 'root/osfstorage/sample/sub_folder/file_in_sub_folder'}, {'@id': './root/osfstorage/sample/sub_folder/'}, {'@id': './root/osfstorage/sample/empty/'}, {'@id': './root/osfstorage/sample/'}, {'@id': 'root/osfstorage/file_in_root'}]}
+        assert 'datePublished' in _find_entity_by_id(json_entities, './')
+        assert remove_fields(_find_entity_by_id(json_entities, 'root/osfstorage/file_in_root'), fields=['rdmURL']) == {'@id': 'root/osfstorage/file_in_root', '@type': 'File', 'contentSize': '9', 'dateCreated': None, 'dateModified': None, 'encodingFormat': None, 'keywords': [], 'name': 'file_in_root'}
+        assert 'rdmURL' in _find_entity_by_id(json_entities, 'root/osfstorage/file_in_root')
+        assert remove_fields(_find_entity_by_id(json_entities, '#root/osfstorage/file_in_root#0'), fields=['dateCreated', 'dateModified']) == {'@id': '#root/osfstorage/file_in_root#0', '@type': 'RDMFileMetadata', 'about': {'@id': 'root/osfstorage/file_in_root'}, 'encodingFormat': 'application/json', 'rdmSchema': {'@id': '#metadata-schema-公的資金による研究データのメタデータ登録-3'}, 'text': '{"test": true}', 'version': 'active'}
+        assert _find_entity_by_id(json_entities, '#metadata-schema-公的資金による研究データのメタデータ登録-3') == {'@id': '#metadata-schema-公的資金による研究データのメタデータ登録-3', '@type': 'RDMMetadataSchema', 'name': '公的資金による研究データのメタデータ登録', 'version': 3}
+        assert _find_entity_by_id(json_entities, 'ro-crate-metadata.json') == {'@id': 'ro-crate-metadata.json', '@type': 'CreativeWork', 'about': {'@id': './'}, 'conformsTo': {'@id': 'https://w3id.org/ro/crate/1.1'}}
+        assert _find_entity_by_id(json_entities, '#root-osfstorage') == {'@id': '#root-osfstorage', '@type': 'RDMAddon', 'about': {'@id': '#root'}, 'description': 'NII Storage', 'hasPart': [{'@id': './root/osfstorage/sample/'}, {'@id': 'root/osfstorage/file_in_root'}], 'name': 'osfstorage'}
+        assert _find_entity_by_id(json_entities, '#root-metadata') == {'@id': '#root-metadata', '@type': 'RDMAddon', 'about': {'@id': '#root'}, 'description': 'Metadata', 'name': 'metadata'}
+        assert remove_fields(_find_entity_by_id(json_entities, '#root'), fields=['dateCreated', 'dateModified', 'name']) == {'@id': '#root', '@type': 'RDMProject', 'about': {'@id': './'}, 'category': 'project', 'contributor': [{'@id': '#creator0'}], 'creator': {'@id': '#creator0'}, 'description': 'TEST_DESCRIPTION', 'hasPart': [], 'keywords': ['Test Node']}
+        assert 'dateCreated' in _find_entity_by_id(json_entities, '#root')
+        assert 'dateModified' in _find_entity_by_id(json_entities, '#root')
+        assert 'name' in _find_entity_by_id(json_entities, '#root')
         creator = self.node.creator
-        assert_equals(_find_entity_by_id(json_entities, '#creator0'), {
-            '@id': '#creator0',
-            '@type': 'Person',
-            'familyName': [
-                {
-                    '@language': 'en',
-                    '@value': creator.family_name
-                }
-            ],
-            'givenName': [
-                {
-                    '@language': 'en',
-                    '@value': creator.given_name
-                }
-            ],
-            'identifier': [],
-            'name': creator.given_name + ' ' + creator.family_name
-        })
+        assert _find_entity_by_id(json_entities, '#creator0') == {'@id': '#creator0', '@type': 'Person', 'familyName': [{'@language': 'en', '@value': creator.family_name}], 'givenName': [{'@language': 'en', '@value': creator.given_name}], 'identifier': [], 'name': creator.given_name + ' ' + creator.family_name}
 
     # TC-A-2023-7-002
     def test_comments_and_files_only(self):
@@ -528,144 +393,23 @@ class TestExportAndImport(OsfTestCase):
         rocrate.download_to(zip_path)
 
         json_entities = _get_ro_crate_from(zip_path)
-        assert_equals(json_entities['@context'], [
-            'https://w3id.org/ro/crate/1.1/context',
-            'https://w3id.org/ro/terms/workflow-run',
-            'https://purl.org/gakunin-rdm/project/0.1',
-        ])
-        assert_equals(
-            [e['@id'] for e in json_entities['@graph']],
-            [
-                './',
-                'ro-crate-metadata.json',
-                'root/osfstorage/sample/file_in_folder',
-                'root/osfstorage/sample/sub_folder/file_in_sub_folder',
-                './root/osfstorage/sample/sub_folder/',
-                '#./root/osfstorage/sample/sub_folder/#0',
-                '#metadata-schema-公的資金による研究データのメタデータ登録-3',
-                './root/osfstorage/sample/empty/',
-                './root/osfstorage/sample/',
-                'root/osfstorage/file_in_root',
-                '#root/osfstorage/file_in_root#0',
-                '#root-osfstorage',
-                '#root-metadata',
-                '#root',
-                '#comment#0',
-                '#comment#1',
-                '#comment#2',
-                '#creator0'
-            ],
-        )
-        assert_equals(remove_fields(_find_entity_by_id(json_entities, './'), fields=['datePublished']), {
-            '@id': './',
-            '@type': 'Dataset',
-            'hasPart': [
-                {'@id': 'root/osfstorage/sample/file_in_folder'},
-                {'@id': 'root/osfstorage/sample/sub_folder/file_in_sub_folder'},
-                {'@id': './root/osfstorage/sample/sub_folder/'},
-                {'@id': './root/osfstorage/sample/empty/'},
-                {'@id': './root/osfstorage/sample/'},
-                {'@id': 'root/osfstorage/file_in_root'},
-            ]
-        })
-        assert_true('datePublished' in _find_entity_by_id(json_entities, './'))
-        assert_equals(remove_fields(
-            _find_entity_by_id(json_entities, 'root/osfstorage/file_in_root'),
-            fields=['rdmURL'],
-        ), {
-            '@id': 'root/osfstorage/file_in_root',
-            '@type': 'File',
-            'contentSize': '9',
-            'dateCreated': None,
-            'dateModified': None,
-            'encodingFormat': None,
-            'keywords': [],
-            'name': 'file_in_root'
-        })
-        assert_true('rdmURL' in _find_entity_by_id(json_entities, 'root/osfstorage/file_in_root'))
-        assert_equals(remove_fields(
-            _find_entity_by_id(json_entities, '#root/osfstorage/file_in_root#0'),
-            fields=['dateCreated', 'dateModified'],
-         ), {
-            '@id': '#root/osfstorage/file_in_root#0',
-            '@type': 'RDMFileMetadata',
-            'about': {
-                '@id': 'root/osfstorage/file_in_root'
-            },
-            'encodingFormat': 'application/json',
-            'rdmSchema': {
-                '@id': '#metadata-schema-\u516c\u7684\u8cc7\u91d1\u306b\u3088\u308b\u7814\u7a76\u30c7\u30fc\u30bf\u306e\u30e1\u30bf\u30c7\u30fc\u30bf\u767b\u9332-3'
-            },
-            'text': "{\"test\": true}",
-            'version': 'active'
-        })
-        assert_true('dateModified' in _find_entity_by_id(json_entities, '#root/osfstorage/file_in_root#0'))
-        assert_true('dateCreated' in _find_entity_by_id(json_entities, '#root/osfstorage/file_in_root#0'))
-        assert_equals(_find_entity_by_id(json_entities, '#metadata-schema-\u516c\u7684\u8cc7\u91d1\u306b\u3088\u308b\u7814\u7a76\u30c7\u30fc\u30bf\u306e\u30e1\u30bf\u30c7\u30fc\u30bf\u767b\u9332-3'), {
-            '@id': '#metadata-schema-\u516c\u7684\u8cc7\u91d1\u306b\u3088\u308b\u7814\u7a76\u30c7\u30fc\u30bf\u306e\u30e1\u30bf\u30c7\u30fc\u30bf\u767b\u9332-3',
-            '@type': 'RDMMetadataSchema',
-            'name': '\u516c\u7684\u8cc7\u91d1\u306b\u3088\u308b\u7814\u7a76\u30c7\u30fc\u30bf\u306e\u30e1\u30bf\u30c7\u30fc\u30bf\u767b\u9332',
-            'version': 3
-        })
-        assert_equals(_find_entity_by_id(json_entities, 'ro-crate-metadata.json'), {
-            '@id': 'ro-crate-metadata.json',
-            '@type': 'CreativeWork',
-            'about': {
-                '@id': './'
-            },
-            'conformsTo': {
-                '@id': 'https://w3id.org/ro/crate/1.1'
-            }
-        })
-        assert_equals(_find_entity_by_id(json_entities, '#root-osfstorage'), {
-            '@id': '#root-osfstorage',
-            '@type': 'RDMAddon',
-            'about': {
-                '@id': '#root'
-            },
-            'description': 'NII Storage',
-            'hasPart': [
-                {'@id': './root/osfstorage/sample/'},
-                {'@id': 'root/osfstorage/file_in_root'},
-            ],
-            'name': 'osfstorage'
-        })
-        assert_equals(_find_entity_by_id(json_entities, '#root-metadata'), {
-            '@id': '#root-metadata',
-            '@type': 'RDMAddon',
-            'about': {
-                '@id': '#root'
-            },
-            'description': 'Metadata',
-            'name': 'metadata'
-        })
-        assert_equals(remove_fields(
-            _find_entity_by_id(json_entities, '#root'),
-            fields=['dateCreated', 'dateModified', 'name'],
-        ), {
-            '@id': '#root',
-            '@type': 'RDMProject',
-            'about': {
-                '@id': './'
-            },
-            'category': 'project',
-            'contributor': [
-                {
-                    '@id': '#creator0'
-                }
-            ],
-            'creator': {
-                '@id': '#creator0'
-            },
-            'description': 'TEST_DESCRIPTION',
-            'hasPart': [],
-            'keywords': [
-                'Test Node'
-            ],
-        })
-        assert_true('dateCreated' in _find_entity_by_id(json_entities, '#root'))
-        assert_true('dateModified' in _find_entity_by_id(json_entities, '#root'))
-        assert_true('name' in _find_entity_by_id(json_entities, '#root'))
+        assert json_entities['@context'] == ['https://w3id.org/ro/crate/1.1/context', 'https://w3id.org/ro/terms/workflow-run', 'https://purl.org/gakunin-rdm/project/0.1']
+        assert [e['@id'] for e in json_entities['@graph']] == ['./', 'ro-crate-metadata.json', 'root/osfstorage/sample/file_in_folder', 'root/osfstorage/sample/sub_folder/file_in_sub_folder', './root/osfstorage/sample/sub_folder/', '#./root/osfstorage/sample/sub_folder/#0', '#metadata-schema-公的資金による研究データのメタデータ登録-3', './root/osfstorage/sample/empty/', './root/osfstorage/sample/', 'root/osfstorage/file_in_root', '#root/osfstorage/file_in_root#0', '#root-osfstorage', '#root-metadata', '#root', '#comment#0', '#comment#1', '#comment#2', '#creator0']
+        assert remove_fields(_find_entity_by_id(json_entities, './'), fields=['datePublished']) == {'@id': './', '@type': 'Dataset', 'hasPart': [{'@id': 'root/osfstorage/sample/file_in_folder'}, {'@id': 'root/osfstorage/sample/sub_folder/file_in_sub_folder'}, {'@id': './root/osfstorage/sample/sub_folder/'}, {'@id': './root/osfstorage/sample/empty/'}, {'@id': './root/osfstorage/sample/'}, {'@id': 'root/osfstorage/file_in_root'}]}
+        assert 'datePublished' in _find_entity_by_id(json_entities, './')
+        assert remove_fields(_find_entity_by_id(json_entities, 'root/osfstorage/file_in_root'), fields=['rdmURL']) == {'@id': 'root/osfstorage/file_in_root', '@type': 'File', 'contentSize': '9', 'dateCreated': None, 'dateModified': None, 'encodingFormat': None, 'keywords': [], 'name': 'file_in_root'}
+        assert 'rdmURL' in _find_entity_by_id(json_entities, 'root/osfstorage/file_in_root')
+        assert remove_fields(_find_entity_by_id(json_entities, '#root/osfstorage/file_in_root#0'), fields=['dateCreated', 'dateModified']) == {'@id': '#root/osfstorage/file_in_root#0', '@type': 'RDMFileMetadata', 'about': {'@id': 'root/osfstorage/file_in_root'}, 'encodingFormat': 'application/json', 'rdmSchema': {'@id': '#metadata-schema-公的資金による研究データのメタデータ登録-3'}, 'text': '{"test": true}', 'version': 'active'}
+        assert 'dateModified' in _find_entity_by_id(json_entities, '#root/osfstorage/file_in_root#0')
+        assert 'dateCreated' in _find_entity_by_id(json_entities, '#root/osfstorage/file_in_root#0')
+        assert _find_entity_by_id(json_entities, '#metadata-schema-公的資金による研究データのメタデータ登録-3') == {'@id': '#metadata-schema-公的資金による研究データのメタデータ登録-3', '@type': 'RDMMetadataSchema', 'name': '公的資金による研究データのメタデータ登録', 'version': 3}
+        assert _find_entity_by_id(json_entities, 'ro-crate-metadata.json') == {'@id': 'ro-crate-metadata.json', '@type': 'CreativeWork', 'about': {'@id': './'}, 'conformsTo': {'@id': 'https://w3id.org/ro/crate/1.1'}}
+        assert _find_entity_by_id(json_entities, '#root-osfstorage') == {'@id': '#root-osfstorage', '@type': 'RDMAddon', 'about': {'@id': '#root'}, 'description': 'NII Storage', 'hasPart': [{'@id': './root/osfstorage/sample/'}, {'@id': 'root/osfstorage/file_in_root'}], 'name': 'osfstorage'}
+        assert _find_entity_by_id(json_entities, '#root-metadata') == {'@id': '#root-metadata', '@type': 'RDMAddon', 'about': {'@id': '#root'}, 'description': 'Metadata', 'name': 'metadata'}
+        assert remove_fields(_find_entity_by_id(json_entities, '#root'), fields=['dateCreated', 'dateModified', 'name']) == {'@id': '#root', '@type': 'RDMProject', 'about': {'@id': './'}, 'category': 'project', 'contributor': [{'@id': '#creator0'}], 'creator': {'@id': '#creator0'}, 'description': 'TEST_DESCRIPTION', 'hasPart': [], 'keywords': ['Test Node']}
+        assert 'dateCreated' in _find_entity_by_id(json_entities, '#root')
+        assert 'dateModified' in _find_entity_by_id(json_entities, '#root')
+        assert 'name' in _find_entity_by_id(json_entities, '#root')
         _assert_dict_matches(_find_entity_by_id(json_entities, '#creator0'), {
             '@id': '#creator0',
             '@type': 'Person',
@@ -684,54 +428,15 @@ class TestExportAndImport(OsfTestCase):
             'identifier': [],
             'name': re.compile(r'Freddie Mercury[0-9]+')
         })
-        assert_equals(remove_fields(
-            _find_entity_by_id(json_entities, '#comment#0'),
-            fields=['dateCreated', 'dateModified'],
-        ), {
-            '@id': '#comment#0',
-            '@type': 'Comment',
-            'about': {
-                '@id': '#root'
-            },
-            'author': {
-                '@id': '#creator0'
-            },
-            'text': 'Reply comment'
-        })
-        assert_true('dateCreated' in _find_entity_by_id(json_entities, '#comment#0'))
-        assert_true('dateModified' in _find_entity_by_id(json_entities, '#comment#0'))
-        assert_equals(remove_fields(
-            _find_entity_by_id(json_entities, '#comment#1'),
-            fields=['dateCreated', 'dateModified'],
-        ), {
-            '@id': '#comment#1',
-            '@type': 'Comment',
-            'about': {
-                '@id': '#root'
-            },
-            'author': {
-                '@id': '#creator0'
-            },
-            'text': 'Comment for the node'
-        })
-        assert_true('dateCreated' in _find_entity_by_id(json_entities, '#comment#1'))
-        assert_true('dateModified' in _find_entity_by_id(json_entities, '#comment#1'))
-        assert_equals(remove_fields(
-            _find_entity_by_id(json_entities, '#comment#2'),
-            fields=['dateCreated', 'dateModified'],
-        ), {
-            '@id': '#comment#2',
-            '@type': 'Comment',
-            'about': {
-                '@id': './root/osfstorage/file_in_root'
-            },
-            'author': {
-                '@id': '#creator0'
-            },
-            'text': 'Comment for the file file_in_root'
-        })
-        assert_true('dateCreated' in _find_entity_by_id(json_entities, '#comment#2'))
-        assert_true('dateModified' in _find_entity_by_id(json_entities, '#comment#2'))
+        assert remove_fields(_find_entity_by_id(json_entities, '#comment#0'), fields=['dateCreated', 'dateModified']) == {'@id': '#comment#0', '@type': 'Comment', 'about': {'@id': '#root'}, 'author': {'@id': '#creator0'}, 'text': 'Reply comment'}
+        assert 'dateCreated' in _find_entity_by_id(json_entities, '#comment#0')
+        assert 'dateModified' in _find_entity_by_id(json_entities, '#comment#0')
+        assert remove_fields(_find_entity_by_id(json_entities, '#comment#1'), fields=['dateCreated', 'dateModified']) == {'@id': '#comment#1', '@type': 'Comment', 'about': {'@id': '#root'}, 'author': {'@id': '#creator0'}, 'text': 'Comment for the node'}
+        assert 'dateCreated' in _find_entity_by_id(json_entities, '#comment#1')
+        assert 'dateModified' in _find_entity_by_id(json_entities, '#comment#1')
+        assert remove_fields(_find_entity_by_id(json_entities, '#comment#2'), fields=['dateCreated', 'dateModified']) == {'@id': '#comment#2', '@type': 'Comment', 'about': {'@id': './root/osfstorage/file_in_root'}, 'author': {'@id': '#creator0'}, 'text': 'Comment for the file file_in_root'}
+        assert 'dateCreated' in _find_entity_by_id(json_entities, '#comment#2')
+        assert 'dateModified' in _find_entity_by_id(json_entities, '#comment#2')
 
     # TC-A-2023-7-003
     def test_logs_and_files_only(self):
@@ -754,143 +459,21 @@ class TestExportAndImport(OsfTestCase):
         rocrate.download_to(zip_path)
 
         json_entities = _get_ro_crate_from(zip_path)
-        assert_equals(json_entities['@context'], [
-            'https://w3id.org/ro/crate/1.1/context',
-            'https://w3id.org/ro/terms/workflow-run',
-            'https://purl.org/gakunin-rdm/project/0.1',
-        ])
-        assert_equals(
-            [e['@id'] for e in json_entities['@graph']],
-            [
-                './',
-                'ro-crate-metadata.json',
-                'root/osfstorage/sample/file_in_folder',
-                'root/osfstorage/sample/sub_folder/file_in_sub_folder',
-                './root/osfstorage/sample/sub_folder/',
-                '#./root/osfstorage/sample/sub_folder/#0',
-                '#metadata-schema-公的資金による研究データのメタデータ登録-3',
-                './root/osfstorage/sample/empty/',
-                './root/osfstorage/sample/',
-                'root/osfstorage/file_in_root',
-                '#root/osfstorage/file_in_root#0',
-                '#root-osfstorage',
-                '#root-metadata',
-                '#root',
-                '#action#0',
-                '#action#1',
-                '#action#2',
-                # GRDM-54077: metadata addon is enabled by default, no addon_added action
-                '#creator0'
-            ],
-        )
-        assert_equals(remove_fields(_find_entity_by_id(json_entities, './'), fields=['datePublished']), {
-            '@id': './',
-            '@type': 'Dataset',
-            'hasPart': [
-                {'@id': 'root/osfstorage/sample/file_in_folder'},
-                {'@id': 'root/osfstorage/sample/sub_folder/file_in_sub_folder'},
-                {'@id': './root/osfstorage/sample/sub_folder/'},
-                {'@id': './root/osfstorage/sample/empty/'},
-                {'@id': './root/osfstorage/sample/'},
-                {'@id': 'root/osfstorage/file_in_root'},
-            ]
-        })
-        assert_true('datePublished' in _find_entity_by_id(json_entities, './'))
-        assert_equals(remove_fields(
-            _find_entity_by_id(json_entities, 'root/osfstorage/file_in_root'),
-            fields=['rdmURL'],
-        ), {
-            '@id': 'root/osfstorage/file_in_root',
-            '@type': 'File',
-            'contentSize': '9',
-            'dateCreated': None,
-            'dateModified': None,
-            'encodingFormat': None,
-            'keywords': [],
-            'name': 'file_in_root'
-        })
-        assert_true('rdmURL' in _find_entity_by_id(json_entities, 'root/osfstorage/file_in_root'))
-        assert_equals(remove_fields(
-            _find_entity_by_id(json_entities, '#root/osfstorage/file_in_root#0'),
-            fields=['dateCreated', 'dateModified'],
-         ), {
-            '@id': '#root/osfstorage/file_in_root#0',
-            '@type': 'RDMFileMetadata',
-            'about': {
-                '@id': 'root/osfstorage/file_in_root'
-            },
-            'encodingFormat': 'application/json',
-            'rdmSchema': {
-                '@id': '#metadata-schema-\u516c\u7684\u8cc7\u91d1\u306b\u3088\u308b\u7814\u7a76\u30c7\u30fc\u30bf\u306e\u30e1\u30bf\u30c7\u30fc\u30bf\u767b\u9332-3'
-            },
-            'text': "{\"test\": true}",
-            'version': 'active'
-        })
-        assert_equals(_find_entity_by_id(json_entities, '#metadata-schema-\u516c\u7684\u8cc7\u91d1\u306b\u3088\u308b\u7814\u7a76\u30c7\u30fc\u30bf\u306e\u30e1\u30bf\u30c7\u30fc\u30bf\u767b\u9332-3'), {
-            '@id': '#metadata-schema-\u516c\u7684\u8cc7\u91d1\u306b\u3088\u308b\u7814\u7a76\u30c7\u30fc\u30bf\u306e\u30e1\u30bf\u30c7\u30fc\u30bf\u767b\u9332-3',
-            '@type': 'RDMMetadataSchema',
-            'name': '\u516c\u7684\u8cc7\u91d1\u306b\u3088\u308b\u7814\u7a76\u30c7\u30fc\u30bf\u306e\u30e1\u30bf\u30c7\u30fc\u30bf\u767b\u9332',
-            'version': 3
-        })
-        assert_equals(_find_entity_by_id(json_entities, 'ro-crate-metadata.json'), {
-            '@id': 'ro-crate-metadata.json',
-            '@type': 'CreativeWork',
-            'about': {
-                '@id': './'
-            },
-            'conformsTo': {
-                '@id': 'https://w3id.org/ro/crate/1.1'
-            }
-        })
-        assert_equals(_find_entity_by_id(json_entities, '#root-osfstorage'), {
-            '@id': '#root-osfstorage',
-            '@type': 'RDMAddon',
-            'about': {
-                '@id': '#root'
-            },
-            'description': 'NII Storage',
-            'hasPart': [
-                {'@id': './root/osfstorage/sample/'},
-                {'@id': 'root/osfstorage/file_in_root'},
-            ],
-            'name': 'osfstorage'
-        })
-        assert_equals(_find_entity_by_id(json_entities, '#root-metadata'), {
-            '@id': '#root-metadata',
-            '@type': 'RDMAddon',
-            'about': {
-                '@id': '#root'
-            },
-            'description': 'Metadata',
-            'name': 'metadata'
-        })
-        assert_equals(remove_fields(
-            _find_entity_by_id(json_entities, '#root'),
-            fields=['dateCreated', 'dateModified', 'name'],
-        ), {
-            '@id': '#root',
-            '@type': 'RDMProject',
-            'about': {
-                '@id': './'
-            },
-            'category': 'project',
-            'contributor': [
-                {
-                    '@id': '#creator0'
-                }
-            ],
-            'creator': {
-                '@id': '#creator0'
-            },
-            'description': 'TEST_DESCRIPTION',
-            'hasPart': [],
-            'keywords': [
-                'Test Node'
-            ],
-        })
-        assert_true('dateCreated' in _find_entity_by_id(json_entities, '#root'))
-        assert_true('dateModified' in _find_entity_by_id(json_entities, '#root'))
-        assert_true('name' in _find_entity_by_id(json_entities, '#root'))
+        assert json_entities['@context'] == ['https://w3id.org/ro/crate/1.1/context', 'https://w3id.org/ro/terms/workflow-run', 'https://purl.org/gakunin-rdm/project/0.1']
+        assert [e['@id'] for e in json_entities['@graph']] == ['./', 'ro-crate-metadata.json', 'root/osfstorage/sample/file_in_folder', 'root/osfstorage/sample/sub_folder/file_in_sub_folder', './root/osfstorage/sample/sub_folder/', '#./root/osfstorage/sample/sub_folder/#0', '#metadata-schema-公的資金による研究データのメタデータ登録-3', './root/osfstorage/sample/empty/', './root/osfstorage/sample/', 'root/osfstorage/file_in_root', '#root/osfstorage/file_in_root#0', '#root-osfstorage', '#root-metadata', '#root', '#action#0', '#action#1', '#action#2', '#creator0']
+        assert remove_fields(_find_entity_by_id(json_entities, './'), fields=['datePublished']) == {'@id': './', '@type': 'Dataset', 'hasPart': [{'@id': 'root/osfstorage/sample/file_in_folder'}, {'@id': 'root/osfstorage/sample/sub_folder/file_in_sub_folder'}, {'@id': './root/osfstorage/sample/sub_folder/'}, {'@id': './root/osfstorage/sample/empty/'}, {'@id': './root/osfstorage/sample/'}, {'@id': 'root/osfstorage/file_in_root'}]}
+        assert 'datePublished' in _find_entity_by_id(json_entities, './')
+        assert remove_fields(_find_entity_by_id(json_entities, 'root/osfstorage/file_in_root'), fields=['rdmURL']) == {'@id': 'root/osfstorage/file_in_root', '@type': 'File', 'contentSize': '9', 'dateCreated': None, 'dateModified': None, 'encodingFormat': None, 'keywords': [], 'name': 'file_in_root'}
+        assert 'rdmURL' in _find_entity_by_id(json_entities, 'root/osfstorage/file_in_root')
+        assert remove_fields(_find_entity_by_id(json_entities, '#root/osfstorage/file_in_root#0'), fields=['dateCreated', 'dateModified']) == {'@id': '#root/osfstorage/file_in_root#0', '@type': 'RDMFileMetadata', 'about': {'@id': 'root/osfstorage/file_in_root'}, 'encodingFormat': 'application/json', 'rdmSchema': {'@id': '#metadata-schema-公的資金による研究データのメタデータ登録-3'}, 'text': '{"test": true}', 'version': 'active'}
+        assert _find_entity_by_id(json_entities, '#metadata-schema-公的資金による研究データのメタデータ登録-3') == {'@id': '#metadata-schema-公的資金による研究データのメタデータ登録-3', '@type': 'RDMMetadataSchema', 'name': '公的資金による研究データのメタデータ登録', 'version': 3}
+        assert _find_entity_by_id(json_entities, 'ro-crate-metadata.json') == {'@id': 'ro-crate-metadata.json', '@type': 'CreativeWork', 'about': {'@id': './'}, 'conformsTo': {'@id': 'https://w3id.org/ro/crate/1.1'}}
+        assert _find_entity_by_id(json_entities, '#root-osfstorage') == {'@id': '#root-osfstorage', '@type': 'RDMAddon', 'about': {'@id': '#root'}, 'description': 'NII Storage', 'hasPart': [{'@id': './root/osfstorage/sample/'}, {'@id': 'root/osfstorage/file_in_root'}], 'name': 'osfstorage'}
+        assert _find_entity_by_id(json_entities, '#root-metadata') == {'@id': '#root-metadata', '@type': 'RDMAddon', 'about': {'@id': '#root'}, 'description': 'Metadata', 'name': 'metadata'}
+        assert remove_fields(_find_entity_by_id(json_entities, '#root'), fields=['dateCreated', 'dateModified', 'name']) == {'@id': '#root', '@type': 'RDMProject', 'about': {'@id': './'}, 'category': 'project', 'contributor': [{'@id': '#creator0'}], 'creator': {'@id': '#creator0'}, 'description': 'TEST_DESCRIPTION', 'hasPart': [], 'keywords': ['Test Node']}
+        assert 'dateCreated' in _find_entity_by_id(json_entities, '#root')
+        assert 'dateModified' in _find_entity_by_id(json_entities, '#root')
+        assert 'name' in _find_entity_by_id(json_entities, '#root')
         _assert_dict_matches(_find_entity_by_id(json_entities, '#creator0'), {
             '@id': '#creator0',
             '@type': 'Person',
@@ -909,43 +492,13 @@ class TestExportAndImport(OsfTestCase):
             'identifier': [],
             'name': re.compile(r'Freddie Mercury[0-9]+')
         })
-        assert_equals(remove_fields(
-            _find_entity_by_id(json_entities, '#action#0'),
-            fields=['startTime'],
-        ), {
-            '@id': '#action#0',
-            '@type': 'Action',
-            'agent': {
-                '@id': '#creator0'
-            },
-            'name': 'metadata_file_added',
-        })
-        assert_true('startTime' in _find_entity_by_id(json_entities, '#action#0'))
-        assert_equals(remove_fields(
-            _find_entity_by_id(json_entities, '#action#1'),
-            fields=['startTime'],
-        ), {
-            '@id': '#action#1',
-            '@type': 'Action',
-            'agent': {
-                '@id': '#creator0'
-            },
-            'name': 'metadata_file_added',
-        })
-        assert_true('startTime' in _find_entity_by_id(json_entities, '#action#1'))
+        assert remove_fields(_find_entity_by_id(json_entities, '#action#0'), fields=['startTime']) == {'@id': '#action#0', '@type': 'Action', 'agent': {'@id': '#creator0'}, 'name': 'metadata_file_added'}
+        assert 'startTime' in _find_entity_by_id(json_entities, '#action#0')
+        assert remove_fields(_find_entity_by_id(json_entities, '#action#1'), fields=['startTime']) == {'@id': '#action#1', '@type': 'Action', 'agent': {'@id': '#creator0'}, 'name': 'metadata_file_added'}
+        assert 'startTime' in _find_entity_by_id(json_entities, '#action#1')
         # GRDM-54077: metadata addon is enabled by default, no addon_added event
-        assert_equals(remove_fields(
-            _find_entity_by_id(json_entities, '#action#2'),
-            fields=['startTime'],
-        ), {
-            '@id': '#action#2',
-            '@type': 'Action',
-            'agent': {
-                '@id': '#creator0'
-            },
-            'name': 'project_created',
-        })
-        assert_true('startTime' in _find_entity_by_id(json_entities, '#action#2'))
+        assert remove_fields(_find_entity_by_id(json_entities, '#action#2'), fields=['startTime']) == {'@id': '#action#2', '@type': 'Action', 'agent': {'@id': '#creator0'}, 'name': 'project_created'}
+        assert 'startTime' in _find_entity_by_id(json_entities, '#action#2')
 
     # TC-A-2023-7-004
     def test_wiki_only(self):
@@ -962,129 +515,25 @@ class TestExportAndImport(OsfTestCase):
         rocrate.download_to(zip_path)
 
         json_entities = _get_ro_crate_from(zip_path)
-        assert_equals(json_entities['@context'], [
-            'https://w3id.org/ro/crate/1.1/context',
-            'https://w3id.org/ro/terms/workflow-run',
-            'https://purl.org/gakunin-rdm/project/0.1',
-        ])
-        assert_equals(len([e for e in json_entities['@graph'] if e['@type'] == 'Comment']), 0)
-        assert_equals(len([e for e in json_entities['@graph'] if e['@type'] == 'Action']), 0)
-        assert_equals(
-            [e['@id'] for e in json_entities['@graph']],
-            ['./', 'ro-crate-metadata.json', '#root-osfstorage', '#root-metadata', 'root/wiki/test', '#root-wiki', '#root', '#creator0'],
-        )
-        assert_equals(remove_fields(_find_entity_by_id(json_entities, './'), fields=['datePublished']), {
-            '@id': './',
-            '@type': 'Dataset',
-            'hasPart': [
-                {
-                '@id': 'root/wiki/test'
-                }
-            ]
-        })
-        assert_true('datePublished' in _find_entity_by_id(json_entities, './'))
-        assert_equals(_find_entity_by_id(json_entities, 'ro-crate-metadata.json'), {
-            '@id': 'ro-crate-metadata.json',
-            '@type': 'CreativeWork',
-            'about': {
-                '@id': './'
-            },
-            'conformsTo': {
-                '@id': 'https://w3id.org/ro/crate/1.1'
-            }
-        })
-        assert_equals(_find_entity_by_id(json_entities, '#root-osfstorage'), {
-            '@id': '#root-osfstorage',
-            '@type': 'RDMAddon',
-            'about': {
-                '@id': '#root'
-            },
-            'description': 'NII Storage',
-            'hasPart': [],
-            'name': 'osfstorage'
-        })
-        assert_equals(_find_entity_by_id(json_entities, '#root-metadata'), {
-            '@id': '#root-metadata',
-            '@type': 'RDMAddon',
-            'about': {
-                '@id': '#root'
-            },
-            'description': 'Metadata',
-            'name': 'metadata'
-        })
-        assert_equals(remove_fields(
-            _find_entity_by_id(json_entities, 'root/wiki/test'),
-            fields=['dateCreated', 'dateModified'],
-        ), {
-            '@id': 'root/wiki/test',
-            '@type': 'File',
-            'contentSize': '14',
-            'encodingFormat': 'text/markdown',
-            'name': 'test',
-            'version': 1
-        })
-        assert_true('dateCreated' in _find_entity_by_id(json_entities, 'root/wiki/test'))
-        assert_true('dateModified' in _find_entity_by_id(json_entities, 'root/wiki/test'))
-        assert_equals(_find_entity_by_id(json_entities, '#root-wiki'), {
-            '@id': '#root-wiki',
-            '@type': 'RDMAddon',
-            'about': {
-                '@id': '#root'
-            },
-            'description': 'Wiki',
-            'hasPart': [
-                {
-                '@id': 'root/wiki/test'
-                }
-            ],
-            'name': 'wiki'
-        })
-        assert_equals(remove_fields(
-            _find_entity_by_id(json_entities, '#root'),
-            fields=['dateCreated', 'dateModified', 'name'],
-        ), {
-            '@id': '#root',
-            '@type': 'RDMProject',
-            'about': {
-                '@id': './'
-            },
-            'category': 'project',
-            'contributor': [
-                {
-                    '@id': '#creator0'
-                }
-            ],
-            'creator': {
-                '@id': '#creator0'
-            },
-            'description': 'TEST_DESCRIPTION',
-            'hasPart': [],
-            'keywords': [
-                'Test Node'
-            ],
-        })
-        assert_true('dateCreated' in _find_entity_by_id(json_entities, '#root'))
-        assert_true('dateModified' in _find_entity_by_id(json_entities, '#root'))
-        assert_true('name' in _find_entity_by_id(json_entities, '#root'))
+        assert json_entities['@context'] == ['https://w3id.org/ro/crate/1.1/context', 'https://w3id.org/ro/terms/workflow-run', 'https://purl.org/gakunin-rdm/project/0.1']
+        assert len([e for e in json_entities['@graph'] if e['@type'] == 'Comment']) == 0
+        assert len([e for e in json_entities['@graph'] if e['@type'] == 'Action']) == 0
+        assert [e['@id'] for e in json_entities['@graph']] == ['./', 'ro-crate-metadata.json', '#root-osfstorage', '#root-metadata', 'root/wiki/test', '#root-wiki', '#root', '#creator0']
+        assert remove_fields(_find_entity_by_id(json_entities, './'), fields=['datePublished']) == {'@id': './', '@type': 'Dataset', 'hasPart': [{'@id': 'root/wiki/test'}]}
+        assert 'datePublished' in _find_entity_by_id(json_entities, './')
+        assert _find_entity_by_id(json_entities, 'ro-crate-metadata.json') == {'@id': 'ro-crate-metadata.json', '@type': 'CreativeWork', 'about': {'@id': './'}, 'conformsTo': {'@id': 'https://w3id.org/ro/crate/1.1'}}
+        assert _find_entity_by_id(json_entities, '#root-osfstorage') == {'@id': '#root-osfstorage', '@type': 'RDMAddon', 'about': {'@id': '#root'}, 'description': 'NII Storage', 'hasPart': [], 'name': 'osfstorage'}
+        assert _find_entity_by_id(json_entities, '#root-metadata') == {'@id': '#root-metadata', '@type': 'RDMAddon', 'about': {'@id': '#root'}, 'description': 'Metadata', 'name': 'metadata'}
+        assert remove_fields(_find_entity_by_id(json_entities, 'root/wiki/test'), fields=['dateCreated', 'dateModified']) == {'@id': 'root/wiki/test', '@type': 'File', 'contentSize': '14', 'encodingFormat': 'text/markdown', 'name': 'test', 'version': 1}
+        assert 'dateCreated' in _find_entity_by_id(json_entities, 'root/wiki/test')
+        assert 'dateModified' in _find_entity_by_id(json_entities, 'root/wiki/test')
+        assert _find_entity_by_id(json_entities, '#root-wiki') == {'@id': '#root-wiki', '@type': 'RDMAddon', 'about': {'@id': '#root'}, 'description': 'Wiki', 'hasPart': [{'@id': 'root/wiki/test'}], 'name': 'wiki'}
+        assert remove_fields(_find_entity_by_id(json_entities, '#root'), fields=['dateCreated', 'dateModified', 'name']) == {'@id': '#root', '@type': 'RDMProject', 'about': {'@id': './'}, 'category': 'project', 'contributor': [{'@id': '#creator0'}], 'creator': {'@id': '#creator0'}, 'description': 'TEST_DESCRIPTION', 'hasPart': [], 'keywords': ['Test Node']}
+        assert 'dateCreated' in _find_entity_by_id(json_entities, '#root')
+        assert 'dateModified' in _find_entity_by_id(json_entities, '#root')
+        assert 'name' in _find_entity_by_id(json_entities, '#root')
         creator = self.node.creator
-        assert_equals(_find_entity_by_id(json_entities, '#creator0'), {
-            '@id': '#creator0',
-            '@type': 'Person',
-            'familyName': [
-                {
-                    '@language': 'en',
-                    '@value': creator.family_name
-                }
-            ],
-            'givenName': [
-                {
-                    '@language': 'en',
-                    '@value': creator.given_name
-                }
-            ],
-            'identifier': [],
-            'name': creator.given_name + ' ' + creator.family_name
-        })
+        assert _find_entity_by_id(json_entities, '#creator0') == {'@id': '#creator0', '@type': 'Person', 'familyName': [{'@language': 'en', '@value': creator.family_name}], 'givenName': [{'@language': 'en', '@value': creator.given_name}], 'identifier': [], 'name': creator.given_name + ' ' + creator.family_name}
 
     # TC-A-2023-7-005
     def test_child_nodes(self):
@@ -1101,133 +550,25 @@ class TestExportAndImport(OsfTestCase):
         rocrate.download_to(zip_path)
 
         json_entities = _get_ro_crate_from(zip_path)
-        assert_equals(json_entities['@context'], [
-            'https://w3id.org/ro/crate/1.1/context',
-            'https://w3id.org/ro/terms/workflow-run',
-            'https://purl.org/gakunin-rdm/project/0.1',
-        ])
-        assert_equals(len([e for e in json_entities['@graph'] if e['@type'] == 'Comment']), 0)
-        assert_equals(len([e for e in json_entities['@graph'] if e['@type'] == 'Action']), 0)
-        assert_equals(
-            [e['@id'] for e in json_entities['@graph']],
-            [
-                './', 'ro-crate-metadata.json',
-                '#node1-osfstorage',
-                # GRDM-54077: metadata addon is enabled by default, included automatically
-                '#node1-metadata',
-                'node1/wiki/test', '#node1-wiki',
-                '#root-osfstorage', '#root-metadata', '#root-wiki', '#root',
-                '#node1', '#creator0',
-            ],
-        )
-        assert_equals(remove_fields(_find_entity_by_id(json_entities, './'), fields=['datePublished']), {
-            '@id': './',
-            '@type': 'Dataset',
-            'hasPart': [{'@id': 'node1/wiki/test'}],
-        })
-        assert_true('datePublished' in _find_entity_by_id(json_entities, './'))
-        assert_equals(_find_entity_by_id(json_entities, 'ro-crate-metadata.json'), {
-            '@id': 'ro-crate-metadata.json',
-            '@type': 'CreativeWork',
-            'about': {
-                '@id': './'
-            },
-            'conformsTo': {
-                '@id': 'https://w3id.org/ro/crate/1.1'
-            }
-        })
-        assert_equals(_find_entity_by_id(json_entities, '#root-osfstorage'), {
-            '@id': '#root-osfstorage',
-            '@type': 'RDMAddon',
-            'about': {
-                '@id': '#root'
-            },
-            'description': 'NII Storage',
-            'hasPart': [],
-            'name': 'osfstorage'
-        })
-        assert_equals(_find_entity_by_id(json_entities, '#root-metadata'), {
-            '@id': '#root-metadata',
-            '@type': 'RDMAddon',
-            'about': {
-                '@id': '#root'
-            },
-            'description': 'Metadata',
-            'name': 'metadata'
-        })
-        assert_equals(_find_entity_by_id(json_entities, '#root-wiki'), {
-            '@id': '#root-wiki',
-            '@type': 'RDMAddon',
-            'about': {
-                '@id': '#root'
-            },
-            'description': 'Wiki',
-            'hasPart': [],
-            'name': 'wiki'
-        })
-        assert_equals(remove_fields(
-            _find_entity_by_id(json_entities, '#root'),
-            fields=['dateCreated', 'dateModified', 'name'],
-        ), {
-            '@id': '#root',
-            '@type': 'RDMProject',
-            'about': {
-                '@id': './'
-            },
-            'category': 'project',
-            'contributor': [
-                {
-                    '@id': '#creator0'
-                }
-            ],
-            'creator': {
-                '@id': '#creator0'
-            },
-            'description': 'TEST_COMPOSITE_DESCRIPTION',
-            'hasPart': [{
-                '@id': '#node1',
-            }],
-            'keywords': [
-                'Composite Node'
-            ],
-        })
-        assert_true('dateCreated' in _find_entity_by_id(json_entities, '#root'))
-        assert_true('dateModified' in _find_entity_by_id(json_entities, '#root'))
-        assert_true('name' in _find_entity_by_id(json_entities, '#root'))
-        assert_equals(remove_fields(
-            _find_entity_by_id(json_entities, '#node1'),
-            fields=['dateCreated', 'dateModified', 'name'],
-        ), {
-            '@id': '#node1',
-            '@type': 'RDMProject',
-            'category': 'project',
-            'contributor': [
-                {
-                    '@id': '#creator0'
-                }
-            ],
-            'creator': {
-                '@id': '#creator0'
-            },
-            'description': 'TEST_SUB_DESCRIPTION',
-            'hasPart': [],
-            'keywords': [
-                'Sub Node'
-            ],
-        })
-        assert_true('dateCreated' in _find_entity_by_id(json_entities, '#node1'))
-        assert_true('dateModified' in _find_entity_by_id(json_entities, '#node1'))
-        assert_true('name' in _find_entity_by_id(json_entities, '#node1'))
-        assert_equals(_find_entity_by_id(json_entities, '#node1-osfstorage'), {
-            '@id': '#node1-osfstorage',
-            '@type': 'RDMAddon',
-            'about': {
-                '@id': '#node1'
-            },
-            'description': 'NII Storage',
-            'hasPart': [],
-            'name': 'osfstorage'
-        })
+        assert json_entities['@context'] == ['https://w3id.org/ro/crate/1.1/context', 'https://w3id.org/ro/terms/workflow-run', 'https://purl.org/gakunin-rdm/project/0.1']
+        assert len([e for e in json_entities['@graph'] if e['@type'] == 'Comment']) == 0
+        assert len([e for e in json_entities['@graph'] if e['@type'] == 'Action']) == 0
+        assert [e['@id'] for e in json_entities['@graph']] == ['./', 'ro-crate-metadata.json', '#node1-osfstorage', '#node1-metadata', 'node1/wiki/test', '#node1-wiki', '#root-osfstorage', '#root-metadata', '#root-wiki', '#root', '#node1', '#creator0']
+        assert remove_fields(_find_entity_by_id(json_entities, './'), fields=['datePublished']) == {'@id': './', '@type': 'Dataset', 'hasPart': [{'@id': 'node1/wiki/test'}]}
+        assert 'datePublished' in _find_entity_by_id(json_entities, './')
+        assert _find_entity_by_id(json_entities, 'ro-crate-metadata.json') == {'@id': 'ro-crate-metadata.json', '@type': 'CreativeWork', 'about': {'@id': './'}, 'conformsTo': {'@id': 'https://w3id.org/ro/crate/1.1'}}
+        assert _find_entity_by_id(json_entities, '#root-osfstorage') == {'@id': '#root-osfstorage', '@type': 'RDMAddon', 'about': {'@id': '#root'}, 'description': 'NII Storage', 'hasPart': [], 'name': 'osfstorage'}
+        assert _find_entity_by_id(json_entities, '#root-metadata') == {'@id': '#root-metadata', '@type': 'RDMAddon', 'about': {'@id': '#root'}, 'description': 'Metadata', 'name': 'metadata'}
+        assert _find_entity_by_id(json_entities, '#root-wiki') == {'@id': '#root-wiki', '@type': 'RDMAddon', 'about': {'@id': '#root'}, 'description': 'Wiki', 'hasPart': [], 'name': 'wiki'}
+        assert remove_fields(_find_entity_by_id(json_entities, '#root'), fields=['dateCreated', 'dateModified', 'name']) == {'@id': '#root', '@type': 'RDMProject', 'about': {'@id': './'}, 'category': 'project', 'contributor': [{'@id': '#creator0'}], 'creator': {'@id': '#creator0'}, 'description': 'TEST_COMPOSITE_DESCRIPTION', 'hasPart': [{'@id': '#node1'}], 'keywords': ['Composite Node']}
+        assert 'dateCreated' in _find_entity_by_id(json_entities, '#root')
+        assert 'dateModified' in _find_entity_by_id(json_entities, '#root')
+        assert 'name' in _find_entity_by_id(json_entities, '#root')
+        assert remove_fields(_find_entity_by_id(json_entities, '#node1'), fields=['dateCreated', 'dateModified', 'name']) == {'@id': '#node1', '@type': 'RDMProject', 'category': 'project', 'contributor': [{'@id': '#creator0'}], 'creator': {'@id': '#creator0'}, 'description': 'TEST_SUB_DESCRIPTION', 'hasPart': [], 'keywords': ['Sub Node']}
+        assert 'dateCreated' in _find_entity_by_id(json_entities, '#node1')
+        assert 'dateModified' in _find_entity_by_id(json_entities, '#node1')
+        assert 'name' in _find_entity_by_id(json_entities, '#node1')
+        assert _find_entity_by_id(json_entities, '#node1-osfstorage') == {'@id': '#node1-osfstorage', '@type': 'RDMAddon', 'about': {'@id': '#node1'}, 'description': 'NII Storage', 'hasPart': [], 'name': 'osfstorage'}
         _assert_dict_matches(_find_entity_by_id(json_entities, '#creator0'), {
             '@id': '#creator0',
             '@type': 'Person',
@@ -1260,12 +601,8 @@ class TestExportAndImport(OsfTestCase):
 
         json_entities = _get_ro_crate_from(zip_path)
         logger.info(f'ro-crate: {json.dumps(json_entities, indent=2)}')
-        assert_equals(len([e for e in json_entities['@graph'] if e['@type'] == 'Comment']), 3)
-        assert_equals(
-            [e['name'] for e in json_entities['@graph'] if e['@type'] == 'Action'],
-            # GRDM-54077: metadata addon is enabled by default, no addon_added event
-            ['metadata_file_added', 'metadata_file_added', 'project_created'],
-        )
+        assert len([e for e in json_entities['@graph'] if e['@type'] == 'Comment']) == 3
+        assert [e['name'] for e in json_entities['@graph'] if e['@type'] == 'Action'] == ['metadata_file_added', 'metadata_file_added', 'project_created']
 
         zip_buf = io.BytesIO()
         with open(zip_path, 'rb') as f:
@@ -1290,45 +627,16 @@ class TestExportAndImport(OsfTestCase):
             for file_extractor in extractor.file_extractors:
                 file_extractor.extract(new_wb)
 
-            assert_equals(new_node.description, 'TEST_DESCRIPTION')
-            assert_equals([t.name for t in new_node.tags.all()], ['Test Node'])
+            assert new_node.description == 'TEST_DESCRIPTION'
+            assert [t.name for t in new_node.tags.all()] == ['Test Node']
 
-            assert_equals(
-                [
-                    t.name
-                    for t in new_node.get_addon('osfstorage').get_root().find_child_by_name('file_in_folder').tags.all()
-                ],
-                ['Test File'],
-            )
+            assert [t.name for t in new_node.get_addon('osfstorage').get_root().find_child_by_name('file_in_folder').tags.all()] == ['Test File']
             schema = RegistrationSchema.objects \
                 .filter(name='公的資金による研究データのメタデータ登録') \
                 .order_by('-schema_version') \
                 .first()
-            assert_equals(
-                new_node.get_addon('metadata').get_file_metadata_for_path('osfstorage/file_in_root')['items'],
-                [
-                    {
-                        'active': True,
-                        'schema': schema._id,
-                        'data': {
-                            'test': True,
-                        },
-                    },
-                ],
-            )
-            assert_equals(
-                new_node.get_addon('metadata').get_file_metadata_for_path('osfstorage/sample/sub_folder/')['items'],
-                [
-                    {
-                        'active': True,
-                        'schema': schema._id,
-                        'data': {
-                            'test': True,
-                            'this_is_folder': True,
-                        },
-                    },
-                ],
-            )
+            assert new_node.get_addon('metadata').get_file_metadata_for_path('osfstorage/file_in_root')['items'] == [{'active': True, 'schema': schema._id, 'data': {'test': True}}]
+            assert new_node.get_addon('metadata').get_file_metadata_for_path('osfstorage/sample/sub_folder/')['items'] == [{'active': True, 'schema': schema._id, 'data': {'test': True, 'this_is_folder': True}}]
             new_node_wb.assert_has_calls([
                 mock.call.get_file_by_materialized_path('osfstorage/sample/', create=True),
                 mock.call.get_file_by_materialized_path('osfstorage/sample/sub_folder/', create=True),
@@ -1342,10 +650,7 @@ class TestExportAndImport(OsfTestCase):
                 mock.call('osfstorage/sample/sub_folder/', 'file_in_sub_folder', b'SUB_FOLDER_DATA'),
                 mock.call('osfstorage/', 'file_in_root', b'ROOT_DATA'),
             ])
-            assert_equals(
-                new_node.wikis.get(page_name='test').get_version().content,
-                'Test Wiki Page',
-            )
+            assert new_node.wikis.get(page_name='test').get_version().content == 'Test Wiki Page'
 
     # TC-A-2023-7-007
     def test_composite_extraction(self):
@@ -1360,16 +665,9 @@ class TestExportAndImport(OsfTestCase):
 
         json_entities = _get_ro_crate_from(zip_path)
         logger.info(f'ro-crate: {json.dumps(json_entities, indent=2)}')
-        assert_equals(len([e for e in json_entities['@graph'] if e['@type'] == 'Comment']), 1)
-        assert_equals(
-            [e['name'] for e in json_entities['@graph'] if e['@type'] == 'Action'],
-            # GRDM-54077: metadata addon is enabled by default, no addon_added event
-            ['metadata_file_added', 'project_created', 'project_created'],
-        )
-        assert_equals(
-            sorted([e['description'] for e in json_entities['@graph'] if e['@type'] == 'RDMProject']),
-            ['TEST_COMPOSITE_DESCRIPTION', 'TEST_SUB_DESCRIPTION'],
-        )
+        assert len([e for e in json_entities['@graph'] if e['@type'] == 'Comment']) == 1
+        assert [e['name'] for e in json_entities['@graph'] if e['@type'] == 'Action'] == ['metadata_file_added', 'project_created', 'project_created']
+        assert sorted([e['description'] for e in json_entities['@graph'] if e['@type'] == 'RDMProject']) == ['TEST_COMPOSITE_DESCRIPTION', 'TEST_SUB_DESCRIPTION']
 
         zip_buf = io.BytesIO()
         with open(zip_path, 'rb') as f:
@@ -1390,7 +688,7 @@ class TestExportAndImport(OsfTestCase):
             )
             extractor.ensure_node(new_node)
             children = list(new_node.nodes)
-            assert_equals(len(children), 1)
+            assert len(children) == 1
             new_child = children[0]
             _, new_node_wb, new_wb_upload_file = _create_waterbutler_client_for_single_node(new_node, {})
             _, new_child_node_wb, new_child_wb_upload_file = _create_waterbutler_client_for_single_node(new_child, {})
@@ -1400,37 +698,23 @@ class TestExportAndImport(OsfTestCase):
             for file_extractor in extractor.file_extractors:
                 file_extractor.extract(new_wb)
 
-            assert_equals(new_node.description, 'TEST_COMPOSITE_DESCRIPTION')
-            assert_equals(new_child.description, 'TEST_SUB_DESCRIPTION')
-            assert_equals([t.name for t in new_node.tags.all()], ['Composite Node'])
-            assert_equals([t.name for t in new_child.tags.all()], ['Sub Node'])
+            assert new_node.description == 'TEST_COMPOSITE_DESCRIPTION'
+            assert new_child.description == 'TEST_SUB_DESCRIPTION'
+            assert [t.name for t in new_node.tags.all()] == ['Composite Node']
+            assert [t.name for t in new_child.tags.all()] == ['Sub Node']
 
             schema = RegistrationSchema.objects \
                 .filter(name='公的資金による研究データのメタデータ登録') \
                 .order_by('-schema_version') \
                 .first()
-            assert_equals(
-                new_node.get_addon('metadata').get_file_metadata_for_path('osfstorage/file_in_composite_root')['items'],
-                [
-                    {
-                        'active': True,
-                        'schema': schema._id,
-                        'data': {
-                            'test': True,
-                        },
-                    },
-                ],
-            )
+            assert new_node.get_addon('metadata').get_file_metadata_for_path('osfstorage/file_in_composite_root')['items'] == [{'active': True, 'schema': schema._id, 'data': {'test': True}}]
             new_wb_upload_file.assert_has_calls([
                 mock.call('osfstorage/', 'file_in_composite_root', b'COMPOSITE_DATA'),
             ])
             new_child_wb_upload_file.assert_has_calls([
                 mock.call('osfstorage/', 'file_in_sub_root', b'SUB_DATA'),
             ])
-            assert_equals(
-                new_child.wikis.get(page_name='test').get_version().content,
-                'Sub Wiki Page',
-            )
+            assert new_child.wikis.get(page_name='test').get_version().content == 'Sub Wiki Page'
 
     # TC-A-2023-7-008
     def test_simple_export_on_error(self):
@@ -1445,7 +729,7 @@ class TestExportAndImport(OsfTestCase):
             self.node_wb.get_root_files.side_effect = Exception('test')
             rocrate = ROCrateFactory(self.node, self.work_dir, self.wb, config)
             zip_path = os.path.join(self.work_dir, 'package.zip')
-            with assert_raises(Exception):
+            with pytest.raises(Exception):
                 rocrate.download_to(zip_path)
         finally:
             self.node_wb.get_root_files.side_effect = old_side_effect
@@ -1464,12 +748,8 @@ class TestExportAndImport(OsfTestCase):
 
         json_entities = _get_ro_crate_from(zip_path)
         logger.info(f'ro-crate: {json.dumps(json_entities, indent=2)}')
-        assert_equals(len([e for e in json_entities['@graph'] if e['@type'] == 'Comment']), 3)
-        assert_equals(
-            [e['name'] for e in json_entities['@graph'] if e['@type'] == 'Action'],
-            # GRDM-54077: metadata addon is enabled by default, no addon_added event
-            ['metadata_file_added', 'metadata_file_added', 'project_created'],
-        )
+        assert len([e for e in json_entities['@graph'] if e['@type'] == 'Comment']) == 3
+        assert [e['name'] for e in json_entities['@graph'] if e['@type'] == 'Action'] == ['metadata_file_added', 'metadata_file_added', 'project_created']
 
         zip_buf = io.BytesIO()
         with open(zip_path, 'rb') as f:
@@ -1486,5 +766,5 @@ class TestExportAndImport(OsfTestCase):
                 self.work_dir,
             )
             new_wb, new_node_wb, new_wb_upload_file = _create_waterbutler_client_for_single_node(new_node, {})
-            with assert_raises(Exception):
+            with pytest.raises(Exception):
                 extractor.ensure_node(new_node)

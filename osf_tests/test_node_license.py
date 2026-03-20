@@ -62,30 +62,30 @@ class TestNodeLicenses:
 
     def test_serialize_node_license(self, node_license):
         serialized = serialize_node_license(node_license)
-        assert_equal(serialized['name'], self.LICENSE_NAME)
-        assert_equal(serialized['id'], node_license.license_id)
-        assert_equal(serialized['text'], node_license.text)
+        assert serialized['name'] == self.LICENSE_NAME
+        assert serialized['id'] == node_license.license_id
+        assert serialized['text'] == node_license.text
 
     def test_serialize_node_license_record(self, node, node_license):
         serialized = serialize_node_license_record(node.node_license)
-        assert_equal(serialized['name'], self.LICENSE_NAME)
-        assert_equal(serialized['id'], node_license.license_id)
-        assert_equal(serialized['text'], node_license.text)
-        assert_equal(serialized['year'], self.YEAR)
-        assert_equal(serialized['copyright_holders'], self.COPYRIGHT_HOLDERS)
+        assert serialized['name'] == self.LICENSE_NAME
+        assert serialized['id'] == node_license.license_id
+        assert serialized['text'] == node_license.text
+        assert serialized['year'] == self.YEAR
+        assert serialized['copyright_holders'] == self.COPYRIGHT_HOLDERS
 
     def test_serialize_node_license_record_None(self, node):
         node.node_license = None
         serialized = serialize_node_license_record(node.node_license)
-        assert_equal(serialized, {})
+        assert serialized == {}
 
     def test_copy_node_license_record(self, node):
         record = node.node_license
         copied = record.copy()
-        assert_is_not_none(copied._id)
-        assert_not_equal(record._id, copied._id)
+        assert copied._id is not None
+        assert record._id != copied._id
         for prop in ('license_id', 'name', 'node_license'):
-            assert_equal(getattr(record, prop), getattr(copied, prop))
+            assert getattr(record, prop) == getattr(copied, prop)
 
     def test_license_uniqueness_on_id_is_enforced_in_the_database(self):
         NodeLicense(license_id='foo', name='bar', text='baz').save()
@@ -93,31 +93,31 @@ class TestNodeLicenses:
             NodeLicense(license_id='foo', name='buz', text='boo').save()
 
     def test_ensure_licenses_updates_existing_licenses(self):
-        assert_equal(ensure_licenses(), (0, 18))
+        assert ensure_licenses() == (0, 18)
 
     def test_ensure_licenses_no_licenses(self):
         before_count = NodeLicense.objects.all().count()
         NodeLicense.objects.all().delete()
-        assert_false(NodeLicense.objects.all().count())
+        assert not NodeLicense.objects.all().count()
 
         ensure_licenses()
-        assert_equal(before_count, NodeLicense.objects.all().count())
+        assert before_count == NodeLicense.objects.all().count()
 
     def test_ensure_licenses_some_missing(self):
         NodeLicense.objects.get(license_id='LGPL3').delete()
-        with assert_raises(NodeLicense.DoesNotExist):
+        with pytest.raises(NodeLicense.DoesNotExist):
             NodeLicense.objects.get(license_id='LGPL3')
         ensure_licenses()
         found = NodeLicense.objects.get(license_id='LGPL3')
-        assert_is_not_none(found)
+        assert found is not None
 
     def test_ensure_licenses_updates_existing(self):
         with mock.patch.object(builtins, 'open', mock.mock_open(read_data=LICENSE_TEXT)):
             ensure_licenses()
         MIT = NodeLicense.objects.get(license_id='MIT')
-        assert_equal(MIT.name, CHANGED_NAME)
-        assert_equal(MIT.text, CHANGED_TEXT)
-        assert_equal(MIT.properties, CHANGED_PROPERTIES)
+        assert MIT.name == CHANGED_NAME
+        assert MIT.text == CHANGED_TEXT
+        assert MIT.properties == CHANGED_PROPERTIES
 
     def test_node_set_node_license(self, node, user):
         GPL3 = NodeLicense.objects.get(license_id='GPL3')
@@ -133,13 +133,13 @@ class TestNodeLicenses:
             save=True
         )
 
-        assert_equal(node.node_license.license_id, GPL3.license_id)
-        assert_equal(node.node_license.name, GPL3.name)
-        assert_equal(node.node_license.copyright_holders, COPYLEFT_HOLDERS)
+        assert node.node_license.license_id == GPL3.license_id
+        assert node.node_license.name == GPL3.name
+        assert node.node_license.copyright_holders == COPYLEFT_HOLDERS
         assert node.logs.latest().action == NodeLog.CHANGED_LICENSE
 
     def test_node_set_node_license_invalid(self, node, user):
-        with assert_raises(NodeStateError):
+        with pytest.raises(NodeStateError):
             node.set_node_license(
                 {
                     'id': 'SOME ID',

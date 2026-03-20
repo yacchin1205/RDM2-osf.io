@@ -24,4 +24,4 @@ class TestCore(unittest.TestCase):
 
     def test_get_addon_returns_dropbox_user_settings(self):
         result = self.user.get_addon('dropbox')
-        assert_true(isinstance(result, UserSettings))
+        assert isinstance(result, UserSettings)

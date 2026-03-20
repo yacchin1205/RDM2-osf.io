@@ -33,23 +33,23 @@ class TestAuthBasicAuthentication(OsfTestCase):
 
     def test_missing_credential_fails(self):
         res = self.app.get(self.unreachable_url, auth=None, expect_errors=True)
-        assert_equal(res.status_code, 302)
-        assert_true('Location' in res.headers)
-        assert_true('/login' in res.headers['Location'])
+        assert res.status_code == 302
+        assert 'Location' in res.headers
+        assert '/login' in res.headers['Location']
 
     def test_invalid_credential_fails(self):
         res = self.app.get(self.unreachable_url, auth=(self.user1.username, 'invalid password'), expect_errors=True)
-        assert_equal(res.status_code, 401)
-        assert_true('<h2 id=\'error\' data-http-status-code="401">Unauthorized</h2>' in res.body.decode())
+        assert res.status_code == 401
+        assert '<h2 id=\'error\' data-http-status-code="401">Unauthorized</h2>' in res.body.decode()
 
     @pytest.mark.enable_bookmark_creation
     def test_valid_credential_authenticates_and_has_permissions(self):
         res = self.app.get(self.reachable_url, auth=self.user1.auth)
-        assert_equal(res.status_code, 200)
+        assert res.status_code == 200
 
     def test_valid_credential_authenticates_but_user_lacks_object_permissions(self):
         res = self.app.get(self.unreachable_url, auth=self.user1.auth, expect_errors=True)
-        assert_equal(res.status_code, 403)
+        assert res.status_code == 403
 
     def test_valid_credential_but_twofactor_required(self):
         user1_addon = self.user1.get_or_add_addon('twofactor')
@@ -59,8 +59,8 @@ class TestAuthBasicAuthentication(OsfTestCase):
         user1_addon.save()
 
         res = self.app.get(self.reachable_url, auth=self.user1.auth, expect_errors=True)
-        assert_equal(res.status_code, 401)
-        assert_true('<h2 id=\'error\' data-http-status-code="401">Unauthorized</h2>' in res.body.decode())
+        assert res.status_code == 401
+        assert '<h2 id=\'error\' data-http-status-code="401">Unauthorized</h2>' in res.body.decode()
 
     def test_valid_credential_twofactor_invalid_otp(self):
         user1_addon = self.user1.get_or_add_addon('twofactor')
@@ -70,8 +70,8 @@ class TestAuthBasicAuthentication(OsfTestCase):
         user1_addon.save()
 
         res = self.app.get(self.reachable_url, auth=self.user1.auth, headers={'X-OSF-OTP': 'invalid otp'}, expect_errors=True)
-        assert_equal(res.status_code, 401)
-        assert_true('<h2 id=\'error\' data-http-status-code="401">Unauthorized</h2>' in res.body.decode())
+        assert res.status_code == 401
+        assert '<h2 id=\'error\' data-http-status-code="401">Unauthorized</h2>' in res.body.decode()
 
     @pytest.mark.enable_bookmark_creation
     def test_valid_credential_twofactor_valid_otp(self):
@@ -82,14 +82,14 @@ class TestAuthBasicAuthentication(OsfTestCase):
         user1_addon.save()
 
         res = self.app.get(self.reachable_url, auth=self.user1.auth, headers={'X-OSF-OTP': _valid_code(self.TOTP_SECRET)})
-        assert_equal(res.status_code, 200)
+        assert res.status_code == 200
 
     @pytest.mark.enable_bookmark_creation
     def test_valid_cookie(self):
         cookie = self.user1.get_or_create_cookie()
         self.app.set_cookie(settings.COOKIE_NAME, cookie.decode())
         res = self.app.get(self.reachable_url)
-        assert_equal(res.status_code, 200)
+        assert res.status_code == 200
 
     def test_expired_cookie(self):
         self.session = SessionFactory(user=self.user1)
@@ -102,5 +102,5 @@ class TestAuthBasicAuthentication(OsfTestCase):
         cookie = self.user1.get_or_create_cookie()
         self.app.set_cookie(settings.COOKIE_NAME, str(cookie))
         res = self.app.get(self.reachable_url)
-        assert_equal(res.status_code, 302)
-        assert_in('login', res.location)
+        assert res.status_code == 302
+        assert 'login' in res.location

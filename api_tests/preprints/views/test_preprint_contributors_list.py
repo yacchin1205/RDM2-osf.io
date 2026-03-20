@@ -1687,11 +1687,9 @@ class TestPreprintContributorBulkCreate(NodeCRUDTestCase):
             {'data': [payload_one, payload_two]},
             auth=user.auth, bulk=True)
         assert res.status_code == 201
-        assert_equals([res.json['data'][0]['attributes']['bibliographic'],
-                            res.json['data'][1]['attributes']['bibliographic']], [True, False])
+        assert [res.json['data'][0]['attributes']['bibliographic'], res.json['data'][1]['attributes']['bibliographic']] == [True, False]
 
-        assert_equals([res.json['data'][0]['attributes']['permission'],
-                            res.json['data'][1]['attributes']['permission']], [permissions.ADMIN, permissions.READ])
+        assert [res.json['data'][0]['attributes']['permission'], res.json['data'][1]['attributes']['permission']] == [permissions.ADMIN, permissions.READ]
 
         assert res.content_type == 'application/vnd.api+json'
 
@@ -1704,11 +1702,9 @@ class TestPreprintContributorBulkCreate(NodeCRUDTestCase):
                                 auth=user.auth, expect_errors=True, bulk=True)
         assert res.status_code == 201
         assert len(res.json['data']) == 2
-        assert_equals([res.json['data'][0]['attributes']['bibliographic'],
-                            res.json['data'][1]['attributes']['bibliographic']], [True, False])
+        assert [res.json['data'][0]['attributes']['bibliographic'], res.json['data'][1]['attributes']['bibliographic']] == [True, False]
 
-        assert_equals([res.json['data'][0]['attributes']['permission'],
-                            res.json['data'][1]['attributes']['permission']], [permissions.ADMIN, permissions.READ])
+        assert [res.json['data'][0]['attributes']['permission'], res.json['data'][1]['attributes']['permission']] == [permissions.ADMIN, permissions.READ]
 
         assert res.content_type == 'application/vnd.api+json'
 
@@ -1925,12 +1921,7 @@ class TestPreprintContributorBulkUpdate(NodeCRUDTestCase):
 
         res = app.get(url_published)
         data = res.json['data']
-        assert_equals(
-            [data[0]['attributes']['permission'],
-             data[1]['attributes']['permission'],
-             data[2]['attributes']['permission']],
-            [permissions.ADMIN, permissions.READ, permissions.READ]
-        )
+        assert [data[0]['attributes']['permission'], data[1]['attributes']['permission'], data[2]['attributes']['permission']] == [permissions.ADMIN, permissions.READ, permissions.READ]
 
     #   test_bulk_update_contributors_published_preprints_logged_out
         res = app.put_json_api(
@@ -1944,12 +1935,7 @@ class TestPreprintContributorBulkUpdate(NodeCRUDTestCase):
 
         res = app.get(url_published, auth=user.auth)
         data = res.json['data']
-        assert_equals(
-            [data[0]['attributes']['permission'],
-             data[1]['attributes']['permission'],
-             data[2]['attributes']['permission']],
-            [permissions.ADMIN, permissions.READ, permissions.READ]
-        )
+        assert [data[0]['attributes']['permission'], data[1]['attributes']['permission'], data[2]['attributes']['permission']] == [permissions.ADMIN, permissions.READ, permissions.READ]
 
     #   test_bulk_update_contributors_unpublished_preprints_logged_out
         res = app.put_json_api(
@@ -1963,11 +1949,7 @@ class TestPreprintContributorBulkUpdate(NodeCRUDTestCase):
 
         res = app.get(url_unpublished, auth=user.auth)
         data = res.json['data']
-        assert_equals(
-            [data[0]['attributes']['permission'],
-             data[1]['attributes']['permission'],
-             data[2]['attributes']['permission']],
-            [permissions.ADMIN, permissions.READ, permissions.READ])
+        assert [data[0]['attributes']['permission'], data[1]['attributes']['permission'], data[2]['attributes']['permission']] == [permissions.ADMIN, permissions.READ, permissions.READ]
 
     #   test_bulk_update_contributors_unpublished_preprints_logged_in_non_contrib
         res = app.put_json_api(
@@ -1982,11 +1964,7 @@ class TestPreprintContributorBulkUpdate(NodeCRUDTestCase):
 
         res = app.get(url_unpublished, auth=user.auth)
         data = res.json['data']
-        assert_equals(
-            [data[0]['attributes']['permission'],
-             data[1]['attributes']['permission'],
-             data[2]['attributes']['permission']],
-            [permissions.ADMIN, permissions.READ, permissions.READ])
+        assert [data[0]['attributes']['permission'], data[1]['attributes']['permission'], data[2]['attributes']['permission']] == [permissions.ADMIN, permissions.READ, permissions.READ]
 
     #   test_bulk_update_contributors_unpublished_preprints_logged_in_read_only_contrib
         res = app.put_json_api(
@@ -2001,12 +1979,7 @@ class TestPreprintContributorBulkUpdate(NodeCRUDTestCase):
 
         res = app.get(url_unpublished, auth=user.auth)
         data = res.json['data']
-        assert_equals(
-            [data[0]['attributes']['permission'],
-             data[1]['attributes']['permission'],
-             data[2]['attributes']['permission']],
-            [permissions.ADMIN, permissions.READ, permissions.READ]
-        )
+        assert [data[0]['attributes']['permission'], data[1]['attributes']['permission'], data[2]['attributes']['permission']] == [permissions.ADMIN, permissions.READ, permissions.READ]
 
     #   test_bulk_update_contributors_preprints_send_dictionary_not_list
         res = app.put_json_api(
@@ -2110,12 +2083,7 @@ class TestPreprintContributorBulkUpdate(NodeCRUDTestCase):
 
         res = app.get(url_published, auth=user.auth)
         data = res.json['data']
-        assert_equals(
-            [data[0]['attributes']['permission'],
-             data[1]['attributes']['permission'],
-             data[2]['attributes']['permission']],
-            [permissions.ADMIN, permissions.READ, permissions.READ]
-        )
+        assert [data[0]['attributes']['permission'], data[1]['attributes']['permission'], data[2]['attributes']['permission']] == [permissions.ADMIN, permissions.READ, permissions.READ]
 
     #   test_bulk_update_contributors_invalid_bibliographic
         res = app.put_json_api(
@@ -2140,12 +2108,7 @@ class TestPreprintContributorBulkUpdate(NodeCRUDTestCase):
 
         res = app.get(url_published, auth=user.auth)
         data = res.json['data']
-        assert_equals(
-            [data[0]['attributes']['permission'],
-             data[1]['attributes']['permission'],
-             data[2]['attributes']['permission']],
-            [permissions.ADMIN, permissions.READ, permissions.READ]
-        )
+        assert [data[0]['attributes']['permission'], data[1]['attributes']['permission'], data[2]['attributes']['permission']] == [permissions.ADMIN, permissions.READ, permissions.READ]
 
     #   test_bulk_update_contributors_must_have_at_least_one_bibliographic_contributor
         res = app.put_json_api(
@@ -2207,11 +2170,7 @@ class TestPreprintContributorBulkUpdate(NodeCRUDTestCase):
         )
         assert res.status_code == 200
         data = res.json['data']
-        assert_equals(
-            [data[0]['attributes']['permission'],
-             data[1]['attributes']['permission']],
-            [permissions.ADMIN, permissions.WRITE]
-        )
+        assert [data[0]['attributes']['permission'], data[1]['attributes']['permission']] == [permissions.ADMIN, permissions.WRITE]
 
     def test_bulk_update_contributors_unpublished_preprints_logged_in_contrib(
             self, app, user, payload_unpublished_one, payload_unpublished_two, url_unpublished):
@@ -2222,11 +2181,7 @@ class TestPreprintContributorBulkUpdate(NodeCRUDTestCase):
         )
         assert res.status_code == 200
         data = res.json['data']
-        assert_equals(
-            [data[0]['attributes']['permission'],
-             data[1]['attributes']['permission']],
-            [permissions.ADMIN, permissions.WRITE]
-        )
+        assert [data[0]['attributes']['permission'], data[1]['attributes']['permission']] == [permissions.ADMIN, permissions.WRITE]
 
 
 @pytest.mark.django_db
@@ -2366,12 +2321,7 @@ class TestPreprintContributorBulkPartialUpdate(NodeCRUDTestCase):
 
         res = app.get(url_published)
         data = res.json['data']
-        assert_equals(
-            [data[0]['attributes']['permission'],
-             data[1]['attributes']['permission'],
-             data[2]['attributes']['permission']],
-            [permissions.ADMIN, permissions.READ, permissions.READ]
-        )
+        assert [data[0]['attributes']['permission'], data[1]['attributes']['permission'], data[2]['attributes']['permission']] == [permissions.ADMIN, permissions.READ, permissions.READ]
 
     #   test_bulk_partial_update_contributors_published_preprints_logged_out
         res = app.patch_json_api(
@@ -2382,12 +2332,7 @@ class TestPreprintContributorBulkPartialUpdate(NodeCRUDTestCase):
 
         res = app.get(url_published, auth=user.auth)
         data = res.json['data']
-        assert_equals(
-            [data[0]['attributes']['permission'],
-             data[1]['attributes']['permission'],
-             data[2]['attributes']['permission']],
-            [permissions.ADMIN, permissions.READ, permissions.READ]
-        )
+        assert [data[0]['attributes']['permission'], data[1]['attributes']['permission'], data[2]['attributes']['permission']] == [permissions.ADMIN, permissions.READ, permissions.READ]
 
     #   test_bulk_partial_update_contributors_unpublished_preprints_logged_out
         res = app.patch_json_api(
@@ -2399,11 +2344,7 @@ class TestPreprintContributorBulkPartialUpdate(NodeCRUDTestCase):
 
         res = app.get(url_unpublished, auth=user.auth)
         data = res.json['data']
-        assert_equals(
-            [data[0]['attributes']['permission'],
-             data[1]['attributes']['permission'],
-             data[2]['attributes']['permission']],
-            [permissions.ADMIN, permissions.READ, permissions.READ])
+        assert [data[0]['attributes']['permission'], data[1]['attributes']['permission'], data[2]['attributes']['permission']] == [permissions.ADMIN, permissions.READ, permissions.READ]
 
     #   test_bulk_partial_update_contributors_unpublished_preprints_logged_in_non_contrib
         res = app.patch_json_api(
@@ -2416,12 +2357,7 @@ class TestPreprintContributorBulkPartialUpdate(NodeCRUDTestCase):
 
         res = app.get(url_unpublished, auth=user.auth)
         data = res.json['data']
-        assert_equals(
-            [data[0]['attributes']['permission'],
-             data[1]['attributes']['permission'],
-             data[2]['attributes']['permission']],
-            [permissions.ADMIN, permissions.READ, permissions.READ]
-        )
+        assert [data[0]['attributes']['permission'], data[1]['attributes']['permission'], data[2]['attributes']['permission']] == [permissions.ADMIN, permissions.READ, permissions.READ]
 
     #   test_bulk_partial_update_contributors_unpublished_preprints_logged_in_read_only_contrib
         res = app.patch_json_api(
@@ -2434,11 +2370,7 @@ class TestPreprintContributorBulkPartialUpdate(NodeCRUDTestCase):
 
         res = app.get(url_unpublished, auth=user.auth)
         data = res.json['data']
-        assert_equals(
-            [data[0]['attributes']['permission'],
-             data[1]['attributes']['permission'],
-             data[2]['attributes']['permission']],
-            [permissions.ADMIN, permissions.READ, permissions.READ])
+        assert [data[0]['attributes']['permission'], data[1]['attributes']['permission'], data[2]['attributes']['permission']] == [permissions.ADMIN, permissions.READ, permissions.READ]
 
     #   test_bulk_partial_update_contributors_preprints_send_dictionary_not_list
         res = app.patch_json_api(
@@ -2531,11 +2463,7 @@ class TestPreprintContributorBulkPartialUpdate(NodeCRUDTestCase):
 
         res = app.get(url_published, auth=user.auth)
         data = res.json['data']
-        assert_equals(
-            [data[0]['attributes']['permission'],
-             data[1]['attributes']['permission'],
-             data[2]['attributes']['permission']],
-            [permissions.ADMIN, permissions.READ, permissions.READ])
+        assert [data[0]['attributes']['permission'], data[1]['attributes']['permission'], data[2]['attributes']['permission']] == [permissions.ADMIN, permissions.READ, permissions.READ]
 
     #   test_bulk_partial_update_invalid_bibliographic
         res = app.patch_json_api(
@@ -2557,11 +2485,7 @@ class TestPreprintContributorBulkPartialUpdate(NodeCRUDTestCase):
 
         res = app.get(url_published, auth=user.auth)
         data = res.json['data']
-        assert_equals(
-            [data[0]['attributes']['permission'],
-             data[1]['attributes']['permission'],
-             data[2]['attributes']['permission']],
-            [permissions.ADMIN, permissions.READ, permissions.READ])
+        assert [data[0]['attributes']['permission'], data[1]['attributes']['permission'], data[2]['attributes']['permission']] == [permissions.ADMIN, permissions.READ, permissions.READ]
 
     def test_bulk_partial_update_contributors_published_preprints_logged_in(
             self, app, user, payload_published_one, payload_published_two, url_published):
@@ -2571,10 +2495,7 @@ class TestPreprintContributorBulkPartialUpdate(NodeCRUDTestCase):
             auth=user.auth, bulk=True)
         assert res.status_code == 200
         data = res.json['data']
-        assert_equals(
-            [data[0]['attributes']['permission'],
-             data[1]['attributes']['permission']],
-            [permissions.ADMIN, permissions.WRITE])
+        assert [data[0]['attributes']['permission'], data[1]['attributes']['permission']] == [permissions.ADMIN, permissions.WRITE]
 
     def test_bulk_partial_update_contributors_unpublished_preprints_logged_in_contrib(
             self, app, user, payload_unpublished_one, payload_unpublished_two, url_unpublished):
@@ -2584,10 +2505,7 @@ class TestPreprintContributorBulkPartialUpdate(NodeCRUDTestCase):
             auth=user.auth, bulk=True)
         assert res.status_code == 200
         data = res.json['data']
-        assert_equals(
-            [data[0]['attributes']['permission'],
-             data[1]['attributes']['permission']],
-            [permissions.ADMIN, permissions.WRITE])
+        assert [data[0]['attributes']['permission'], data[1]['attributes']['permission']] == [permissions.ADMIN, permissions.WRITE]
 
 @pytest.mark.enable_quickfiles_creation
 class TestPreprintContributorBulkDelete(NodeCRUDTestCase):

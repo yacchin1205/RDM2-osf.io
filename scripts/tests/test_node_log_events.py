@@ -66,5 +66,5 @@ class TestNodeLogAnalytics(OsfTestCase):
             }
         ]
 
-        assert_equals(expected, self.results)
+        assert expected == self.results
 

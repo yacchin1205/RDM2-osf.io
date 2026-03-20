@@ -95,10 +95,10 @@ class TestNextcloudinstitutions(unittest.TestCase):
             self.option.save()
 
     def test_nextcloudinstitutions_default_is_not_allowed(self):
-        assert_false(self.option.is_allowed)
+        assert not self.option.is_allowed
         self._new_project()
         result = self.project.get_addon(NAME)
-        assert_equal(result, None)
+        assert result == None
 
     def test_nextcloudinstitutions_no_eppn(self):
         self.user.eppn = None
@@ -106,28 +106,28 @@ class TestNextcloudinstitutions(unittest.TestCase):
         self._allow()
         self._new_project()
         result = self.project.get_addon(NAME)
-        assert_equal(result, None)
+        assert result == None
 
     def test_nextcloudinstitutions_no_institution(self):
         self.user.affiliated_institutions.clear()
         self._allow()
         self._new_project()
         result = self.project.get_addon(NAME)
-        assert_equal(result, None)
+        assert result == None
 
     def test_nextcloudinstitutions_no_addon_option(self):
         self._allow()
         self.option.delete()
         self._new_project()
         result = self.project.get_addon(NAME)
-        assert_equal(result, None)
+        assert result == None
 
     def test_nextcloudinstitutions_automount(self):
         self._allow()
         self._new_project()
         result = self.project.get_addon(NAME)
-        assert_true(isinstance(result, NodeSettings))
-        assert_equal(result.root_folder_fullpath, self._expected_root_folder)
+        assert isinstance(result, NodeSettings)
+        assert result.root_folder_fullpath == self._expected_root_folder
 
     def test_nextcloudinstitutions_automount_with_basefolder(self):
         base_folder = six.u('/GRDMプロジェクトフォルダ')
@@ -136,10 +136,10 @@ class TestNextcloudinstitutions(unittest.TestCase):
         self.option.save()
         self._new_project()
         result = self.project.get_addon(NAME)
-        assert_true(isinstance(result, NodeSettings))
+        assert isinstance(result, NodeSettings)
         name = self._expected_folder_name
         expected_root_folder = six.u('{}/{}').format(base_folder, name)
-        assert_equal(result.root_folder_fullpath, expected_root_folder)
+        assert result.root_folder_fullpath == expected_root_folder
 
     def test_nextcloudinstitutions_rename(self):
         self._allow()
@@ -148,5 +148,5 @@ class TestNextcloudinstitutions(unittest.TestCase):
             self.project.title = self.project.title + '_new'
             self.project.save()
         result = self.project.get_addon(NAME)
-        assert_true(isinstance(result, NodeSettings))
-        assert_equal(result.root_folder_fullpath, self._expected_root_folder)
+        assert isinstance(result, NodeSettings)
+        assert result.root_folder_fullpath == self._expected_root_folder
