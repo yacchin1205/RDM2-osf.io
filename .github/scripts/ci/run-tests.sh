@@ -82,7 +82,7 @@ if [ "$TEST_BUILD" = "addons" ]; then
 [nodeenv]
 node = system
 EOF
-    pip3 install --force-reinstall --no-deps pre-commit==1.10.5
+    pip3 install --force-reinstall --no-deps pre-commit==3.7.1
     hash -r
 fi
 mkdir -p user_key_info
@@ -93,7 +93,8 @@ pip3 install uritemplate.py==0.3.0
 if [ "$TEST_BUILD" = "api1_and_js" ]; then
     python3 -m invoke assets --dev
 fi
-python3 -m invoke "test-travis-${TEST_BUILD}" -n 1
+INVOKE_TEST_BUILD="${TEST_BUILD//_/-}"
+python3 -m invoke "test-travis-${INVOKE_TEST_BUILD}" -n 1
 BASH
 
 compose run --rm \

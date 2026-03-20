@@ -1,10 +1,10 @@
+from functools import partial
 from json import dumps
 from django.core.handlers.wsgi import WSGIHandler
 from django.contrib.staticfiles.handlers import StaticFilesHandler
 from django.test.signals import template_rendered
 from django.core import signals
 from django.test.client import store_rendered_templates
-from django.utils.functional import curry
 try:
     from django.db import close_old_connections
 except ImportError:
@@ -82,7 +82,7 @@ class JSONAPITestApp(TestApp, JSONAPIWrapper):
             # Curry a data dictionary into an instance of the template renderer
             # callback function.
             data = {}
-            on_template_render = curry(store_rendered_templates, data)
+            on_template_render = partial(store_rendered_templates, data)
             template_rendered.connect(on_template_render)
 
             response = super(JSONAPITestApp, self).do_request(req, status,
