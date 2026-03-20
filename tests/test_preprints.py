@@ -5,7 +5,7 @@ import mock
 import furl
 import pytest
 import time
-from future.moves.urllib.parse import urlparse, urljoin
+from urllib.parse import urlparse, urljoin
 import datetime
 from django.utils import timezone
 import pytz

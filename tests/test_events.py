@@ -1,6 +1,7 @@
 from collections import OrderedDict
 
 import mock
+import pytest
 
 from website.notifications.events.base import Event, register, event_registry
 from website.notifications.events.files import (
@@ -33,21 +34,21 @@ class TestEventNotImplemented(OsfTestCase):
         self.node = factories.ProjectFactory(creator=self.user)
         self.event = self.NotImplementedEvent(self.user, self.node, 'not_implemented')
 
-    @raises(NotImplementedError)
     def test_text(self):
-        text = self.event.text_message
+        with pytest.raises(NotImplementedError):
+            _ = self.event.text_message
 
-    @raises(NotImplementedError)
     def test_html(self):
-        html = self.event.html_message
+        with pytest.raises(NotImplementedError):
+            _ = self.event.html_message
 
-    @raises(NotImplementedError)
     def test_url(self):
-        url = self.event.url
+        with pytest.raises(NotImplementedError):
+            _ = self.event.url
 
-    @raises(NotImplementedError)
     def test_event(self):
-        event = self.event.event_type
+        with pytest.raises(NotImplementedError):
+            _ = self.event.event_type
 
 
 class TestListOfFiles(OsfTestCase):

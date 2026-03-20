@@ -12,7 +12,7 @@ import shutil
 import tempfile
 import time
 import unittest
-from future.moves.urllib.parse import quote
+from urllib.parse import quote
 import uuid
 
 from flask import request
