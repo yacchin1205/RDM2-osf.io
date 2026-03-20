@@ -182,7 +182,7 @@ def use_ja_analyzer(func):
 
     return wrapped
 
-def setup(cls, self, create_obj=True):
+def setup_search_test_data(cls, self, create_obj=True):
     super(cls, self).setUp()
     search.delete_all()
     search.create_index(None)
@@ -407,7 +407,7 @@ class TestSearchJapanese(OsfTestCase):
     @enable_private_search
     @use_ja_analyzer
     def setUp(self):
-        setup(TestSearchJapanese, self, create_obj=False)
+        setup_search_test_data(TestSearchJapanese, self, create_obj=False)
 
     @enable_private_search
     @use_ja_analyzer
@@ -781,7 +781,7 @@ class TestSearchBugfix(OsfTestCase):
     @enable_private_search
     @use_ja_analyzer
     def setUp(self):
-        setup(TestSearchBugfix, self, create_obj=False)
+        setup_search_test_data(TestSearchBugfix, self, create_obj=False)
 
     @enable_private_search
     @use_ja_analyzer
@@ -1058,7 +1058,7 @@ class TestPrivateSearch(OsfTestCase):
 
     @enable_private_search
     def setUp(self):
-        setup(TestPrivateSearch, self)
+        setup_search_test_data(TestPrivateSearch, self)
 
     @enable_private_search
     def tearDown(self):
@@ -1894,7 +1894,7 @@ class TestSearchExt(OsfTestCase):
 
     @enable_private_search
     def setUp(self):
-        setup(TestSearchExt, self)
+        setup_search_test_data(TestSearchExt, self)
 
     @enable_private_search
     def tearDown(self):
@@ -2112,7 +2112,7 @@ class TestSearchHighlight(OsfTestCase):
 
     @enable_private_search
     def setUp(self):
-        setup(TestSearchHighlight, self, create_obj=False)
+        setup_search_test_data(TestSearchHighlight, self, create_obj=False)
 
     @enable_private_search
     def tearDown(self):
@@ -2500,7 +2500,7 @@ class TestSearchSort(OsfTestCase):
 
     @enable_private_search
     def setUp(self):
-        setup(TestSearchSort, self, create_obj=False)
+        setup_search_test_data(TestSearchSort, self, create_obj=False)
 
     @enable_private_search
     def tearDown(self):
@@ -2762,7 +2762,7 @@ class TestSearchSort(OsfTestCase):
 class TestOriginalSearch(OsfTestCase):
 
     def setUp(self):
-        setup(TestOriginalSearch, self)
+        setup_search_test_data(TestOriginalSearch, self)
 
     def tearDown(self):
         tear_down(TestOriginalSearch, self)
