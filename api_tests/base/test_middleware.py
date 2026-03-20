@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 from django.http import HttpResponse
 
-from future.moves.urllib.parse import urlparse
+from urllib.parse import urlparse
 import mock
 from rest_framework.test import APIRequestFactory
 from django.test.utils import override_settings

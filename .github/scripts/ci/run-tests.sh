@@ -84,6 +84,14 @@ node = system
 EOF
     pip3 install --force-reinstall --no-deps pre-commit==3.7.1
     hash -r
+    pwd
+    echo "HOME=$HOME"
+    ls -la .git || true
+    git rev-parse --show-toplevel || true
+    git status --short || true
+    git config --show-origin --get-all safe.directory || true
+    command -v pre-commit || true
+    pre-commit --version || true
 fi
 mkdir -p user_key_info
 cp root_cert_verifycate.pem user_key_info/
@@ -94,7 +102,12 @@ if [ "$TEST_BUILD" = "api1_and_js" ]; then
     python3 -m invoke assets --dev
 fi
 INVOKE_TEST_BUILD="${TEST_BUILD//_/-}"
-python3 -m invoke "test-travis-${INVOKE_TEST_BUILD}" -n 1
+if ! python3 -m invoke "test-travis-${INVOKE_TEST_BUILD}" -n 1; then
+    if [ "$TEST_BUILD" = "addons" ]; then
+        cat /root/.cache/pre-commit/pre-commit.log || true
+    fi
+    exit 1
+fi
 BASH
 
 compose run --rm \

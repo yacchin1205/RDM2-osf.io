@@ -1,4 +1,3 @@
-from past.builtins import basestring
 from addons.osfstorage.models import Region
 from osf.models import Institution, UserQuota
 from tests.base import AdminTestCase
@@ -14,7 +13,7 @@ import pytest
 @pytest.mark.django_db
 def test_factory():
     inst = InstitutionFactory()
-    assert isinstance(inst.name, basestring)
+    assert isinstance(inst.name, str)
     assert len(inst.domains) > 0
     assert len(inst.email_domains) > 0
 
@@ -195,7 +194,7 @@ class TestInstitution(AdminTestCase):
         res = institution.get_default_region()
         assert res == first_source
         assert institution.get_institutional_storage().last() == last_source
-        nt.assert_not_equals(res, last_source)
+        assert res != last_source
 
     def test_get_default_institutional_storage(self):
         institution = InstitutionFactory()
@@ -207,7 +206,7 @@ class TestInstitution(AdminTestCase):
         res = institution.get_default_institutional_storage()
         assert res == first_source
         assert institution.get_institutional_storage().last() == last_source
-        nt.assert_not_equals(res, last_source)
+        assert res != last_source
 
     def test_is_allowed_institutional_storage_id(self):
         institution = InstitutionFactory()

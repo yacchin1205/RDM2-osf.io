@@ -3,7 +3,7 @@
 import os
 import json
 import datetime as dt
-from future.moves.urllib.parse import urlparse, urljoin, parse_qs
+from urllib.parse import parse_qs, urljoin, urlparse
 
 from django.db import connection, transaction
 from django.contrib.auth.models import Group

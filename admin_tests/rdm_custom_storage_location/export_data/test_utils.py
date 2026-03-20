@@ -8,7 +8,6 @@ import requests
 from datetime import datetime, timezone, timedelta
 from jsonschema import ValidationError, SchemaError
 from mock import patch, MagicMock
-from nose import tools as nt
 from requests import ConnectionError, ReadTimeout, Timeout
 from rest_framework import status
 
