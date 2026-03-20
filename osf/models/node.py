@@ -20,7 +20,6 @@ from django.db.models.signals import post_save
 from django.dispatch import receiver
 from django.utils import timezone
 from django.utils.functional import cached_property
-from keen import scoped_keys
 from psycopg2._psycopg import AsIs
 from typedmodels.models import TypedModel, TypedModelManager
 from guardian.models import (
@@ -449,8 +448,6 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
     wiki_private_uuids = DateTimeAwareJSONField(default=dict, blank=True)
 
     identifiers = GenericRelation(Identifier, related_query_name='nodes')
-
-    keenio_read_key = models.CharField(max_length=1000, null=True, blank=True)
 
     # Group from Cloud Gateway (for API v1)
     group = models.OneToOneField(CGGroup,
@@ -1271,13 +1268,11 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
                     self.request_embargo_termination(auth=auth)
                     return False
             self.is_public = True
-            self.keenio_read_key = self.generate_keenio_read_key()
         elif permissions == 'private' and self.is_public:
             if self.is_registration and not self.is_pending_embargo:
                 raise NodeStateError('Public registrations must be withdrawn, not made private.')
             else:
                 self.is_public = False
-                self.keenio_read_key = ''
         else:
             return False
 
@@ -1308,16 +1303,6 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         if auth and permissions == 'public':
             project_signals.privacy_set_public.send(auth.user, node=self, meeting_creation=meeting_creation)
         return True
-
-    def generate_keenio_read_key(self):
-        return scoped_keys.encrypt(settings.KEEN['public']['master_key'], options={
-            'filters': [{
-                'property_name': 'node.id',
-                'operator': 'eq',
-                'property_value': str(self._id)
-            }],
-            'allowed_operations': [READ]
-        })
 
     @property
     def private_links_active(self):

@@ -98,7 +98,6 @@ pdfkit==1.0.0
 numpy==1.26.4
 
 # Analytics requirements
-keen==0.5.1
 maxminddb-geolite2==2018.308
 
 # OSF models

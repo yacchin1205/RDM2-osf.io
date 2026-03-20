@@ -418,12 +418,8 @@ class CeleryConfig:
         'scripts.stuck_registration_audit',
         'scripts.analytics.tasks',
         'scripts.populate_new_and_noteworthy_projects',
-        'scripts.populate_popular_projects_and_registrations',
         'website.search.elastic_search',
         'scripts.generate_sitemap',
-        'scripts.analytics.run_keen_summaries',
-        'scripts.analytics.run_keen_snapshots',
-        'scripts.analytics.run_keen_events',
         'scripts.clear_sessions',
         'scripts.cleanup_task_results',
         'osf.management.commands.check_crossref_dois',
@@ -501,7 +497,6 @@ class CeleryConfig:
         'website.search.search',
         'website.project.tasks',
         'scripts.populate_new_and_noteworthy_projects',
-        'scripts.populate_popular_projects_and_registrations',
         'scripts.refresh_addon_tokens',
         'scripts.retract_registrations',
         'scripts.embargo_registrations',
@@ -511,9 +506,6 @@ class CeleryConfig:
         'scripts.clear_sessions',
         'scripts.cleanup_task_results',
         'scripts.send_queued_mails',
-        'scripts.analytics.run_keen_summaries',
-        'scripts.analytics.run_keen_snapshots',
-        'scripts.analytics.run_keen_events',
         'scripts.generate_sitemap',
         'scripts.premigrate_created_modified',
         'scripts.add_missing_identifiers_to_preprints',
@@ -613,29 +605,10 @@ class CeleryConfig:
                 'schedule': crontab(minute=0, hour=7, day_of_week=6),  # Saturday 2:00 a.m.
                 'kwargs': {'dry_run': False}
             },
-            'update_popular_nodes': {
-                'task': 'scripts.populate_popular_projects_and_registrations',
-                'schedule': crontab(minute=0, hour=7),  # Daily 2:00 a.m.
-                'kwargs': {'dry_run': False}
-            },
             'registration_schema_metrics': {
                 'task': 'management.commands.registration_schema_metrics',
                 'schedule': crontab(minute=45, hour=7, day_of_month=3),  # Third day of month 2:45 a.m.
                 'kwargs': {'dry_run': False}
-            },
-            'run_keen_summaries': {
-                'task': 'scripts.analytics.run_keen_summaries',
-                'schedule': crontab(minute=0, hour=6),  # Daily 1:00 a.m.
-                'kwargs': {'yesterday': True}
-            },
-            # 'run_keen_snapshots': {
-            #     'task': 'scripts.analytics.run_keen_snapshots',
-            #     'schedule': crontab(minute=0, hour=8),  # Daily 3:00 a.m.
-            # },
-            'run_keen_events': {
-                'task': 'scripts.analytics.run_keen_events',
-                'schedule': crontab(minute=0, hour=9),  # Daily 4:00 a.m.
-                'kwargs': {'yesterday': True}
             },
             # 'data_storage_usage': {
             #   'task': 'management.commands.data_storage_usage',

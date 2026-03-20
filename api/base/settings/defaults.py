@@ -11,7 +11,6 @@ https://docs.djangoproject.com/en/1.8/ref/settings/
 """
 
 import os
-from urllib.parse import urlparse
 from website import settings as osf_settings
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -213,8 +212,7 @@ REST_FRAMEWORK = {
 # CORS plugin only matches based on "netloc" part of URL, so as workaround we add that to the list
 CORS_ORIGIN_ALLOW_ALL = False
 CORS_ORIGIN_WHITELIST = (
-    urlparse(osf_settings.DOMAIN).netloc,
-    osf_settings.DOMAIN,
+    osf_settings.DOMAIN.rstrip('/'),
 )
 # This needs to remain True to allow cross origin requests that are in CORS_ORIGIN_WHITELIST to
 # use cookies.
@@ -234,9 +232,9 @@ MIDDLEWARE = (
     'api.base.middleware.CorsMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
-    # 'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'django.contrib.auth.middleware.AuthenticationMiddleware',
     # 'django.contrib.auth.middleware.SessionAuthenticationMiddleware',
-    # 'django.contrib.messages.middleware.MessageMiddleware',
+    'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'django.middleware.security.SecurityMiddleware',
     # 'waffle.middleware.WaffleMiddleware',
@@ -248,6 +246,13 @@ TEMPLATES = [
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
         'DIRS': [os.path.join(BASE_DIR, 'templates')],
         'APP_DIRS': True,
+        'OPTIONS': {
+            'context_processors': [
+                'django.template.context_processors.request',
+                'django.contrib.auth.context_processors.auth',
+                'django.contrib.messages.context_processors.messages',
+            ],
+        },
     },
 ]
 

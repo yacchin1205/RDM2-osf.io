@@ -1,15 +1,11 @@
-import time
 import logging
 import argparse
 import importlib
-from datetime import datetime, timedelta
+from datetime import timedelta
 from dateutil.parser import parse
 from django.utils import timezone
 
 from website.app import init_app
-from website.settings import KEEN as keen_settings
-from keen.client import KeenClient
-from scripts import utils as script_utils
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
@@ -29,18 +25,7 @@ class BaseAnalytics(object):
         raise NotImplementedError('You must define a get_events method to gather analytic events')
 
     def send_events(self, events):
-        keen_project = keen_settings['private']['project_id']
-        write_key = keen_settings['private']['write_key']
-        if keen_project and write_key:
-            client = KeenClient(
-                project_id=keen_project,
-                write_key=write_key,
-            )
-            logger.info('Adding {} events to the {} collection'.format(len(events), self.collection_name))
-            client.add_events({self.collection_name: events})
-        else:
-            logger.info('Keen not enabled - would otherwise be adding the following {} events to the {} collection'.format(len(events), self.collection_name))
-            print(events)
+        logger.info('Skipping {} events for the {} collection'.format(len(events), self.collection_name))
 
 
 class SnapshotAnalytics(BaseAnalytics):
@@ -105,26 +90,7 @@ class EventAnalytics(SummaryAnalytics):
             yield events[i:i + 5000]
 
     def send_events(self, events):
-        keen_project = keen_settings['private']['project_id']
-        write_key = keen_settings['private']['write_key']
-        if keen_project and write_key:
-            client = KeenClient(
-                project_id=keen_project,
-                write_key=write_key,
-            )
-            logger.info('Adding {} events to the {} collection'.format(len(events), self.collection_name))
-
-            for chunk in self.yield_chunked_events(events):
-                client.add_events({self.collection_name: chunk})
-                time.sleep(1)
-
-        else:
-            logger.info(
-                'Keen not enabled - would otherwise be adding the following {} events to the {} collection'.format(
-                    len(events), self.collection_name
-                )
-            )
-            print(events)
+        logger.info('Skipping {} events for the {} collection'.format(len(events), self.collection_name))
 
 
 class BaseAnalyticsHarness(object):
