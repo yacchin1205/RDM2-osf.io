@@ -23,7 +23,6 @@ from admin.nodes.views import (
 )
 from admin_tests.utilities import setup_log_view, setup_view
 from website import settings
-from nose import tools as nt
 from django.utils import timezone
 from django.test import RequestFactory
 from django.urls import reverse

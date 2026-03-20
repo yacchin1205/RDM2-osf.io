@@ -4,7 +4,6 @@ from django.contrib.sessions.middleware import SessionMiddleware
 from django.core.exceptions import PermissionDenied
 from django.test import RequestFactory
 from django.urls import reverse
-from nose import tools as nt
 
 from admin.user_emails import views
 from admin.user_emails.forms import UserEmailsSearchForm

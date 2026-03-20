@@ -1,5 +1,4 @@
 import pytest
-from nose import tools as nt
 
 from addons.dataverse.tests.factories import DataverseNodeSettingsFactory, DataverseAccountFactory
 from addons.github.tests.factories import GitHubNodeSettingsFactory, GitHubAccountFactory

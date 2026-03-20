@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-from nose import tools as nt
 from django.test import RequestFactory
 
 from tests.base import AdminTestCase

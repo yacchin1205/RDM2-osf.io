@@ -1,6 +1,5 @@
 import pytest
 
-from nose import tools as nt
 
 from admin.spam.templatetags import spam_extras
 

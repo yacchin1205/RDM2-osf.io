@@ -2,7 +2,6 @@ from django.test import RequestFactory
 from rest_framework import status as http_status
 import json
 import mock
-from nose import tools as nt
 
 from addons.ociinstitutions import settings
 from addons.osfstorage.models import Region

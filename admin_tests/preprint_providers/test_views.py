@@ -4,7 +4,6 @@ import mock
 from io import StringIO
 
 import responses
-from nose import tools as nt
 from django.test import RequestFactory
 from django.core.files.uploadedfile import InMemoryUploadedFile
 from scripts.update_taxonomies import update_taxonomies

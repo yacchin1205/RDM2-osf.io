@@ -1,7 +1,6 @@
 import pytest
 from celery.states import SUCCESS
 from mock import patch
-from nose import tools as nt
 
 from admin.rdm_custom_storage_location.export_data.views.restore import ProcessError
 from admin.rdm_custom_storage_location.tasks import (

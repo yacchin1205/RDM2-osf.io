@@ -84,11 +84,11 @@ django-guardian==2.4.0
 git+https://github.com/CenterForOpenScience/django-webpack-loader.git@6b62fef7d6bc9d25d7b7b7a303f4580ad24831a6
 django-password-reset==1.0
 django-sendgrid-v5==1.2.3
-python-redmine==2.0.2
+python-redmine==2.5.0
 pyfcm==1.4.3
 facebook-sdk==3.1.0
 #git+https://github.com/mobolic/facebook-sdk.git@09b281b97ff3192d8d78edca393c753d11b0eb99#egg=facebook-sdk
-tweepy==3.5.0
+tweepy==3.10.0
 pandas==2.2.1
 matplotlib==3.8.3
 seaborn==0.13.2

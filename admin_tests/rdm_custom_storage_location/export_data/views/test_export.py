@@ -11,7 +11,6 @@ from celery.utils.threads import LocalStack
 from django.db import IntegrityError
 from django.test import RequestFactory
 from django_celery_results.models import TaskResult
-from nose import tools as nt
 from rest_framework import status
 
 from admin.rdm_custom_storage_location.export_data.views import export

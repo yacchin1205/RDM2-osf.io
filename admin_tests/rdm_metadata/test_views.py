@@ -1,5 +1,4 @@
 import json
-from nose import tools as nt
 
 from django.test import RequestFactory
 

@@ -6,7 +6,6 @@ from addons.osfstorage.models import Region
 from admin.institutional_storage_quota_control import views
 from django.test import RequestFactory
 from django.urls import reverse
-from nose import tools as nt
 from osf.models import UserQuota
 from admin_tests.utilities import setup_view
 from osf_tests.factories import (

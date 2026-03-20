@@ -15,6 +15,12 @@ import pytest
 
 from django.test import TestCase as DjangoTestCase
 from django.test import override_settings
+from django.core import signals
+try:
+    from django.db import close_old_connections
+except ImportError:
+    from django.db import close_connection
+    close_old_connections = None
 from faker import Factory
 from framework.auth.core import Auth
 from framework.celery_tasks.handlers import celery_before_request
@@ -34,6 +40,35 @@ from webtest_plus import TestApp
 from .json_api_test_app import JSONAPITestApp
 
 logger = logging.getLogger(__name__)
+
+
+class WebsiteTestApp(TestApp):
+    # Website tests still use the legacy webtest_plus harness, which injects
+    # HTTP_AUTHORIZATION as bytes. Current Werkzeug expects a str when
+    # request.authorization is accessed, so normalize the header here at the
+    # test boundary before Flask parses it.
+    def do_request(self, req, status, expect_errors):
+        if close_old_connections is not None:
+            signals.request_started.disconnect(close_old_connections)
+            signals.request_finished.disconnect(close_old_connections)
+        else:
+            signals.request_finished.disconnect(close_connection)
+
+        try:
+            auth = req.environ.get('HTTP_AUTHORIZATION')
+            if auth is None:
+                req.environ['HTTP_AUTHORIZATION'] = 'None'
+            elif isinstance(auth, bytes):
+                req.environ['HTTP_AUTHORIZATION'] = auth.decode()
+            else:
+                req.environ['HTTP_AUTHORIZATION'] = str(auth)
+            return super(WebsiteTestApp, self).do_request(req, status, expect_errors)
+        finally:
+            if close_old_connections:
+                signals.request_started.connect(close_old_connections)
+                signals.request_finished.connect(close_old_connections)
+            else:
+                signals.request_finished.connect(close_connection)
 
 
 def get_default_metaschema():
@@ -111,7 +146,7 @@ class AppTestCase(unittest.TestCase):
 
     def setUp(self):
         super(AppTestCase, self).setUp()
-        self.app = TestApp(test_app)
+        self.app = WebsiteTestApp(test_app)
         self.app.lint = False  # This breaks things in Py3
         if not self.PUSH_CONTEXT:
             return

@@ -7,7 +7,6 @@ from django.core.exceptions import PermissionDenied
 from django.http import Http404, JsonResponse
 from django.test import RequestFactory
 from django.urls import reverse
-from nose import tools as nt
 
 from admin.rdm_custom_storage_location.export_data.views import management
 from admin_tests.utilities import setup_view

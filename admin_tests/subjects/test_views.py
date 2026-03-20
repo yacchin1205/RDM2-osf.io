@@ -1,5 +1,4 @@
 import pytest
-from nose import tools as nt
 from django.test import RequestFactory
 from django.urls import reverse
 from django.core.exceptions import PermissionDenied

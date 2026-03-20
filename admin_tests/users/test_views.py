@@ -5,7 +5,6 @@ import pytz
 import pytest
 from datetime import datetime, timedelta
 
-from nose import tools as nt
 from django.test import RequestFactory
 from django.http import Http404
 from django.core.files.uploadedfile import SimpleUploadedFile

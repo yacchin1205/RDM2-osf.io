@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 
 import json
-from nose import tools as nt
 from django.test import RequestFactory
 from django.http import Http404
 

@@ -1,4 +1,3 @@
-from nose import tools as nt
 
 from tests.base import AdminTestCase
 from osf_tests.factories import AuthUserFactory

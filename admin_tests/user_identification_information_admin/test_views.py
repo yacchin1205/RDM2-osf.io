@@ -1,6 +1,5 @@
 import pytest
 from django.test import RequestFactory
-from nose import tools as nt
 
 from addons.github.tests.factories import GitHubNodeSettingsFactory, GitHubAccountFactory
 from addons.s3.tests.factories import (S3NodeSettingsFactory, S3AccountFactory, )

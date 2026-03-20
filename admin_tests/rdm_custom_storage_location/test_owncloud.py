@@ -5,7 +5,6 @@ import json
 import mock
 import owncloud
 import requests
-from nose import tools as nt
 
 from addons.osfstorage.models import Region
 from admin.rdm_custom_storage_location import views

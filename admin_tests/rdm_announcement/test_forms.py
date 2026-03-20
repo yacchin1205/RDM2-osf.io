@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-from nose import tools as nt
 
 from tests.base import AdminTestCase
 from admin.rdm_announcement.forms import PreviewForm

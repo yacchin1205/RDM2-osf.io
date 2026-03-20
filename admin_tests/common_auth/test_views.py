@@ -1,5 +1,4 @@
 import pytest
-from nose import tools as nt
 import mock
 
 from django.test import RequestFactory

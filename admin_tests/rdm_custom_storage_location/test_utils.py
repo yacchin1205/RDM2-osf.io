@@ -1,6 +1,5 @@
 import mock
 import pytest
-from nose import tools as nt
 
 from addons.osfstorage.models import Region
 from admin.rdm_custom_storage_location.utils import (
@@ -55,7 +54,7 @@ class TestUtils:
         available_list = ['s3', 's3compat']
         provider_list = get_providers(available_list=available_list)
         provider_list_short_name = [p.short_name for p in provider_list]
-        nt.assert_list_equal(provider_list_short_name, available_list)
+        assert provider_list_short_name == available_list
 
     @patch('osf.utils.external_util.remove_region_external_account')
     @patch('admin.rdm_custom_storage_location.utils.update_storage')

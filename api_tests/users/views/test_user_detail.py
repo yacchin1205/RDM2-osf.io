@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 import mock
 import pytest
-from future.moves.urllib.parse import urlparse, parse_qs
+from urllib.parse import urlparse, parse_qs
 import datetime as dt
 
 from django.db import connection, transaction

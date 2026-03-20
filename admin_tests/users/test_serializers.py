@@ -1,7 +1,6 @@
 from datetime import datetime
 
 from django.utils import timezone
-from nose import tools as nt
 
 from tests.base import AdminTestCase
 from osf_tests.factories import NodeFactory, UserFactory, PreprintFactory
@@ -37,10 +36,10 @@ class TestUserSerializers(AdminTestCase):
         assert info['disabled'] == False
         user.is_disabled = True
         info = serialize_user(user)
-        nt.assert_almost_equal(
-            int(info['disabled'].strftime('%s')),
-            int(timezone.now().strftime('%s')),
-            delta=50)
+        assert abs(
+            int(info['disabled'].strftime('%s')) -
+            int(timezone.now().strftime('%s'))
+        ) <= 50
         assert isinstance(info['disabled'], datetime)
 
     def test_serialize_simple_node(self):

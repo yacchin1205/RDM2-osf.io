@@ -159,8 +159,9 @@ def serialize_contributors(contribs, node, **kwargs):
 
 
 def serialize_visible_contributors(node):
-    # This is optimized when node has .include('contributor__user__guids')
-    contribs = node.contributor_set.include(
+    # Prefetch related user objects explicitly; legacy queryset.include is no
+    # longer available on the Django queryset path used in tests.
+    contribs = node.contributor_set.prefetch_related(
         'user__groups', 'user__guids', 'user__ext'
     )
 

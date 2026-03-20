@@ -1,4 +1,3 @@
-from nose import tools as nt
 
 from tests.base import AdminTestCase
 from tests.test_conferences import ConferenceFactory

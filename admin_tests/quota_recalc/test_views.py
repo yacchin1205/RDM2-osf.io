@@ -2,7 +2,6 @@
 from django.test import RequestFactory
 import json
 import mock
-from nose import tools as nt
 
 from admin.quota_recalc import views
 from api.base import settings as api_settings

@@ -1,7 +1,6 @@
 from django.test import RequestFactory
 from rest_framework import status as http_status
 import json
-from nose import tools as nt
 
 from addons.osfstorage.models import Region
 from admin.rdm_custom_storage_location import views

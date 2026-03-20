@@ -1,4 +1,3 @@
-from nose.tools import *  # noqa: F403
 import datetime as datetime
 import pytest
 
@@ -142,7 +141,7 @@ class TestNodeChanges(AdminTestCase):
 
         # Create an embargo from a registration with none
         change_embargo_date(self.registration, self.user, self.date_valid)
-        assert_almost_equal(self.registration.embargo.end_date, self.date_valid, delta=datetime.timedelta(days=1))
+        assert abs(self.registration.embargo.end_date - self.date_valid) <= datetime.timedelta(days=1)
 
         # Make sure once embargo is set, registration is made private
         self.registration.reload()
@@ -150,7 +149,7 @@ class TestNodeChanges(AdminTestCase):
 
         # Update an embargo end date
         change_embargo_date(self.registration, self.user, self.date_valid2)
-        assert_almost_equal(self.registration.embargo.end_date, self.date_valid2, delta=datetime.timedelta(days=1))
+        assert abs(self.registration.embargo.end_date - self.date_valid2) <= datetime.timedelta(days=1)
 
         # Test invalid dates
         with pytest.raises(ValidationError):
@@ -162,7 +161,7 @@ class TestNodeChanges(AdminTestCase):
         with pytest.raises(PermissionDenied):
             change_embargo_date(self.registration, UserFactory(), self.date_valid)
 
-        assert_almost_equal(self.registration.embargo.end_date, self.date_valid2, delta=datetime.timedelta(days=1))
+        assert abs(self.registration.embargo.end_date - self.date_valid2) <= datetime.timedelta(days=1)
 
         # Add a test to check privatizing
 

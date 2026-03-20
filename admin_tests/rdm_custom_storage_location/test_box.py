@@ -3,7 +3,6 @@ from django.test import RequestFactory
 from django.utils import timezone
 from rest_framework import status as http_status
 import json
-from nose import tools as nt
 import mock
 
 from addons.osfstorage.models import Region

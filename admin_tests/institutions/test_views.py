@@ -5,7 +5,6 @@ from operator import itemgetter
 import pytest
 from django.http import Http404, HttpResponse
 from django.urls import reverse
-from nose import tools as nt
 import mock
 from django.test import RequestFactory
 from django.contrib.auth.models import Permission, AnonymousUser

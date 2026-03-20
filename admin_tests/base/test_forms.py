@@ -1,5 +1,3 @@
-from nose.tools import *  # noqa: F403
-
 from tests.base import AdminTestCase
 
 from admin.base.forms import GuidForm

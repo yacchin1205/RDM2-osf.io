@@ -1,4 +1,3 @@
-from nose import tools as nt
 
 from django.test import RequestFactory
 #from django.core.urlresolvers import reverse, reverse_lazy

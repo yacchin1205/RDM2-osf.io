@@ -4,7 +4,6 @@ import mock
 from django.http import Http404
 import pytest
 from django.test import RequestFactory
-from nose import tools as nt
 from rest_framework import status as http_status
 from django.core.exceptions import PermissionDenied
 

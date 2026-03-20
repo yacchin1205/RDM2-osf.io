@@ -3,7 +3,6 @@ from django.utils import timezone
 from rest_framework import status as http_status
 import json
 import mock
-from nose import tools as nt
 
 from addons.osfstorage.models import Region
 from admin.rdm_custom_storage_location import views

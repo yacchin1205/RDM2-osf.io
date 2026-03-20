@@ -9,7 +9,6 @@ from django.core.exceptions import PermissionDenied
 from django.db.models.query import QuerySet
 from django.test import RequestFactory
 from django.urls import reverse
-from nose import tools as nt
 from osf.models.institution_entitlement import InstitutionEntitlement
 from osf_tests.factories import (
     AuthUserFactory,

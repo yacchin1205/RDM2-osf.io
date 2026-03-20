@@ -5,7 +5,6 @@ import pytest
 from django.http import Http404
 from django.test import RequestFactory
 from django.urls import reverse
-from nose import tools as nt
 
 from addons.github.tests.factories import GitHubNodeSettingsFactory, GitHubAccountFactory
 from addons.s3.tests.factories import (S3UserSettingsFactory, S3NodeSettingsFactory, S3AccountFactory, )

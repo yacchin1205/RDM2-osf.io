@@ -2,7 +2,6 @@
 
 import flask
 import mock
-from nose import tools as nt
 from django.test import RequestFactory
 from django.contrib.sessions.middleware import SessionMiddleware
 

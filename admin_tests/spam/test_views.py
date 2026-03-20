@@ -3,7 +3,6 @@ from django.db import transaction
 from django.test import RequestFactory
 from django.http import Http404
 from django.utils import timezone
-from nose import tools as nt
 from datetime import timedelta
 
 from osf.models import Comment, SpamStatus
@@ -90,7 +89,7 @@ class TestSpamListView(AdminTestCase):
             self.comment_2._id,
             self.comment_1._id
         ]
-        nt.assert_list_equal(should_be, response_list)
+        assert response_list == should_be
 
     def test_get_context_data(self):
         self.view.object_list = self.view.get_queryset()

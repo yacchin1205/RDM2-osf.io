@@ -4,7 +4,6 @@ from admin.osf_groups.views import (
     OSFGroupsFormView
 )
 from admin_tests.utilities import setup_log_view
-from nose import tools as nt
 from django.test import RequestFactory
 
 from tests.base import AdminTestCase

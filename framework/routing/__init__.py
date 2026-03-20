@@ -309,7 +309,7 @@ def call_url(url, view_kwargs=None):
     rv, _, _, _ = unpack(rv)
 
     # Follow redirects
-    if isinstance(rv, werkzeug.wrappers.BaseResponse) \
+    if isinstance(rv, werkzeug.wrappers.Response) \
             and rv.status_code in REDIRECT_CODES:
         redirect_url = rv.headers['Location']
         return call_url(redirect_url)
@@ -341,7 +341,7 @@ class Renderer(object):
             return self.handle_error(data)
 
         # Return if response
-        if isinstance(data, werkzeug.wrappers.BaseResponse):
+        if isinstance(data, werkzeug.wrappers.Response):
             return data
 
         # Unpack tuple
@@ -351,7 +351,7 @@ class Renderer(object):
         rendered = self.render(data, redirect_url, *args, **kwargs)
 
         # Return if response
-        if isinstance(rendered, werkzeug.wrappers.BaseResponse):
+        if isinstance(rendered, werkzeug.wrappers.Response):
             return rendered
 
         # Set content type in headers
