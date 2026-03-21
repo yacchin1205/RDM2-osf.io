@@ -1322,34 +1322,34 @@ class TestSearchMigration(OsfTestCase):
         )
 
     def test_first_migration_no_remove(self):
-        migrate(delete=False, remove=False, index=settings.ELASTIC_INDEX, app=self.app.app)
+        migrate(delete=False, remove=False, index=settings.ELASTIC_INDEX, app=self.app.application)
         var = self.es.indices.get_aliases()
         assert list(var[settings.ELASTIC_INDEX + '_v1']['aliases'].keys())[0] == settings.ELASTIC_INDEX
 
     def test_multiple_migrations_no_remove(self):
         for n in range(1, 21):
-            migrate(delete=False, remove=False, index=settings.ELASTIC_INDEX, app=self.app.app)
+            migrate(delete=False, remove=False, index=settings.ELASTIC_INDEX, app=self.app.application)
             var = self.es.indices.get_aliases()
             assert list(var[settings.ELASTIC_INDEX + '_v{}'.format(n)]['aliases'].keys())[0] == settings.ELASTIC_INDEX
 
     def test_first_migration_with_remove(self):
-        migrate(delete=False, remove=True, index=settings.ELASTIC_INDEX, app=self.app.app)
+        migrate(delete=False, remove=True, index=settings.ELASTIC_INDEX, app=self.app.application)
         var = self.es.indices.get_aliases()
         assert list(var[settings.ELASTIC_INDEX + '_v1']['aliases'].keys())[0] == settings.ELASTIC_INDEX
 
     def test_multiple_migrations_with_remove(self):
         for n in range(1, 21, 2):
-            migrate(delete=False, remove=True, index=settings.ELASTIC_INDEX, app=self.app.app)
+            migrate(delete=False, remove=True, index=settings.ELASTIC_INDEX, app=self.app.application)
             var = self.es.indices.get_aliases()
             assert list(var[settings.ELASTIC_INDEX + '_v{}'.format(n)]['aliases'].keys())[0] == settings.ELASTIC_INDEX
 
-            migrate(delete=False, remove=True, index=settings.ELASTIC_INDEX, app=self.app.app)
+            migrate(delete=False, remove=True, index=settings.ELASTIC_INDEX, app=self.app.application)
             var = self.es.indices.get_aliases()
             assert list(var[settings.ELASTIC_INDEX + '_v{}'.format(n + 1)]['aliases'].keys())[0] == settings.ELASTIC_INDEX
             assert not var.get(settings.ELASTIC_INDEX + '_v{}'.format(n))
 
     def test_migration_institutions(self):
-        migrate(delete=True, index=settings.ELASTIC_INDEX, app=self.app.app)
+        migrate(delete=True, index=settings.ELASTIC_INDEX, app=self.app.application)
         count_query = {}
         count_query['aggregations'] = {
             'counts': {
@@ -1371,8 +1371,9 @@ class TestSearchMigration(OsfTestCase):
         collection_one = factories.CollectionFactory(is_public=True, provider=provider)
         collection_two = factories.CollectionFactory(is_public=True, provider=provider)
         node = factories.NodeFactory(creator=self.user, title='Ali Bomaye', is_public=True)
-        collection_one.collect_object(node, self.user)
-        collection_two.collect_object(node, self.user)
+        with run_celery_tasks():
+            collection_one.collect_object(node, self.user)
+            collection_two.collect_object(node, self.user)
         assert node.is_collected
 
         docs = query_collections('*')['results']

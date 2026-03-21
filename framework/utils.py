@@ -3,6 +3,8 @@ import re
 import pytz
 import time
 from datetime import datetime
+from bleach.css_sanitizer import CSSSanitizer, ALLOWED_CSS_PROPERTIES
+from bleach.sanitizer import Cleaner, ALLOWED_ATTRIBUTES, ALLOWED_PROTOCOLS, ALLOWED_TAGS
 from django.utils import timezone
 from werkzeug.utils import secure_filename as werkzeug_secure_filename
 
@@ -31,6 +33,31 @@ def secure_filename(filename):
         pass
 
     return secure
+
+
+def sanitize_html(
+    text,
+    tags=ALLOWED_TAGS,
+    attributes=ALLOWED_ATTRIBUTES,
+    protocols=ALLOWED_PROTOCOLS,
+    strip=False,
+    styles=ALLOWED_CSS_PROPERTIES,
+    strip_comments=True,
+    filters=None,
+):
+    css_sanitizer = None
+    if styles is not None:
+        css_sanitizer = CSSSanitizer(allowed_css_properties=styles)
+    cleaner = Cleaner(
+        tags=tags,
+        attributes=attributes,
+        protocols=protocols,
+        strip=strip,
+        strip_comments=strip_comments,
+        css_sanitizer=css_sanitizer,
+        filters=filters,
+    )
+    return cleaner.clean(text)
 
 
 def get_timestamp():
