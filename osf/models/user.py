@@ -1352,7 +1352,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         with reraise_django_validation_errors():
             validate_email(email)
 
-        if not external_identity and self.emails.filter(address=email).exists():
+        if self.pk and not external_identity and self.emails.filter(address=email).exists():
             raise ValueError('Email already confirmed to this user.')
 
         # If the unconfirmed email is already present, refresh the token

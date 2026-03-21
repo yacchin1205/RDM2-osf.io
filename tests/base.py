@@ -35,40 +35,11 @@ from website.notifications.listeners import (subscribe_contributor,
 from website.project.signals import contributor_added, project_created
 from website.project.views.contributor import notify_added_contributor
 from website.signals import ALL_SIGNALS
-from webtest_plus import TestApp
 
 from .json_api_test_app import JSONAPITestApp
+from .response import FormsTestResponse
 
 logger = logging.getLogger(__name__)
-
-
-class WebsiteTestApp(TestApp):
-    # Website tests still use the legacy webtest_plus harness, which injects
-    # HTTP_AUTHORIZATION as bytes. Current Werkzeug expects a str when
-    # request.authorization is accessed, so normalize the header here at the
-    # test boundary before Flask parses it.
-    def do_request(self, req, status, expect_errors):
-        if close_old_connections is not None:
-            signals.request_started.disconnect(close_old_connections)
-            signals.request_finished.disconnect(close_old_connections)
-        else:
-            signals.request_finished.disconnect(close_connection)
-
-        try:
-            auth = req.environ.get('HTTP_AUTHORIZATION')
-            if auth is None:
-                req.environ['HTTP_AUTHORIZATION'] = 'None'
-            elif isinstance(auth, bytes):
-                req.environ['HTTP_AUTHORIZATION'] = auth.decode()
-            else:
-                req.environ['HTTP_AUTHORIZATION'] = str(auth)
-            return super(WebsiteTestApp, self).do_request(req, status, expect_errors)
-        finally:
-            if close_old_connections:
-                signals.request_started.connect(close_old_connections)
-                signals.request_finished.connect(close_old_connections)
-            else:
-                signals.request_finished.connect(close_connection)
 
 
 def get_default_metaschema():
@@ -83,7 +54,7 @@ except AssertionError:  # Routes have already been set up
 rm_handlers(test_app, django_handlers)
 rm_handlers(test_app, celery_handlers)
 
-test_app.testing = True
+test_app.config['TESTING'] = True
 
 
 # Silence some 3rd-party logging and some "loud" internal loggers
@@ -146,7 +117,9 @@ class AppTestCase(unittest.TestCase):
 
     def setUp(self):
         super(AppTestCase, self).setUp()
-        self.app = WebsiteTestApp(test_app)
+        self.app = test_app.test_client()
+        self.app.response_wrapper = FormsTestResponse
+        self.app.application.config.update({'TESTING': True, })
         self.app.lint = False  # This breaks things in Py3
         if not self.PUSH_CONTEXT:
             return

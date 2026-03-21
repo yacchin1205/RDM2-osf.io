@@ -13,6 +13,7 @@ from werkzeug.local import LocalProxy
 
 from framework.flask import redirect
 from framework.sessions.utils import remove_session
+from osf.utils.fields import ensure_str
 from website import settings
 
 
@@ -91,12 +92,12 @@ def create_session(response, data=None):
     if current_session:
         current_session.data.update(data or {})
         current_session.save()
-        cookie_value = itsdangerous.Signer(settings.SECRET_KEY).sign(current_session._id)
+        cookie_value = ensure_str(itsdangerous.Signer(settings.SECRET_KEY).sign(current_session._id))
     else:
         session_id = str(bson.objectid.ObjectId())
         new_session = Session(_id=session_id, data=data or {})
         new_session.save()
-        cookie_value = itsdangerous.Signer(settings.SECRET_KEY).sign(session_id)
+        cookie_value = ensure_str(itsdangerous.Signer(settings.SECRET_KEY).sign(session_id))
         set_session(new_session)
     if response is not None:
         response.set_cookie(settings.COOKIE_NAME, value=cookie_value, domain=settings.OSF_COOKIE_DOMAIN,
@@ -160,7 +161,7 @@ def before_request():
     cookie = request.cookies.get(settings.COOKIE_NAME)
     if cookie:
         try:
-            session_id = itsdangerous.Signer(settings.SECRET_KEY).unsign(cookie)
+            session_id = ensure_str(itsdangerous.Signer(settings.SECRET_KEY).unsign(cookie))
             user_session = Session.load(session_id) or Session(_id=session_id)
         except itsdangerous.BadData:
             return
