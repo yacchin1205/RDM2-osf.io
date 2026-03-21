@@ -82,6 +82,7 @@ if [ "$TEST_BUILD" = "addons" ]; then
 [nodeenv]
 node = system
 EOF
+    git config --global --add safe.directory /code
     pip3 install --force-reinstall --no-deps pre-commit==3.7.1
     hash -r
     pwd
