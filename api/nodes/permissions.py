@@ -60,7 +60,7 @@ class IsAdminContributor(permissions.BasePermission):
     admin contributor to make changes.  Admin group membership
     is not sufficient.
     """
-    acceptable_models = (AbstractNode, DraftRegistration,)
+    acceptable_models = (AbstractNode, DraftRegistration)
 
     def has_object_permission(self, request, view, obj):
         assert_resource_type(obj, self.acceptable_models)
@@ -86,7 +86,7 @@ class EditIfPublic(permissions.BasePermission):
 
 
 class IsAdmin(permissions.BasePermission):
-    acceptable_models = (AbstractNode, PrivateLink,)
+    acceptable_models = (AbstractNode, PrivateLink)
 
     def has_object_permission(self, request, view, obj):
         assert_resource_type(obj, self.acceptable_models)
@@ -122,7 +122,7 @@ class IsContributorOrGroupMember(permissions.BasePermission):
 
 class AdminOrPublic(permissions.BasePermission):
 
-    acceptable_models = (AbstractNode, OSFUser, Institution, BaseAddonSettings, DraftRegistration,)
+    acceptable_models = (AbstractNode, OSFUser, Institution, BaseAddonSettings, DraftRegistration)
 
     def has_object_permission(self, request, view, obj):
         if isinstance(obj, dict) and 'self' in obj:
@@ -138,7 +138,7 @@ class AdminOrPublic(permissions.BasePermission):
 
 class AdminContributorOrPublic(permissions.BasePermission):
 
-    acceptable_models = (AbstractNode, DraftRegistration,)
+    acceptable_models = (AbstractNode, DraftRegistration)
 
     def has_object_permission(self, request, view, obj):
         """
@@ -178,7 +178,7 @@ class ReadOnlyIfWithdrawn(permissions.BasePermission):
 class ContributorDetailPermissions(permissions.BasePermission):
     """Permissions for contributor detail page."""
 
-    acceptable_models = (AbstractNode, OSFUser, Contributor,)
+    acceptable_models = (AbstractNode, OSFUser, Contributor)
 
     def load_resource(self, context, view):
         return AbstractNode.load(context[view.node_lookup_url_kwarg])
@@ -201,7 +201,7 @@ class NodeGroupDetailPermissions(permissions.BasePermission):
     """Permissions for node group detail - involving who can update the relationship
     between a node and an OSF Group."""
 
-    acceptable_models = (OSFGroup, AbstractNode,)
+    acceptable_models = (OSFGroup, AbstractNode)
 
     def load_resource(self, context, view):
         return AbstractNode.load(context[view.node_lookup_url_kwarg])
@@ -222,7 +222,7 @@ class NodeGroupDetailPermissions(permissions.BasePermission):
 
 class ContributorOrPublicForPointers(permissions.BasePermission):
 
-    acceptable_models = (AbstractNode, NodeRelation,)
+    acceptable_models = (AbstractNode, NodeRelation)
 
     def has_object_permission(self, request, view, obj):
         assert_resource_type(obj, self.acceptable_models)
@@ -342,7 +342,7 @@ class NodeLinksShowIfVersion(ShowIfVersion):
 # GRDM-50321 Project Metadata should be available to non-admins.
 class IsWritableContributorToRegisterDrafts(permissions.BasePermission):
 
-    acceptable_models = (AbstractNode, DraftRegistration,)
+    acceptable_models = (AbstractNode, DraftRegistration)
 
     def has_object_permission(self, request, view, obj):
         """
@@ -364,7 +364,7 @@ class AdminOrPublicOrSuperUser(permissions.BasePermission):
     2. The request is using safe methods (GET, HEAD, OPTIONS) and the object is either public or viewable by the user
     3. The user has admin permissions on the object
     """
-    acceptable_models = (AbstractNode, OSFUser, Institution, BaseAddonSettings, DraftRegistration,)
+    acceptable_models = (AbstractNode, OSFUser, Institution, BaseAddonSettings, DraftRegistration)
 
     def has_object_permission(self, request, view, obj):
         """

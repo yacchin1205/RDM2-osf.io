@@ -54,7 +54,7 @@ class BaseSearchView(JSONAPIBaseView, generics.ListCreateAPIView):
 
     def get_parsers(self):
         if self.request.method == 'POST':
-            return (SearchParser(), )
+            return (SearchParser(),)
         return super(BaseSearchView, self).get_parsers()
 
     def get_queryset(self, query=None):

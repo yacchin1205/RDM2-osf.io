@@ -77,7 +77,7 @@ class SubjectRelationshipBaseView(JSONAPIBaseView, generics.RetrieveUpdateAPIVie
 
     """
     serializer_class = SubjectsRelationshipSerializer
-    parser_classes = (JSONAPIRelationshipParser, JSONAPIRelationshipParserForRegularJSON, )
+    parser_classes = (JSONAPIRelationshipParser, JSONAPIRelationshipParserForRegularJSON)
 
     def get_resource(self, check_object_permissions=True):
         raise NotImplementedError()

@@ -46,7 +46,7 @@ class CanSubmitToCollectionOrPublic(permissions.BasePermission):
 
 class CanUpdateDeleteCGMOrPublic(permissions.BasePermission):
 
-    acceptable_models = (CollectionSubmission, )
+    acceptable_models = (CollectionSubmission,)
 
     def has_object_permission(self, request, view, obj):
         if isinstance(obj, dict):

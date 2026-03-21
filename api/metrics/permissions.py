@@ -22,7 +22,7 @@ class IsRawMetricsUser(permissions.BasePermission):
 
 class IsInstitutionalMetricsUser(permissions.BasePermission):
 
-    acceptable_models = (Institution, )
+    acceptable_models = (Institution,)
 
     def has_object_permission(self, request, view, obj):
         user = request.user

@@ -569,7 +569,7 @@ class RelationshipField(ser.HyperlinkedIdentityField):
 
     def __init__(
         self, related_view=None, related_view_kwargs=None, self_view=None, self_view_kwargs=None,
-        self_meta=None, related_meta=None, always_embed=False, filter=None, filter_key=None, required=False, **kwargs
+        self_meta=None, related_meta=None, always_embed=False, filter=None, filter_key=None, required=False, **kwargs,
     ):
         related_view = related_view
         self_view = self_view
@@ -647,9 +647,11 @@ class RelationshipField(ser.HyperlinkedIdentityField):
 
         field_counts_requested = [val for val in params.split(',')]
 
-        countable_fields = {field for field in self.parent.fields if
-                            getattr(self.parent.fields[field], 'json_api_link', False) or
-                            getattr(getattr(self.parent.fields[field], 'field', None), 'json_api_link', None)}
+        countable_fields = {
+            field for field in self.parent.fields if
+            getattr(self.parent.fields[field], 'json_api_link', False) or
+            getattr(getattr(self.parent.fields[field], 'field', None), 'json_api_link', None)
+        }
         for count_field in field_counts_requested:
             # Some fields will hide relationships, e.g. HideIfWithdrawal
             # Ignore related_counts for these fields
@@ -786,7 +788,7 @@ class RelationshipField(ser.HyperlinkedIdentityField):
             if href and not href == '{}':
                 if self.always_embed:
                     envelope = 'data'
-                query_dict = dict(format=['jsonapi', ], envelope=[envelope, ])
+                query_dict = dict(format=['jsonapi'], envelope=[envelope])
                 if 'view_only' in self.parent.context['request'].query_params.keys():
                     query_dict.update(view_only=[self.parent.context['request'].query_params['view_only']])
                 esi_url = utils.extend_querystring_params(href, query_dict)
@@ -974,9 +976,11 @@ class TargetField(ser.Field):
         """
         view_info = self.view_map.get(resource.target.referent._name, None)
         if not view_info:
-            raise api_exceptions.TargetNotSupportedError('{} is not a supported target type'.format(
-                resource.target._name,
-            ))
+            raise api_exceptions.TargetNotSupportedError(
+                '{} is not a supported target type'.format(
+                    resource.target._name,
+                ),
+            )
         if not view_info['view']:
             return None, None, None
         embed_value = resource.target._id
@@ -995,7 +999,7 @@ class TargetField(ser.Field):
         href = value.get_absolute_url()
 
         if href:
-            esi_url = utils.extend_querystring_params(href, dict(envelope=[envelope, ], format=['jsonapi', ]))
+            esi_url = utils.extend_querystring_params(href, dict(envelope=[envelope], format=['jsonapi']))
             return '<esi:include src="{}"/>'.format(esi_url)
         return self.to_representation(value)
 
@@ -1142,7 +1146,7 @@ class Link(object):
             args=arg_values,
             kwargs=kwarg_values,
             query_kwargs=query_kwarg_values,
-            **self.reverse_kwargs
+            **self.reverse_kwargs,
         )
 
 

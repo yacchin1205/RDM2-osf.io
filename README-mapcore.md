@@ -24,8 +24,8 @@ mAP coreから Authorization Codeを入手するAPIエンドポイントを指�
 mAP coreから Access Tokenなどを入手するAPIエンドポイントを指定する。デフォルトは /oauth/token.php
 * MAPCORE_REFRESH_PATH
 mAP coreにて Access Token / Refresh Tokenの更新を行うAPIエンドポイントを指定する。デフォルトは /oauth/token.php
-* MAPCORE_API_PATH  
-mAP coreのグループ/メンバー操作を行うAPIのエンドポイントを指定する。デフォルトは /api2/v1  
+* MAPCORE_API_PATH
+mAP coreのグループ/メンバー操作を行うAPIのエンドポイントを指定する。デフォルトは /api2/v1
 * MAPCORE_AUTHCODE_MAGIC
 OAuth2認証におけるstateフィールドの値(任意の文字列)を指定する。デフォルトは GRDM_mAP_AuthCode
 * MAPCORE_CLIENTID
