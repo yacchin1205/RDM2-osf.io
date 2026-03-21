@@ -1586,7 +1586,7 @@ dot-prop@^4.1.0:
 
 "dropzone@https://github.com/CenterForOpenScience/dropzone.git#aba21eb6b82cc823ac7a7a53d6e035791c082bae":
   version "4.3.0"
-  resolved "git+ssh://git@github.com/CenterForOpenScience/dropzone.git#aba21eb6b82cc823ac7a7a53d6e035791c082bae"
+  resolved "https://github.com/CenterForOpenScience/dropzone.git#aba21eb6b82cc823ac7a7a53d6e035791c082bae"
   integrity sha512-h7t2dxSLe/IXqsGd3rOexezsB1TgYYJmxe2yUU/VDiPy67D8A7+Np111CjtE/+Xyx5shYZfI59+ZMcu6HN3Idg==
 
 duplexer3@^0.1.4:
@@ -5875,7 +5875,7 @@ tough-cookie@>=0.12.0, tough-cookie@~2.3.3:
 
 "treebeard@https://github.com/CenterForOpenScience/treebeard.git#d2bb8f6f8104fcac040402727f431c26722b269e":
   version "0.6.1"
-  resolved "git+ssh://git@github.com/CenterForOpenScience/treebeard.git#d2bb8f6f8104fcac040402727f431c26722b269e"
+  resolved "https://github.com/CenterForOpenScience/treebeard.git#d2bb8f6f8104fcac040402727f431c26722b269e"
   integrity sha512-qbEJbi/Nfnl9LqI3myIiPlxDXVPgB9lQRjCNIwLrtk1vSs0Jp6DUM+AAycAT3bMAfqXfzMuWqDQWrkrBmUs4mw==
   dependencies:
     bootstrap "~3.3.2"
