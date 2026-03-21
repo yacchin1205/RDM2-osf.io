@@ -24,7 +24,7 @@ from django.contrib.auth.hashers import check_password
 from django.contrib.auth.models import PermissionsMixin
 from django.dispatch import receiver
 from django.db import models
-from django.db.models import Count
+from django.db.models import Count, Exists, OuterRef
 from django.db.models.signals import m2m_changed, post_save
 from django.utils import timezone
 from guardian.shortcuts import get_objects_for_user
@@ -51,7 +51,7 @@ from osf.models.tag import Tag
 from osf.models.mapcore import MAPProfile
 from osf.models.validators import validate_email, validate_social, validate_history_item
 from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
-from osf.utils.fields import NonNaiveDateTimeField, LowercaseEmailField
+from osf.utils.fields import NonNaiveDateTimeField, LowercaseEmailField, ensure_str
 from osf.utils.names import impute_names
 from osf.utils.requests import check_select_for_update
 from osf.utils.permissions import API_CONTRIBUTOR_PERMISSIONS, MANAGER, MEMBER, MANAGE, ADMIN
@@ -672,7 +672,11 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         """
         Nodes where user is a bibliographic contributor (group membership not factored in)
         """
-        return self.nodes.filter(is_deleted=False, contributor__visible=True, type__in=['osf.node', 'osf.registration'])
+        return self.nodes.annotate(
+            self_is_visible=Exists(
+                Contributor.objects.filter(node_id=OuterRef('id'), user_id=self.id, visible=True)
+            )
+        ).filter(deleted__isnull=True, self_is_visible=True, type__in=['osf.node', 'osf.registration'])
 
     @property
     def all_nodes(self):
@@ -1096,8 +1100,16 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
             )
         except mailchimp_utils.OSFError as error:
             sentry.log_exception(error)
+            if self.mailchimp_mailing_lists is None:
+                self.mailchimp_mailing_lists = {}
+            self.mailchimp_mailing_lists[website_settings.MAILCHIMP_GENERAL_LIST] = False
+            self.save()
         except Exception as error:
             sentry.log_exception(error)
+            if self.mailchimp_mailing_lists is None:
+                self.mailchimp_mailing_lists = {}
+            self.mailchimp_mailing_lists[website_settings.MAILCHIMP_GENERAL_LIST] = False
+            self.save()
         # Call to `unsubscribe` above saves, and can lead to stale data
         self.reload()
         self.is_disabled = True
@@ -1936,7 +1948,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         secret = secret or settings.SECRET_KEY
 
         try:
-            token = itsdangerous.Signer(secret).unsign(cookie)
+            token = ensure_str(itsdangerous.Signer(secret).unsign(cookie))
         except itsdangerous.BadSignature:
             return None
 

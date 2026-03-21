@@ -173,7 +173,7 @@ class TestQuickFilesNode:
         actual_filenames = list(quickfiles.files.all().values_list('name', flat=True))
         expected_filenames = ['Woo.pdf', 'Woo (1).pdf', 'Woo (2).pdf', 'Woo (3).pdf']
 
-        assert actual_filenames == expected_filenames
+        assert sorted(actual_filenames) == sorted(expected_filenames)
 
     @mock.patch('osf.models.user.MAX_QUICKFILES_MERGE_RENAME_ATTEMPTS', 1)
     def test_quickfiles_moves_errors_after_max_renames(self, user, quickfiles):

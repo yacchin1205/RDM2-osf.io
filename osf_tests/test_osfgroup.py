@@ -220,6 +220,7 @@ class TestOSFGroup:
     def test_notify_group_member_email_does_not_send_before_throttle_expires(self, mock_send_mail, manager, osf_group):
         member = AuthUserFactory()
         assert member.member_added_email_records == {}
+        mock_send_mail.reset_mock()
         group_signals.member_added.send(osf_group, user=member, permission=WRITE, auth=Auth(manager))
         assert mock_send_mail.call_count == 1
 
@@ -236,6 +237,7 @@ class TestOSFGroup:
 
         member = AuthUserFactory()
         assert member.member_added_email_records == {}
+        mock_send_mail.reset_mock()
         group_signals.member_added.send(osf_group, user=member, permission=WRITE, auth=Auth(manager), throttle=throttle)
         assert mock_send_mail.call_count == 1
 
@@ -254,6 +256,7 @@ class TestOSFGroup:
         member.add_unclaimed_record(osf_group, referrer=manager, given_name='grapes mcgee', email='grapes@cos.io')
         member.save()
         assert member.member_added_email_records == {}
+        mock_send_mail.reset_mock()
         group_signals.member_added.send(osf_group, user=member, permission=WRITE, auth=Auth(manager), throttle=throttle)
         assert mock_send_mail.call_count == 1
 

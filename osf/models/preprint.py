@@ -60,6 +60,11 @@ class PreprintManager(models.Manager):
     def get_queryset(self):
         return GuidMixinQuerySet(self.model, using=self._db)
 
+    def all(self):
+        # Keep GuidMixinQuerySet.all() in the call path so `guids` prefetch
+        # applies to Preprint queries too.
+        return self.get_queryset().all()
+
     no_user_query = Q(
         is_published=True,
         is_public=True,

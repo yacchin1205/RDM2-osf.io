@@ -2,8 +2,6 @@
 Tests related to authenticating API requests
 """
 
-from unittest import TestCase
-
 import mock
 
 import pytest

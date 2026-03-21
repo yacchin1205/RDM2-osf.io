@@ -46,7 +46,7 @@ class TestWaffleCookies(OsfTestCase):
         """
         node = ProjectFactory(is_public=True)
         user = AuthUserFactory()
-        resp = self.app.get(node.web_url_for('view_project'), auth=user.auth, auto_follow=True)
+        resp = self.app.get(node.web_url_for('view_project'), auth=user.auth, follow_redirects=True)
 
         waffle_cookie = next(value for key, value in list(resp.headers.items()) if 'dwf_test_flag=' in value)
 

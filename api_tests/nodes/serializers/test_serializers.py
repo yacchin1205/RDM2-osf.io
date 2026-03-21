@@ -50,7 +50,7 @@ class TestNodeSerializer:
         assert attributes['registration'] == node.is_registration
         assert attributes['fork'] == node.is_fork
         assert attributes['collection'] == node.is_collection
-        assert attributes['analytics_key'] == node.keenio_read_key
+        assert attributes['analytics_key'] == ''
         assert attributes['wiki_enabled'] == node.has_addon('wiki')
 
         # Relationships

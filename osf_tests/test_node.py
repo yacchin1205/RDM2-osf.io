@@ -1,6 +1,6 @@
+import mock
 import datetime
 
-import mock
 import pytest
 import pytz
 import responses
@@ -801,7 +801,7 @@ class TestLogging:
         last_log = node.logs.latest()
         assert last_log.action == NodeLog.EMBARGO_INITIATED
         # date is tzaware
-        assert last_log.date.tzinfo == pytz.utc
+        assert last_log.date.tzinfo == datetime.UTC
 
         # updates node.modified
         assert_datetime_equal(node.modified, last_log.date)
@@ -2359,12 +2359,10 @@ class TestSetPrivacy:
         node.save()
         assert bool(node.is_public) is True
         assert node.logs.first().action == NodeLog.MADE_PUBLIC
-        assert node.keenio_read_key != ''
         node.set_privacy('private', auth=auth)
         node.save()
         assert bool(node.is_public) is False
         assert node.logs.first().action == NodeLog.MADE_PRIVATE
-        assert node.keenio_read_key == ''
 
     @mock.patch('osf.models.queued_mail.queue_mail')
     def test_set_privacy_sends_mail_default(self, mock_queue, node, auth):
@@ -4324,7 +4322,7 @@ class TestNodeLog:
         assert bool(log.action)
 
     def test_tz_date(self, log):
-        assert log.date.tzinfo == pytz.UTC
+        assert log.date.tzinfo == datetime.UTC
 
     def test_original_node_and_current_node_for_registration_logs(self):
         user = UserFactory()

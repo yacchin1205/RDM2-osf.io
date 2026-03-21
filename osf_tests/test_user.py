@@ -12,7 +12,6 @@ from django.utils import timezone
 import mock
 import itsdangerous
 import pytest
-import pytz
 
 from framework.auth.exceptions import ExpiredTokenError, InvalidTokenError, ChangePasswordError, MergeDisableError
 from framework.auth.signals import user_merged
@@ -501,7 +500,7 @@ class TestOSFUser:
         u.set_unusable_password()
         u.save()
         assert bool(u.date_registered) is True
-        assert u.date_registered.tzinfo == pytz.utc
+        assert u.date_registered.tzinfo == dt.UTC
 
     def test_cant_create_user_without_full_name(self):
         u = OSFUser(username=fake_email())
@@ -1966,10 +1965,16 @@ class TestDisablingUsers(OsfTestCase):
         assert not Session.load(session1._id)
         assert not Session.load(session2._id)
 
-    def test_disable_account_api(self):
-        settings.ENABLE_EMAIL_SUBSCRIPTIONS = True
-        with pytest.raises(mailchimp_utils.mailchimp.InvalidApiKeyError):
-            self.user.disable_account()
+    @mock.patch('website.mailchimp_utils.get_mailchimp_api', side_effect=mailchimp_utils.OSFError('boom'))
+    def test_disable_account_api(self, mock_mail):
+        self.user.mailchimp_mailing_lists[settings.MAILCHIMP_GENERAL_LIST] = True
+        self.user.save()
+
+        self.user.disable_account()
+
+        assert self.user.is_disabled is True
+        assert isinstance(self.user.date_disabled, dt.datetime)
+        assert self.user.mailchimp_mailing_lists[settings.MAILCHIMP_GENERAL_LIST] is False
 
 # Copied from tests/modes/test_user.py
 @pytest.mark.enable_quickfiles_creation
@@ -2195,8 +2200,10 @@ class TestUserMerging(OsfTestCase):
         self.project_with_unreg_contrib.save()
 
     @pytest.mark.enable_enqueue_task
+    @mock.patch('osf.models.OSFUser.update_search_nodes_contributors')
+    @mock.patch('osf.models.OSFUser.update_search')
     @mock.patch('website.mailchimp_utils.get_mailchimp_api')
-    def test_merge(self, mock_get_mailchimp_api):
+    def test_merge(self, mock_get_mailchimp_api, mock_update_search, mock_update_search_nodes_contributors):
         def is_mrm_field(value):
             return 'RelatedManager' in str(value.__class__)
 
@@ -2338,7 +2345,8 @@ class TestUserMerging(OsfTestCase):
         # mock mailchimp
         mock_client = mock.MagicMock()
         mock_get_mailchimp_api.return_value = mock_client
-        mock_client.lists.list.return_value = {'data': [{'id': x, 'list_name': list_name} for x, list_name in enumerate(self.user.mailchimp_mailing_lists)]}
+        all_list_names = set(self.user.mailchimp_mailing_lists).union(other_user.mailchimp_mailing_lists)
+        mock_client.lists.all.return_value = {'lists': [{'id': x, 'name': list_name} for x, list_name in enumerate(all_list_names)]}
 
         with run_celery_tasks():
             # perform the merge
@@ -2431,6 +2439,7 @@ class TestUserMerging(OsfTestCase):
         #Explictly reconnect signal as it is disconnected by default for test
         contributor_added.connect(notify_added_contributor)
         other_user = UserFactory()
+        mock_notify.reset_mock()
         self.user.merge_user(other_user, is_forced=True)
         assert other_user.merged_by._id == self.user._id
         assert mock_notify.called is False

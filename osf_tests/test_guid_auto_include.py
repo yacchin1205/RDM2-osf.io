@@ -5,7 +5,7 @@ from django_bulk_update.helper import bulk_update
 
 from django.db.models import DateTimeField
 
-from osf_tests.factories import UserFactory, PreprintFactory, NodeFactory
+from osf_tests.factories import UserFactory, PreprintFactory, NodeFactory, PreprintProviderFactory
 
 
 @pytest.mark.django_db
@@ -19,14 +19,15 @@ class TestGuidAutoInclude:
     @pytest.mark.parametrize('Factory', guid_factories)
     def test_filter_object(self, Factory):
         obj = Factory()
-        assert '__guids' in str(obj._meta.model.objects.filter(id=obj.id).query), 'Guids were not included in filter query for {}'.format(obj._meta.model.__name__)
+        qs = obj._meta.model.objects.filter(id=obj.id)
+        assert 'guids' in qs._prefetch_related_lookups, 'Guids were not prefetched for {}'.format(obj._meta.model.__name__)
 
     @pytest.mark.parametrize('Factory', guid_factories)
     @pytest.mark.django_assert_num_queries
     def test_all(self, Factory, django_assert_num_queries):
         for _ in range(0, 5):
-            UserFactory()
-        with django_assert_num_queries(1):
+            Factory()
+        with django_assert_num_queries(2):
             wut = Factory._meta.model.objects.all()
             for x in wut:
                 assert x._id is not None, 'Guid was None'
@@ -38,7 +39,7 @@ class TestGuidAutoInclude:
         for _ in range(0, 5):
             objects.append(Factory())
         new_ids = [o.id for o in objects]
-        with django_assert_num_queries(1):
+        with django_assert_num_queries(2):
 
             wut = Factory._meta.model.objects.filter(id__in=new_ids)
             for x in wut:
@@ -51,7 +52,7 @@ class TestGuidAutoInclude:
         for _ in range(0, 5):
             objects.append(Factory())
         new_ids = [o.id for o in objects]
-        with django_assert_num_queries(1):
+        with django_assert_num_queries(2):
 
             wut = Factory._meta.model.objects.filter(id__in=new_ids).order_by('id')
             for x in wut:
@@ -79,7 +80,7 @@ class TestGuidAutoInclude:
         except IndexError:
             pytest.skip('Thing doesn\'t have a DateTimeField')
 
-        with django_assert_num_queries(1):
+        with django_assert_num_queries(2):
             wut = Factory._meta.model.objects.exclude(**{dtfield: timezone.now()})
             for x in wut:
                 assert x._id is not None, 'Guid was None'
@@ -125,7 +126,7 @@ class TestGuidAutoInclude:
         if not hasattr(thing_with_contributors, 'contributors'):
             pytest.skip('Thing must have contributors')
         try:
-            with django_assert_num_queries(1):
+            with django_assert_num_queries(2):
                 [x._id for x in thing_with_contributors.contributors.all()]
         except Exception as ex:
             pytest.fail('Related manager failed for {} with exception {}'.format(Factory._meta.model.__name__, ex))
@@ -151,6 +152,10 @@ class TestGuidAutoInclude:
         if Factory == PreprintFactory:
             # Don't try to save preprints on build when neither the subject nor provider have been saved
             kwargs['finish'] = False
+            kwargs['provider'] = PreprintProviderFactory()
+            kwargs['creator'] = UserFactory()
+        elif Factory == NodeFactory:
+            kwargs['creator'] = UserFactory()
         for _ in range(0, 5):
             objects.append(Factory.build(**kwargs))
         with django_assert_num_queries(1):

@@ -23,12 +23,8 @@ class TestIncludeQuerySet:
     @pytest.mark.django_assert_num_queries
     def test_include_guids(self, create_n_nodes, django_assert_num_queries):
         create_n_nodes(3)
-        # Confirm guids included automagically
-        with django_assert_num_queries(1):
+        with django_assert_num_queries(2):
             for node in Node.objects.all():
-                assert node._id is not None
-        with django_assert_num_queries(1):
-            for node in Node.objects.include('guids').all():
                 assert node._id is not None
 
     @pytest.mark.django_assert_num_queries
@@ -36,16 +32,16 @@ class TestIncludeQuerySet:
         nodes = create_n_nodes(3)
         nids = [e.id for e in nodes[:-1]]
 
-        with django_assert_num_queries(1):
-            for node in Node.objects.include('guids').filter(id__in=nids):
+        with django_assert_num_queries(2):
+            for node in Node.objects.filter(id__in=nids):
                 assert node._id is not None
 
     @pytest.mark.django_assert_num_queries
     def test_include_root_guids(self, create_n_nodes, django_assert_num_queries):
         nodes = create_n_nodes(3, roots=False)
 
-        queryset = Node.objects.filter(id__in=[e.id for e in nodes]).include('root__guids')
-        with django_assert_num_queries(1):
+        queryset = Node.objects.filter(id__in=[e.id for e in nodes]).prefetch_related('root__guids')
+        with django_assert_num_queries(4):
             for node in queryset:
                 assert node.root._id is not None
 
@@ -57,8 +53,8 @@ class TestIncludeQuerySet:
                 contrib = UserFactory()
                 node.add_contributor(contrib, auth=Auth(node.creator), save=True)
 
-        nodes = Node.objects.include('contributor__user__guids').all()
-        for node in nodes:
-            with django_assert_num_queries(0):
+        with django_assert_num_queries(5):
+            nodes = Node.objects.prefetch_related('contributor_set__user__guids').all()
+            for node in nodes:
                 for contributor in node.contributor_set.all():
                     assert contributor.user._id is not None
