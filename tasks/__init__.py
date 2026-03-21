@@ -530,6 +530,9 @@ def test_travis_addons(ctx, numprocesses=None, coverage=False, testmon=False):
     Run half of the tests to help travis go faster.
     """
     travis_setup(ctx)
+    # npm install in travis_setup mutates yarn.lock for GitHub tarball dependencies.
+    # Keep addons lint/test runs isolated from that side effect.
+    ctx.run('git checkout -- yarn.lock', echo=True)
     syntax(ctx)
     test_addons(ctx, numprocesses=numprocesses, coverage=coverage, testmon=testmon)
 
