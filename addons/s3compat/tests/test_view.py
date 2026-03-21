@@ -1,10 +1,8 @@
 # -*- coding: utf-8 -*-
 from rest_framework import status as http_status
 
-from boto.exception import S3ResponseError
+from botocore.exceptions import NoCredentialsError
 import mock
-from nose.tools import (assert_equal, assert_equals,
-    assert_true, assert_in, assert_false)
 import pytest
 
 from framework.auth import Auth
@@ -293,11 +291,9 @@ class TestCreateBucket(S3CompatAddonTestCase, OsfTestCase):
 
     @mock.patch('addons.s3compat.views.utils.create_bucket')
     def test_create_bucket_fail(self, mock_make):
-        error = S3ResponseError(418, 'because Im a test')
-        error.message = 'This should work'
-        mock_make.side_effect = error
+        mock_make.side_effect = NoCredentialsError()
 
         url = '/api/v1/project/{0}/s3compat/newbucket/'.format(self.project._id)
         ret = self.app.post_json(url, {'bucket_name': 'doesntevenmatter'}, auth=self.user.auth, expect_errors=True)
 
-        assert ret.body.decode() == '{"message": "This should work", "title": "Problem connecting to S3 Compatible Storage"}'
+        assert ret.body.decode() == '{"message": "Unable to locate credentials", "title": "Problem connecting to S3 Compatible Storage"}'

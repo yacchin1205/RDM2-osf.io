@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 """Reporting test for metadata addon"""
 import mock
-from nose.tools import *  # noqa (PEP8 asserts)
 import pytest
 from tests.base import OsfTestCase
 

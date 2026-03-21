@@ -6,7 +6,6 @@ import unittest
 import pytest
 import pytz
 from django.utils import timezone
-from nose.tools import *  # noqa
 
 from framework.auth import Auth
 from addons.osfstorage.models import OsfStorageFile, OsfStorageFileNode, OsfStorageFolder
@@ -233,7 +232,7 @@ class TestOsfstorageFileNode(StorageTestCase):
         child = self.node_settings.get_root().append_file('Test')
         guid = child.get_guid(create=True)
 
-        assert_is_not(OsfStorageFileNode.load(child._id).guids.first(), None)
+        assert OsfStorageFileNode.load(child._id).guids.first() is not None
 
         with mock.patch('osf.models.files.apps.get_model') as get_model:
             child.delete()
@@ -836,7 +835,7 @@ class TestOsfStorageFileVersion(StorageTestCase):
         )
 
         assert version._find_matching_archive() is True
-        assert_is_not(version.archive, None)
+        assert version.archive is not None
 
         assert version.metadata['vault'] == 'the cloud'
         assert version.metadata['archive'] == 'erchiv'

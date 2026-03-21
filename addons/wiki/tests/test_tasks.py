@@ -11,7 +11,6 @@ import pytz
 import datetime
 import unicodedata
 import uuid
-from nose.tools import *  # noqa
 from unittest.mock import MagicMock, ANY
 from tests.base import OsfTestCase, fake
 from osf_tests.factories import (

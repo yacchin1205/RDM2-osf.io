@@ -2,7 +2,6 @@
 from rest_framework import status as http_status
 
 import mock
-from nose.tools import *  # noqa
 from swiftclient import exceptions as swift_exceptions
 
 from framework.auth import Auth

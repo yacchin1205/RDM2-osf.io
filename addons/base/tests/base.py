@@ -1,4 +1,3 @@
-from nose.tools import *  # noqa (PEP8 asserts)
 
 from framework.auth import Auth
 

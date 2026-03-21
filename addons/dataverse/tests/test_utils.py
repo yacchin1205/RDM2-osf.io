@@ -1,6 +1,3 @@
-from nose.tools import (
-    assert_equal, assert_true, assert_false, assert_is_instance
-)
 import pytest
 
 from dataverse import Dataverse, Dataset, DataverseFile

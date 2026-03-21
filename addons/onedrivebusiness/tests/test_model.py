@@ -3,9 +3,6 @@ import unittest
 
 import mock
 import pytest
-from nose.tools import (assert_false, assert_true,
-                        assert_equal, assert_is_none)
-
 from addons.base.tests.models import (
     OAuthAddonNodeSettingsTestSuiteMixin,
     OAuthAddonUserSettingTestSuiteMixin

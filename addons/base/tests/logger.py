@@ -1,6 +1,5 @@
 import abc
 
-from nose.tools import *  # noqa (PEP8 asserts)
 
 from framework.auth import Auth
 from osf_tests.factories import AuthUserFactory, ProjectFactory

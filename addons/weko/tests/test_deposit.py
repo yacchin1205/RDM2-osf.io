@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 import logging
 import mock
-from nose.tools import *  # noqa
 import json
 import os
 import tempfile

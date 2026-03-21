@@ -4,7 +4,6 @@ import six
 
 from mock import patch, Mock, MagicMock
 import pytest
-from nose.tools import *  # noqa (PEP8 asserts)
 
 from admin.rdm_addons.utils import get_rdm_addon_option
 

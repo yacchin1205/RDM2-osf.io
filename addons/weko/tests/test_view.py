@@ -3,7 +3,6 @@ from rest_framework import status as http_status
 
 import logging
 import mock
-from nose.tools import *  # noqa
 
 from framework.auth import Auth
 from tests.base import OsfTestCase, get_default_metaschema

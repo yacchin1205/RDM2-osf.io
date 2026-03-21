@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 import unittest
-from nose.tools import assert_raises, assert_equal
 import pytest
 
 from django.core.exceptions import ValidationError

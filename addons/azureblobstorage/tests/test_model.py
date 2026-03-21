@@ -1,4 +1,3 @@
-from nose.tools import *  # noqa
 import mock
 import pytest
 import unittest

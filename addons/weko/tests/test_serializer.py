@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 """Serializer tests for the WEKO addon."""
 import mock
-from nose.tools import *  # noqa (PEP8 asserts)
 
 from website.util import web_url_for
 from addons.base.tests.serializers import StorageAddonSerializerTestSuiteMixin

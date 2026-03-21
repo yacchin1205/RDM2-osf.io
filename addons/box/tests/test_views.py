@@ -2,7 +2,6 @@
 """Views tests for the Box addon."""
 from django.utils import timezone
 from rest_framework import status as http_status
-from nose.tools import *  # noqa (PEP8 asserts)
 import mock
 import pytest
 from urllib3.exceptions import MaxRetryError

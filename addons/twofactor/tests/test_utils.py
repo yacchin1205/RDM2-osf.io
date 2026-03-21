@@ -1,6 +1,5 @@
 import pytest
 from framework.auth import Auth
-from nose.tools import assert_equal, assert_false, assert_in, assert_true
 from osf_tests.factories import UserFactory
 from tests.base import OsfTestCase
 from addons.twofactor.utils import serialize_settings, serialize_urls

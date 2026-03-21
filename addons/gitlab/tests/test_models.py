@@ -3,7 +3,6 @@
 import mock
 import pytest
 import unittest
-from nose.tools import *  # noqa
 
 from tests.base import OsfTestCase, get_default_metaschema
 from osf_tests.factories import ProjectFactory, UserFactory, DraftRegistrationFactory

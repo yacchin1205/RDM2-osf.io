@@ -2,7 +2,6 @@ import pytest
 import mock
 from datetime import datetime
 
-from nose.tools import assert_false, assert_equal, assert_raises
 
 from addons.metadata import tasks as metadata_tasks
 

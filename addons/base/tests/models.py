@@ -8,9 +8,6 @@ from addons.base.tests.utils import MockFolder
 from django.utils import timezone
 from framework.auth import Auth
 from framework.exceptions import HTTPError
-from nose.tools import (assert_equal, assert_false, assert_in, assert_is,
-                        assert_is_none, assert_not_in, assert_raises,
-                        assert_true)
 from osf.utils.permissions import ADMIN
 from osf_tests.factories import ProjectFactory, UserFactory
 from tests.utils import mock_auth

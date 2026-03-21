@@ -1,4 +1,3 @@
-from nose.tools import assert_is_not_none, assert_equal
 import pytest
 import unittest
 

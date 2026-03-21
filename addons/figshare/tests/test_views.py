@@ -3,7 +3,6 @@
 
 from rest_framework import status as http_status
 import mock
-from nose.tools import assert_equal
 import pytest
 
 from addons.base.tests.views import (

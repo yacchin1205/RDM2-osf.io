@@ -2,7 +2,6 @@
 """Client tests for the IQB-RIMS addon."""
 import json
 import mock
-from nose.tools import *  # noqa (PEP8 asserts)
 import pytest
 
 from addons.iqbrims.client import (

@@ -3,7 +3,6 @@ import pytest
 import json
 import logging
 
-from nose.tools import *  # noqa
 
 from tests.base import OsfTestCase
 

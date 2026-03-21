@@ -1,7 +1,6 @@
 import mock
 import pytest
 
-from nose.tools import assert_equal
 
 from addons.forward.tests.utils import ForwardAddonTestCase
 from tests.base import OsfTestCase

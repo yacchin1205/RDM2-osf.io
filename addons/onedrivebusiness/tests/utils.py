@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 import mock
-from nose.tools import (assert_equals, assert_true, assert_false)
 from openpyxl import Workbook
 
 from addons.base.tests.base import OAuthAddonTestCaseMixin, AddonTestCase

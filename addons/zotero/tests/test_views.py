@@ -1,11 +1,10 @@
 # -*- coding: utf-8 -*-
 import mock
 import pytest
-from future.moves.urllib.parse import urlparse, urljoin
+from urllib.parse import urlparse, urljoin
 import responses
 
 from framework.auth import Auth
-from nose.tools import (assert_equal, assert_true, assert_false)
 from addons.base.tests import views
 from addons.base.tests.utils import MockLibrary, MockFolder
 from addons.zotero.models import Zotero

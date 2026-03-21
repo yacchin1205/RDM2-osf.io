@@ -7,7 +7,6 @@ import pytest
 import unittest
 from json import dumps
 
-from nose.tools import *  # noqa (PEP8 asserts)
 from tests.base import OsfTestCase, get_default_metaschema
 from osf_tests.factories import ProjectFactory, UserFactory, AuthUserFactory, DraftRegistrationFactory, InstitutionFactory
 

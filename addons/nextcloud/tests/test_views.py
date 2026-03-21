@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-from nose.tools import assert_in, assert_equal
 import mock
 import pytest
 

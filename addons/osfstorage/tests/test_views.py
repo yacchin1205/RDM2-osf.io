@@ -8,7 +8,6 @@ import datetime
 import pytest
 import responses
 from waffle.testutils import override_flag
-from nose.tools import *  # noqa
 from dateutil.parser import parse as parse_datetime
 from website import settings
 
@@ -260,7 +259,7 @@ class TestUploadFileHook(HookTestCase):
         assert version.location == {'object': 'file', 'uname': 'testmachine', 'service': 'filesystem', 'provider': 'filesystem', storage_settings.WATERBUTLER_RESOURCE: 'blah'}
         assert version.metadata == {'size': 123, 'name': 'file', 'base64': '==', 'provider': 'filesystem', 'modified': 'Mon, 16 Feb 2015 18:45:34 GMT'}
 
-        assert_is_not(version, None)
+        assert version is not None
         assert [version] == list(record.versions.all())
         assert version not in self.record.versions.all()
         assert version.get_basefilenode_version(record).version_name == record.name
@@ -276,7 +275,7 @@ class TestUploadFileHook(HookTestCase):
         assert res.status_code == 200
         assert res.json['status'] == 'success'
         version = models.FileVersion.load(res.json['version'])
-        assert_is_not(version, None)
+        assert version is not None
         assert version in self.record.versions.all()
 
     def test_upload_duplicate(self):
@@ -292,7 +291,7 @@ class TestUploadFileHook(HookTestCase):
         assert res.status_code == 200
         assert res.json['status'] == 'success'
         version = models.FileVersion.load(res.json['version'])
-        assert_is_not(version, None)
+        assert version is not None
         assert version in self.record.versions.all()
 
     def test_upload_create_child(self):
@@ -306,7 +305,7 @@ class TestUploadFileHook(HookTestCase):
 
         version = models.FileVersion.load(res.json['version'])
 
-        assert_is_not(version, None)
+        assert version is not None
         assert version not in self.record.versions.all()
 
         record = parent.find_child_by_name(name)
@@ -327,7 +326,7 @@ class TestUploadFileHook(HookTestCase):
 
         version = models.FileVersion.load(res.json['version'])
 
-        assert_is_not(version, None)
+        assert version is not None
         assert version not in self.record.versions.all()
 
         record = parent.find_child_by_name(name)
@@ -366,7 +365,7 @@ class TestUploadFileHook(HookTestCase):
 
         version = models.FileVersion.load(res.json['version'])
 
-        assert_is_not(version, None)
+        assert version is not None
         assert version in new_node.versions.all()
 
         assert version in new_node.versions.all()
@@ -479,7 +478,7 @@ class TestUploadFileHookPreprint(TestUploadFileHook):
         assert version.location == {'object': 'file', 'uname': 'testmachine', 'service': 'filesystem', 'provider': 'filesystem', storage_settings.WATERBUTLER_RESOURCE: 'blah'}
         assert version.metadata == {'size': 123, 'name': 'file', 'base64': '==', 'provider': 'filesystem', 'modified': 'Mon, 16 Feb 2015 18:45:34 GMT'}
 
-        assert_is_not(version, None)
+        assert version is not None
         assert [version] == list(record.versions.all())
         assert version not in self.record.versions.all()
         assert record.serialize() == res.json['data']
@@ -493,7 +492,7 @@ class TestUploadFileHookPreprint(TestUploadFileHook):
         assert res.status_code == 200
         assert res.json['status'] == 'success'
         version = models.FileVersion.load(res.json['version'])
-        assert_is_not(version, None)
+        assert version is not None
         assert version in self.record.versions.all()
         assert self.record.versions.first().get_basefilenode_version(self.record).version_name == self.name
 
@@ -510,7 +509,7 @@ class TestUploadFileHookPreprint(TestUploadFileHook):
         assert res.status_code == 200
         assert res.json['status'] == 'success'
         version = models.FileVersion.load(res.json['version'])
-        assert_is_not(version, None)
+        assert version is not None
         assert version in self.record.versions.all()
 
     def test_upload_create_child(self):
@@ -524,7 +523,7 @@ class TestUploadFileHookPreprint(TestUploadFileHook):
 
         version = models.FileVersion.load(res.json['version'])
 
-        assert_is_not(version, None)
+        assert version is not None
         assert version not in self.record.versions.all()
 
         record = parent.find_child_by_name(name)
@@ -544,7 +543,7 @@ class TestUploadFileHookPreprint(TestUploadFileHook):
 
         version = models.FileVersion.load(res.json['version'])
 
-        assert_is_not(version, None)
+        assert version is not None
         assert version not in self.record.versions.all()
 
         record = parent.find_child_by_name(name)
@@ -582,7 +581,7 @@ class TestUploadFileHookPreprint(TestUploadFileHook):
 
         version = models.FileVersion.load(res.json['version'])
 
-        assert_is_not(version, None)
+        assert version is not None
         assert version in new_node.versions.all()
 
         assert version in new_node.versions.all()

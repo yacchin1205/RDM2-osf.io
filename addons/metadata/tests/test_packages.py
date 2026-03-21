@@ -10,7 +10,6 @@ import tempfile
 from zipfile import ZipFile
 
 import mock
-from nose.tools import *  # noqa (PEP8 asserts)
 import pytest
 from tests.base import OsfTestCase
 

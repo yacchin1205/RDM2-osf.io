@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 import mock
-from nose.tools import *  # noqa
 
 from tests.base import OsfTestCase
 from addons.weko.models import WEKOProvider

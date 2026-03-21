@@ -15,7 +15,6 @@ import datetime
 import re
 import unicodedata
 import uuid
-from nose.tools import *  # noqa
 from unittest.mock import MagicMock
 from tests.base import OsfTestCase, fake
 from osf_tests.factories import (

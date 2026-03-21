@@ -3,8 +3,6 @@ import abc
 
 import mock
 from framework.auth import Auth
-from nose.tools import (assert_equal, assert_false, assert_in,
-                        assert_is_not_none, assert_raises, assert_true)
 from osf_tests.factories import ProjectFactory, AuthUserFactory
 from tests.utils import mock_auth
 from website.util import web_url_for

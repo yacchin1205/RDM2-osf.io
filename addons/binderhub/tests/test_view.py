@@ -2,7 +2,6 @@
 from rest_framework import status as http_status
 
 import mock
-from nose.tools import *  # noqa
 
 from framework.auth import Auth
 from tests.base import OsfTestCase, get_default_metaschema
@@ -14,7 +13,7 @@ from .. import settings
 from .factories import make_binderhub, make_tljh
 from .utils import BaseAddonTestCase
 from website.util import api_url_for
-from future.moves.urllib.parse import urlparse, parse_qs
+from urllib.parse import urlparse, parse_qs
 
 
 class TestViews(BaseAddonTestCase, OsfTestCase):

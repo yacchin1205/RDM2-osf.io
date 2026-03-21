@@ -2,8 +2,6 @@ import json
 import hmac
 import hashlib
 
-import nose
-from nose.tools import *  # noqa
 import pytest
 
 from tests.base import OsfTestCase
@@ -59,6 +57,3 @@ class TestHookVerify(OsfTestCase):
                 {'X-Hub-Signature': 'invalid'}
             )
 
-
-if __name__ == '__main__':
-    nose.run()

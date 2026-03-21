@@ -6,7 +6,6 @@ import pytest
 
 import mock
 import requests
-from nose.tools import *  # noqa
 from elasticsearch.exceptions import ConnectionError as ESConnectionError, ConnectionTimeout
 
 from tests.base import OsfTestCase

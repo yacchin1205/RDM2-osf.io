@@ -2,7 +2,6 @@
 import hashlib
 import json
 import mock
-from nose.tools import *  # noqa
 import pytest
 import re
 from urllib.parse import quote

@@ -1,10 +1,8 @@
 import unittest
-from future.moves.urllib.parse import urlparse, urljoin, parse_qs
+from urllib.parse import urlparse, urljoin, parse_qs
 
 import pytest
 from addons.twofactor.tests.utils import _valid_code
-from nose.tools import (assert_equal, assert_false, assert_is_none,
-                        assert_is_not_none, assert_true)
 from osf_tests.factories import UserFactory
 
 pytestmark = pytest.mark.django_db

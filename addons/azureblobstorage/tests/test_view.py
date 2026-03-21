@@ -2,7 +2,6 @@
 from rest_framework import status as http_status
 
 import mock
-from nose.tools import *  # noqa
 from azure.common import AzureHttpError
 
 from framework.auth import Auth

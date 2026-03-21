@@ -1,7 +1,6 @@
 import unittest
 
 import pytest
-from nose.tools import assert_true  # noqa (PEP8 asserts)
 from osf_tests.factories import UserFactory
 from addons.dropbox.models import UserSettings
 

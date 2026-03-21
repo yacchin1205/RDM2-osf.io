@@ -1,5 +1,4 @@
 import pytest
-from nose.tools import assert_equal, assert_false, assert_in, assert_true
 from tests.base import OsfTestCase
 from osf_tests.factories import AuthUserFactory
 from addons.twofactor.tests import _valid_code

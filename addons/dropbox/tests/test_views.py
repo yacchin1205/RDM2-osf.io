@@ -3,7 +3,6 @@ from rest_framework import status as http_status
 import unittest
 
 from dropbox.exceptions import ApiError
-from nose.tools import assert_equal
 from tests.base import OsfTestCase
 from urllib3.exceptions import MaxRetryError
 

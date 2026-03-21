@@ -7,7 +7,6 @@ import json
 import logging
 import mock
 from mock import call
-from nose.tools import *  # noqa
 import re
 
 from osf.models.metaschema import RegistrationSchema
