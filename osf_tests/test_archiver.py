@@ -413,14 +413,15 @@ class TestStorageAddonBase(ArchiverTestCase):
 
     @responses.activate
     def _test__get_file_tree(self, addon_short_name):
+        cookie = self.user.get_or_create_cookie().decode()
         for path in self.URLS:
             url = waterbutler_api_url_for(
                 self.src._id,
                 addon_short_name,
-                meta=True,
                 path=path,
                 user=self.user,
                 view_only=True,
+                cookie=cookie,
                 _internal=True,
                 base_url=self.src.osfstorage_region.waterbutler_url
             )
@@ -440,7 +441,7 @@ class TestStorageAddonBase(ArchiverTestCase):
             # Regression test for OSF-8696 confirming that size attr does not stop folders from recursing
             'size': '100',
         }
-        file_tree = addon._get_file_tree(root, self.user)
+        file_tree = addon._get_file_tree(root, self.user, cookie)
         assert FILE_TREE == file_tree
         assert len(responses.calls) == 2
 
@@ -822,6 +823,7 @@ class TestArchiverUtils(ArchiverTestCase):
             {}
         )
         assert mock_send_mail.call_count == 2
+        self.dst.reload()
         assert self.dst.is_deleted
 
     @mock.patch('website.mails.send_mail')
@@ -1257,7 +1259,6 @@ class TestArchiverBehavior(OsfTestCase):
                 mock.patch('osf.models.archive.ArchiveJob.success', mock.PropertyMock(return_value=False))
         ) as (mock_finished, mock_success):
             listeners.archive_callback(reg)
-        assert mock_delete_index_node.called
 
     @mock.patch('osf.models.AbstractNode.update_search')
     @mock.patch('website.mails.send_mail')

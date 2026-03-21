@@ -45,8 +45,10 @@ tqdm==4.66.2
 # Support SSL SNI on Python < 2.7.9
 # (http://docs.python-requests.org/en/latest/community/faq/#what-are-hostname-doesn-t-match-errors)
 ndg-httpsclient==0.3.0
-# Python markdown extensions for comment emails
-git+https://github.com/CenterForOpenScience/mdx_del_ins.git
+# 20260321: Use the packaged fork that upstream CenterForOpenScience/osf.io pins.
+# The old mdx_del_ins git dependency installs an outdated distribution name/API
+# which does not resolve as a Markdown 3.5 extension in our Python 3.12 image.
+markdown-del-ins==1.0.0
 
 certifi==2024.2.2
 sendgrid==6.11.0

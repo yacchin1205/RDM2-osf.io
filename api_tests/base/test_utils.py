@@ -7,7 +7,6 @@ from osf_tests.factories import UserFactory, InstitutionFactory
 from osf.models.project_limit_number_setting_attribute import ProjectLimitNumberSettingAttribute
 from osf.models.project_limit_number_template import ProjectLimitNumberTemplate
 from osf.models.project_limit_number_template_attribute import ProjectLimitNumberTemplateAttribute
-from rest_framework import fields
 from rest_framework.exceptions import ValidationError
 from api.base import utils as api_utils
 
@@ -15,15 +14,19 @@ from framework.status import push_status_message
 
 
 class TestTruthyFalsy:
-    """Check that our copy/pasted representation of
-    TRUTHY and FALSY match the DRF BooleanField's versions
-    """
+    """Check the truthy/falsy contract used by api.base.utils."""
 
     def test_truthy(self):
-        assert api_utils.TRUTHY == fields.BooleanField.TRUE_VALUES
+        for value in ('t', 'T', 'true', 'True', 'TRUE', '1', 1, True, 'on', 'ON', 'On', 'y', 'Y', 'YES', 'yes'):
+            assert api_utils.is_truthy(value)
+        for value in ('f', 'F', 'false', 'False', 'FALSE', '0', 0, 0.0, False, 'off', 'OFF', 'Off', 'n', 'N', 'NO', 'no'):
+            assert not api_utils.is_truthy(value)
 
     def test_falsy(self):
-        assert api_utils.FALSY == fields.BooleanField.FALSE_VALUES
+        for value in ('f', 'F', 'false', 'False', 'FALSE', '0', 0, 0.0, False, 'off', 'OFF', 'Off', 'n', 'N', 'NO', 'no'):
+            assert api_utils.is_falsy(value)
+        for value in ('t', 'T', 'true', 'True', 'TRUE', '1', 1, True, 'on', 'ON', 'On', 'y', 'Y', 'YES', 'yes'):
+            assert not api_utils.is_falsy(value)
 
 
 class TestIsDeprecated(unittest.TestCase):

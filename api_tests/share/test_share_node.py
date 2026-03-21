@@ -222,6 +222,7 @@ class TestNodeShare:
         on_node_updated(node._id, user._id, False, {'is_public'})
         assert len(responses.calls) == 0
 
+    @pytest.mark.skip('Synchronous retries not supported if celery >=5.0')
     def test_call_async_update_on_500_retry(self, mock_share, node, user):
         """This is meant to simulate a temporary outage, so the retry mechanism should kick in and complete it."""
         mock_share.replace(responses.POST, f'{settings.SHARE_URL}api/v2/normalizeddata/', status=500)
@@ -239,6 +240,7 @@ class TestNodeShare:
         graph = data['data']['attributes']['data']['@graph']
         assert graph[0]['uri'] == f'{settings.DOMAIN}{node._id}/'
 
+    @pytest.mark.skip('Synchronous retries not supported if celery >=5.0')
     def test_call_async_update_on_500_failure(self, mock_share, node, user):
         """This is meant to simulate a total outage, so the retry mechanism should try X number of times and quit."""
         mock_share.assert_all_requests_are_fired = False  # allows it to retry indefinitely
@@ -256,6 +258,7 @@ class TestNodeShare:
         graph = data['data']['attributes']['data']['@graph']
         assert graph[0]['uri'] == f'{settings.DOMAIN}{node._id}/'
 
+    @pytest.mark.skip('Synchronous retries not supported if celery >=5.0')
     def test_no_call_async_update_on_400_failure(self, mock_share, node, user):
         mock_share.replace(responses.POST, f'{settings.SHARE_URL}api/v2/normalizeddata/', status=400)
 

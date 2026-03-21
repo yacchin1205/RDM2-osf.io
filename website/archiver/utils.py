@@ -110,8 +110,12 @@ def handle_archive_fail(reason, src, dst, user, result):
         pass
     else:  # reason == ARCHIVER_UNCAUGHT_ERROR
         send_archiver_uncaught_error_mails(src, user, result, url)
-    dst.root.sanction.forcibly_reject()
-    dst.root.sanction.save()
+    # 20260321: Keep the CenterForOpenScience/osf.io guard here. Archive failure
+    # can be handled for registrations without an active sanction, so
+    # forcibly_reject must stay conditional.
+    if dst.root.sanction:
+        dst.root.sanction.forcibly_reject()
+        dst.root.sanction.save()
     dst.root.delete_registration_tree(save=True)
 
 def archive_provider_for(node, user):

@@ -22,9 +22,11 @@ from osf.utils.requests import check_select_for_update
 from website import settings as website_settings
 from website import util as website_util  # noqa
 
-# These values are copied from rest_framework.fields.BooleanField
-# BooleanField cannot be imported here without raising an
-# ImproperlyConfigured error
+# 20260321:
+# Keep the broader historical truthy/falsy inputs here instead of following
+# DRF's narrower BooleanField values. These sets are part of this project's
+# input contract via is_truthy()/is_falsy(), so changing them would be an API
+# compatibility change rather than a pure framework-alignment refactor.
 TRUTHY = set(('t', 'T', 'true', 'True', 'TRUE', '1', 1, True, 'on', 'ON', 'On', 'y', 'Y', 'YES', 'yes'))
 FALSY = set(('f', 'F', 'false', 'False', 'FALSE', '0', 0, 0.0, False, 'off', 'OFF', 'Off', 'n', 'N', 'NO', 'no'))
 
@@ -286,7 +288,6 @@ def check_user_can_create_project(user):
         ).annotate(
             setting_type=F('attribute__setting_type'),
             attribute_name=F('attribute__attribute_name'),
-            setting_id=F('setting_id'),
         ).order_by('id').values(
             'id',
             'attribute_name',

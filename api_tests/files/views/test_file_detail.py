@@ -4,6 +4,7 @@ import itsdangerous
 import mock
 import pytest
 import pytz
+from urllib.parse import quote, quote_plus
 from django.utils import timezone
 
 from addons.base.utils import get_mfr_url
@@ -692,8 +693,8 @@ class TestFileVersionView:
         render_link = res.json['data']['links']['render']
         download_link = res.json['data']['links']['download']
         assert mfr_url in render_link
-        assert download_link in render_link
-        assert 'revision=1' in render_link
+        assert quote_plus(download_link) in render_link
+        assert quote('revision=1') in render_link
 
         guid = file.get_guid(create=True)._id
         res = app.get(
@@ -703,9 +704,9 @@ class TestFileVersionView:
         render_link = res.json['data']['links']['render']
         download_link = res.json['data']['links']['download']
         assert mfr_url in render_link
-        assert download_link in render_link
+        assert quote_plus(download_link) in render_link
         assert guid in render_link
-        assert 'revision=1' in render_link
+        assert quote('revision=1') in render_link
 
         # test_read_only
         assert app.put(

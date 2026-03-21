@@ -304,9 +304,8 @@ class TestOAuthScopedAccess(ApiTestCase):
             expect_errors=True
         )
         assert res.status_code == 200
-        TestCase().assertDictContainsSubset(
-            payload['data']['attributes'],
-            res.json['data']['attributes']
+        assert res.json['data']['attributes'] == (
+            payload['data']['attributes'] | res.json['data']['attributes']
         )
 
     @mock.patch('framework.auth.cas.CasClient.profile')
