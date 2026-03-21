@@ -108,10 +108,17 @@ class CorsMiddleware(corsheaders.middleware.CorsMiddleware):
 
     _context = threading.local()
 
+    def __call__(self, request):
+        self._context.request = request
+        try:
+            return super(CorsMiddleware, self).__call__(request)
+        finally:
+            self._context.request = None
+
     def origin_found_in_white_lists(self, origin, url):
-        settings.CORS_ORIGIN_WHITELIST += api_settings.ORIGINS_WHITELIST
-        # Check if origin is in the dynamic custom domain whitelist
         found = super(CorsMiddleware, self).origin_found_in_white_lists(origin, url)
+        if not found and url.netloc.lower() in api_settings.ORIGINS_WHITELIST:
+            found = True
         # Check if a cross-origin request using the Authorization header
         if not found:
             if not self._context.request.COOKIES:
@@ -129,12 +136,6 @@ class CorsMiddleware(corsheaders.middleware.CorsMiddleware):
 
         return found
 
-    def process_response(self, request, response):
-        self._context.request = request
-        try:
-            return super(CorsMiddleware, self).process_response(request, response)
-        finally:
-            self._context.request = None
 
 
 class PostcommitTaskMiddleware(MiddlewareMixin):
