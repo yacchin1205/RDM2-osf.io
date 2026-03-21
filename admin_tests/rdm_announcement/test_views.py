@@ -58,7 +58,7 @@ class TestIndexView(AdminTestCase):
         self.request.user.is_registered = True
         self.request.user.is_superuser = False
         self.request.user.is_staff = False
-        assert self.view.test_func() == False
+        assert self.view.test_func() is False
 
     def test_non_active_user_login(self):
         """test invalid user login"""
@@ -66,7 +66,7 @@ class TestIndexView(AdminTestCase):
         self.request.user.is_registered = True
         self.request.user.is_superuser = True
         self.request.user.is_staff = True
-        assert self.view.test_func() == False
+        assert self.view.test_func() is False
 
     def test_non_registered_user_login(self):
         """test unregistered user login"""
@@ -74,7 +74,7 @@ class TestIndexView(AdminTestCase):
         self.request.user.is_registered = False
         self.request.user.is_superuser = True
         self.request.user.is_staff = True
-        assert self.view.test_func() == False
+        assert self.view.test_func() is False
 
     def test_super_admin_get(self, *args, **kwargs):
         """test superuser GET method"""
@@ -171,7 +171,7 @@ class TestSettingsView(AdminTestCase):
         self.request.user.is_registered = True
         self.request.user.is_superuser = False
         self.request.user.is_staff = False
-        assert self.view.test_func() == False
+        assert self.view.test_func() is False
 
     def test_non_active_user_login(self):
         """test invalid user login"""
@@ -179,7 +179,7 @@ class TestSettingsView(AdminTestCase):
         self.request.user.is_registered = True
         self.request.user.is_superuser = True
         self.request.user.is_staff = True
-        assert self.view.test_func() == False
+        assert self.view.test_func() is False
 
     def test_non_registered_user_login(self):
         """login at unregisterd user"""
@@ -187,7 +187,7 @@ class TestSettingsView(AdminTestCase):
         self.request.user.is_registered = False
         self.request.user.is_superuser = True
         self.request.user.is_staff = True
-        assert self.view.test_func() == False
+        assert self.view.test_func() is False
 
     def test_super_admin_get(self, *args, **kwargs):
         """test superuser GET method"""
@@ -302,7 +302,7 @@ class TestSettingsUpdateView(AdminTestCase):
         self.request.user.is_registered = True
         self.request.user.is_superuser = False
         self.request.user.is_staff = False
-        assert self.view.test_func() == False
+        assert self.view.test_func() is False
 
     def test_non_active_user_login(self):
         """test invalid user login"""
@@ -310,7 +310,7 @@ class TestSettingsUpdateView(AdminTestCase):
         self.request.user.is_registered = True
         self.request.user.is_superuser = True
         self.request.user.is_staff = True
-        assert self.view.test_func() == False
+        assert self.view.test_func() is False
 
     def test_non_registered_user_login(self):
         """test unregistered user login"""
@@ -318,7 +318,7 @@ class TestSettingsUpdateView(AdminTestCase):
         self.request.user.is_registered = False
         self.request.user.is_superuser = True
         self.request.user.is_staff = True
-        assert self.view.test_func() == False
+        assert self.view.test_func() is False
 
 class TestSendView(AdminTestCase):
     def setUp(self):
@@ -353,7 +353,7 @@ class TestSendView(AdminTestCase):
         self.request.user.is_registered = True
         self.request.user.is_superuser = False
         self.request.user.is_staff = False
-        assert self.view.test_func() == False
+        assert self.view.test_func() is False
 
     def test_non_active_user_login(self):
         """test invalid user login"""
@@ -361,7 +361,7 @@ class TestSendView(AdminTestCase):
         self.request.user.is_registered = True
         self.request.user.is_superuser = True
         self.request.user.is_staff = True
-        assert self.view.test_func() == False
+        assert self.view.test_func() is False
 
     def test_non_registered_user_login(self):
         """test unregistered user login"""
@@ -369,4 +369,4 @@ class TestSendView(AdminTestCase):
         self.request.user.is_registered = False
         self.request.user.is_superuser = True
         self.request.user.is_staff = True
-        assert self.view.test_func() == False
+        assert self.view.test_func() is False

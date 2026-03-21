@@ -586,7 +586,7 @@ class TestInstitutionStorageListByAdmin(AdminTestCase):
         view = setup_view(view, request)
         query_set = view.get_queryset()
 
-        assert query_set.exists() == True
+        assert query_set.exists() is True
         assert query_set.first().id == self.institution.id
         assert query_set.first().storage_name == self.region.name
 
@@ -639,5 +639,5 @@ class TestInstitutionStorageListBySuperUser(AdminTestCase):
         view = setup_view(view, request)
         query_set = view.get_queryset()
 
-        assert query_set.exists() == True
+        assert query_set.exists() is True
         assert len(query_set) == 2

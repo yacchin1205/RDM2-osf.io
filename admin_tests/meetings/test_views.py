@@ -148,7 +148,7 @@ class TestMeetingCreateFormView(AdminTestCase):
 
     def test_get_initial(self):
         self.view().get_initial()
-        assert self.view().initial['edit'] == False
+        assert self.view().initial['edit'] is False
         assert self.view.initial['submission1'] == DEFAULT_FIELD_NAMES['submission1']
 
     def test_form_valid(self):

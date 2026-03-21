@@ -170,7 +170,7 @@ class TestPreprintProvidersList(ApiTestCase):
         assert data['attributes']['provider'] == 'osfstorage'
         assert data['attributes']['preprint'] == self.preprint._id
         assert data['attributes']['path'] == '/'
-        assert data['attributes']['node'] == None
+        assert data['attributes']['node'] is None
 
     def test_osfstorage_file_data_not_found(self):
         res = self.app.get(

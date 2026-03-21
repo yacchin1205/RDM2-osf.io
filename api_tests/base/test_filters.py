@@ -135,7 +135,7 @@ class TestFilterMixin(ApiTestCase):
         assert fields['filter[int_field]']['int_field']['value'] == 42
 
         assert 'bool_field' in fields.get('filter[bool_field]')
-        assert fields['filter[bool_field]']['bool_field']['value'] == False
+        assert fields['filter[bool_field]']['bool_field']['value'] is False
 
     def test_parse_query_params_uses_field_source_attribute(self):
         query_params = {
@@ -145,7 +145,7 @@ class TestFilterMixin(ApiTestCase):
         fields = self.view.parse_query_params(query_params)
         parsed_field = fields['filter[bool_field]']['bool_field']
         assert parsed_field['source_field_name'] == 'foobar'
-        assert parsed_field['value'] == False
+        assert parsed_field['value'] is False
         assert parsed_field['op'] == 'eq'
 
     def test_parse_query_params_generalizes_dates(self):
@@ -378,7 +378,7 @@ class TestListFilterMixin(ApiTestCase):
         fields = self.view.parse_query_params(query_params)
         parsed_field = fields['filter[bool_field]']['bool_field']
         assert parsed_field['source_field_name'] == 'foobar'
-        assert parsed_field['value'] == False
+        assert parsed_field['value'] is False
         assert parsed_field['op'] == 'eq'
 
 @pytest.mark.django_db

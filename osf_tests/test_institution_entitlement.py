@@ -11,7 +11,7 @@ class TestInstitutionEntitlementModel:
         user = AuthUserFactory()
         inst = InstitutionEntitlementFactory(institution=institution, login_availability=True, modifier=user)
         assert inst.institution == institution
-        assert inst.login_availability == True
+        assert inst.login_availability is True
         assert inst.modifier == user
 
     @pytest.mark.django_db
@@ -20,7 +20,7 @@ class TestInstitutionEntitlementModel:
         user = AuthUserFactory()
         institution_entitlement = InstitutionEntitlement(institution=institution, login_availability=True, modifier=user)
         assert institution_entitlement.institution == institution
-        assert institution_entitlement.login_availability == True
+        assert institution_entitlement.login_availability is True
         assert institution_entitlement.modifier == user
 
     @pytest.mark.django_db

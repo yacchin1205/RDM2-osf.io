@@ -1,8 +1,6 @@
 """Tests related to project decorators"""
 import pytest
 
-
-
 from website.project.decorators import must_be_valid_project
 
 from osf.models import Sanction

@@ -82,7 +82,7 @@ class TestNodeShare:
     def test_update_registration_share(self, mock_share, registration, user):
         on_node_updated(registration._id, user._id, False, {'is_public'})
 
-        assert mock_share.calls[-1].request.headers['Authorization'] == f'Bearer mock-api-token'
+        assert mock_share.calls[-1].request.headers['Authorization'] == 'Bearer mock-api-token'
 
         data = json.loads(mock_share.calls[-1].request.body.decode())
         graphs = data['data']['attributes']['data']['@graph']

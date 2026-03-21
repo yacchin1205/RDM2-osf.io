@@ -65,7 +65,7 @@ class TestInstitutionListViewStat(AdminTestCase):
         self.request.user.is_registered = True
         self.request.user.is_superuser = False
         self.request.user.is_staff = False
-        assert self.view.test_func() == False
+        assert self.view.test_func() is False
 
     def test_non_active_user_login(self):
         """test invalid user login"""
@@ -73,7 +73,7 @@ class TestInstitutionListViewStat(AdminTestCase):
         self.request.user.is_registered = True
         self.request.user.is_superuser = True
         self.request.user.is_staff = True
-        assert self.view.test_func() == False
+        assert self.view.test_func() is False
 
     def test_non_registered_user_login(self):
         """test unregistered user login"""
@@ -81,7 +81,7 @@ class TestInstitutionListViewStat(AdminTestCase):
         self.request.user.is_registered = False
         self.request.user.is_superuser = True
         self.request.user.is_staff = True
-        assert self.view.test_func() == False
+        assert self.view.test_func() is False
 
     def test_super_admin_get(self, *args, **kwargs):
         """test superuser GET method"""
@@ -142,7 +142,7 @@ class TestclassStatisticsView(AdminTestCase):
         self.request.user.is_registered = True
         self.request.user.is_superuser = False
         self.request.user.is_staff = False
-        assert self.view.test_func() == False
+        assert self.view.test_func() is False
 
     def test_non_active_user_login(self):
         """test invalid user login"""
@@ -150,7 +150,7 @@ class TestclassStatisticsView(AdminTestCase):
         self.request.user.is_registered = True
         self.request.user.is_superuser = True
         self.request.user.is_staff = True
-        assert self.view.test_func() == False
+        assert self.view.test_func() is False
 
     def test_non_registered_user_login(self):
         """test unregistered user login"""
@@ -158,7 +158,7 @@ class TestclassStatisticsView(AdminTestCase):
         self.request.user.is_registered = False
         self.request.user.is_superuser = True
         self.request.user.is_staff = True
-        assert self.view.test_func() == False
+        assert self.view.test_func() is False
 
     def test_non_affiliated_institution_user_login(self):
         """test user unaffiliated institution login"""
@@ -167,7 +167,7 @@ class TestclassStatisticsView(AdminTestCase):
         self.request.user.is_superuser = False
         self.request.user.is_staff = True
         self.view.kwargs = {'institution_id': self.institution1.id + 1}
-        assert self.view.test_func() == False
+        assert self.view.test_func() is False
         self.view.kwargs = {'institution_id': self.institution1.id}
 
     def test_get_context_data(self, **kwargs):
@@ -224,7 +224,7 @@ class TestImageView(AdminTestCase):
         self.request.user.is_registered = True
         self.request.user.is_superuser = False
         self.request.user.is_staff = False
-        assert self.view.test_func() == False
+        assert self.view.test_func() is False
 
     def test_non_active_user_login(self):
         """test invalid user login"""
@@ -232,7 +232,7 @@ class TestImageView(AdminTestCase):
         self.request.user.is_registered = True
         self.request.user.is_superuser = True
         self.request.user.is_staff = True
-        assert self.view.test_func() == False
+        assert self.view.test_func() is False
 
     def test_non_registered_user_login(self):
         """test unregistered user login"""
@@ -240,7 +240,7 @@ class TestImageView(AdminTestCase):
         self.request.user.is_registered = False
         self.request.user.is_superuser = True
         self.request.user.is_staff = True
-        assert self.view.test_func() == False
+        assert self.view.test_func() is False
 
     def test_non_affiliated_institution_user_login(self):
         """test user unaffiliated institution login"""
@@ -249,7 +249,7 @@ class TestImageView(AdminTestCase):
         self.request.user.is_superuser = False
         self.request.user.is_staff = True
         self.view.kwargs = {'institution_id': self.institution1.id + 1}
-        assert self.view.test_func() == False
+        assert self.view.test_func() is False
         self.view.kwargs = {'institution_id': self.institution1.id}
 
 class TestSendView(AdminTestCase):
@@ -292,7 +292,7 @@ class TestSendView(AdminTestCase):
         self.request.user.is_registered = True
         self.request.user.is_superuser = False
         self.request.user.is_staff = False
-        assert self.view.test_func() == False
+        assert self.view.test_func() is False
 
     def test_non_active_user_login(self):
         """test invalid user login"""
@@ -300,7 +300,7 @@ class TestSendView(AdminTestCase):
         self.request.user.is_registered = True
         self.request.user.is_superuser = True
         self.request.user.is_staff = True
-        assert self.view.test_func() == False
+        assert self.view.test_func() is False
 
     def test_non_registered_user_login(self):
         """test unregistered user login"""
@@ -308,7 +308,7 @@ class TestSendView(AdminTestCase):
         self.request.user.is_registered = False
         self.request.user.is_superuser = True
         self.request.user.is_staff = True
-        assert self.view.test_func() == False
+        assert self.view.test_func() is False
 
     def test_non_affiliated_institution_user_login(self):
         """test user unaffiliated institution login"""
@@ -317,7 +317,7 @@ class TestSendView(AdminTestCase):
         self.request.user.is_superuser = False
         self.request.user.is_staff = True
         self.view.kwargs = {'institution_id': self.institution1.id + 1}
-        assert self.view.test_func() == False
+        assert self.view.test_func() is False
         self.view.kwargs = {'institution_id': self.institution1.id}
 
     def test_valid_get(self, *args, **kwargs):
@@ -441,7 +441,7 @@ class TestGatherView(AdminTestCase):
             'attach_file': 'XYZ',
             'attach_data': 'abc'
         }
-        assert views.send_email(to_list=to_list, cc_list=cc_list, data=mail_data)['is_success'] == False
+        assert views.send_email(to_list=to_list, cc_list=cc_list, data=mail_data)['is_success'] is False
 
     @patch('admin.rdm_statistics.views.render_to_string', return_value='<h1>My First Heading</h1>', autospec=True)
     @patch('admin.rdm_statistics.views.pdfkit', return_value='41', autospec=True)

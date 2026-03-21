@@ -6,7 +6,6 @@ from osf.models import QuickFilesNode
 from addons.osfstorage.models import OsfStorageFile
 from osf.exceptions import DraftRegistrationStateError, MaxRetriesError, NodeStateError
 from api_tests.utils import create_test_file
-from tests.utils import assert_equals
 from tests.base import get_default_metaschema
 
 from . import factories

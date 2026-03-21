@@ -19,8 +19,8 @@ class TestRdmAddonOption(AdminTestCase):
         self.institution.delete()
 
     def test_get_rdm_addon_option_without_create_option(self):
-        assert None == utils.get_rdm_addon_option(self.institution.id, 's3', create=False)
-        assert None == utils.get_rdm_addon_option(self.institution.id, 'dropboxbusiness', create=False)
+        assert utils.get_rdm_addon_option(self.institution.id, 's3', create=False) is None
+        assert utils.get_rdm_addon_option(self.institution.id, 'dropboxbusiness', create=False) is None
 
     def test_get_is_allowed_default(self):
         # newly created option

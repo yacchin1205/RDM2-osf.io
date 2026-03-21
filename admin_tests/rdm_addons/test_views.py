@@ -50,17 +50,17 @@ class TestInstitutionListView(AdminTestCase):
         """test user not superuser or institution administrator login"""
         self.request.user.is_superuser = False
         self.request.user.is_staff = False
-        assert self.view.test_func() == False
+        assert self.view.test_func() is False
 
     def test_non_active_user_login(self):
         """test invalid user login"""
         self.request.user.is_active = False
-        assert self.view.test_func() == False
+        assert self.view.test_func() is False
 
     def test_non_registered_user_login(self):
         """test unregistered user login"""
         self.request.user.is_registered = False
-        assert self.view.test_func() == False
+        assert self.view.test_func() is False
 
     def test_super_admin_get(self, *args, **kwargs):
         """test superuser GET method"""
@@ -112,24 +112,24 @@ class TestAddonListView(AdminTestCase):
         """test user not superuser or institution administrator login"""
         self.request.user.is_superuser = False
         self.request.user.is_staff = False
-        assert self.view.test_func() == False
+        assert self.view.test_func() is False
 
     def test_non_active_user_login(self):
         """test invalid user login"""
         self.request.user.is_active = False
-        assert self.view.test_func() == False
+        assert self.view.test_func() is False
 
     def test_non_registered_user_login(self):
         """test unregistered user login"""
         self.request.user.is_registered = False
-        assert self.view.test_func() == False
+        assert self.view.test_func() is False
 
     def test_non_affiliated_institution_user_login(self):
         """test user unaffiliated institution login"""
         self.request.user.is_superuser = False
         self.request.user.is_staff = True
         self.view.kwargs = {'institution_id': self.institution1.id + 1}
-        assert self.view.test_func() == False
+        assert self.view.test_func() is False
 
 
 class TestIconView(AdminTestCase):
@@ -205,24 +205,24 @@ class TestAddonAllowView(AdminTestCase):
         """test user not superuser or institution administrator login"""
         self.request.user.is_superuser = False
         self.request.user.is_staff = False
-        assert self.view.test_func() == False
+        assert self.view.test_func() is False
 
     def test_non_active_user_login(self):
         """test invalid user login"""
         self.request.user.is_active = False
-        assert self.view.test_func() == False
+        assert self.view.test_func() is False
 
     def test_non_registered_user_login(self):
         """test unregistered user login"""
         self.request.user.is_registered = False
-        assert self.view.test_func() == False
+        assert self.view.test_func() is False
 
     def test_non_affiliated_institution_user_login(self):
         """test user unaffiliated institution login"""
         self.request.user.is_superuser = False
         self.request.user.is_staff = True
         self.view.kwargs = {'institution_id': self.rdm_addon_option.institution.id + 1}
-        assert self.view.test_func() == False
+        assert self.view.test_func() is False
 
     def test_get(self, *args, **kwargs):
         self.view.get(self.request, *args, **self.view.kwargs)
@@ -235,10 +235,10 @@ class TestAddonAllowView(AdminTestCase):
         self.view.kwargs['allowed'] = False
         self.view.get(self.request, *args, **self.view.kwargs)
         rdm_addon_option = utils.get_rdm_addon_option(self.rdm_addon_option.institution.id, self.view.kwargs['addon_name'])
-        assert rdm_addon_option.is_allowed == False
+        assert rdm_addon_option.is_allowed is False
         assert rdm_addon_option.provider == self.view.kwargs['addon_name']
         assert rdm_addon_option.institution_id == self.view.kwargs['institution_id']
-        assert self.user.external_accounts.filter(pk=self.external_account.id).exists() == False
+        assert self.user.external_accounts.filter(pk=self.external_account.id).exists() is False
 
 class TestNoInstitutionAddonAllowView(AdminTestCase):
     def setUp(self):
@@ -287,9 +287,9 @@ class TestNoInstitutionAddonAllowView(AdminTestCase):
         self.view.kwargs['allowed'] = False
         self.view.get(self.request, *args, **self.view.kwargs)
         rdm_addon_option = utils.get_rdm_addon_option(MAGIC_INSTITUTION_ID, self.view.kwargs['addon_name'])
-        assert rdm_addon_option.is_allowed == False
+        assert rdm_addon_option.is_allowed is False
         assert rdm_addon_option.provider == self.view.kwargs['addon_name']
-        assert self.user.external_accounts.filter(pk=self.external_account.id).exists() == False
+        assert self.user.external_accounts.filter(pk=self.external_account.id).exists() is False
 
 class TestAddonForceView(AdminTestCase):
     def setUp(self):
@@ -341,24 +341,24 @@ class TestAddonForceView(AdminTestCase):
         """test user not superuser or institution administrator login"""
         self.request.user.is_superuser = False
         self.request.user.is_staff = False
-        assert self.view.test_func() == False
+        assert self.view.test_func() is False
 
     def test_non_active_user_login(self):
         """test invalid user login"""
         self.request.user.is_active = False
-        assert self.view.test_func() == False
+        assert self.view.test_func() is False
 
     def test_non_registered_user_login(self):
         """test unregistered user login"""
         self.request.user.is_registered = False
-        assert self.view.test_func() == False
+        assert self.view.test_func() is False
 
     def test_non_affiliated_institution_user_login(self):
         """test user unaffiliated institution login"""
         self.request.user.is_superuser = False
         self.request.user.is_staff = True
         self.view.kwargs = {'institution_id': self.rdm_addon_option.institution.id + 1}
-        assert self.view.test_func() == False
+        assert self.view.test_func() is False
 
     def test_get(self, *args, **kwargs):
         self.view.get(self.request, *args, **self.view.kwargs)
@@ -370,7 +370,7 @@ class TestAddonForceView(AdminTestCase):
         self.view.kwargs['forced'] = False
         self.view.get(self.request, *args, **self.view.kwargs)
         rdm_addon_option = utils.get_rdm_addon_option(self.rdm_addon_option.institution.id, self.view.kwargs['addon_name'])
-        assert rdm_addon_option.is_forced == False
+        assert rdm_addon_option.is_forced is False
         assert rdm_addon_option.provider == self.view.kwargs['addon_name']
         assert self.user.external_accounts.filter(pk=self.external_account.id).exists()
 
@@ -417,5 +417,5 @@ class TestNoInstitutionAddonForceView(AdminTestCase):
         self.view.kwargs['forced'] = False
         self.view.get(self.request, *args, **self.view.kwargs)
         rdm_addon_option = utils.get_rdm_addon_option(MAGIC_INSTITUTION_ID, self.view.kwargs['addon_name'])
-        assert rdm_addon_option.is_forced == False
+        assert rdm_addon_option.is_forced is False
         assert rdm_addon_option.provider == self.view.kwargs['addon_name']

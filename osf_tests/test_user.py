@@ -576,7 +576,7 @@ class TestOSFUser:
         random_string.return_value = 'abcde'
         u = UserFactory()
         u.add_unconfirmed_email('foo@bar.com')
-        assert(
+        assert (
             u.get_confirmation_url('foo@bar.com') ==
             '{0}confirm/{1}/{2}/'.format(settings.DOMAIN, u._id, 'abcde')
         )
@@ -722,7 +722,7 @@ class TestOSFUser:
     def test_format_surname(self):
         user = UserFactory(fullname='Duane Johnson')
         summary = user.get_summary(formatter='surname')
-        assert(
+        assert (
             summary['user_display_name'] ==
             'Johnson'
         )
@@ -730,7 +730,7 @@ class TestOSFUser:
     def test_format_surname_one_name(self):
         user = UserFactory(fullname='Rock')
         summary = user.get_summary(formatter='surname')
-        assert(
+        assert (
             summary['user_display_name'] ==
             'Rock'
         )
@@ -739,7 +739,7 @@ class TestOSFUser:
         assert user.url == '/{0}/'.format(user._id)
 
     def test_absolute_url(self, user):
-        assert(
+        assert (
             user.absolute_url ==
             urljoin(settings.DOMAIN, '/{0}/'.format(user._id))
         )
@@ -778,7 +778,7 @@ class TestOSFUser:
         assert size is None
 
     def test_activity_points(self, user):
-        assert(
+        assert (
             user.get_activity_points() == get_total_activity_count(user._primary_key)
         )
 
@@ -887,13 +887,13 @@ class TestOSFUser:
 
     def test_is_full_account_required_info_miss_institution(self):
         user_auth = AuthUserFactory()
-        assert user_auth.is_full_account_required_info == True
+        assert user_auth.is_full_account_required_info is True
 
     def test_is_full_account_required_info_miss_jobs(self):
         user_auth = AuthUserFactory()
         institution = InstitutionFactory()
         user_auth.affiliated_institutions.add(institution)
-        assert user_auth.is_full_account_required_info == False
+        assert user_auth.is_full_account_required_info is False
 
     def test_is_full_account_required_info_has_jobs(self):
         name = 'name'
@@ -915,7 +915,7 @@ class TestOSFUser:
         user = OSFUser.objects.filter(fullname=name).first()
         assert user
         assert user.jobs
-        assert user_auth.is_full_account_required_info == False
+        assert user_auth.is_full_account_required_info is False
 
     @mock.patch('osf.models.user.OSFUser.ext', new_callable=mock.PropertyMock)
     def test_is_full_account_required_info_exception(self, mock_idp_attr):
@@ -942,7 +942,7 @@ class TestOSFUser:
         }]
         user_auth.save()
         mock_idp_attr.side_effect = AttributeError('exception')
-        assert user_auth.is_full_account_required_info == True
+        assert user_auth.is_full_account_required_info is True
 
     @pytest.mark.feature_202210
     def test_user_is_valid_user(self):
@@ -1217,7 +1217,7 @@ class TestCookieMethods:
         user = UserFactory()
         super_secret_key = 'children need maps'
         signer = itsdangerous.Signer(super_secret_key)
-        assert(
+        assert (
             Session.objects.filter(data__auth_user_id=user._id).count() == 0
         )
 

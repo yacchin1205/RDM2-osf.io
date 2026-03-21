@@ -189,7 +189,7 @@ class TestSaveCredentials(AdminTestCase):
 
         wb_settings = institution_storage.waterbutler_settings
         assert wb_settings['storage']['provider'] == 'dropboxbusiness'
-        assert wb_settings['disabled'] == True
+        assert wb_settings['disabled'] is True
 
     @mock.patch('addons.dropboxbusiness.utils.TeamInfo')
     @mock.patch('addons.dropboxbusiness.utils.addon_option_to_token')
@@ -235,7 +235,7 @@ class TestSaveCredentials(AdminTestCase):
 
         wb_settings = institution_storage.waterbutler_settings
         assert wb_settings['storage']['provider'] == 'dropboxbusiness'
-        assert wb_settings['disabled'] == True
+        assert wb_settings['disabled'] is True
 
     # Connection tests
     def test_no_token(self):

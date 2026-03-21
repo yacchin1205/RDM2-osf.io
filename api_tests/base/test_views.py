@@ -1,8 +1,11 @@
 # -*- coding: utf-8 -*-
-from rest_framework import status as http_status
+from unittest import SkipTest
+
 import pkgutil
 
 import mock
+
+from rest_framework import status as http_status
 
 
 from api.entitlements.views import LoginAvailability
@@ -65,12 +68,12 @@ class TestApiBaseViews(ApiTestCase):
 
     def test_does_not_exist_formatting(self):
         if DEBUG_MODE:
-            raise SkipTest
+            raise SkipTest()
         else:
             url = '/{}{}/'.format(API_BASE, 'notapage')
             res = self.app.get(url, expect_errors=True)
             errors = res.json['errors']
-            assert(isinstance(errors, list))
+            assert (isinstance(errors, list))
             assert errors[0] == {'detail': 'Not found.'}
 
     def test_view_classes_have_minimal_set_of_permissions_classes(self):
@@ -144,7 +147,7 @@ class TestStatusView(ApiTestCase):
         res = self.app.get(url)
         assert res.status_code == 200
         assert 'maintenance' in res.json
-        assert res.json['maintenance'] == None
+        assert res.json['maintenance'] is None
 
     def test_status_view_with_maintenance(self):
         maintenance.set_maintenance(message='test')

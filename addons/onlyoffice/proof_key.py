@@ -65,13 +65,13 @@ def uint_bytearray(n):
     return struct.pack('>I', n)
 
 
-def ulonglong_bytearray(l):
+def ulonglong_bytearray(value):
     """
     Converts a numeric value representing an unsigned 64-bit integer into a bytestring in big-endian byte order.
-    :param l: Number to encode
+    :param value: Number to encode
     :return: Packed bytestring in big-endian byte order
     """
-    return struct.pack('>Q', l)
+    return struct.pack('>Q', value)
 
 
 def generate_key(modulus_b64, exp_b64):

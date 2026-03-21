@@ -138,8 +138,6 @@ class CorsMiddleware(corsheaders.middleware.CorsMiddleware):
 
         return found
 
-
-
 class PostcommitTaskMiddleware(MiddlewareMixin):
     """
     Handle postcommit tasks for django.

@@ -42,8 +42,8 @@ EXPORT_DATA_TASK_PATH = 'admin.rdm_custom_storage_location.tasks'
 # Test cases for initializing ProcessError
 @pytest.mark.feature_202210
 def test_init_process_error():
-    process_error = ProcessError(f'Test initialize process error object')
-    assert str(process_error) == f'Test initialize process error object'
+    process_error = ProcessError('Test initialize process error object')
+    assert str(process_error) == 'Test initialize process error object'
 
 
 # Test cases for RestoreDataActionView
@@ -97,7 +97,7 @@ class TestRestoreDataActionView(AdminTestCase):
         request.user = AuthUserFactory()
         self.view.request = request
         response = self.view.dispatch(request)
-        assert response.data == {'message': f'Missing required parameters.'}
+        assert response.data == {'message': 'Missing required parameters.'}
         assert response.status_code == status.HTTP_400_BAD_REQUEST
 
     @mock.patch(f'{RESTORE_EXPORT_DATA_PATH}.check_before_restore_export_data')
@@ -176,7 +176,7 @@ class TestRestoreDataActionView(AdminTestCase):
 
         response = self.view.post(request)
         mock_check_for_running_restore.assert_called()
-        assert response.data == {'message': f'Cannot restore in this time.'}
+        assert response.data == {'message': 'Cannot restore in this time.'}
         assert response.status_code == status.HTTP_400_BAD_REQUEST
 
     @mock.patch(f'{RESTORE_EXPORT_DATA_PATH}.check_before_restore_export_data')
@@ -187,12 +187,12 @@ class TestRestoreDataActionView(AdminTestCase):
         })
         request.user = AuthUserFactory()
         mock_check_for_running_restore.return_value = False
-        mock_check_before_restore.return_value = {'open_dialog': False, 'message': f'Mock test error message.'}
+        mock_check_before_restore.return_value = {'open_dialog': False, 'message': 'Mock test error message.'}
 
         response = self.view.post(request)
         mock_check_for_running_restore.assert_called()
         mock_check_before_restore.assert_called()
-        assert response.data == {'message': f'Mock test error message.'}
+        assert response.data == {'message': 'Mock test error message.'}
         assert response.status_code == status.HTTP_400_BAD_REQUEST
 
     def test__test_func__anonymous(self):
@@ -205,7 +205,7 @@ class TestRestoreDataActionView(AdminTestCase):
         view.kwargs = {
             'export_id': self.export_data_01.id,
         }
-        assert view.test_func() == False
+        assert view.test_func() is False
 
     def test__test_func__normal_user(self):
         view = restore.RestoreDataActionView()
@@ -217,7 +217,7 @@ class TestRestoreDataActionView(AdminTestCase):
         view.kwargs = {
             'export_id': self.export_data_01.id,
         }
-        assert view.test_func() == False
+        assert view.test_func() is False
 
     def test__test_func__super(self):
         view = restore.RestoreDataActionView()
@@ -233,7 +233,7 @@ class TestRestoreDataActionView(AdminTestCase):
         view.export_id = self.export_data_01.id
         view.export_data = self.export_data_01
         view.destination = self.region_inst_01
-        assert view.test_func() == True
+        assert view.test_func() is True
 
     def test__test_func__admin_with_permission(self):
         view = restore.RestoreDataActionView()
@@ -249,7 +249,7 @@ class TestRestoreDataActionView(AdminTestCase):
         view.export_id = self.export_data_01.id
         view.export_data = self.export_data_01
         view.destination = self.region_inst_01
-        assert view.test_func() == True
+        assert view.test_func() is True
 
     def test__test_func__admin_without_permission(self):
         view = restore.RestoreDataActionView()
@@ -267,7 +267,7 @@ class TestRestoreDataActionView(AdminTestCase):
         view.export_id = self.export_data_01.id
         view.export_data = self.export_data_01
         view.destination = self.region_inst_01
-        assert view.test_func() == False
+        assert view.test_func() is False
 
         request = APIRequestFactory().post('restore_export_data', {
             'destination_id': self.region_inst_02.id,
@@ -281,7 +281,7 @@ class TestRestoreDataActionView(AdminTestCase):
         view.export_id = self.export_data_02.id
         view.export_data = self.export_data_02
         view.destination = self.region_inst_01
-        assert view.test_func() == False
+        assert view.test_func() is False
 
         # admin not in institution
         request = APIRequestFactory().post('restore_export_data', {
@@ -293,7 +293,7 @@ class TestRestoreDataActionView(AdminTestCase):
         view.kwargs = {
             'export_id': self.export_data_02.id,
         }
-        assert view.test_func() == False
+        assert view.test_func() is False
 
     def test__test_func__export_and_dest_not_same_inst(self):
         view = restore.RestoreDataActionView()
@@ -309,7 +309,7 @@ class TestRestoreDataActionView(AdminTestCase):
         view.export_id = self.export_data_01.id
         view.export_data = self.export_data_01
         view.destination = self.region_inst_02
-        assert view.test_func() == False
+        assert view.test_func() is False
 
 
 # Test cases for CheckTaskStatusRestoreDataActionView
@@ -389,7 +389,7 @@ class TestCheckTaskStatusRestoreDataActionView(AdminTestCase):
     def test_get_missing_params(self):
         request = APIRequestFactory().get('task_status', {})
         response = self.view.get(request)
-        assert response.data == {'message': f'Missing required parameters.'}
+        assert response.data == {'message': 'Missing required parameters.'}
         assert response.status_code == status.HTTP_400_BAD_REQUEST
 
     def test__test_func__anonymous(self):
@@ -403,7 +403,7 @@ class TestCheckTaskStatusRestoreDataActionView(AdminTestCase):
         view.kwargs = {
             'export_id': self.export_data_01.id,
         }
-        assert view.test_func() == False
+        assert view.test_func() is False
 
     def test__test_func__normal_user(self):
         view = restore.CheckTaskStatusRestoreDataActionView()
@@ -416,7 +416,7 @@ class TestCheckTaskStatusRestoreDataActionView(AdminTestCase):
         view.kwargs = {
             'export_id': self.export_data_01.id,
         }
-        assert view.test_func() == False
+        assert view.test_func() is False
 
     def test__test_func__super(self):
         view = restore.CheckTaskStatusRestoreDataActionView()
@@ -429,7 +429,7 @@ class TestCheckTaskStatusRestoreDataActionView(AdminTestCase):
         view.kwargs = {
             'export_id': self.export_data_01.id,
         }
-        assert view.test_func() == True
+        assert view.test_func() is True
 
     def test__test_func__admin_with_permission(self):
         view = restore.CheckTaskStatusRestoreDataActionView()
@@ -442,7 +442,7 @@ class TestCheckTaskStatusRestoreDataActionView(AdminTestCase):
         view.kwargs = {
             'export_id': self.export_data_01.id,
         }
-        assert view.test_func() == True
+        assert view.test_func() is True
 
     def test__test_func__admin_without_permission(self):
         view = restore.CheckTaskStatusRestoreDataActionView()
@@ -457,7 +457,7 @@ class TestCheckTaskStatusRestoreDataActionView(AdminTestCase):
         view.kwargs = {
             'export_id': self.export_data_02.id,
         }
-        assert view.test_func() == False
+        assert view.test_func() is False
 
         request = APIRequestFactory().get('task_status', {
             'task_id': self.restore_data_01.task_id,
@@ -468,7 +468,7 @@ class TestCheckTaskStatusRestoreDataActionView(AdminTestCase):
         view.kwargs = {
             'export_id': self.export_data_02.id,
         }
-        assert view.test_func() == False
+        assert view.test_func() is False
 
         # admin not in institution
         request = APIRequestFactory().get('task_status', {
@@ -481,7 +481,7 @@ class TestCheckTaskStatusRestoreDataActionView(AdminTestCase):
         view.kwargs = {
             'export_id': self.export_data_01.id,
         }
-        assert view.test_func() == False
+        assert view.test_func() is False
 
     def test__test_func__without_param(self):
         view = restore.CheckTaskStatusRestoreDataActionView()
@@ -491,7 +491,7 @@ class TestCheckTaskStatusRestoreDataActionView(AdminTestCase):
         view.kwargs = {
             'export_id': self.export_data_01.id,
         }
-        assert view.test_func() == True
+        assert view.test_func() is True
 
 
 # Test cases for functions in restore.py used only in restore data process
@@ -618,16 +618,16 @@ class TestRestoreDataFunction(AdminTestCase):
         result = self.view.check_before_restore_export_data(None, self.export_data.id,
                                                             self.addon_data_restore.destination.id)
         mock_read_export_data.assert_called()
-        assert result == {'open_dialog': False, 'message': f'The export data files are corrupted'}
+        assert result == {'open_dialog': False, 'message': 'The export data files are corrupted'}
 
     @mock.patch(f'{RESTORE_EXPORT_DATA_PATH}.read_export_data_and_check_schema')
     def test_check_before_restore_export_data_exception_at_export_file(self, mock_read_export_data):
-        mock_read_export_data.side_effect = Exception(f'Mock test exception at read export data file')
+        mock_read_export_data.side_effect = Exception('Mock test exception at read export data file')
 
         result = self.view.check_before_restore_export_data(None, self.export_data.id,
                                                             self.addon_data_restore.destination.id)
         mock_read_export_data.assert_called()
-        assert result == {'open_dialog': False, 'message': f'Cannot connect to the export data storage location'}
+        assert result == {'open_dialog': False, 'message': 'Cannot connect to the export data storage location'}
 
     @mock.patch(f'{RESTORE_EXPORT_DATA_PATH}.read_export_data_and_check_schema')
     def test_check_before_restore_export_data_error_at_file_info(self, mock_read_export_data):
@@ -640,7 +640,7 @@ class TestRestoreDataFunction(AdminTestCase):
                                                                 self.addon_data_restore.destination.id)
             mock_read_export_data.assert_called()
             mock_read_file_info.assert_called()
-            assert result == {'open_dialog': False, 'message': f'The export data files are corrupted'}
+            assert result == {'open_dialog': False, 'message': 'The export data files are corrupted'}
 
     @mock.patch(f'{RESTORE_EXPORT_DATA_PATH}.read_export_data_and_check_schema')
     def test_check_before_restore_export_data_no_destination_region_found(self, mock_read_export_data):
@@ -652,7 +652,7 @@ class TestRestoreDataFunction(AdminTestCase):
             result = self.view.check_before_restore_export_data(None, self.export_data.id, -1)
             mock_read_export_data.assert_called()
             mock_read_file_info.assert_called()
-            assert result == {'open_dialog': False, 'message': f'Failed to get destination storage information'}
+            assert result == {'open_dialog': False, 'message': 'Failed to get destination storage information'}
 
     @mock.patch(f'{EXPORT_DATA_UTIL_PATH}.get_file_data')
     @mock.patch(f'{RESTORE_EXPORT_DATA_PATH}.read_file_info_and_check_schema')
@@ -662,7 +662,7 @@ class TestRestoreDataFunction(AdminTestCase):
         test_response = requests.Response()
         test_response.status_code = status.HTTP_400_BAD_REQUEST
         test_response._content = json.dumps(
-            {'message': f'Mock test bad request when check destination storage'}).encode('utf-8')
+            {'message': 'Mock test bad request when check destination storage'}).encode('utf-8')
 
         mock_read_export_data.return_value = True
         mock_read_file_info.return_value = {'folders': [{'project': {'id': self.project_id}}]}
@@ -673,7 +673,7 @@ class TestRestoreDataFunction(AdminTestCase):
         mock_read_export_data.assert_called()
         mock_read_file_info.assert_called()
         mock_utils_get_file_data.assert_called()
-        assert result == {'open_dialog': False, 'message': f'Cannot connect to destination storage'}
+        assert result == {'open_dialog': False, 'message': 'Cannot connect to destination storage'}
 
     @mock.patch(f'{EXPORT_DATA_UTIL_PATH}.get_file_data')
     @mock.patch(f'{RESTORE_EXPORT_DATA_PATH}.read_file_info_and_check_schema')
@@ -708,7 +708,7 @@ class TestRestoreDataFunction(AdminTestCase):
         mock_read_export_data.assert_called()
         mock_read_file_info.assert_called()
         mock_utils_get_file_data.assert_called()
-        assert result == {'open_dialog': False, 'message': f'Cannot connect to destination storage'}
+        assert result == {'open_dialog': False, 'message': 'Cannot connect to destination storage'}
 
     # prepare_for_restore_export_data_process
     def test_prepare_for_restore_export_data_process_with_other_process_running(self):
@@ -719,7 +719,7 @@ class TestRestoreDataFunction(AdminTestCase):
             response = self.view.prepare_for_restore_export_data_process(None, self.export_data.id,
                                                                          self.export_data_restore.destination.id, [], creator)
             mock_utils.assert_called()
-            assert response.data == {'message': f'Cannot restore in this time.'}
+            assert response.data == {'message': 'Cannot restore in this time.'}
             assert response.status_code == status.HTTP_400_BAD_REQUEST
 
     def test_prepare_for_restore_export_data_process_successfully(self):
@@ -825,7 +825,7 @@ class TestRestoreDataFunction(AdminTestCase):
 
         def mock_callback_test_check_process_abort(*args, **kwargs):
             task_result.abort()
-            raise ProcessError(f'Mock test abort process')
+            raise ProcessError('Mock test abort process')
 
         mock_read_file_info.return_value = {'folders': [{'project': {'id': 1}}], 'files': [{'project': {'id': 1}}]}
         mock_check_process.side_effect = mock_callback_test_check_process_abort
@@ -856,7 +856,7 @@ class TestRestoreDataFunction(AdminTestCase):
         mock_check_process.return_value = None
         mock_create_folder_path.return_value = None
         mock_copy_to_destination.return_value = [{}, []]
-        mock_add_tag_and_timestamp.side_effect = IntegrityError(f'Mock test for error when adding tag/timestamp')
+        mock_add_tag_and_timestamp.side_effect = IntegrityError('Mock test for error when adding tag/timestamp')
 
         with pytest.raises(IntegrityError):
             self.view.restore_export_data_process(task, {}, self.export_data_restore.export.id,
@@ -947,7 +947,7 @@ class TestRestoreDataFunction(AdminTestCase):
                 result = self.view.read_export_data_and_check_schema(self.export_data, None)
                 mock_read_export_data.assert_called_once()
                 mock_validate_file_json.assert_called_once()
-                assert result == True
+                assert result is True
 
     def test_read_export_data_and_check_schema_read_file_error(self):
         test_response = requests.Response()
@@ -964,7 +964,7 @@ class TestRestoreDataFunction(AdminTestCase):
 
     def test_read_export_data_and_check_schema_read_file_exception(self):
         mock_read_export_data = mock.MagicMock()
-        mock_read_export_data.side_effect = Exception(f'Mock test exception while reading export data')
+        mock_read_export_data.side_effect = Exception('Mock test exception while reading export data')
         with mock.patch.object(ExportData, 'read_export_data_from_location', mock_read_export_data):
             with pytest.raises(Exception):
                 result = self.view.read_export_data_and_check_schema(self.export_data, None)
@@ -985,7 +985,7 @@ class TestRestoreDataFunction(AdminTestCase):
                 result = self.view.read_export_data_and_check_schema(self.export_data, None)
                 mock_read_export_data.assert_called_once()
                 mock_validate_file_json.assert_called_once()
-                assert result == False
+                assert result is False
 
     # read_file_info_and_check_schema
     def test_read_file_info_and_check_schema_read_error(self):
@@ -1430,7 +1430,7 @@ class TestRestoreDataFunction(AdminTestCase):
                     bulkmount_export_files,
                     self.export_data_restore,
                     [], None)
-                assert result == None
+                assert result is None
 
     # add_tag_and_timestamp_to_database
     @mock.patch(f'{RESTORE_EXPORT_DATA_PATH}.add_timestamp_to_file_node')
@@ -1549,7 +1549,7 @@ class TestStopRestoreDataActionView(AdminTestCase):
         request.user = AuthUserFactory()
         self.view.request = request
         response = self.view.dispatch(request)
-        assert response.data == {'message': f'Missing required parameters.'}
+        assert response.data == {'message': 'Missing required parameters.'}
         assert response.status_code == status.HTTP_400_BAD_REQUEST
 
     def test_post(self):
@@ -1575,7 +1575,7 @@ class TestStopRestoreDataActionView(AdminTestCase):
 
         self.view.request = request
         response = self.view.dispatch(request, export_id=self.export_data_restore.export.id)
-        assert response.data == {'message': f'The restore export data is not exist'}
+        assert response.data == {'message': 'The restore export data is not exist'}
         assert response.status_code == status.HTTP_404_NOT_FOUND
 
     def test_post_task_no_result(self):
@@ -1591,7 +1591,7 @@ class TestStopRestoreDataActionView(AdminTestCase):
         self.view.export_id = self.export_data_restore.export.id
         self.view.task_id = FAKE_TASK_ID
         response = self.view.post(request)
-        assert response.data == {'message': f'Stop restore data successfully.'}
+        assert response.data == {'message': 'Stop restore data successfully.'}
         assert response.status_code == status.HTTP_200_OK
 
     def test_post_task_is_not_running(self):
@@ -1606,7 +1606,7 @@ class TestStopRestoreDataActionView(AdminTestCase):
         self.view.export_id = self.export_data_restore.export.id
         self.view.task_id = FAKE_TASK_ID
         response = self.view.post(request)
-        assert response.data == {'message': f'Stop restore data successfully.'}
+        assert response.data == {'message': 'Stop restore data successfully.'}
         assert response.status_code == status.HTTP_200_OK
 
     def test_post_task_done_moving_files(self):
@@ -1621,7 +1621,7 @@ class TestStopRestoreDataActionView(AdminTestCase):
         self.view.export_id = self.export_data_restore.export.id
         self.view.task_id = FAKE_TASK_ID
         response = self.view.post(request)
-        assert response.data == {'message': f'Cannot stop restore process at this time.'}
+        assert response.data == {'message': 'Cannot stop restore process at this time.'}
         assert response.status_code == status.HTTP_400_BAD_REQUEST
 
     @mock.patch.object(AbortableAsyncResult, 'abort')
@@ -1638,7 +1638,7 @@ class TestStopRestoreDataActionView(AdminTestCase):
         self.view.task_id = FAKE_TASK_ID
         response = self.view.post(request)
         mock_task_abort.assert_called()
-        assert response.data == {'message': f'Cannot stop restore process at this time.'}
+        assert response.data == {'message': 'Cannot stop restore process at this time.'}
         assert response.status_code == status.HTTP_400_BAD_REQUEST
 
     def test__test_func__anonymous(self):
@@ -1652,7 +1652,7 @@ class TestStopRestoreDataActionView(AdminTestCase):
         view.kwargs = {
             'export_id': self.export_data_01.id,
         }
-        assert view.test_func() == False
+        assert view.test_func() is False
 
     def test__test_func__normal_user(self):
         view = restore.StopRestoreDataActionView()
@@ -1665,7 +1665,7 @@ class TestStopRestoreDataActionView(AdminTestCase):
         view.kwargs = {
             'export_id': self.export_data_01.id,
         }
-        assert view.test_func() == False
+        assert view.test_func() is False
 
     def test__test_func__super(self):
         view = restore.StopRestoreDataActionView()
@@ -1684,7 +1684,7 @@ class TestStopRestoreDataActionView(AdminTestCase):
         view.export_data_inst_id = self.institution01.id
         view.export_data_restore = self.restore_data_01
         view.export_data_restore_inst_id = self.institution01.id
-        assert view.test_func() == True
+        assert view.test_func() is True
 
     def test__test_func__addmin_with_permission(self):
         view = restore.StopRestoreDataActionView()
@@ -1703,7 +1703,7 @@ class TestStopRestoreDataActionView(AdminTestCase):
         view.export_data_inst_id = self.institution01.id
         view.export_data_restore = self.restore_data_01
         view.export_data_restore_inst_id = self.institution01.id
-        assert view.test_func() == True
+        assert view.test_func() is True
 
     def test__test_func__addmin_without_permission(self):
         view = restore.StopRestoreDataActionView()
@@ -1724,7 +1724,7 @@ class TestStopRestoreDataActionView(AdminTestCase):
         view.export_data_inst_id = self.institution01.id
         view.export_data_restore = self.restore_data_01
         view.export_data_restore_inst_id = self.institution01.id
-        assert view.test_func() == False
+        assert view.test_func() is False
 
         request = APIRequestFactory().post('stop_restore_export_data', {
             'task_id': self.restore_data_02.task_id,
@@ -1741,7 +1741,7 @@ class TestStopRestoreDataActionView(AdminTestCase):
         view.export_data_inst_id = self.institution02.id
         view.export_data_restore = self.restore_data_02
         view.export_data_restore_inst_id = self.institution02.id
-        assert view.test_func() == False
+        assert view.test_func() is False
 
         # admin not in institution
         request = APIRequestFactory().post('stop_restore_export_data', {
@@ -1760,7 +1760,7 @@ class TestStopRestoreDataActionView(AdminTestCase):
         view.export_data_inst_id = self.institution02.id
         view.export_data_restore = self.restore_data_02
         view.export_data_restore_inst_id = self.institution02.id
-        assert view.test_func() == False
+        assert view.test_func() is False
 
     def test__test_func__super_with_param_not_same_inst(self):
         view = restore.StopRestoreDataActionView()
@@ -1779,7 +1779,7 @@ class TestStopRestoreDataActionView(AdminTestCase):
         view.export_data_inst_id = self.institution02.id
         view.export_data_restore = self.restore_data_01
         view.export_data_restore_inst_id = self.institution01.id
-        assert view.test_func() == False
+        assert view.test_func() is False
 
         request = APIRequestFactory().post('stop_restore_export_data', {
             'task_id': self.restore_data_01.task_id,
@@ -1796,7 +1796,7 @@ class TestStopRestoreDataActionView(AdminTestCase):
         view.export_data_inst_id = self.institution01.id
         view.export_data_restore = self.restore_data_01
         view.export_data_restore_inst_id = self.institution01.id
-        assert view.test_func() == False
+        assert view.test_func() is False
 
         request = APIRequestFactory().post('stop_restore_export_data', {
             'task_id': self.restore_data_01.task_id,
@@ -1813,7 +1813,7 @@ class TestStopRestoreDataActionView(AdminTestCase):
         view.export_data_inst_id = self.institution02.id
         view.export_data_restore = self.restore_data_01
         view.export_data_restore_inst_id = self.institution01.id
-        assert view.test_func() == False
+        assert view.test_func() is False
 
 
 # Test cases for CheckRunningRestoreActionView
@@ -1883,7 +1883,7 @@ class TestCheckRunningRestoreActionView(AdminTestCase):
         view.kwargs = {
             'export_id': self.export_data_01.id,
         }
-        assert view.test_func() == False
+        assert view.test_func() is False
 
     def test__test_func__normal_user(self):
         view = restore.CheckRunningRestoreActionView()
@@ -1895,7 +1895,7 @@ class TestCheckRunningRestoreActionView(AdminTestCase):
         view.kwargs = {
             'export_id': self.export_data_01.id,
         }
-        assert view.test_func() == False
+        assert view.test_func() is False
 
     def test__test_func__super(self):
         view = restore.CheckRunningRestoreActionView()
@@ -1907,7 +1907,7 @@ class TestCheckRunningRestoreActionView(AdminTestCase):
         view.kwargs = {
             'export_id': self.export_data_01.id,
         }
-        assert view.test_func() == True
+        assert view.test_func() is True
 
     def test__test_func__addmin_with_permission(self):
         view = restore.CheckRunningRestoreActionView()
@@ -1919,7 +1919,7 @@ class TestCheckRunningRestoreActionView(AdminTestCase):
         view.kwargs = {
             'export_id': self.export_data_01.id,
         }
-        assert view.test_func() == True
+        assert view.test_func() is True
 
     def test__test_func__addmin_without_permission(self):
         #not same institution of login user
@@ -1934,7 +1934,7 @@ class TestCheckRunningRestoreActionView(AdminTestCase):
         }
         view.export_data = self.export_data_01
         view.destination_id = self.region_inst_01.id
-        assert view.test_func() == False
+        assert view.test_func() is False
 
         view = restore.CheckRunningRestoreActionView()
         request = APIRequestFactory().get('check_running_restore', {
@@ -1947,7 +1947,7 @@ class TestCheckRunningRestoreActionView(AdminTestCase):
         }
         view.export_data = self.export_data_02
         view.destination_id = self.region_inst_02.id
-        assert view.test_func() == False
+        assert view.test_func() is False
 
         # admin not in institution
         view = restore.CheckRunningRestoreActionView()
@@ -1962,7 +1962,7 @@ class TestCheckRunningRestoreActionView(AdminTestCase):
         }
         view.export_data = self.export_data_02
         view.destination_id = self.region_inst_02.id
-        assert view.test_func() == False
+        assert view.test_func() is False
 
     def test__test_func__without_param(self):
         view = restore.CheckRunningRestoreActionView()
@@ -1972,7 +1972,7 @@ class TestCheckRunningRestoreActionView(AdminTestCase):
         view.kwargs = {
             'export_id': self.export_data_01.id,
         }
-        assert view.test_func() == True
+        assert view.test_func() is True
 
     def test__test_func__super_with_param_not_same_inst(self):
         view = restore.CheckRunningRestoreActionView()
@@ -1986,4 +1986,4 @@ class TestCheckRunningRestoreActionView(AdminTestCase):
         }
         view.export_data = self.export_data_02
         view.destination_id = self.region_inst_01.id
-        assert view.test_func() == False
+        assert view.test_func() is False

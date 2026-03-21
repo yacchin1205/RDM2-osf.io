@@ -18,6 +18,6 @@ def gen_product_name_list(product_name_filepath):
     with open(product_name_filepath) as f:
         for line in f:
             match = re.match(product_line_pattern, line)
-            if(is_valid_product_line(match)):
+            if (is_valid_product_line(match)):
                 product_name_list.append(match.group(1))
     return product_name_list

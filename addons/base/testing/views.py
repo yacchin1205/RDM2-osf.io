@@ -343,7 +343,7 @@ class OAuthCitationAddonConfigViewsTestCaseMixin(OAuthAddonConfigViewsTestCaseMi
         self.node_settings.clear_settings()
         self.node_settings.save()
         assert not self.node_settings.complete
-        assert self.node_settings.list_id == None
+        assert self.node_settings.list_id is None
         url = self.project.api_url_for('{0}_widget'.format(self.ADDON_SHORT_NAME))
         res = self.app.get(url, auth=self.user.auth).json
 

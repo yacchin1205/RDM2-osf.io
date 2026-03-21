@@ -3335,7 +3335,7 @@ class TestUserListView(AdminTestCase):
 
     def test_get_user_list_with_osf_query(self):
         """Test getting user list with OSF user query"""
-        include_osf_query = f'u.username = %s'
+        include_osf_query = 'u.username = %s'
         user_list = self.view.get_user_list_met_logic_condition(
             self.institution.id,
             1,
@@ -3348,7 +3348,7 @@ class TestUserListView(AdminTestCase):
 
     def test_get_user_list_with_multiple_osf_query(self):
         """Test getting user list with multiple OSF user queries"""
-        include_osf_query = f'u.username = %s AND u.username = %s'
+        include_osf_query = 'u.username = %s AND u.username = %s'
         user_list = self.view.get_user_list_met_logic_condition(
             self.institution.id,
             1,
@@ -3362,7 +3362,7 @@ class TestUserListView(AdminTestCase):
     def test_get_user_list_with_both_conditions(self):
         """Test getting user list with both logic condition and OSF query"""
         logic_condition = "data -> 'idp_attr' ->> 'fullname' = %s"
-        include_osf_query = f'u.username = %s'
+        include_osf_query = 'u.username = %s'
 
         user_list = self.view.get_user_list_met_logic_condition(
             self.institution.id,
@@ -3966,7 +3966,7 @@ class TestExportUserListCSVView(AdminTestCase):
 
     def test_get_user_list_with_osf_query(self):
         """Test get user list function with OSF user query"""
-        include_osf_query = f'u.username = %s'
+        include_osf_query = 'u.username = %s'
         user_list = self.view.get_user_list_met_logic_condition(
             self.institution.id,
             '',
@@ -3978,7 +3978,7 @@ class TestExportUserListCSVView(AdminTestCase):
 
     def test_get_user_list_with_multiple_osf_query(self):
         """Test get user list function with multiple OSF user queries"""
-        include_osf_query = f'u.username = %s AND u.username = %s'
+        include_osf_query = 'u.username = %s AND u.username = %s'
         user_list = self.view.get_user_list_met_logic_condition(
             self.institution.id,
             '',
@@ -3991,7 +3991,7 @@ class TestExportUserListCSVView(AdminTestCase):
     def test_get_user_list_with_both_conditions(self):
         """Test get user list function with both logic condition and OSF query"""
         logic_condition = "data -> 'idp_attr' ->> 'fullname' = %s"
-        include_osf_query = f'u.username = %s'
+        include_osf_query = 'u.username = %s'
 
         user_list = self.view.get_user_list_met_logic_condition(
             self.institution.id,

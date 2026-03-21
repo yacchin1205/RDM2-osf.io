@@ -34,7 +34,7 @@ def get_actual(app, url, user=None, sort=None, expect_errors=False, **filters):
             res = app.get(url)
         else:
             res = app.get(url, auth=user.auth)
-        actual.extend([l['id'] for l in res.json['data']])
+        actual.extend([item['id'] for item in res.json['data']])
         url = res.json['links']['next']
     if sort is None:
         return set(actual)
@@ -85,7 +85,7 @@ class ReviewActionFilterMixin(object):
 
     def test_filter_actions(self, app, url, user, expected_actions):
         # unfiltered
-        expected = set([l._id for l in expected_actions])
+        expected = set([action._id for action in expected_actions])
         actual = get_actual(app, url, user)
         assert expected == actual
 
@@ -101,24 +101,24 @@ class ReviewActionFilterMixin(object):
 
         # filter by trigger
         expected = set(
-            [l._id for l in expected_actions if l.trigger == action.trigger])
+            [review_action._id for review_action in expected_actions if review_action.trigger == action.trigger])
         actual = get_actual(app, url, user, trigger=action.trigger)
         assert expected == actual
 
         # filter by from_state
         expected = set(
-            [l._id for l in expected_actions if l.from_state == action.from_state])
+            [review_action._id for review_action in expected_actions if review_action.from_state == action.from_state])
         actual = get_actual(app, url, user, from_state=action.from_state)
         assert expected == actual
 
         # filter by to_state
         expected = set(
-            [l._id for l in expected_actions if l.to_state == action.to_state])
+            [review_action._id for review_action in expected_actions if review_action.to_state == action.to_state])
         actual = get_actual(app, url, user, to_state=action.to_state)
         assert expected == actual
 
         # filter by date_created
-        expected = set([l._id for l in expected_actions])
+        expected = set([review_action._id for review_action in expected_actions])
         actual = get_actual(app, url, user, date_created=action.created)
         assert expected == actual
 
@@ -129,7 +129,7 @@ class ReviewActionFilterMixin(object):
         assert expected == actual
 
         # filter by date_modified
-        expected = set([l._id for l in expected_actions])
+        expected = set([review_action._id for review_action in expected_actions])
         actual = get_actual(app, url, user, date_modified=action.modified)
         assert expected == actual
 
@@ -141,13 +141,13 @@ class ReviewActionFilterMixin(object):
 
         # filter by target
         expected = set(
-            [l._id for l in expected_actions if l.target_id == action.target_id])
+            [review_action._id for review_action in expected_actions if review_action.target_id == action.target_id])
         actual = get_actual(app, url, user, target=action.target._id)
         assert expected == actual
 
         # filter by provider
         expected = set(
-            [l._id for l in expected_actions if l.target.provider_id == action.target.provider_id])
+            [review_action._id for review_action in expected_actions if review_action.target.provider_id == action.target.provider_id])
         actual = get_actual(
             app, url, user, provider=action.target.provider._id)
         assert expected == actual

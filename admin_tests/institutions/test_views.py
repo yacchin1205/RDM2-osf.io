@@ -74,22 +74,22 @@ class TestInstitutionUserList(AdminTestCase):
     def test_permission_unauthenticated(self):
         view = setup_user_view(views.InstitutionUserList(), self.request, user=AnonymousUser())
         permission_result = view.test_func()
-        assert permission_result == False
-        assert view.raise_exception == False
+        assert permission_result is False
+        assert view.raise_exception is False
 
     def test_permission_user(self):
         view = setup_user_view(views.InstitutionUserList(), self.request, user=self.user)
         permission_result = view.test_func()
-        assert permission_result == False
-        assert view.raise_exception == True
+        assert permission_result is False
+        assert view.raise_exception is True
 
     def test_permission_admin(self):
         self.user.is_staff = True
         self.user.save()
         view = setup_user_view(views.InstitutionUserList(), self.request, user=self.user)
         permission_result = view.test_func()
-        assert permission_result == False
-        assert view.raise_exception == True
+        assert permission_result is False
+        assert view.raise_exception is True
 
     def test_permission_super_admin(self):
         self.user.is_superuser = True
@@ -97,7 +97,7 @@ class TestInstitutionUserList(AdminTestCase):
         self.user.save()
         view = setup_user_view(views.InstitutionUserList(), self.request, user=self.user)
         permission_result = view.test_func()
-        assert permission_result == True
+        assert permission_result is True
 
     def test_get_list(self, *args, **kwargs):
         res = self.view.get(self.request, *args, **kwargs)
@@ -1076,7 +1076,7 @@ class TestQuotaUserList(AdminTestCase):
         response = self.view.get_context_data()
 
         assert isinstance(response, dict)
-        assert not 'institution_storage_name' in response
+        assert 'institution_storage_name' not in response
 
     def test_get_context_data_has_storage_name(self):
         self.view.get_institution = self.get_institution_has_storage_name
@@ -1112,21 +1112,21 @@ class TestUserListByInstitutionID(AdminTestCase):
     def test_permission_unauthenticated(self):
         self.request.user = AnonymousUser()
         permission_result = self.view.test_func()
-        assert permission_result == False
-        assert self.view.raise_exception == False
+        assert permission_result is False
+        assert self.view.raise_exception is False
 
     def test_permission_user(self):
         permission_result = self.view.test_func()
-        assert permission_result == False
-        assert self.view.raise_exception == True
+        assert permission_result is False
+        assert self.view.raise_exception is True
 
     def test_permission_admin(self):
         self.user.is_staff = True
         self.user.save()
         self.request.user = self.user
         permission_result = self.view.test_func()
-        assert permission_result == False
-        assert self.view.raise_exception == True
+        assert permission_result is False
+        assert self.view.raise_exception is True
 
     def test_permission_super_admin(self):
         self.user.is_superuser = True
@@ -1134,7 +1134,7 @@ class TestUserListByInstitutionID(AdminTestCase):
         self.user.save()
         self.request.user = self.user
         permission_result = self.view.test_func()
-        assert permission_result == True
+        assert permission_result is True
 
     def test_default_user_list_by_institution_id(self, *args, **kwargs):
 

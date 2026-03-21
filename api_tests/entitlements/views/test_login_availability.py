@@ -30,7 +30,7 @@ class TestLoginAvailability:
         res = app.simple_post_api(url, data, expect_errors=True)
         res_data = res.json['login_availability']
         assert res.status_code == 200
-        assert res_data == False
+        assert res_data is False
 
     def test_post_serializer_invalid(self, app):
         self.institution = InstitutionFactory()

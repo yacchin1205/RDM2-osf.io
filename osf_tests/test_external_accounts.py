@@ -16,9 +16,11 @@ class TestEncryptedExternalAccountFields(object):
     def setup_class(self):
         self.magic_string = ''.join(random.choice(string.hexdigits) for _ in range(25))
 
-        self.encrypted_field_dict = {f.name: self.magic_string for f in
-                                ExternalAccountFactory._meta.model._meta.get_fields() if
-                                isinstance(f, EncryptedTextField)}
+        self.encrypted_field_dict = {
+            f.name: self.magic_string for f in
+            ExternalAccountFactory._meta.model._meta.get_fields()
+            if isinstance(f, EncryptedTextField)
+        }
 
     def test_values_match(self):
         eaf = ExternalAccountFactory(**self.encrypted_field_dict)
@@ -26,7 +28,7 @@ class TestEncryptedExternalAccountFields(object):
         ea.reload()
 
         for field_name, value in self.encrypted_field_dict.items():
-                assert self.encrypted_field_dict[field_name] == getattr(ea, field_name)
+            assert self.encrypted_field_dict[field_name] == getattr(ea, field_name)
 
     def test_database_is_encrypted(self):
         eaf = ExternalAccountFactory(**self.encrypted_field_dict)

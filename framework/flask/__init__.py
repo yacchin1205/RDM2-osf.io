@@ -1,7 +1,8 @@
 # -*- coding: utf-8 -*-
-from flask import (Flask, request, jsonify, render_template,  # noqa
+from flask import (  # noqa
+    Flask, request, jsonify, render_template,
     render_template_string, Blueprint, send_file, abort, make_response,
-    redirect as flask_redirect, url_for, send_from_directory, current_app
+    redirect as flask_redirect, url_for, send_from_directory, current_app,
 )
 import furl
 from flask_babel import Babel

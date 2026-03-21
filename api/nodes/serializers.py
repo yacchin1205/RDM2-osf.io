@@ -1070,9 +1070,9 @@ class NodeAddonSettingsSerializer(NodeAddonSettingsSerializerBase):
     def should_call_set_folder(self, folder_info, instance, auth, node_settings):
         if (
             folder_info and not (   # If we have folder information to set
-                    instance and getattr(instance, 'folder_id', False) and (  # and the settings aren't already configured with this folder
-                        instance.folder_id == folder_info or (hasattr(folder_info, 'get') and instance.folder_id == folder_info.get('id', False))
-                    )
+                instance and getattr(instance, 'folder_id', False) and (  # and the settings aren't already configured with this folder
+                    instance.folder_id == folder_info or (hasattr(folder_info, 'get') and instance.folder_id == folder_info.get('id', False))
+                )
             )
         ):
             if auth.user._id != node_settings.user_settings.owner._id:  # And the user is allowed to do this
@@ -1917,7 +1917,7 @@ class NodeSettingsUpdateSerializer(NodeSettingsSerializer):
         Returns addon, if exists, otherwise returns None
         """
         addon = obj.get_or_add_addon(addon_name, auth=auth) if should_enable else obj.delete_addon(addon_name, auth)
-        if type(addon) == bool:
+        if isinstance(addon, bool):
             addon = None
         return addon
 

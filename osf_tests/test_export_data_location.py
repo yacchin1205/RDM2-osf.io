@@ -47,7 +47,7 @@ class TestExportDataRestore(TestCase):
         mock_website_settings.ADDONS_AVAILABLE = []
         with mock.patch('osf.models.export_data_location.website_settings', mock_website_settings):
             res = self.export_data_location.addon
-            assert res == None
+            assert res is None
 
     def test_provider_short_name_not_null(self):
         expect_value = self.addon.short_name
@@ -62,7 +62,7 @@ class TestExportDataRestore(TestCase):
         mock_website_settings.ADDONS_AVAILABLE = []
         with mock.patch('osf.models.export_data_location.website_settings', mock_website_settings):
             res = self.export_data_location.provider_short_name
-            assert res == None
+            assert res is None
 
     def test_provider_full_name_not_null(self):
         expect_value = self.addon.full_name
@@ -77,7 +77,7 @@ class TestExportDataRestore(TestCase):
         mock_website_settings.ADDONS_AVAILABLE = []
         with mock.patch('osf.models.export_data_location.website_settings', mock_website_settings):
             res = self.export_data_location.provider_full_name
-            assert res == None
+            assert res is None
 
     def test_serialize_waterbutler_credentials_s3(self):
         res = self.export_data_location.serialize_waterbutler_credentials('s3')
@@ -107,7 +107,7 @@ class TestExportDataRestore(TestCase):
 
     def test_serialize_waterbutler_settings_nextcloudinstitutions(self):
         res = self.export_data_location.serialize_waterbutler_settings('nextcloudinstitutions')
-        assert res != None
+        assert res is not None
 
     def test_serialize_waterbutler_settings_dropboxbusiness(self):
         res = self.export_data_location.serialize_waterbutler_settings('dropboxbusiness')

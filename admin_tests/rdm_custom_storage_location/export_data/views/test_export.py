@@ -534,7 +534,7 @@ class TestExportDataProcess(unittest.TestCase):
             assert _task_result.get('exc_message') != export.MSG_EXPORT_COMPLETED
             assert _task_result.get('export_data_id') == self.export_data.id
             assert _task_result.get('export_data_status') == self.export_data.status
-            assert _task_result.get('traceback') != None
+            assert _task_result.get('traceback') is not None
 
     @pytest.mark.django_db
     @mock.patch(f'{EXPORT_DATA_PATH}.ExportData.extract_file_information_json_from_source_storage')
@@ -917,9 +917,9 @@ class TestExportDataRollbackProcess(unittest.TestCase):
             assert _task_result.get('exc_type') != 'ExportDataTaskException'
             assert _task_result.get('exc_message') != export.MSG_EXPORT_STOPPED
             assert _task_result.get('export_data_id') == self.export_data.id
-            assert _task_result.get('export_data_task_id') == None
+            assert _task_result.get('export_data_task_id') is None
             assert _task_result.get('export_data_status') == self.export_data.status
-            assert _task_result.get('traceback') != None
+            assert _task_result.get('traceback') is not None
 
     @pytest.mark.django_db
     @mock.patch(f'{EXPORT_DATA_PATH}.ExportData.objects')
@@ -947,9 +947,9 @@ class TestExportDataRollbackProcess(unittest.TestCase):
             assert _task_result.get('exc_type') == 'ExportDataTaskException'
             assert _task_result.get('exc_message') == export.MSG_EXPORT_STOPPED
             assert _task_result.get('export_data_id') == self.export_data.id
-            assert _task_result.get('export_data_task_id') == None
+            assert _task_result.get('export_data_task_id') is None
             assert _task_result.get('export_data_status') == self.export_data.status
-            assert _task_result.get('traceback') == None
+            assert _task_result.get('traceback') is None
 
     @pytest.mark.django_db
     @mock.patch(f'{EXPORT_DATA_PATH}.ExportData.objects')
@@ -977,7 +977,7 @@ class TestExportDataRollbackProcess(unittest.TestCase):
             assert _task_result.get('exc_type') == 'ExportDataTaskException'
             assert _task_result.get('exc_message') == export.MSG_EXPORT_STOPPED
             assert _task_result.get('export_data_id') == self.export_data.id
-            assert _task_result.get('export_data_task_id') == None
+            assert _task_result.get('export_data_task_id') is None
             assert _task_result.get('export_data_status') == self.export_data.status
 
     @pytest.mark.django_db
@@ -1006,7 +1006,7 @@ class TestExportDataRollbackProcess(unittest.TestCase):
             assert _task_result.get('exc_type') == 'ExportDataTaskException'
             assert _task_result.get('exc_message') == export.MSG_EXPORT_FORCE_STOPPED
             assert _task_result.get('export_data_id') == self.export_data.id
-            assert _task_result.get('export_data_task_id') == None
+            assert _task_result.get('export_data_task_id') is None
             assert _task_result.get('export_data_status') == self.export_data.status
 
     @pytest.mark.django_db
@@ -1439,7 +1439,7 @@ class TestStopExportDataActionView(AdminTestCase):
 
         assert response.status_code == status.HTTP_404_NOT_FOUND
         assert response.data.get('message') == export.MSG_EXPORT_NOT_EXIST_INPUT
-        assert response.data.get('task_id') == None
+        assert response.data.get('task_id') is None
 
     @mock.patch(f'{EXPORT_DATA_PATH}.ExportData.objects')
     def test_post__400_no_export_data(self, mock_export_data):
@@ -1740,7 +1740,7 @@ class TestCheckDataExportDataActionView(AdminTestCase):
         response = self.view.post(self.request)
 
         assert response.status_code == status.HTTP_200_OK
-        assert response.data['has_data'] == True
+        assert response.data['has_data'] is True
 
     @mock.patch(f'{EXPORT_DATA_PATH}.ExportData.objects')
     def test_post__200_not_has_data(self, mock_export_data):
@@ -1755,7 +1755,7 @@ class TestCheckDataExportDataActionView(AdminTestCase):
         response = self.view.post(self.request)
 
         assert response.status_code == status.HTTP_200_OK
-        assert response.data['has_data'] == False
+        assert response.data['has_data'] is False
 
 
 class TestCheckRunningExportActionView(AdminTestCase):
@@ -1847,7 +1847,7 @@ class TestCheckRunningExportActionView(AdminTestCase):
         response = self.view.post(self.request)
 
         assert response.status_code == status.HTTP_200_OK
-        assert response.data.get('task_id') == None
+        assert response.data.get('task_id') is None
 
 
 class TestCheckExportDataProcessStatus(AdminTestCase):

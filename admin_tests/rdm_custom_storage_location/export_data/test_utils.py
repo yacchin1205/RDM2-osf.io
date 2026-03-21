@@ -1488,7 +1488,7 @@ class TestUtilsForExportData(AdminTestCase):
         mock_validate.return_value = None
 
         with patch(f'{EXPORT_DATA_UTIL_PATH}.from_json', mock_from_json):
-            with patch(f'jsonschema.validate', mock_validate):
+            with patch('jsonschema.validate', mock_validate):
                 result = utils.validate_exported_data({}, 'file-info-schema.json')
                 mock_from_json.assert_called()
                 mock_validate.assert_called()
@@ -1498,10 +1498,10 @@ class TestUtilsForExportData(AdminTestCase):
         mock_from_json = MagicMock()
         mock_from_json.return_value = {}
         mock_validate = MagicMock()
-        mock_validate.side_effect = ValidationError(f'Mock test jsonschema.ValidationError')
+        mock_validate.side_effect = ValidationError('Mock test jsonschema.ValidationError')
 
         with patch(f'{EXPORT_DATA_UTIL_PATH}.from_json', mock_from_json):
-            with patch(f'jsonschema.validate', mock_validate):
+            with patch('jsonschema.validate', mock_validate):
                 result = utils.validate_exported_data({}, 'file-info-schema.json')
                 mock_from_json.assert_called()
                 mock_validate.assert_called()
@@ -1511,10 +1511,10 @@ class TestUtilsForExportData(AdminTestCase):
         mock_from_json = MagicMock()
         mock_from_json.return_value = {}
         mock_validate = MagicMock()
-        mock_validate.side_effect = FileNotFoundError(f'Mock test jsonschema.SchemaError')
+        mock_validate.side_effect = FileNotFoundError('Mock test jsonschema.SchemaError')
 
         with patch(f'{EXPORT_DATA_UTIL_PATH}.from_json', mock_from_json):
-            with patch(f'jsonschema.validate', mock_validate):
+            with patch('jsonschema.validate', mock_validate):
                 with pytest.raises(FileNotFoundError):
                     result = utils.validate_exported_data({}, 'fake-schema.json')
                     mock_from_json.assert_called()
@@ -1548,7 +1548,7 @@ class TestUtilsForExportData(AdminTestCase):
 
     def test_check_diff_epsilon(self):
         res = utils.deep_diff(1.2, 2.1, parent_key='section1', epsilon_keys=['section1', 'section2'])
-        assert res == None
+        assert res is None
 
     def test_check_diff_between_list_flip(self):
         a_standard = [
@@ -1576,7 +1576,7 @@ class TestUtilsForExportData(AdminTestCase):
             }
         ]
         res = utils.deep_diff(a_standard, a_new, exclude_keys=['section1', 'section2'])
-        assert res != None
+        assert res is not None
 
     def test_check_diff_between_list_not_flip(self):
         a_standard = [
@@ -1604,7 +1604,7 @@ class TestUtilsForExportData(AdminTestCase):
             }
         ]
         res = utils.deep_diff(a_new, a_standard, exclude_keys=['section1', 'section2'])
-        assert res != None
+        assert res is not None
 
     def test_type_dict(self):
         a_standard = {
@@ -1630,7 +1630,7 @@ class TestUtilsForExportData(AdminTestCase):
 
         }
         res = utils.deep_diff(a_new, a_standard, exclude_keys=['section1', 'section2'])
-        assert res != None
+        assert res is not None
 
     @patch(f'{EXPORT_DATA_UTIL_PATH}.get_file_data')
     def test_check_for_file_existent_on_export_location(self, mock_get_file_data):
@@ -1742,7 +1742,7 @@ class TestUtilsForCheckRestoreData(AdminTestCase):
 
     def test_check_diff_epsilon(self):
         res = utils.deep_diff(1.2, 2.1, parent_key='section1', epsilon_keys=['section1', 'section2'])
-        assert res == None
+        assert res is None
 
     def test_check_diff_between_list_flip(self):
         a_standard = [
@@ -1770,7 +1770,7 @@ class TestUtilsForCheckRestoreData(AdminTestCase):
             }
         ]
         res = utils.deep_diff(a_standard, a_new, exclude_keys=['section1', 'section2'])
-        assert res != None
+        assert res is not None
 
     def test_check_diff_between_list_not_flip(self):
         a_standard = [
@@ -1798,7 +1798,7 @@ class TestUtilsForCheckRestoreData(AdminTestCase):
             }
         ]
         res = utils.deep_diff(a_new, a_standard, exclude_keys=['section1', 'section2'])
-        assert res != None
+        assert res is not None
 
     def test_check_diff_between_dict(self):
         a_standard = {
@@ -1824,7 +1824,7 @@ class TestUtilsForCheckRestoreData(AdminTestCase):
 
         }
         res = utils.deep_diff(a_new, a_standard, exclude_keys=['section1', 'section2'])
-        assert res != None
+        assert res is not None
 
     # check_file_metadata
     def test_check_file_metadata_not_set(self):
@@ -1987,11 +1987,11 @@ class TestUtilsForRestoreData(AdminTestCase):
     # check_for_any_running_restore_process
     def test_check_for_any_running_restore_process_true_result(self):
         result = utils.check_for_any_running_restore_process(self.destination_id)
-        assert result == True
+        assert result is True
 
     def test_check_for_any_running_restore_process_false_result(self):
         result = utils.check_for_any_running_restore_process(-1)
-        assert result == False
+        assert result is False
 
     # validate_file_json
     def test_validate_file_json(self):
@@ -2001,7 +2001,7 @@ class TestUtilsForRestoreData(AdminTestCase):
         mock_validate.return_value = None
 
         with patch(f'{EXPORT_DATA_UTIL_PATH}.from_json', mock_from_json):
-            with patch(f'jsonschema.validate', mock_validate):
+            with patch('jsonschema.validate', mock_validate):
                 result = utils.validate_file_json({}, 'file-info-schema.json')
                 mock_from_json.assert_called()
                 mock_validate.assert_called()
@@ -2011,10 +2011,10 @@ class TestUtilsForRestoreData(AdminTestCase):
         mock_from_json = MagicMock()
         mock_from_json.return_value = {}
         mock_validate = MagicMock()
-        mock_validate.side_effect = ValidationError(f'Mock test jsonschema.ValidationError')
+        mock_validate.side_effect = ValidationError('Mock test jsonschema.ValidationError')
 
         with patch(f'{EXPORT_DATA_UTIL_PATH}.from_json', mock_from_json):
-            with patch(f'jsonschema.validate', mock_validate):
+            with patch('jsonschema.validate', mock_validate):
                 result = utils.validate_file_json({}, 'file-info-schema.json')
                 mock_from_json.assert_called()
                 mock_validate.assert_called()
@@ -2024,10 +2024,10 @@ class TestUtilsForRestoreData(AdminTestCase):
         mock_from_json = MagicMock()
         mock_from_json.return_value = {}
         mock_validate = MagicMock()
-        mock_validate.side_effect = SchemaError(f'Mock test jsonschema.SchemaError')
+        mock_validate.side_effect = SchemaError('Mock test jsonschema.SchemaError')
 
         with patch(f'{EXPORT_DATA_UTIL_PATH}.from_json', mock_from_json):
-            with patch(f'jsonschema.validate', mock_validate):
+            with patch('jsonschema.validate', mock_validate):
                 result = utils.validate_file_json({}, 'file-info-schema.json')
                 mock_from_json.assert_called()
                 mock_validate.assert_called()
@@ -2037,10 +2037,10 @@ class TestUtilsForRestoreData(AdminTestCase):
         mock_from_json = MagicMock()
         mock_from_json.return_value = {}
         mock_validate = MagicMock()
-        mock_validate.side_effect = FileNotFoundError(f'Mock test jsonschema.SchemaError')
+        mock_validate.side_effect = FileNotFoundError('Mock test jsonschema.SchemaError')
 
         with patch(f'{EXPORT_DATA_UTIL_PATH}.from_json', mock_from_json):
-            with patch(f'jsonschema.validate', mock_validate):
+            with patch('jsonschema.validate', mock_validate):
                 with pytest.raises(FileNotFoundError):
                     result = utils.validate_file_json({}, 'fake-schema.json')
                     mock_from_json.assert_called()
@@ -2320,7 +2320,7 @@ class TestUtilsForRestoreData(AdminTestCase):
     def test_create_folder_path__invalid_folder_path(self):
         response = utils.create_folder_path(self.export_data_restore.destination, TEST_PROJECT_ID,
                                             '/folder', [], None)
-        assert response == None
+        assert response is None
 
     @patch(f'{EXPORT_DATA_UTIL_PATH}.create_folders')
     def test_create_folder_path__create_folders(self, mock_create_folders):
@@ -2329,7 +2329,7 @@ class TestUtilsForRestoreData(AdminTestCase):
         response = utils.create_folder_path(self.export_data_restore.destination, TEST_PROJECT_ID,
                                             '/folder/', [], None)
         mock_create_folders.assert_called()
-        assert response == None
+        assert response is None
 
     # create_folders
     @patch(f'{EXPORT_DATA_UTIL_PATH}.create_folder')
@@ -2387,7 +2387,7 @@ class TestUtilsForRestoreData(AdminTestCase):
                                                    None, None)
         mock_get_files_in_path.assert_called()
         mock_create_folder.assert_called()
-        assert created_folder_path == None
+        assert created_folder_path is None
 
     @patch(f'{EXPORT_DATA_UTIL_PATH}.create_folder')
     @patch(f'{EXPORT_DATA_UTIL_PATH}.get_files_in_path')
@@ -2401,7 +2401,7 @@ class TestUtilsForRestoreData(AdminTestCase):
                                                    None, None)
         mock_get_files_in_path.assert_called()
         mock_create_folder.assert_called()
-        assert created_folder_path == None
+        assert created_folder_path is None
 
     @patch(f'{EXPORT_DATA_UTIL_PATH}.create_folder')
     @patch(f'{EXPORT_DATA_UTIL_PATH}.get_files_in_path')
@@ -2730,7 +2730,7 @@ class TestUtilsForRestoreData(AdminTestCase):
             self.export_data, TEST_PROVIDER, TEST_PROJECT_ID,
             '/', '/folder/',
             [], None)
-        assert response == None
+        assert response is None
 
     @patch(f'{EXPORT_DATA_UTIL_PATH}.copy_file_to_other_storage')
     @patch(f'{EXPORT_DATA_UTIL_PATH}.create_folders')
@@ -2760,7 +2760,7 @@ class TestUtilsForRestoreData(AdminTestCase):
             [], None)
         mock_create_folders.assert_called()
         mock_copy_file.assert_not_called()
-        assert response == None
+        assert response is None
 
     # prepare_file_node_for_add_on_storage
     def test_prepare_file_node_for_add_on_storage(self):

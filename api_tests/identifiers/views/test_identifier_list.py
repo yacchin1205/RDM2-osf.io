@@ -19,7 +19,6 @@ from osf_tests.factories import (
 )
 from osf.utils.permissions import READ, WRITE
 from osf.utils.workflows import DefaultStates
-from tests.utils import assert_equals
 from website.identifiers.clients import DataCiteClient
 from website import settings
 

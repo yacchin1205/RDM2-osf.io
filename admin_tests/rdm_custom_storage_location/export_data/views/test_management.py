@@ -53,7 +53,7 @@ class TestExportBaseView(AdminTestCase):
 
     def test_load_institution(self):
         response = self.view.load_institution()
-        assert response == None
+        assert response is None
 
     def test_load_institution_not_exist(self):
         self.view.kwargs = {'institution_id': '0'}
@@ -107,7 +107,7 @@ class TestExportDataListView(AdminTestCase):
             mock_render.return_value = None
             with mock.patch(f'{MANAGEMENT_EXPORT_DATA_PATH}.render', mock_render):
                 res = self.view.get(self.request, institution_id=self.institution.id)
-                assert res == None
+                assert res is None
 
     def test_get_super_not_institution_id(self):
         mock_class = mock.MagicMock()
@@ -142,7 +142,7 @@ class TestExportDataDeletedListView(AdminTestCase):
             mock_render.return_value = None
             with mock.patch(f'{MANAGEMENT_EXPORT_DATA_PATH}.render', mock_render):
                 res = self.view.get(self.request)
-                assert res == None
+                assert res is None
 
 
 @pytest.mark.feature_202210
@@ -172,7 +172,7 @@ class TestExportDataInformationView(AdminTestCase):
                     view = setup_view(view, request,
                                     institution_id=self.institution.id, data_id=self.export_data.id)
                     res = view.get(request)
-                    assert res == None
+                    assert res is None
 
     def test_get_success_not_admin(self):
         mock_validate = mock.MagicMock()
@@ -193,7 +193,7 @@ class TestExportDataInformationView(AdminTestCase):
                     view = setup_view(view, request,
                                     institution_id=self.institution.id, data_id=self.export_data.id)
                     res = view.get(request)
-                    assert res == None
+                    assert res is None
 
     @mock.patch('osf.models.export_data.requests')
     @mock.patch(f'{MANAGEMENT_EXPORT_DATA_PATH}.render_bad_request_response')

@@ -502,13 +502,13 @@ class TestRemove2Factor(AdminTestCase):
 
     def test_integration_delete_two_factor(self):
         user_addon = self.user.get_or_add_addon('twofactor')
-        assert user_addon != None
+        assert user_addon is not None
         user_settings = self.user.get_addon('twofactor')
-        assert user_settings != None
+        assert user_settings is not None
         count = AdminLogEntry.objects.count()
         self.setup_view.delete(self.request)
         post_addon = self.user.get_addon('twofactor')
-        assert post_addon == None
+        assert post_addon is None
         assert AdminLogEntry.objects.count() == count + 1
 
     def test_no_user_permissions_raises_error(self):
@@ -1326,7 +1326,7 @@ class TestGetUserInstitutionQuota(AdminTestCase):
         )
         context = response.get_object()
         assert context['quota'] == 200
-        assert context['disable_update_max_quota'] == True
+        assert context['disable_update_max_quota'] is True
 
     def test_get_nii_custom_storage_quota(self):
         UserQuota.objects.create(
@@ -1344,7 +1344,7 @@ class TestGetUserInstitutionQuota(AdminTestCase):
         )
         context = response.get_object()
         assert context['quota'] == 200
-        assert context['disable_update_max_quota'] == False
+        assert context['disable_update_max_quota'] is False
 
 
 class TestSetUserInstitutionQuota(AdminTestCase):

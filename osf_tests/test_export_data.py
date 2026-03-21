@@ -594,7 +594,7 @@ class TestExportDataWithRestoreData(TestCase):
         assert self.export_data.get_all_restored().first() == self.export_data_restore
 
     def test_has_restored(self):
-        assert self.export_data.has_restored() == True
+        assert self.export_data.has_restored() is True
 
     def test_get_latest_restored(self):
         assert self.export_data.get_latest_restored() == self.export_data_restore

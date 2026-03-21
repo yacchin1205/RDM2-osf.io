@@ -37,13 +37,13 @@ class TestIsDeprecated(unittest.TestCase):
         request_version = '2.6'
         is_deprecated = api_utils.is_deprecated(
             request_version, self.min_version, self.max_version)
-        assert is_deprecated == True
+        assert is_deprecated is True
 
     def test_is_not_deprecated(self):
         request_version = '2.5'
         is_deprecated = api_utils.is_deprecated(
             request_version, self.min_version, self.max_version)
-        assert is_deprecated == False
+        assert is_deprecated is False
 
     def test_is_deprecated_larger_versions(self):
         request_version = '2.10'

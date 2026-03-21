@@ -211,7 +211,7 @@ class TestSaveCredentials(AdminTestCase):
 
         wb_settings = institution_storage.waterbutler_settings
         assert wb_settings['storage']['provider'] == 's3compatinstitutions'
-        assert wb_settings['disabled'] == True
+        assert wb_settings['disabled'] is True
 
     @mock.patch('admin.rdm_custom_storage_location.utils.test_s3compat_connection')
     def test_invalid_credentials(self, mock_testconnection):
@@ -267,7 +267,7 @@ class TestSaveCredentials(AdminTestCase):
 
         wb_settings = institution_storage.waterbutler_settings
         assert wb_settings['storage']['provider'] == 's3compatinstitutions'
-        assert wb_settings['disabled'] == True
+        assert wb_settings['disabled'] is True
 
 
 class TestFetchCredentialsView(AdminTestCase):
@@ -332,7 +332,7 @@ class TestFetchCredentialsView(AdminTestCase):
         assert response_body.get('s3compatinstitutions_bucket') == settings.DEFAULT_BASE_BUCKET
 
     def test_get_default(self):
-        response = self.view_get(f'provider_short_name=s3compatinstitutions')
+        response = self.view_get('provider_short_name=s3compatinstitutions')
         assert response.status_code == http_status.HTTP_200_OK
         response_body = json.loads(response.content.decode())
         assert response_body.get('s3compatinstitutions_endpoint_url') == ''

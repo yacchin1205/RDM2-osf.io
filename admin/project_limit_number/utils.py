@@ -107,11 +107,11 @@ def generate_logic_condition_from_attribute(attribute):
     if use_left_suffix_match:
         # If attribute is left_suffix_match, use LIKE %s for query and add % to the front of attribute_value
         params.append(f'%{attribute_value}')
-        attribute_value_compare_string = f'LIKE %s'
+        attribute_value_compare_string = 'LIKE %s'
     else:
         # Otherwise, use = %s for query
         params.append(attribute_value)
-        attribute_value_compare_string = f'= %s'
+        attribute_value_compare_string = '= %s'
 
     extended_data_idp_attr = 'data -> \'idp_attr\' ->> \'{attribute_column}\''
 

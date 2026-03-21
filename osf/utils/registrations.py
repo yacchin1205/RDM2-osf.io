@@ -365,4 +365,3 @@ def build_registration_metadata_dict(keys, current_index=0, metadata={}, value={
         # until we get to the deepest level where we can set the value equal to the user's response
         set_nested_values(metadata, current_chain, val)
         return build_registration_metadata_dict(keys, current_index + 1, metadata, value)
-from collections.abc import Mapping

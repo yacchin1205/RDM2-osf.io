@@ -32,7 +32,7 @@ class TestExportDataInstitutionListView(AdminTestCase):
 
     def test_func(self):
         res = self.view.test_func()
-        assert res == True
+        assert res is True
 
     def test_get_queryset(self):
         mock_institution = mock.MagicMock()
@@ -116,7 +116,7 @@ class TestExportDataListInstitutionListView(AdminTestCase):
 
     def test_func(self):
         res = self.view.test_func()
-        assert res == True
+        assert res is True
 
     def test_get_queryset(self):
         mock_institution = mock.MagicMock()

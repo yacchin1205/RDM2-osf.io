@@ -179,7 +179,7 @@ class TestSaveCredentials(AdminTestCase):
 
         wb_settings = institution_storage.waterbutler_settings
         assert wb_settings['storage']['provider'] == 'onedrivebusiness'
-        assert wb_settings['disabled'] == True
+        assert wb_settings['disabled'] is True
 
     @mock.patch('admin.rdm_custom_storage_location.utils.validate_onedrivebusiness_connection')
     def test_success_superuser(self, mock_validateconnection):
@@ -225,7 +225,7 @@ class TestSaveCredentials(AdminTestCase):
 
         wb_settings = institution_storage.waterbutler_settings
         assert wb_settings['storage']['provider'] == 'onedrivebusiness'
-        assert wb_settings['disabled'] == True
+        assert wb_settings['disabled'] is True
 
     # Connection tests
     def test_folder_id_missing(self):

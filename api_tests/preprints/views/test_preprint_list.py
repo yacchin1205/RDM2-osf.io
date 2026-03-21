@@ -436,7 +436,7 @@ class TestPreprintCreate(ApiTestCase):
         data = res.json['data']
         preprint = Preprint.load(data['id'])
         assert res.status_code == 201
-        assert data['attributes']['is_published'] == False
+        assert data['attributes']['is_published'] is False
         assert preprint.node == self.public_project
 
     def test_create_preprint_with_supplemental_private_project(self):

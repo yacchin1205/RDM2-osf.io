@@ -2,6 +2,8 @@
 Tests related to authenticating API requests
 """
 
+from unittest import TestCase
+
 import mock
 
 import pytest
@@ -302,7 +304,7 @@ class TestOAuthScopedAccess(ApiTestCase):
             expect_errors=True
         )
         assert res.status_code == 200
-        assert_dict_contains_subset(
+        TestCase().assertDictContainsSubset(
             payload['data']['attributes'],
             res.json['data']['attributes']
         )

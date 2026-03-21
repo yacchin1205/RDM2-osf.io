@@ -65,7 +65,7 @@ class RestoreDataActionView(RdmPermissionMixin, UserPassesTestMixin, APIView):
 
         # Check required parameters
         if self.destination_id is None or self.export_id is None:
-            return response_render({'message': f'Missing required parameters.'}, status=status.HTTP_400_BAD_REQUEST)
+            return response_render({'message': 'Missing required parameters.'}, status=status.HTTP_400_BAD_REQUEST)
 
         # Validate format destination_id
         try:
@@ -104,7 +104,7 @@ class RestoreDataActionView(RdmPermissionMixin, UserPassesTestMixin, APIView):
             # Check the destination is available (not in restore process or checking restore data process)
             any_process_running = utils.check_for_any_running_restore_process(self.destination_id)
             if any_process_running:
-                return Response({'message': f'Cannot restore in this time.'}, status=status.HTTP_400_BAD_REQUEST)
+                return Response({'message': 'Cannot restore in this time.'}, status=status.HTTP_400_BAD_REQUEST)
 
             result = check_before_restore_export_data(cookies, self.export_id, self.destination_id, cookie=cookie)
             if result.get('open_dialog'):
@@ -131,7 +131,7 @@ def check_before_restore_export_data(cookies, export_id, destination_id, **kwarg
     check_export_data = ExportData.objects.filter(id=export_id, is_deleted=False)
     # Check export file data: /export_{process_start}/export_data_{institution_guid}_{process_start}.json
     if not check_export_data:
-        return {'open_dialog': False, 'message': f'Cannot be restored because export data does not exist', 'not_found': True}
+        return {'open_dialog': False, 'message': 'Cannot be restored because export data does not exist', 'not_found': True}
     # Update status RUNNING for export data for checking connect to destination storage
     export_data = check_export_data[0]
     pre_status = export_data.status
@@ -143,13 +143,13 @@ def check_before_restore_export_data(cookies, export_id, destination_id, **kwarg
             # Update status COMPLETED for export data if raise error
             export_data.status = pre_status
             export_data.save()
-            return {'open_dialog': False, 'message': f'The export data files are corrupted'}
+            return {'open_dialog': False, 'message': 'The export data files are corrupted'}
     except Exception as e:
         logger.error(f'Exception: {e}')
         # Update status COMPLETED for export data if raise exception when reading export data and checking schema
         export_data.status = pre_status
         export_data.save()
-        return {'open_dialog': False, 'message': f'Cannot connect to the export data storage location'}
+        return {'open_dialog': False, 'message': 'Cannot connect to the export data storage location'}
 
     # Get file info file: /export_{process_start}/file_info_{institution_guid}_{process_start}.json
     try:
@@ -165,14 +165,14 @@ def check_before_restore_export_data(cookies, export_id, destination_id, **kwarg
     if not len(export_data_folders) and not len(export_data_files):
         export_data.status = pre_status
         export_data.save()
-        return {'open_dialog': False, 'message': f'The export data files are corrupted'}
+        return {'open_dialog': False, 'message': 'The export data files are corrupted'}
 
     # Check whether the restore destination storage is not empty
     destination_region = Region.objects.filter(id=destination_id).first()
     if not destination_region:
         export_data.status = pre_status
         export_data.save()
-        return {'open_dialog': False, 'message': f'Failed to get destination storage information'}
+        return {'open_dialog': False, 'message': 'Failed to get destination storage information'}
 
     destination_provider = destination_region.provider_name
     if utils.is_add_on_storage(destination_provider):
@@ -187,7 +187,7 @@ def check_before_restore_export_data(cookies, export_id, destination_id, **kwarg
                     logger.error(f'Return error with response: {response.content}')
                     export_data.status = pre_status
                     export_data.save()
-                    return {'open_dialog': False, 'message': f'Cannot connect to destination storage'}
+                    return {'open_dialog': False, 'message': 'Cannot connect to destination storage'}
 
                 response_body = response.json()
                 data = response_body.get('data')
@@ -200,7 +200,7 @@ def check_before_restore_export_data(cookies, export_id, destination_id, **kwarg
             logger.error(f'Exception: {e}')
             export_data.status = pre_status
             export_data.save()
-            return {'open_dialog': False, 'message': f'Cannot connect to destination storage'}
+            return {'open_dialog': False, 'message': 'Cannot connect to destination storage'}
 
     export_data.status = pre_status
     export_data.save()
@@ -212,7 +212,7 @@ def prepare_for_restore_export_data_process(cookies, export_id, destination_id, 
     # Check the destination is available (not in restore process or checking restore data process)
     any_process_running = utils.check_for_any_running_restore_process(destination_id)
     if any_process_running:
-        return Response({'message': f'Cannot restore in this time.'}, status=status.HTTP_400_BAD_REQUEST)
+        return Response({'message': 'Cannot restore in this time.'}, status=status.HTTP_400_BAD_REQUEST)
 
     # Try to add new process record to DB
     export_data_restore = ExportDataRestore(export_id=export_id, destination_id=destination_id,
@@ -317,7 +317,7 @@ def check_if_restore_process_stopped(task, current_process_step):
     if task.is_aborted():
         task.update_state(state=ABORTED,
                           meta={'current_restore_step': current_process_step})
-        raise ProcessError(f'Restore process is stopped')
+        raise ProcessError('Restore process is stopped')
 
 
 @no_auto_transaction
@@ -346,7 +346,7 @@ class StopRestoreDataActionView(RdmPermissionMixin, UserPassesTestMixin, APIView
 
         # Check required parameters
         if not self.destination_id or not self.export_id or not self.task_id:
-            return response_render({'message': f'Missing required parameters.'},
+            return response_render({'message': 'Missing required parameters.'},
                                    status=status.HTTP_400_BAD_REQUEST)
 
         # Validate format destination_id
@@ -361,14 +361,14 @@ class StopRestoreDataActionView(RdmPermissionMixin, UserPassesTestMixin, APIView
         if check_export_data:
             self.export_data_inst_id = get_institution_id_by_region(check_export_data.source)
         else:
-            return response_render({'message': f'The export data is not exist'},
+            return response_render({'message': 'The export data is not exist'},
                                    status=status.HTTP_404_NOT_FOUND)
 
         destination_region = Region.objects.filter(id=self.destination_id).first()
         if destination_region:
             self.destination_inst_id = get_institution_id_by_region(destination_region)
         else:
-            return response_render({'message': f'The destination storage does not exist'},
+            return response_render({'message': 'The destination storage does not exist'},
                                    status=status.HTTP_404_NOT_FOUND)
 
         self.export_data_restore = ExportDataRestore.objects.filter(task_id=self.task_id,
@@ -376,7 +376,7 @@ class StopRestoreDataActionView(RdmPermissionMixin, UserPassesTestMixin, APIView
         if self.export_data_restore:
             self.export_data_restore_inst_id = get_institution_id_by_region(self.export_data_restore.export.source)
         else:
-            return response_render({'message': f'The restore export data is not exist'},
+            return response_render({'message': 'The restore export data is not exist'},
                                    status=status.HTTP_404_NOT_FOUND)
         return super().dispatch(request, *args, **kwargs)
 
@@ -405,19 +405,19 @@ class StopRestoreDataActionView(RdmPermissionMixin, UserPassesTestMixin, APIView
         if not result:
             self.export_data_restore.update(process_end=timezone.make_naive(timezone.now(), timezone.utc),
                                             status=ExportData.STATUS_STOPPED)
-            return Response({'message': f'Stop restore data successfully.'}, status=status.HTTP_200_OK)
+            return Response({'message': 'Stop restore data successfully.'}, status=status.HTTP_200_OK)
 
         # If process state is not STARTED and not PENDING then update status to Stopped
         if task.state != 'STARTED' and task.state != PENDING:
             self.export_data_restore.update(process_end=timezone.make_naive(timezone.now(), timezone.utc),
                                             status=ExportData.STATUS_STOPPED)
-            return Response({'message': f'Stop restore data successfully.'}, status=status.HTTP_200_OK)
+            return Response({'message': 'Stop restore data successfully.'}, status=status.HTTP_200_OK)
 
         # Get current restore progress step
         current_progress_step = result.get('current_restore_step')
         logger.debug(f'Current progress step before abort: {current_progress_step}')
         if current_progress_step >= 4 or current_progress_step is None:
-            return Response({'message': f'Cannot stop restore process at this time.'},
+            return Response({'message': 'Cannot stop restore process at this time.'},
                             status=status.HTTP_400_BAD_REQUEST)
 
         # Update process status
@@ -429,7 +429,7 @@ class StopRestoreDataActionView(RdmPermissionMixin, UserPassesTestMixin, APIView
         # If task does not abort then return error response
         if task.state != ABORTED:
             self.export_data_restore.update(status=ExportData.STATUS_ERROR)
-            return Response({'message': f'Cannot stop restore process at this time.'},
+            return Response({'message': 'Cannot stop restore process at this time.'},
                             status=status.HTTP_400_BAD_REQUEST)
 
         self.export_data_restore.update(process_end=timezone.make_naive(timezone.now(), timezone.utc),
@@ -474,7 +474,7 @@ class CheckTaskStatusRestoreDataActionView(RdmPermissionMixin, UserPassesTestMix
         task_id = request.GET.get('task_id')
         task_type = request.GET.get('task_type')
         if task_id is None:
-            return Response({'message': f'Missing required parameters.'}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'message': 'Missing required parameters.'}, status=status.HTTP_400_BAD_REQUEST)
         task = AbortableAsyncResult(task_id)
         response = {
             'state': task.state,
@@ -538,12 +538,12 @@ def read_export_data_and_check_schema(export_data, cookies, **kwargs):
         response = export_data.read_export_data_from_location(cookies, **kwargs)
         if response.status_code != status.HTTP_200_OK:
             # Error
-            raise ProcessError(f'Cannot connect to the export data storage location')
+            raise ProcessError('Cannot connect to the export data storage location')
         response_body = response.content
         response_file_content = response_body.decode('utf-8')
         response_file_json = json.loads(response_file_content)
     except Exception:
-        raise ProcessError(f'Cannot connect to the export data storage location')
+        raise ProcessError('Cannot connect to the export data storage location')
 
     # Validate export file schema
     return utils.validate_file_json(response_file_json, 'export-data-schema.json')
@@ -554,17 +554,17 @@ def read_file_info_and_check_schema(export_data, cookies, **kwargs):
     try:
         response = export_data.read_file_info_from_location(cookies, **kwargs)
         if response.status_code != status.HTTP_200_OK:
-            raise ProcessError(f'Cannot get file information list')
+            raise ProcessError('Cannot get file information list')
         response_body = response.content
         response_file_content = response_body.decode('utf-8')
         response_file_json = json.loads(response_file_content)
     except Exception:
-        raise ProcessError(f'Cannot get file information list')
+        raise ProcessError('Cannot get file information list')
 
     # Validate file info schema
     is_file_valid = utils.validate_file_json(response_file_json, 'file-info-schema.json')
     if not is_file_valid:
-        raise ProcessError(f'The export data files are corrupted')
+        raise ProcessError('The export data files are corrupted')
 
     return response_file_json
 

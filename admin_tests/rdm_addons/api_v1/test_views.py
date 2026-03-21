@@ -69,24 +69,24 @@ class TestOAuthView(AdminTestCase):
         """test user not superuser or institution administrator login"""
         self.request.user.is_superuser = False
         self.request.user.is_staff = False
-        assert self.view.test_func() == False
+        assert self.view.test_func() is False
 
     def test_non_active_user_login(self):
         """test invalid user login"""
         self.request.user.is_active = False
-        assert self.view.test_func() == False
+        assert self.view.test_func() is False
 
     def test_non_registered_user_login(self):
         """test unregistered user login"""
         self.request.user.is_registered = False
-        assert self.view.test_func() == False
+        assert self.view.test_func() is False
 
     def test_non_affiliated_institution_user_login(self):
         """test unaffiliated institution user login"""
         self.request.user.is_superuser = False
         self.request.user.is_staff = True
         self.view.kwargs['institution_id'] = self.rdm_addon_option.institution.id + 1
-        assert self.view.test_func() == False
+        assert self.view.test_func() is False
         self.view.kwargs['institution_id'] = self.rdm_addon_option.institution.id
 
     def test_delete(self, *args, **kwargs):
@@ -146,24 +146,24 @@ class TestSettingsView(AdminTestCase):
         """test user not superuser or institution administrator login"""
         self.request.user.is_superuser = False
         self.request.user.is_staff = False
-        assert self.view.test_func() == False
+        assert self.view.test_func() is False
 
     def test_non_active_user_login(self):
         """test invalid user login"""
         self.request.user.is_active = False
-        assert self.view.test_func() == False
+        assert self.view.test_func() is False
 
     def test_non_registered_user_login(self):
         """test unregistered user login"""
         self.request.user.is_registered = False
-        assert self.view.test_func() == False
+        assert self.view.test_func() is False
 
     def test_non_affiliated_institution_user_login(self):
         """test user unaffiliated institution login"""
         self.request.user.is_superuser = False
         self.request.user.is_staff = True
         self.view.kwargs = {'institution_id': self.institution.id + 1}
-        assert self.view.test_func() == False
+        assert self.view.test_func() is False
 
     def test_get_dataverse(self, *args, **kwargs):
         self.request.user.is_superuser = False
@@ -232,24 +232,24 @@ class TestAccountsView(AdminTestCase):
         """test user not superuser or institution administrator login"""
         self.request.user.is_superuser = False
         self.request.user.is_staff = False
-        assert self.view.test_func() == False
+        assert self.view.test_func() is False
 
     def test_non_active_user_login(self):
         """test invalid user login"""
         self.request.user.is_active = False
-        assert self.view.test_func() == False
+        assert self.view.test_func() is False
 
     def test_non_registered_user_login(self):
         """test unregistered user login"""
         self.request.user.is_registered = False
-        assert self.view.test_func() == False
+        assert self.view.test_func() is False
 
     def test_non_affiliated_institution_user_login(self):
         """test user unaffiliated institution login"""
         self.request.user.is_superuser = False
         self.request.user.is_staff = True
         self.view.kwargs = {'institution_id': self.rdm_addon_option.institution.id + 1}
-        assert self.view.test_func() == False
+        assert self.view.test_func() is False
 
     def test_get(self, *args, **kwargs):
         res = self.view.get(self.request, *args, **self.view.kwargs)

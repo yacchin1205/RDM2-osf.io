@@ -33,7 +33,7 @@ class TestUserSerializers(AdminTestCase):
     def test_serialize_account_status(self):
         user = UserFactory()
         info = serialize_user(user)
-        assert info['disabled'] == False
+        assert info['disabled'] is False
         user.is_disabled = True
         info = serialize_user(user)
         assert abs(

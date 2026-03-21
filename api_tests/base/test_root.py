@@ -33,7 +33,7 @@ class TestWelcomeToApi(ApiTestCase):
         res = self.app.get(self.url)
         assert res.status_code == 200
         assert res.content_type == 'application/vnd.api+json'
-        assert res.json['meta']['current_user'] == None
+        assert res.json['meta']['current_user'] is None
 
     def test_returns_current_user_info_when_logged_in(self):
         res = self.app.get(self.url, auth=self.user.auth)
@@ -45,13 +45,13 @@ class TestWelcomeToApi(ApiTestCase):
         res = self.app.get(self.url, auth=self.user.auth)
         assert res.status_code == 200
         assert res.content_type == 'application/vnd.api+json'
-        assert res.json['meta']['current_user']['data']['attributes']['accepted_terms_of_service'] == False
+        assert res.json['meta']['current_user']['data']['attributes']['accepted_terms_of_service'] is False
         self.user.accepted_terms_of_service = timezone.now()
         self.user.save()
         res = self.app.get(self.url, auth=self.user.auth)
         assert res.status_code == 200
         assert res.content_type == 'application/vnd.api+json'
-        assert res.json['meta']['current_user']['data']['attributes']['accepted_terms_of_service'] == True
+        assert res.json['meta']['current_user']['data']['attributes']['accepted_terms_of_service'] is True
 
     def test_returns_302_redirect_for_base_url(self):
         res = self.app.get('/')
@@ -66,7 +66,7 @@ class TestWelcomeToApi(ApiTestCase):
 
         res = self.app.get(self.url)
         assert res.status_code == 200
-        assert res.json['meta'][ADMIN] == True
+        assert res.json['meta'][ADMIN] is True
 
     def test_basic_auth_does_not_have_admin(self):
         res = self.app.get(self.url, auth=self.user.auth)
@@ -107,7 +107,7 @@ class TestWelcomeToApi(ApiTestCase):
         )
 
         assert res.status_code == 200
-        assert res.json['meta'][ADMIN] == True
+        assert res.json['meta'][ADMIN] is True
 
     @mock.patch('api.base.authentication.drf.OSFCASAuthentication.authenticate')
     def test_non_admin_scoped_token_does_not_have_admin(self, mock_auth):

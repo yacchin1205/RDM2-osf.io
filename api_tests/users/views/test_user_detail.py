@@ -361,7 +361,7 @@ class TestUserRoutesNodeRoutes:
         assert res.status_code == 403
 
     #   test_get_200_path_users_me_nodes_user_logged_in
-        url = '/{}users/me/nodes/'.format(API_BASE, user_one._id)
+        url = '/{}users/me/nodes/'.format(API_BASE)
         res = app.get(url, auth=user_one.auth)
         assert res.status_code == 200
 

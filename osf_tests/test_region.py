@@ -163,7 +163,7 @@ class TestRegion:
 
         export_data_1 = ExportDataFactory(source=region, status=ExportData.STATUS_COMPLETED)
         export_data_2 = ExportDataFactory(source=region, status=ExportData.STATUS_CHECKING)
-        nt.assert_list_equal(list(region.location_ids_has_exported_data), [export_data_1.location.id, export_data_2.location.id])
+        assert list(region.location_ids_has_exported_data) == [export_data_1.location.id, export_data_2.location.id]
 
     def test_has_same_settings_as_default_region_true(self):
         default_region = Region.objects.get(_id=DEFAULT_REGION_ID)

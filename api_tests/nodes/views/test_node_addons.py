@@ -65,7 +65,7 @@ class NodeAddonListMixin(object):
             assert self.node_settings.has_auth == addon_data['node_has_auth']
             assert self.node_settings.folder_id == addon_data['folder_id']
         if wrong_type:
-            assert addon_data == None
+            assert addon_data is None
 
     def test_settings_list_GET_disabled(self):
         wrong_type = self.should_expect_errors()
@@ -79,7 +79,7 @@ class NodeAddonListMixin(object):
             auth=self.user.auth,
             expect_errors=wrong_type)
         addon_data = self.get_response_for_addon(res)
-        assert addon_data == None
+        assert addon_data is None
 
     def test_settings_list_raises_error_if_PUT(self):
         res = self.app.put_json_api(
@@ -123,7 +123,7 @@ class NodeAddonListMixin(object):
             assert self.node_settings.has_auth == addon_data['node_has_auth']
             assert self.node_settings.folder_id == addon_data['folder_id']
         if wrong_type:
-            assert addon_data == None
+            assert addon_data is None
 
 
 class NodeAddonDetailMixin(object):
@@ -207,8 +207,8 @@ class NodeAddonDetailMixin(object):
             expect_errors=wrong_type)
         if not wrong_type:
             addon_data = res.json['data']['attributes']
-            assert addon_data['external_account_id'] == None
-            assert addon_data['folder_id'] == None
+            assert addon_data['external_account_id'] is None
+            assert addon_data['folder_id'] is None
             assert not addon_data['node_has_auth']
         if wrong_type:
             assert res.status_code in [404, 501]
@@ -230,8 +230,8 @@ class NodeAddonDetailMixin(object):
             expect_errors=wrong_type)
         if not wrong_type:
             addon_data = res.json['data']['attributes']
-            assert addon_data['external_account_id'] == None
-            assert addon_data['folder_id'] == None
+            assert addon_data['external_account_id'] is None
+            assert addon_data['folder_id'] is None
             assert not addon_data['node_has_auth']
         if wrong_type:
             assert res.status_code in [404, 501]
@@ -268,8 +268,8 @@ class NodeAddonDetailMixin(object):
             expect_errors=wrong_type)
         if not wrong_type:
             addon_data = res.json['data']['attributes']
-            assert addon_data['external_account_id'] == None
-            assert addon_data['folder_id'] == None
+            assert addon_data['external_account_id'] is None
+            assert addon_data['folder_id'] is None
             assert not addon_data['node_has_auth']
         if wrong_type:
             assert res.status_code in [404, 405]
@@ -297,7 +297,7 @@ class NodeAddonDetailMixin(object):
         if not wrong_type:
             addon_data = res.json['data']['attributes']
             assert addon_data['external_account_id'] == self.account_id
-            assert addon_data['folder_id'] == None
+            assert addon_data['folder_id'] is None
             assert addon_data['node_has_auth']
         if wrong_type:
             assert res.status_code in [404, 501]
@@ -319,8 +319,8 @@ class NodeAddonDetailMixin(object):
             expect_errors=wrong_type)
         if not wrong_type:
             addon_data = res.json['data']['attributes']
-            assert addon_data['external_account_id'] == None
-            assert addon_data['folder_id'] == None
+            assert addon_data['external_account_id'] is None
+            assert addon_data['folder_id'] is None
             assert not addon_data['node_has_auth']
         if wrong_type:
             assert res.status_code in [404, 501]
@@ -1183,8 +1183,8 @@ class TestNodeForwardAddon(
             auth=self.user.auth)
 
         addon_data = res.json['data']['attributes']
-        assert addon_data['url'] == None
-        assert addon_data['label'] == None
+        assert addon_data['url'] is None
+        assert addon_data['label'] is None
 
         self.node.reload()
         assert self.node.logs.latest().action != 'forward_url_changed'
