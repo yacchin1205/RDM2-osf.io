@@ -25,8 +25,36 @@
           "nav": "体系的番号",
           "title": "体系的番号|Japan Grant Number",
           "type": "string",
-          "format": "japan-grant-number",
-          "ui": { "item": { "width": "narrow" } }
+          "format": "text",
+          "ui": { "item": { "width": "narrow" } },
+          "suggestion": [
+            {
+              "key": "erad:japan_grant_number",
+              "template": "<div style=\"background-color: white;\"><span>{{japan_grant_number}}</span><span><small class=\"m-l-md text-muted\">{{kadai_mei}} ({{nendo}})</small></span></div>",
+              "autofill": {
+                "funder": "haibunkikan_cd",
+                "project-research-field": "bunya_cd",
+                "funding-stream-code": "funding_stream_code",
+                "program-name-ja": "program_name_ja",
+                "program-name-en": "program_name_en",
+                "project-name-ja": "kadai_mei_ja",
+                "project-name-en": "kadai_mei_en"
+              }
+            },
+            {
+              "key": "kaken:japan_grant_number",
+              "template": "<div style=\"background-color: white;\"><span>{{japan_grant_number}}</span><span><small class=\"m-l-md text-muted\">{{kadai_mei}} ({{nendo}}) [KAKEN]</small></span></div>",
+              "autofill": {
+                "funder": "haibunkikan_cd",
+                "project-research-field": "bunya_cd",
+                "funding-stream-code": "funding_stream_code",
+                "program-name-ja": "program_name_ja",
+                "program-name-en": "program_name_en",
+                "project-name-ja": "kadai_mei_ja",
+                "project-name-en": "kadai_mei_en"
+              }
+            }
+          ]
         },
         {
           "qid": "funder",
@@ -34,8 +62,8 @@
           "title": "資金配分機関情報|Funder",
           "help": "資金配分機関情報を選択してください。一覧に無い場合は英語略称を記入してください。|Please select the funder. If not listed, please enter the English abbreviation.",
           "type": "choose",
-          "format": "e-rad-award-funder",
-          "ui": { "item": { "width": "half" } },
+          "format": "singleselect-pulldown",
+          "ui": { "item": { "width": "half", "freetext": true } },
           "options": [
             {
               "text": "AMED",
@@ -129,7 +157,7 @@
           "nav": "体系的番号におけるプログラム情報コード",
           "title": "体系的番号におけるプログラム情報コード|Funding stream code in Japan Grant Number",
           "type": "string",
-          "format": "funding-stream-code",
+          "format": "text",
           "ui": { "item": { "width": "narrow" } },
           "pattern": "^[a-zA-Z0-9]{0,5}$",
           "space_normalization": true
@@ -143,7 +171,7 @@
             "sub_label": "（日本語）|(Japanese)"
           },
           "type": "string",
-          "format": "jgn-program-name-ja"
+          "format": "text"
         },
         {
           "qid": "program-name-en",
@@ -151,7 +179,7 @@
           "title": "Program name (English)",
           "ui": { "group": "program-name", "sub_label": "（English）|(English)" },
           "type": "string",
-          "format": "jgn-program-name-en"
+          "format": "text"
         },
         {
           "qid": "project-name-ja",
@@ -162,8 +190,38 @@
             "sub_label": "（日本語）|(Japanese)"
           },
           "type": "string",
-          "format": "e-rad-award-title-ja",
-          "space_normalization": true
+          "format": "text",
+          "space_normalization": true,
+          "suggestion": [
+            {
+              "key": "erad:kadai_mei",
+              "valueField": "kadai_mei_ja",
+              "template": "<div style=\"background-color: white;\"><span>{{kadai_mei_ja}}</span><span><small class=\"m-l-md text-muted\">{{japan_grant_number}} ({{nendo}})</small></span></div>",
+              "autofill": {
+                "japan-grant-number": "japan_grant_number",
+                "funder": "haibunkikan_cd",
+                "project-research-field": "bunya_cd",
+                "funding-stream-code": "funding_stream_code",
+                "program-name-ja": "program_name_ja",
+                "program-name-en": "program_name_en",
+                "project-name-en": "kadai_mei_en"
+              }
+            },
+            {
+              "key": "kaken:kadai_mei",
+              "valueField": "kadai_mei_ja",
+              "template": "<div style=\"background-color: white;\"><span>{{kadai_mei_ja}}</span><span><small class=\"m-l-md text-muted\">{{japan_grant_number}} ({{nendo}}) [KAKEN]</small></span></div>",
+              "autofill": {
+                "japan-grant-number": "japan_grant_number",
+                "funder": "haibunkikan_cd",
+                "project-research-field": "bunya_cd",
+                "funding-stream-code": "funding_stream_code",
+                "program-name-ja": "program_name_ja",
+                "program-name-en": "program_name_en",
+                "project-name-en": "kadai_mei_en"
+              }
+            }
+          ]
         },
         {
           "qid": "project-name-en",
@@ -171,15 +229,45 @@
           "title": "Project name (English)",
           "ui": { "group": "project-name", "sub_label": "（English）|(English)" },
           "type": "string",
-          "format": "e-rad-award-title-en",
-          "space_normalization": true
+          "format": "text",
+          "space_normalization": true,
+          "suggestion": [
+            {
+              "key": "erad:kadai_mei",
+              "valueField": "kadai_mei_en",
+              "template": "<div style=\"background-color: white;\"><span>{{kadai_mei_en}}</span><span><small class=\"m-l-md text-muted\">{{japan_grant_number}} ({{nendo}})</small></span></div>",
+              "autofill": {
+                "japan-grant-number": "japan_grant_number",
+                "funder": "haibunkikan_cd",
+                "project-research-field": "bunya_cd",
+                "funding-stream-code": "funding_stream_code",
+                "program-name-ja": "program_name_ja",
+                "program-name-en": "program_name_en",
+                "project-name-ja": "kadai_mei_ja"
+              }
+            },
+            {
+              "key": "kaken:kadai_mei",
+              "valueField": "kadai_mei_en",
+              "template": "<div style=\"background-color: white;\"><span>{{kadai_mei_en}}</span><span><small class=\"m-l-md text-muted\">{{japan_grant_number}} ({{nendo}}) [KAKEN]</small></span></div>",
+              "autofill": {
+                "japan-grant-number": "japan_grant_number",
+                "funder": "haibunkikan_cd",
+                "project-research-field": "bunya_cd",
+                "funding-stream-code": "funding_stream_code",
+                "program-name-ja": "program_name_ja",
+                "program-name-en": "program_name_en",
+                "project-name-ja": "kadai_mei_ja"
+              }
+            }
+          ]
         },
         {
           "qid": "project-research-field",
           "nav": "プロジェクトの分野",
           "title": "プロジェクトの分野|Research field",
           "type": "choose",
-          "format": "e-rad-award-field",
+          "format": "singleselect-pulldown",
           "ui": { "item": { "width": "narrow" } },
           "options": [
               {
@@ -239,15 +327,41 @@
               "id": "japan-grant-number",
               "title": "体系的番号|Japan Grant Number",
               "type": "string",
-              "format": "japan-grant-number",
-              "ui": { "item": { "width": "narrow" } }
+              "format": "text",
+              "ui": { "item": { "width": "narrow" } },
+              "suggestion": [
+                {
+                  "key": "erad:japan_grant_number",
+                  "template": "<div style=\"background-color: white;\"><span>{{japan_grant_number}}</span><span><small class=\"m-l-md text-muted\">{{kadai_mei}} ({{nendo}})</small></span></div>",
+                  "autofill": {
+                    "funder": "haibunkikan_cd",
+                    "funding-stream-code": "funding_stream_code",
+                    "program-name-ja": "program_name_ja",
+                    "program-name-en": "program_name_en",
+                    "project-name-ja": "kadai_mei_ja",
+                    "project-name-en": "kadai_mei_en"
+                  }
+                },
+                {
+                  "key": "kaken:japan_grant_number",
+                  "template": "<div style=\"background-color: white;\"><span>{{japan_grant_number}}</span><span><small class=\"m-l-md text-muted\">{{kadai_mei}} ({{nendo}}) [KAKEN]</small></span></div>",
+                  "autofill": {
+                    "funder": "haibunkikan_cd",
+                    "funding-stream-code": "funding_stream_code",
+                    "program-name-ja": "program_name_ja",
+                    "program-name-en": "program_name_en",
+                    "project-name-ja": "kadai_mei_ja",
+                    "project-name-en": "kadai_mei_en"
+                  }
+                }
+              ]
             },
             {
               "id": "funder",
               "title": "資金配分機関情報|Funder",
               "type": "choose",
-              "format": "e-rad-award-funder",
-              "ui": { "item": { "width": "half" } },
+              "format": "singleselect-pulldown",
+              "ui": { "item": { "width": "half", "freetext": true } },
               "options": [
                 {
                   "text": "AMED",
@@ -339,7 +453,7 @@
               "id": "funding-stream-code",
               "title": "体系的番号におけるプログラム情報コード|Funding stream code",
               "type": "string",
-              "format": "funding-stream-code",
+              "format": "text",
               "ui": { "item": { "width": "narrow" } }
             },
             {
@@ -350,14 +464,14 @@
                 "sub_label": "（日本語）|(Japanese)"
               },
               "type": "string",
-              "format": "jgn-program-name-ja"
+              "format": "text"
             },
             {
               "id": "program-name-en",
               "title": "Program name (English)",
               "ui": { "group": "program-name", "sub_label": "（English）|(English)" },
               "type": "string",
-              "format": "jgn-program-name-en"
+              "format": "text"
             },
             {
               "id": "project-name-ja",
@@ -367,14 +481,70 @@
                 "sub_label": "（日本語）|(Japanese)"
               },
               "type": "string",
-              "format": "e-rad-award-title-ja"
+              "format": "text",
+              "suggestion": [
+                {
+                  "key": "erad:kadai_mei",
+                  "valueField": "kadai_mei_ja",
+                  "template": "<div style=\"background-color: white;\"><span>{{kadai_mei_ja}}</span><span><small class=\"m-l-md text-muted\">{{japan_grant_number}} ({{nendo}})</small></span></div>",
+                  "autofill": {
+                    "japan-grant-number": "japan_grant_number",
+                    "funder": "haibunkikan_cd",
+                    "funding-stream-code": "funding_stream_code",
+                    "program-name-ja": "program_name_ja",
+                    "program-name-en": "program_name_en",
+                    "project-name-en": "kadai_mei_en"
+                  }
+                },
+                {
+                  "key": "kaken:kadai_mei",
+                  "valueField": "kadai_mei_ja",
+                  "template": "<div style=\"background-color: white;\"><span>{{kadai_mei_ja}}</span><span><small class=\"m-l-md text-muted\">{{japan_grant_number}} ({{nendo}}) [KAKEN]</small></span></div>",
+                  "autofill": {
+                    "japan-grant-number": "japan_grant_number",
+                    "funder": "haibunkikan_cd",
+                    "funding-stream-code": "funding_stream_code",
+                    "program-name-ja": "program_name_ja",
+                    "program-name-en": "program_name_en",
+                    "project-name-en": "kadai_mei_en"
+                  }
+                }
+              ]
             },
             {
               "id": "project-name-en",
               "title": "Project name (English)",
               "ui": { "group": "project-name", "sub_label": "（English）|(English)" },
               "type": "string",
-              "format": "e-rad-award-title-en"
+              "format": "text",
+              "suggestion": [
+                {
+                  "key": "erad:kadai_mei",
+                  "valueField": "kadai_mei_en",
+                  "template": "<div style=\"background-color: white;\"><span>{{kadai_mei_en}}</span><span><small class=\"m-l-md text-muted\">{{japan_grant_number}} ({{nendo}})</small></span></div>",
+                  "autofill": {
+                    "japan-grant-number": "japan_grant_number",
+                    "funder": "haibunkikan_cd",
+                    "funding-stream-code": "funding_stream_code",
+                    "program-name-ja": "program_name_ja",
+                    "program-name-en": "program_name_en",
+                    "project-name-ja": "kadai_mei_ja"
+                  }
+                },
+                {
+                  "key": "kaken:kadai_mei",
+                  "valueField": "kadai_mei_en",
+                  "template": "<div style=\"background-color: white;\"><span>{{kadai_mei_en}}</span><span><small class=\"m-l-md text-muted\">{{japan_grant_number}} ({{nendo}}) [KAKEN]</small></span></div>",
+                  "autofill": {
+                    "japan-grant-number": "japan_grant_number",
+                    "funder": "haibunkikan_cd",
+                    "funding-stream-code": "funding_stream_code",
+                    "program-name-ja": "program_name_ja",
+                    "program-name-en": "program_name_en",
+                    "project-name-ja": "kadai_mei_ja"
+                  }
+                }
+              ]
             }
           ]
         }

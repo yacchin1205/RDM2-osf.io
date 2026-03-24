@@ -264,7 +264,7 @@ def create_schema_block(state, schema_id, block_type, display_text='', required=
         'required_if': required_if,
         'message_required_if': message_required_if,
         'enabled_if': enabled_if,
-        'suggestion': suggestion,
+        'suggestion': json.dumps(suggestion) if suggestion is not None else None,
         'display_template': display_template,
         'auto_value': auto_value,
         'auto_date': auto_date,
