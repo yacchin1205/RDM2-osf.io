@@ -227,6 +227,8 @@ class _Validator:
         self._validate_alias(wizard.get('alias'))
         self._validate_navigation(wizard.get('navigation'))
         self._validate_progress(wizard.get('progress'))
+        self._validate_field_hints(wizard.get('fieldHints'))
+        self._validate_array_input_fields()
         self._check_orphan_fields()
         return len(self.errors) == 0
 
@@ -368,6 +370,117 @@ class _Validator:
         style = prog.get('style')
         if style is not None and style not in ('sidebar', 'steps'):
             self.error(f'rdmWizard.progress.style: must be "sidebar" or "steps", got {style!r}')
+
+    def _validate_field_hints(self, hints: Any):
+        if hints is None:
+            return
+        if not isinstance(hints, dict):
+            self.error('rdmWizard.fieldHints must be an object')
+            return
+        for key, hint in hints.items():
+            path = f'rdmWizard.fieldHints[{key!r}]'
+            if not isinstance(key, str) or not key:
+                self.error(f'{path}: key must be a non-empty string')
+                continue
+            if not isinstance(hint, dict):
+                self.error(f'{path}: value must be an object')
+                continue
+            # Resolve dotted key: "arrayField.subField"
+            parts = key.split('.', 1)
+            base_id = parts[0]
+            if base_id not in self.field_ids:
+                self.error(f'{path}: field {base_id!r} not found in form fields')
+            # Validate ui
+            ui = hint.get('ui')
+            if ui is not None:
+                self._validate_field_hint_ui(ui, path)
+            # Validate suggestion
+            suggestion = hint.get('suggestion')
+            if suggestion is not None:
+                self._validate_field_hint_suggestion(suggestion, path)
+            for prop in hint:
+                if prop not in ('ui', 'suggestion'):
+                    self.warn(f'{path}: unknown property {prop!r}')
+
+    def _validate_field_hint_ui(self, ui: Any, path: str):
+        if not isinstance(ui, dict):
+            self.error(f'{path}.ui: must be an object')
+            return
+        width = ui.get('width')
+        if width is not None and width not in ('narrow', 'half', 'full'):
+            self.error(f'{path}.ui.width: must be "narrow", "half", or "full", got {width!r}')
+        freetext = ui.get('freetext')
+        if freetext is not None and not isinstance(freetext, bool):
+            self.error(f'{path}.ui.freetext: must be a boolean')
+        option_map = ui.get('optionMap')
+        if option_map is not None:
+            if not isinstance(option_map, dict):
+                self.error(f'{path}.ui.optionMap: must be an object')
+            elif not all(isinstance(v, str) for v in option_map.values()):
+                self.error(f'{path}.ui.optionMap: all values must be strings')
+        for prop in ui:
+            if prop not in ('width', 'freetext', 'optionMap'):
+                self.warn(f'{path}.ui: unknown property {prop!r}')
+
+    def _validate_field_hint_suggestion(self, suggestion: Any, path: str):
+        if not isinstance(suggestion, list):
+            self.error(f'{path}.suggestion: must be an array')
+            return
+        for i, config in enumerate(suggestion):
+            sp = f'{path}.suggestion[{i}]'
+            if not isinstance(config, dict):
+                self.error(f'{sp}: must be an object')
+                continue
+            if 'key' not in config or not isinstance(config['key'], str):
+                self.error(f'{sp}.key: required string')
+                continue
+            template = config.get('template')
+            if template is not None and not isinstance(template, str):
+                self.error(f'{sp}.template: must be a string')
+            value_field = config.get('valueField')
+            if value_field is not None and not isinstance(value_field, str):
+                self.error(f'{sp}.valueField: must be a string')
+            autofill = config.get('autofill')
+            if autofill is not None:
+                if not isinstance(autofill, dict):
+                    self.error(f'{sp}.autofill: must be an object')
+                elif not all(isinstance(v, str) for v in autofill.values()):
+                    self.error(f'{sp}.autofill: all values must be strings')
+
+    def _validate_array_input_fields(self):
+        """Validate _ARRAY_INPUT placeholder JSON in multi-line-text fields."""
+        import re
+        editor = self.form.get('editorJson', self.form)
+        for field in editor.get('fields', []):
+            if not isinstance(field, dict):
+                continue
+            if field.get('type') != 'multi-line-text':
+                continue
+            placeholder = field.get('placeholder', '')
+            if not isinstance(placeholder, str):
+                continue
+            match = re.match(r'^_ARRAY_INPUT\((.+)\)$', placeholder, re.DOTALL)
+            if not match:
+                continue
+            fid = field['id']
+            path = f'field[{fid!r}]._ARRAY_INPUT'
+            try:
+                sub_fields = json.loads(match.group(1))
+            except json.JSONDecodeError as e:
+                self.error(f'{path}: invalid JSON: {e}')
+                continue
+            if not isinstance(sub_fields, list):
+                self.error(f'{path}: must be a JSON array')
+                continue
+            for i, sf in enumerate(sub_fields):
+                sp = f'{path}[{i}]'
+                if not isinstance(sf, dict):
+                    self.error(f'{sp}: must be an object')
+                    continue
+                if 'id' not in sf or not isinstance(sf['id'], str):
+                    self.error(f'{sp}: id is required (string)')
+                if 'type' not in sf or not isinstance(sf['type'], str):
+                    self.error(f'{sp}: type is required (string)')
 
     def _check_orphan_fields(self):
         orphans = self.field_ids - self.referenced_fields
