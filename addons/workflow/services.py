@@ -1435,6 +1435,7 @@ def send_workflow_notification(
                 html_text=html_text,
                 node_title=node.title,
                 node_url=node.absolute_url,
+                can_change_preferences=False,
             )
 
     return [user._id for user in recipients]
