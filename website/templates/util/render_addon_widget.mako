@@ -324,7 +324,7 @@
                             <div data-bind="visible: activeTab() === 'runs'">
                                 <div class="clearfix m-b-sm">
                                     <button type="button" class="btn btn-default btn-xs pull-right"
-                                            data-bind="click: fetchRuns, disable: isRefreshingRuns">
+                                            data-bind="click: fetchAll, disable: isRefreshingRuns">
                                         <i class="fa fa-refresh" data-bind="css: { 'fa-spin': isRefreshingRuns }"></i>
                                         ${_("Refresh")}
                                     </button>
@@ -376,7 +376,7 @@
                             <div data-bind="visible: activeTab() === 'tasks'">
                                 <div class="clearfix m-b-sm">
                                     <button type="button" class="btn btn-default btn-xs pull-right"
-                                            data-bind="click: fetchTasks, disable: isRefreshingTasks">
+                                            data-bind="click: fetchAll, disable: isRefreshingTasks">
                                         <i class="fa fa-refresh" data-bind="css: { 'fa-spin': isRefreshingTasks }"></i>
                                         ${_("Refresh")}
                                     </button>

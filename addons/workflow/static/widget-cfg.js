@@ -369,6 +369,11 @@ function WorkflowWidgetViewModel() {
         return request;
     };
 
+    self.fetchAll = function() {
+        self.fetchRuns();
+        self.fetchTasks();
+    };
+
     self.fetchPendingTemplates = function() {
         if (!self.apiBaseUrl || !self.canStartWorkflow) {
             return $.Deferred().resolve();

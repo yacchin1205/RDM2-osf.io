@@ -4565,8 +4565,8 @@ msgstr "メンバー管理"
 #: addons/workflow/templates/workflow_node_settings.mako:415
 #: addons/workflow/templates/workflow_node_settings.mako:450
 #: addons/workflow/templates/workflow_node_settings.mako:485
-msgid "Access connected services (e.g., WEKO)"
-msgstr "接続済みサービス(例: WEKO)へアクセス"
+msgid "Access connected services (add-ons, etc.)"
+msgstr "接続済みサービス(各種アドオン等)へアクセス"
 
 
 #: addons/workflow/templates/workflow_node_settings.mako:45
