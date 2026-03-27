@@ -23,6 +23,7 @@
     "@projects": {
         "@type": "object",
         "root.jpcoar:fundingReference[]": {
+            "@createIf": "{{funder_value}}{{funding_stream_code_value}}{{japan_grant_number_value}}{{project_name_ja_value}}{{project_name_en_value}}{{program_name_ja_value}}{{program_name_en_value}}",
             ".@type": "PropertyValue",
             "jpcoar:funderIdentifier": {
                 "@createIf": "{{ funder_value | to_funder_ror_id }}",
@@ -83,6 +84,7 @@
     "additional-funding": {
         "@type": "jsonarray",
         "root.jpcoar:fundingReference[]": {
+            "@createIf": "{{object_funder}}{{object_funding_stream_code}}{{object_japan_grant_number}}{{object_project_name_ja}}{{object_project_name_en}}{{object_program_name_ja}}{{object_program_name_en}}",
             ".@type": "PropertyValue",
             "jpcoar:funderIdentifier": {
                 "@createIf": "{{ object_funder | to_funder_ror_id }}",

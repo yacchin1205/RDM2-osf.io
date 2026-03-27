@@ -804,6 +804,7 @@ const TextFormField = oop.extend(FormFieldInterface, {
           // Otherwise, just set the value on the current field (but not if undefined)
           self.setValue(value);
         }
+        self.emit('change');
       }
       function getFieldValue() {
         return self.getValue();
