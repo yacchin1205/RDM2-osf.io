@@ -1058,6 +1058,10 @@ def activate_workflow_activation(activation: WorkflowActivation, activated_by: '
         activation.is_enabled = True
         update_fields.append('is_enabled')
 
+    if activation.is_dismissed:
+        activation.is_dismissed = False
+        update_fields.append('is_dismissed')
+
     if activation.activated_by_id != activated_by.id:
         activation.activated_by = activated_by
         update_fields.append('activated_by')
@@ -1067,6 +1071,19 @@ def activate_workflow_activation(activation: WorkflowActivation, activated_by: '
 
     update_fields.append('modified')
     activation.save(update_fields=update_fields)
+
+
+def dismiss_workflow_activation(activation: WorkflowActivation) -> None:
+    """Dismiss a pending auto-activate template for a node.
+
+    Creates a disabled+dismissed activation record to suppress the pending banner.
+    """
+    if activation.is_dismissed:
+        return
+
+    activation.is_dismissed = True
+    activation.is_enabled = False
+    activation.save(update_fields=['is_dismissed', 'is_enabled', 'modified'])
 
 
 def deactivate_workflow_activation(activation: WorkflowActivation) -> None:

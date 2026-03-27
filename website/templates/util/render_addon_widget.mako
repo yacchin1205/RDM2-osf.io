@@ -252,6 +252,22 @@
                         <!-- /ko -->
 
                         <!-- ko if: !loadingTemplates() && !templateError() -->
+                            <!-- ko if: pendingTemplates().length -->
+                                <div class="alert alert-info">
+                                    <strong>${_("Available workflows")}</strong>
+                                    <!-- ko foreach: pendingTemplates -->
+                                        <div style="margin-top: 6px;">
+                                            <span data-bind="text: displayLabel"></span>
+                                            <button class="btn btn-xs btn-primary" data-bind="click: $parent.acceptPending">
+                                                ${_("Activate")}
+                                            </button>
+                                            <button class="btn btn-xs btn-default" data-bind="click: $parent.dismissPending">
+                                                ${_("Dismiss")}
+                                            </button>
+                                        </div>
+                                    <!-- /ko -->
+                                </div>
+                            <!-- /ko -->
                             <div data-bind="if: activeTemplates().length">
                                 <!-- ko if: canStartWorkflow -->
                                     <div class="form-inline m-b-sm">
