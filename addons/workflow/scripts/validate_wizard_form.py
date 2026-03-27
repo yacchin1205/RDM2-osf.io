@@ -390,6 +390,10 @@ class _Validator:
             base_id = parts[0]
             if base_id not in self.field_ids:
                 self.error(f'{path}: field {base_id!r} not found in form fields')
+            # Validate visible
+            visible = hint.get('visible')
+            if visible is not None:
+                self._validate_visible(visible, path)
             # Validate ui
             ui = hint.get('ui')
             if ui is not None:
@@ -399,7 +403,7 @@ class _Validator:
             if suggestion is not None:
                 self._validate_field_hint_suggestion(suggestion, path)
             for prop in hint:
-                if prop not in ('ui', 'suggestion'):
+                if prop not in ('visible', 'ui', 'suggestion'):
                     self.warn(f'{path}: unknown property {prop!r}')
 
     def _validate_field_hint_ui(self, ui: Any, path: str):

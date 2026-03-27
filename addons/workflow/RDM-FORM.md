@@ -349,6 +349,24 @@ Per-field UI hints and input suggestions, defined within the wizard config.
 | `freetext` | boolean | Allow free-text input on dropdowns. Default: `false` |
 | `optionMap` | `Record<string, string>` | Code-to-display mapping for dropdown autofill (see below) |
 
+#### `visible`
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `visible` | `string \| boolean` | Visibility expression. Same grammar as page `visible`. Default: `true` |
+
+Field-level visibility control. Hidden fields are excluded from rendering
+and validation, but their values are preserved and included in submission
+(same semantics as page-level `visible`).
+
+```json
+"fieldHints": {
+  "confirmation_データ収集": {
+    "visible": "hasEvidenceData"
+  }
+}
+```
+
 #### `suggestion` Properties
 
 Uses the same structure as metadata schema `suggestion` definitions.
