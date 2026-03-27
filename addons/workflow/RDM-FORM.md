@@ -59,6 +59,45 @@ Renders a file browser for selecting files from the project's storage providers.
 }
 ```
 
+### `_FILE_UPLOADER(path[, extensions])`
+
+Renders a file browser with upload capability targeting a specific folder in
+osfstorage. The folder path is created recursively if it does not exist.
+
+```json
+{
+  "fieldType": "FormField",
+  "id": "manuscript_files",
+  "name": "Manuscript Files",
+  "type": "multi-line-text",
+  "placeholder": "_FILE_UPLOADER(IQB-RIMS Temporary files/最終原稿・組図, .pdf,.docx)"
+}
+```
+
+**Parameters**:
+- `path` (required): osfstorage-relative folder path. `/`-separated segments are
+  created from root if missing.
+- `extensions` (optional): Comma-separated list of accepted file extensions
+  (e.g. `.pdf,.xlsx`). Omit to allow all file types. Files with non-matching
+  extensions trigger a warning and block form submission.
+
+**Value** (`_FILE_SELECTOR` compatible):
+```json
+{
+  "provider": "osfstorage",
+  "files": [
+    { "path": "/5f3e2a1b.../", "materialized": "/IQB-RIMS Temporary files/最終原稿・組図/paper.pdf", "enable": true }
+  ]
+}
+```
+
+All files in the target folder are included with `enable: true`.
+
+**Multiple uploaders per form**: Supported. Each field gets a unique drop zone
+based on the field ID.
+
+**Read-only**: When `readOnly: true`, displays the file list without upload/delete controls.
+
 ### `_EXPORT_TARGET()`
 
 Renders a dropdown of available storage providers for export destination.

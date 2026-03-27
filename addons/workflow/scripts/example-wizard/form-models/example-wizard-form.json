@@ -2,7 +2,7 @@
   "id": "example-wizard-form-001",
   "name": "Wizard Form Example",
   "key": "example-wizard-form",
-  "description": "Demonstrates _rdmWizard with _EXPORT_TARGET, _ARRAY_INPUT, visibility, alias, and fieldHints. See addons/workflow/RDM-FORM.md.",
+  "description": "Demonstrates _rdmWizard with _EXPORT_TARGET, _FILE_UPLOADER, _ARRAY_INPUT, visibility, alias, and fieldHints. See addons/workflow/RDM-FORM.md.",
   "editorJson": {
     "name": "Wizard Form Example",
     "key": "example-wizard-form",
@@ -19,7 +19,7 @@
         "overrideId": true,
         "placeholder": null,
         "layout": null,
-        "expression": "{\"pages\":[{\"id\":\"export-settings\",\"title\":\"Export Settings\",\"fields\":[\"ex_heading\",\"ex_description\",\"export_target\",\"include_details\"]},{\"id\":\"details\",\"title\":\"Details\",\"visible\":\"include_details\",\"fields\":[\"det_heading\",\"note\",\"members\"]},{\"id\":\"confirmation\",\"title\":\"Confirmation\",\"fields\":[\"conf_heading\",\"conf_export_target\",\"conf_note\"]}],\"alias\":{\"conf_note\":\"note\",\"conf_export_target\":\"export_target\"},\"fieldHints\":{\"note\":{\"ui\":{\"width\":\"full\"}},\"members.name\":{\"ui\":{\"width\":\"half\"}},\"members.role\":{\"ui\":{\"width\":\"half\"}}},\"navigation\":{\"allowBack\":true,\"allowHeaderNavigation\":false},\"progress\":{\"style\":\"sidebar\"}}"
+        "expression": "{\"pages\":[{\"id\":\"export-settings\",\"title\":\"Export Settings\",\"fields\":[\"ex_heading\",\"ex_description\",\"export_target\",\"include_details\"]},{\"id\":\"file-upload\",\"title\":\"File Upload\",\"fields\":[\"upload_heading\",\"upload_description\",\"uploaded_files\"]},{\"id\":\"details\",\"title\":\"Details\",\"visible\":\"include_details\",\"fields\":[\"det_heading\",\"note\",\"members\"]},{\"id\":\"confirmation\",\"title\":\"Confirmation\",\"fields\":[\"conf_heading\",\"conf_export_target\",\"conf_note\",\"conf_upload_heading\",\"conf_uploaded_files\"]}],\"alias\":{\"conf_note\":\"note\",\"conf_export_target\":\"export_target\"},\"fieldHints\":{\"note\":{\"ui\":{\"width\":\"full\"}},\"members.name\":{\"ui\":{\"width\":\"half\"}},\"members.role\":{\"ui\":{\"width\":\"half\"}}},\"navigation\":{\"allowBack\":true,\"allowHeaderNavigation\":false},\"progress\":{\"style\":\"sidebar\"}}"
       },
       {
         "fieldType": "FormField",
@@ -68,6 +68,43 @@
         "readOnly": false,
         "overrideId": true,
         "placeholder": null,
+        "layout": null
+      },
+      {
+        "fieldType": "FormField",
+        "id": "upload_heading",
+        "name": "File Upload",
+        "type": "headline-with-line",
+        "value": null,
+        "required": false,
+        "readOnly": false,
+        "overrideId": false,
+        "placeholder": null,
+        "layout": null
+      },
+      {
+        "fieldType": "ExpressionFormField",
+        "id": "upload_description",
+        "name": "upload_description",
+        "type": "expression",
+        "value": null,
+        "required": false,
+        "readOnly": false,
+        "overrideId": false,
+        "placeholder": null,
+        "layout": null,
+        "expression": "Upload files to the project folder (_FILE_UPLOADER placeholder). Only PDF and DOCX are accepted."
+      },
+      {
+        "fieldType": "FormField",
+        "id": "uploaded_files",
+        "name": "Manuscript Files",
+        "type": "multi-line-text",
+        "value": null,
+        "required": false,
+        "readOnly": false,
+        "overrideId": true,
+        "placeholder": "_FILE_UPLOADER(example-workflow/uploads, .pdf,.docx)",
         "layout": null
       },
       {
@@ -140,6 +177,30 @@
         "readOnly": true,
         "overrideId": true,
         "placeholder": null,
+        "layout": null
+      },
+      {
+        "fieldType": "FormField",
+        "id": "conf_upload_heading",
+        "name": "Uploaded Files (read-only)",
+        "type": "headline",
+        "value": null,
+        "required": false,
+        "readOnly": false,
+        "overrideId": false,
+        "placeholder": null,
+        "layout": null
+      },
+      {
+        "fieldType": "FormField",
+        "id": "conf_uploaded_files",
+        "name": "Uploaded Files",
+        "type": "multi-line-text",
+        "value": null,
+        "required": false,
+        "readOnly": true,
+        "overrideId": true,
+        "placeholder": "_FILE_UPLOADER(example-workflow/uploads)",
         "layout": null
       }
     ],

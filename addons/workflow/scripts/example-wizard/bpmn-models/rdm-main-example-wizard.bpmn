@@ -44,7 +44,7 @@ def startForm = summary.putObject("startForm")
 
 // Wizard form variables
 def wizardForm = summary.putObject("wizardForm")
-['export_target', 'note', 'include_details'].each { key ->
+['export_target', 'uploaded_files', 'note', 'include_details'].each { key ->
     def val = execution.getVariable(key)
     if (val == null) {
         wizardForm.putNull(key)

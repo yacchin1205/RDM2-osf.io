@@ -25,6 +25,8 @@ startEvent           → wizardTask          → buildSummary (script) → resul
 | Feature | Field ID | Page |
 |---------|----------|------|
 | `_EXPORT_TARGET()` | `export_target` | Export Settings |
+| `_FILE_UPLOADER(path, ext)` | `uploaded_files` | File Upload |
+| `_FILE_UPLOADER(path)` readOnly | `conf_uploaded_files` | Confirmation |
 | `_ARRAY_INPUT(fields)` | `members` | Details |
 | Visibility expression | `include_details` | Details (conditionally shown) |
 | Alias (read-only reference) | `conf_note` → `note` | Confirmation |
@@ -35,8 +37,9 @@ startEvent           → wizardTask          → buildSummary (script) → resul
 
 ```
 Export Settings          _EXPORT_TARGET, boolean toggle
+File Upload              _FILE_UPLOADER (with .pdf,.docx filter)
 Details                  _ARRAY_INPUT, text  (visible: include_details)
-Confirmation             alias fields (readOnly)
+Confirmation             alias fields (readOnly), _FILE_UPLOADER (readOnly)
 ```
 
 ## How to deploy
