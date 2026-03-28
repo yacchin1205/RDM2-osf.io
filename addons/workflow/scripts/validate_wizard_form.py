@@ -229,6 +229,7 @@ class _Validator:
         self._validate_progress(wizard.get('progress'))
         self._validate_field_hints(wizard.get('fieldHints'))
         self._validate_array_input_fields()
+        self._validate_template_expressions()
         self._check_orphan_fields()
         return len(self.errors) == 0
 
@@ -485,6 +486,48 @@ class _Validator:
                     self.error(f'{sp}: id is required (string)')
                 if 'type' not in sf or not isinstance(sf['type'], str):
                     self.error(f'{sp}: type is required (string)')
+
+    def _validate_template_expressions(self):
+        """Check {{ }}/{% %} balance in ExpressionFormField expressions."""
+        import re
+        editor = self.form.get('editorJson', self.form)
+        for field in editor.get('fields', []):
+            if not isinstance(field, dict):
+                continue
+            if field.get('type') != 'expression':
+                continue
+            if field.get('id') == '_rdmWizard':
+                continue
+            expr = field.get('expression', '')
+            if not isinstance(expr, str):
+                continue
+            if '{{' not in expr and '{%' not in expr:
+                continue
+            fid = field['id']
+            path = f'field[{fid!r}].expression'
+            # Check {{ }} balance
+            open_count = len(re.findall(r'\{\{-?', expr))
+            close_count = len(re.findall(r'-?\}\}', expr))
+            if open_count != close_count:
+                self.error(f'{path}: unbalanced {{{{ }}}} ({open_count} open, {close_count} close)')
+            # Check {% %} tag balance
+            tags = re.findall(r'\{%-?\s*(\w+)', expr)
+            stack = []
+            for tag in tags:
+                if tag in ('for', 'if'):
+                    stack.append(tag)
+                elif tag == 'endfor':
+                    if not stack or stack[-1] != 'for':
+                        self.error(f'{path}: unexpected {{% endfor %}} without matching {{% for %}}')
+                    else:
+                        stack.pop()
+                elif tag == 'endif':
+                    if not stack or stack[-1] != 'if':
+                        self.error(f'{path}: unexpected {{% endif %}} without matching {{% if %}}')
+                    else:
+                        stack.pop()
+            for unclosed in reversed(stack):
+                self.error(f'{path}: unclosed {{% {unclosed} %}}')
 
     def _check_orphan_fields(self):
         orphans = self.field_ids - self.referenced_fields

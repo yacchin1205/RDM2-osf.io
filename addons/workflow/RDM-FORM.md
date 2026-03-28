@@ -284,6 +284,106 @@ After (wizard `visible`):
 
 No intermediate variables, no Groovy scripts.
 
+### Template Expressions
+
+`ExpressionFormField` supports Jinja2-subset template directives alongside
+Flowable UEL `${...}` variables. Templates are evaluated client-side and
+produce Markdown text (rendered by `MarkdownToHtml`).
+
+**Processing order**: `${...}` (Flowable UEL) is resolved first, then
+`{{ }}` / `{% %}` directives are expanded. Both can coexist in the same
+expression string. If no `{{ }}` or `{% %}` directives are present, the
+template engine is not invoked (fast path).
+
+#### Syntax
+
+**Value interpolation**:
+```
+{{ variable }}
+{{ item.property }}
+{{ item['property-name'] }}
+{{ value | default('N/A') }}
+```
+
+**Control structures**:
+```
+{% if condition %}...{% elif condition %}...{% else %}...{% endif %}
+{% for item in array %}...{% endfor %}
+```
+
+**Whitespace trimming** (critical for Markdown output):
+```
+{%- tag %}   strip whitespace before
+{% tag -%}   strip whitespace after
+{{- expr -}} strip both sides
+```
+
+Without trimming, `{% for %}` / `{% endfor %}` tags produce blank lines
+that break Markdown list formatting.
+
+#### Expression Grammar
+
+```
+expression  = or_expr
+or_expr     = and_expr ( "or" and_expr )*
+and_expr    = not_expr ( "and" not_expr )*
+not_expr    = "not" not_expr | compare
+compare     = access ( ( "==" | "!=" ) access )?
+access      = primary ( "." ident | "[" expression "]" )*
+primary     = "(" expression ")" | "true" | "false" | string_literal | ident
+```
+
+Keywords use Jinja2 style (`and`, `or`, `not`) rather than C-style
+(`&&`, `||`, `!`) used in visibility expressions.
+
+Identifiers may contain hyphens (matching Flowable field IDs). Since
+arithmetic operators are not supported, `item.japan-grant-number` is
+unambiguous dot-access, not subtraction.
+
+#### Resolution
+
+Template expressions resolve names from the wizard's field context:
+1. Task variables (Flowable process variables)
+2. Form field values (all pages, overriding task variables)
+
+Same context as page visibility expressions.
+
+#### Truthiness
+
+`false`, `null`, `undefined`, `""`, `0`, and empty arrays `[]` are falsy.
+
+#### Filters
+
+| Filter | Syntax | Description |
+|--------|--------|-------------|
+| `default` | `{{ val \| default('fallback') }}` | Returns fallback if value is `null`, `undefined`, or `""` |
+| `length` | `{{ arr \| length }}` | Array length or string length |
+
+#### Example
+
+Display funding information from three data sources in a unified format:
+```
+### Funding
+{%- for pm in funding_project_metadata %}
+
+**{{ pm.data.japan-grant-number.value | default('') }}**
+- Funder: {{ pm.data.funder.value | default('') }}
+- Program: {{ pm.data.program-name-ja.value | default('') }}
+{%- endfor %}
+{%- if japan-grant-number %}
+
+**{{ japan-grant-number }}**
+- Funder: {{ funder | default('') }}
+- Program: {{ program-name-ja | default('') }}
+{%- endif %}
+{%- for item in additional-funding %}
+
+**{{ item.japan-grant-number | default('') }}**
+- Funder: {{ item.funder | default('') }}
+- Program: {{ item.program-name-ja | default('') }}
+{%- endfor %}
+```
+
 ### Alias
 
 Declarative field-value synchronization. Key = alias field ID, value = source field ID.
