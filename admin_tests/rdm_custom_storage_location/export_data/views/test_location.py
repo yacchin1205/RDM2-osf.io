@@ -1,10 +1,9 @@
 import json
-import mock
+from unittest import mock
 
 from django.http import Http404
 import pytest
 from django.test import RequestFactory
-from nose import tools as nt
 from rest_framework import status as http_status
 from django.core.exceptions import PermissionDenied
 
@@ -50,22 +49,22 @@ class TestExportStorageLocationViewBaseView(AdminTestCase):
 
     def test_get_default_storage_location(self):
         view = setup_view(self.view, self.request)
-        nt.assert_is_not_none(view.get_default_storage_location())
+        assert (view.get_default_storage_location()) is not None
 
     def test_have_default_storage_location_id(self):
         view = setup_view(self.view, self.request)
-        nt.assert_false(view.have_default_storage_location_id(1))
+        assert not (view.have_default_storage_location_id(1))
 
     def test_test_func(self):
         view = setup_view(self.view, self.request)
-        nt.assert_false(view.test_func())
+        assert not (view.test_func())
 
     def test_test_func_user_is_institutional_admin(self):
         self.user.is_staff = True
         self.user.affiliated_institutions.add(self.institution)
 
         view = setup_view(self.view, self.request)
-        nt.assert_true(view.test_func())
+        assert (view.test_func())
 
     def test_is_affiliated_institution(self):
         institution_id = self.institution.id
@@ -73,35 +72,35 @@ class TestExportStorageLocationViewBaseView(AdminTestCase):
         self.user.affiliated_institutions.add(self.institution)
         self.request.user = self.user
         view = setup_view(self.view, self.request)
-        nt.assert_true(view.is_affiliated_institution(institution_id))
+        assert (view.is_affiliated_institution(institution_id))
 
     def test__test_func_anonymous(self):
         self.request.user = self.anon
-        nt.assert_false(setup_view(self.view, self.request).test_func())
+        assert not (setup_view(self.view, self.request).test_func())
 
     def test__test_func_normal_user(self):
         self.request.user = self.normal_user
-        nt.assert_false(setup_view(self.view, self.request).test_func())
+        assert not (setup_view(self.view, self.request).test_func())
 
     def test__test_func_super_user(self):
         self.request.user = self.superuser
-        nt.assert_true(setup_view(self.view, self.request).test_func())
+        assert (setup_view(self.view, self.request).test_func())
 
     def test__test_func_admin_not_inst(self):
         self.request.user = self.institution02_admin
-        nt.assert_false(setup_view(self.view, self.request).test_func())
+        assert not (setup_view(self.view, self.request).test_func())
 
     def test__admin_login_having_institution_id(self):
         self.request.user = self.institution02_admin
-        nt.assert_false(setup_view(self.view, self.request, institution_id=self.institution.id).test_func())
+        assert not (setup_view(self.view, self.request, institution_id=self.institution.id).test_func())
 
     def test__super_login_with_institution_id(self):
         self.request.user = self.superuser
-        nt.assert_true(setup_view(self.view, self.request, institution_id=self.institution.id).test_func())
+        assert (setup_view(self.view, self.request, institution_id=self.institution.id).test_func())
 
     def test__super_login_missing_institution_id(self):
         self.request.user = self.superuser
-        nt.assert_true(setup_view(self.view, self.request).test_func())
+        assert (setup_view(self.view, self.request).test_func())
 
 
 class TestExportStorageLocationInstitutionListView(AdminTestCase):
@@ -117,30 +116,30 @@ class TestExportStorageLocationInstitutionListView(AdminTestCase):
     def test_unauthorized(self):
         self.user = AnonymousUser()
         view = setup_view(self.view, self.request)
-        nt.assert_false(view.test_func())
+        assert not (view.test_func())
 
     def test_admin_login(self):
         self.user.is_superuser = False
         self.user.is_staff = True
         view = setup_view(self.view, self.request)
-        nt.assert_false(view.test_func())
+        assert not (view.test_func())
 
     def test_superuser_login(self):
         self.user.is_superuser = True
         view = setup_view(self.view, self.request)
-        nt.assert_true(view.test_func())
+        assert (view.test_func())
 
     def test_get_queryset(self):
         institution = InstitutionFactory()
         res = self.view.get_queryset()
-        nt.assert_equal(len(res), 1)
-        nt.assert_equal(res[0], institution)
+        assert (len(res)) == (1)
+        assert (res[0]) == (institution)
 
     def test_get_context_data(self):
         self.view.object_list = self.view.get_queryset()
         view = setup_view(self.view, self.request)
         res = view.get_context_data()
-        nt.assert_is_not_none(res)
+        assert (res) is not None
 
 
 @pytest.mark.feature_202210
@@ -187,12 +186,12 @@ class ExportStorageLocationView(AdminTestCase):
     def test_get_admin_login_with_institution_id_not_belonged(self):
         institution = InstitutionFactory()
         view = setup_view(self.view, self.request, institution_id=institution.id)
-        with nt.assert_raises(PermissionDenied):
+        with pytest.raises(PermissionDenied):
             view.get(self.request)
 
     def test_get_admin_login_with_institution_id_not_exist(self):
         view = setup_view(self.view, self.request, institution_id=-1)
-        with nt.assert_raises(Http404):
+        with pytest.raises(Http404):
             view.get(self.request)
 
     def test_get_queryset(self):
@@ -234,7 +233,7 @@ class TestTestConnectionView(AdminTestCase):
             'provider_short_name': '',
         }
         request_post_response = self.view_post(params)
-        nt.assert_equals(request_post_response.status_code, http_status.HTTP_400_BAD_REQUEST)
+        assert (request_post_response.status_code) == (http_status.HTTP_400_BAD_REQUEST)
 
     def test_view_post_s3(self):
         params = {
@@ -244,7 +243,7 @@ class TestTestConnectionView(AdminTestCase):
             'provider_short_name': 's3',
         }
         request_post_response = self.view_post(params)
-        nt.assert_equals(request_post_response.status_code, http_status.HTTP_400_BAD_REQUEST)
+        assert (request_post_response.status_code) == (http_status.HTTP_400_BAD_REQUEST)
 
     def test_view_post_s3compat(self):
         params = {
@@ -255,7 +254,7 @@ class TestTestConnectionView(AdminTestCase):
             'provider_short_name': 's3compat',
         }
         request_post_response = self.view_post(params)
-        nt.assert_equals(request_post_response.status_code, http_status.HTTP_400_BAD_REQUEST)
+        assert (request_post_response.status_code) == (http_status.HTTP_400_BAD_REQUEST)
 
     def test_view_post_s3compatsigv4(self):
         params = {
@@ -266,7 +265,7 @@ class TestTestConnectionView(AdminTestCase):
             'provider_short_name': 's3compatsigv4',
         }
         request_post_response = self.view_post(params)
-        nt.assert_equals(request_post_response.status_code, http_status.HTTP_400_BAD_REQUEST)
+        assert (request_post_response.status_code) == (http_status.HTTP_400_BAD_REQUEST)
 
     def test_view_post_nextcloudinstitutions(self):
         params = {
@@ -277,7 +276,7 @@ class TestTestConnectionView(AdminTestCase):
             'provider_short_name': 'nextcloudinstitutions',
         }
         request_post_response = self.view_post(params)
-        nt.assert_equals(request_post_response.status_code, http_status.HTTP_400_BAD_REQUEST)
+        assert (request_post_response.status_code) == (http_status.HTTP_400_BAD_REQUEST)
 
     def test_view_post_dropboxbusiness(self):
         params = {
@@ -288,14 +287,14 @@ class TestTestConnectionView(AdminTestCase):
             'provider_short_name': 'dropboxbusiness',
         }
         request_post_response = self.view_post(params)
-        nt.assert_equals(request_post_response.status_code, http_status.HTTP_400_BAD_REQUEST)
+        assert (request_post_response.status_code) == (http_status.HTTP_400_BAD_REQUEST)
 
     def test_view_post_provider_short_name_invalid(self):
         params = {
             'provider_short_name': 'invalidprovider',
         }
         request_post_response = self.view_post(params)
-        nt.assert_equals(request_post_response.status_code, http_status.HTTP_400_BAD_REQUEST)
+        assert (request_post_response.status_code) == (http_status.HTTP_400_BAD_REQUEST)
 
 
 @pytest.mark.feature_202210
@@ -341,14 +340,14 @@ class TestSaveCredentialsView(AdminTestCase):
             'provider_short_name': '',
         }
         request_post_response = self.view_post(params)
-        nt.assert_equals(request_post_response.status_code, http_status.HTTP_400_BAD_REQUEST)
+        assert (request_post_response.status_code) == (http_status.HTTP_400_BAD_REQUEST)
 
     def test_view_post_with_storage_name_empty(self):
         params = {
             'storage_name': '',
         }
         request_post_response = self.view_post(params)
-        nt.assert_equals(request_post_response.status_code, http_status.HTTP_400_BAD_REQUEST)
+        assert (request_post_response.status_code) == (http_status.HTTP_400_BAD_REQUEST)
 
     def test_view_post_s3_with_empty_storage_name(self):
         params = {
@@ -359,7 +358,7 @@ class TestSaveCredentialsView(AdminTestCase):
             'storage_name': '',
         }
         request_post_response = self.view_post(params)
-        nt.assert_equals(request_post_response.status_code, http_status.HTTP_400_BAD_REQUEST)
+        assert (request_post_response.status_code) == (http_status.HTTP_400_BAD_REQUEST)
 
     def test_view_post_s3(self):
         params = {
@@ -370,7 +369,7 @@ class TestSaveCredentialsView(AdminTestCase):
             'storage_name': 'test storage_name',
         }
         request_post_response = self.view_post(params)
-        nt.assert_equals(request_post_response.status_code, http_status.HTTP_400_BAD_REQUEST)
+        assert (request_post_response.status_code) == (http_status.HTTP_400_BAD_REQUEST)
 
     def test_view_post_s3compat(self):
         params = {
@@ -383,7 +382,7 @@ class TestSaveCredentialsView(AdminTestCase):
 
         }
         request_post_response = self.view_post(params)
-        nt.assert_equals(request_post_response.status_code, http_status.HTTP_400_BAD_REQUEST)
+        assert (request_post_response.status_code) == (http_status.HTTP_400_BAD_REQUEST)
 
     def test_view_post_s3compatsigv4(self):
         params = {
@@ -396,7 +395,7 @@ class TestSaveCredentialsView(AdminTestCase):
 
         }
         request_post_response = self.view_post(params)
-        nt.assert_equals(request_post_response.status_code, http_status.HTTP_400_BAD_REQUEST)
+        assert (request_post_response.status_code) == (http_status.HTTP_400_BAD_REQUEST)
 
     def test_view_post_nextcloudinstitutions(self):
         params = {
@@ -410,7 +409,7 @@ class TestSaveCredentialsView(AdminTestCase):
 
         }
         request_post_response = self.view_post(params)
-        nt.assert_equals(request_post_response.status_code, http_status.HTTP_400_BAD_REQUEST)
+        assert (request_post_response.status_code) == (http_status.HTTP_400_BAD_REQUEST)
 
     def test_view_post_dropboxbusiness(self):
         params = {
@@ -418,7 +417,7 @@ class TestSaveCredentialsView(AdminTestCase):
             'storage_name': 'test storage_name',
         }
         request_post_response = self.view_post(params)
-        nt.assert_equals(request_post_response.status_code, http_status.HTTP_400_BAD_REQUEST)
+        assert (request_post_response.status_code) == (http_status.HTTP_400_BAD_REQUEST)
 
     @mock.patch('admin.rdm_custom_storage_location.export_data.utils.save_s3compat_credentials')
     def test_super_admin_post_with_institution_id(self, mock_save_s3):
@@ -431,7 +430,7 @@ class TestSaveCredentialsView(AdminTestCase):
             'storage_name': 'test storage_name',
         }
         request_post_response = self.view_post_user(self.superuser, params, self.institution.id)
-        nt.assert_equals(request_post_response.status_code, http_status.HTTP_200_OK)
+        assert (request_post_response.status_code) == (http_status.HTTP_200_OK)
 
     def test_super_admin_post_with_institution_id_not_exist(self):
         params = {
@@ -441,7 +440,7 @@ class TestSaveCredentialsView(AdminTestCase):
             'provider_short_name': 's3compat',
         }
         request_post_response = self.view_post_user(self.superuser, params, -1)
-        nt.assert_equals(request_post_response.status_code, http_status.HTTP_404_NOT_FOUND)
+        assert (request_post_response.status_code) == (http_status.HTTP_404_NOT_FOUND)
 
     def test_admin_post_with_institution_id(self):
         params = {
@@ -451,7 +450,7 @@ class TestSaveCredentialsView(AdminTestCase):
             'provider_short_name': 's3compat',
         }
         request_post_response = self.view_post_user(self.user, params, -1)
-        nt.assert_equals(request_post_response.status_code, http_status.HTTP_404_NOT_FOUND)
+        assert (request_post_response.status_code) == (http_status.HTTP_404_NOT_FOUND)
 
 @pytest.mark.feature_202210
 class TestDeleteCredentialsView(AdminTestCase):
@@ -496,7 +495,7 @@ class TestDeleteCredentialsView(AdminTestCase):
         view = setup_view(self.view, self.request, export_location.id)
         result = view.delete(self.request, export_location.id)
 
-        nt.assert_equals(result.status_code, 400)
+        assert (result.status_code) == (400)
 
     def test_delete(self):
         export_location = ExportDataLocation.objects.create(institution_guid=self.institution.guid)
@@ -505,7 +504,7 @@ class TestDeleteCredentialsView(AdminTestCase):
         view.storage_location = export_location
         result = view.delete(self.request, export_location.id)
 
-        nt.assert_equals(result.status_code, 200)
+        assert (result.status_code) == (200)
 
     def test_delete_exception(self):
         export_location = ExportDataLocation.objects.create()
@@ -513,31 +512,31 @@ class TestDeleteCredentialsView(AdminTestCase):
         view = setup_view(self.view, self.request, export_location.id)
         result = view.delete(self.request, int(export_location.id) + 1)
 
-        nt.assert_equals(result.status_code, 400)
+        assert (result.status_code) == (400)
 
     def test__test_func_anonymus(self):
         self.request.user = self.anon
         export_location = ExportDataLocation.objects.create(institution_guid=self.institution.guid)
         view = setup_view(self.view, self.request, export_location.id)
-        nt.assert_false(view.test_func())
+        assert not (view.test_func())
 
     def test__test_func_normal_user(self):
         self.request.user = self.normal_user
         export_location = ExportDataLocation.objects.create(institution_guid=self.institution.guid)
         view = setup_view(self.view, self.request, export_location.id)
-        nt.assert_false(view.test_func())
+        assert not (view.test_func())
 
     def test__test_func_super_user(self):
         self.request.user = self.superuser
         export_location = ExportDataLocation.objects.create(institution_guid=self.institution.guid)
         view = setup_view(self.view, self.request, location_id=export_location.id, institution_id=self.institution.id)
-        nt.assert_true(view.test_func())
+        assert (view.test_func())
 
     def test__test_func_admin_not_inst(self):
         self.request.user = self.institution02_admin
         export_location = ExportDataLocation.objects.create(institution_guid=self.institution.guid)
         view = setup_view(self.view, self.request, location_id=export_location.id)
-        nt.assert_false(view.test_func())
+        assert not (view.test_func())
 
     def test__test_func_admin_not_permission(self):
         user2 = AuthUserFactory()
@@ -551,30 +550,30 @@ class TestDeleteCredentialsView(AdminTestCase):
 
         export_location = ExportDataLocation.objects.create(institution_guid=self.institution.guid)
         view = setup_view(self.view, request, location_id=export_location.id)
-        nt.assert_false(view.test_func())
+        assert not (view.test_func())
 
     def test__test_func_admin(self):
         self.request.user = self.user
         export_location = ExportDataLocation.objects.create(institution_guid=self.institution.guid)
         view = setup_view(self.view, self.request, location_id=export_location.id)
-        nt.assert_true(view.test_func())
+        assert (view.test_func())
 
     def test__test_func_admin_institution_not_exist(self):
         self.request.user = self.user
         export_location = ExportDataLocation.objects.create(institution_guid=self.institution.id)
         view = setup_view(self.view, self.request, location_id=export_location.id, institution_id=-1)
-        with nt.assert_raises(Http404):
+        with pytest.raises(Http404):
             view.test_func()
 
     def test__test_func_super_admin_institution_not_exist(self):
         self.request.user = self.superuser
         export_location = ExportDataLocation.objects.create(institution_guid=self.institution.id)
         view = setup_view(self.view, self.request, location_id=export_location.id, institution_id=-1)
-        with nt.assert_raises(Http404):
+        with pytest.raises(Http404):
             view.test_func()
 
     def test__test_func_no_storage_location(self):
         self.request.user = self.superuser
         view = setup_view(self.view, self.request)
-        with nt.assert_raises(Http404):
+        with pytest.raises(Http404):
             view.test_func()

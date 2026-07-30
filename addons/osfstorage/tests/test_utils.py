@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 # encoding: utf-8
 import pytest
-from nose.tools import *  # noqa
 
 
 from framework import sessions
@@ -52,10 +51,10 @@ class TestSerializeRevision(StorageTestCase):
             self.versions[0],
             0,
         )
-        assert_equal(expected, observed)
-        assert_equal(self.record.get_download_count(), 3)
-        assert_equal(self.record.get_download_count(version=2), 1)
-        assert_equal(self.record.get_download_count(version=0), 2)
+        assert (expected) == (observed)
+        assert (self.record.get_download_count()) == (3)
+        assert (self.record.get_download_count(version=2)) == (1)
+        assert (self.record.get_download_count(version=0)) == (2)
 
     def test_anon_revisions(self):
         sessions.sessions[request._get_current_object()] = Session()
@@ -78,4 +77,4 @@ class TestSerializeRevision(StorageTestCase):
             1,
             anon=True
         )
-        assert_equal(expected, observed)
+        assert (expected) == (observed)

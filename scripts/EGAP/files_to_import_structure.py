@@ -5,7 +5,6 @@ import argparse
 from distutils.dir_util import copy_tree
 import logging
 
-from nose.tools import assert_equal
 
 logger = logging.getLogger(__name__)
 
@@ -76,7 +75,7 @@ def audit_files(source_directory):
     project_ids = set([get_item_id(folders) for folders in list(projects)])
 
     # check for duplicate ids
-    assert_equal(len(projects), len(project_ids))
+    assert (len(projects)) == (len(project_ids))
 
 
 def main(files_dir, metadata_dir, id_list=None):

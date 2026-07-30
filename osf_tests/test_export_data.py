@@ -1,14 +1,13 @@
 import copy
 from datetime import datetime
 
-import mock
+from unittest import mock
 import pytest
 import requests
 import json
 from addons.osfstorage.tests.factories import FileVersionFactory
 from django.http import JsonResponse
 from django.test import TestCase
-from nose import tools as nt
 
 from addons.osfstorage.models import Region
 from addons.osfstorage.settings import DEFAULT_REGION_ID
@@ -117,38 +116,38 @@ class TestExportData(TestCase):
         }
 
     def test_init(self):
-        nt.assert_is_not_none(self.export_data)
-        nt.assert_equal(self.export_data.status, ExportData.STATUS_COMPLETED)
+        assert (self.export_data) is not None
+        assert (self.export_data.status) == (ExportData.STATUS_COMPLETED)
 
     def test_repr(self):
         expected_value = f'"({self.export_data.source}-{self.export_data.location})[{self.export_data.status}]"'
-        nt.assert_equal(repr(self.export_data), expected_value)
+        assert (repr(self.export_data)) == (expected_value)
 
     def test_str(self):
         expected_value = f'"({self.export_data.source}-{self.export_data.location})[{self.export_data.status}]"'
-        nt.assert_equal(repr(self.export_data), expected_value)
+        assert (repr(self.export_data)) == (expected_value)
 
     def test_extract_file_information_json_from_source_storage__00_not_institution(self):
         export_data = ExportDataFactory()
         result = export_data.extract_file_information_json_from_source_storage()
-        nt.assert_is_none(result)
+        assert (result) is None
 
     def test_extract_file_information_json_from_source_storage__01_normal(self):
         test_file_info_json = copy.deepcopy(self.file_info_json)
 
         result = self.export_data.extract_file_information_json_from_source_storage()
 
-        nt.assert_is_instance(result, tuple)
+        assert isinstance((result), (tuple))
         export_data_json, file_info_json = result
         file_info_first_file = file_info_json.get('files', [{}])[0]
         test_file_info_file = test_file_info_json.get('files', [{}])[0]
 
-        nt.assert_equal(export_data_json, self.export_data_json)
-        nt.assert_equal(file_info_json.get('institution'), test_file_info_json.get('institution'))
-        nt.assert_equal(file_info_first_file.get('tags'), test_file_info_file.get('tags'))
-        nt.assert_equal(file_info_first_file.get('version'), test_file_info_file.get('version'))
-        nt.assert_equal(file_info_first_file.get('location'), test_file_info_file.get('location'))
-        nt.assert_equal(file_info_first_file.get('timestamp'), test_file_info_file.get('timestamp'))
+        assert (export_data_json) == (self.export_data_json)
+        assert (file_info_json.get('institution')) == (test_file_info_json.get('institution'))
+        assert (file_info_first_file.get('tags')) == (test_file_info_file.get('tags'))
+        assert (file_info_first_file.get('version')) == (test_file_info_file.get('version'))
+        assert (file_info_first_file.get('location')) == (test_file_info_file.get('location'))
+        assert (file_info_first_file.get('timestamp')) == (test_file_info_file.get('timestamp'))
 
     def test_extract_file_information_json_from_source_storage__02_with_tags(self):
         # Add tags to file info JSON and test DB
@@ -160,18 +159,18 @@ class TestExportData(TestCase):
 
         result = self.export_data.extract_file_information_json_from_source_storage()
 
-        nt.assert_is_instance(result, tuple)
+        assert isinstance((result), (tuple))
         export_data_json, file_info_json = result
 
         file_info_first_file = file_info_json.get('files', [{}])[0]
         test_file_info_file = test_file_info_json.get('files', [{}])[0]
 
-        nt.assert_equal(export_data_json, self.export_data_json)
-        nt.assert_equal(file_info_json.get('institution'), test_file_info_json.get('institution'))
-        nt.assert_equal(file_info_first_file.get('tags'), test_file_info_file.get('tags'))
-        nt.assert_equal(file_info_first_file.get('version'), test_file_info_file.get('version'))
-        nt.assert_equal(file_info_first_file.get('location'), test_file_info_file.get('location'))
-        nt.assert_equal(file_info_first_file.get('timestamp'), test_file_info_file.get('timestamp'))
+        assert (export_data_json) == (self.export_data_json)
+        assert (file_info_json.get('institution')) == (test_file_info_json.get('institution'))
+        assert (file_info_first_file.get('tags')) == (test_file_info_file.get('tags'))
+        assert (file_info_first_file.get('version')) == (test_file_info_file.get('version'))
+        assert (file_info_first_file.get('location')) == (test_file_info_file.get('location'))
+        assert (file_info_first_file.get('timestamp')) == (test_file_info_file.get('timestamp'))
 
     def test_extract_file_information_json_from_source_storage__03_with_timestamp(self):
         # Add timestamp to file info JSON and test DB
@@ -194,18 +193,18 @@ class TestExportData(TestCase):
 
         result = self.export_data.extract_file_information_json_from_source_storage()
 
-        nt.assert_is_instance(result, tuple)
+        assert isinstance((result), (tuple))
         export_data_json, file_info_json = result
 
         file_info_first_file = file_info_json.get('files', [{}])[0]
         test_file_info_file = test_file_info_json.get('files', [{}])[0]
 
-        nt.assert_equal(export_data_json, self.export_data_json)
-        nt.assert_equal(file_info_json.get('institution'), test_file_info_json.get('institution'))
-        nt.assert_equal(file_info_first_file.get('tags'), test_file_info_file.get('tags'))
-        nt.assert_equal(file_info_first_file.get('version'), test_file_info_file.get('version'))
-        nt.assert_equal(file_info_first_file.get('location'), test_file_info_file.get('location'))
-        nt.assert_equal(file_info_first_file.get('timestamp'), test_file_info_file.get('timestamp'))
+        assert (export_data_json) == (self.export_data_json)
+        assert (file_info_json.get('institution')) == (test_file_info_json.get('institution'))
+        assert (file_info_first_file.get('tags')) == (test_file_info_file.get('tags'))
+        assert (file_info_first_file.get('version')) == (test_file_info_file.get('version'))
+        assert (file_info_first_file.get('location')) == (test_file_info_file.get('location'))
+        assert (file_info_first_file.get('timestamp')) == (test_file_info_file.get('timestamp'))
 
     def test_extract_file_information_json_from_source_storage__04_inst_region(self):
         self.inst_region.name = 'inst'
@@ -219,14 +218,14 @@ class TestExportData(TestCase):
 
         result = self.export_data.extract_file_information_json_from_source_storage()
 
-        nt.assert_is_instance(result, tuple)
+        assert isinstance((result), (tuple))
         export_data_json, file_info_json = result
 
         file_info_files = file_info_json.get('files',)
 
-        nt.assert_equal(export_data_json, test_export_data_json)
-        nt.assert_equal(file_info_json.get('institution'), test_file_info_json.get('institution'))
-        nt.assert_equal(file_info_files, [])
+        assert (export_data_json) == (test_export_data_json)
+        assert (file_info_json.get('institution')) == (test_file_info_json.get('institution'))
+        assert (file_info_files) == ([])
 
         self.inst_region.name = self.default_region.name
         self.inst_region.save()
@@ -243,14 +242,14 @@ class TestExportData(TestCase):
 
         result = self.export_data.extract_file_information_json_from_source_storage()
 
-        nt.assert_is_instance(result, tuple)
+        assert isinstance((result), (tuple))
         export_data_json, file_info_json = result
 
         file_info_files = file_info_json.get('files',)
 
-        nt.assert_equal(export_data_json, test_export_data_json)
-        nt.assert_equal(file_info_json.get('institution'), test_file_info_json.get('institution'))
-        nt.assert_equal(file_info_files, [])
+        assert (export_data_json) == (test_export_data_json)
+        assert (file_info_json.get('institution')) == (test_file_info_json.get('institution'))
+        assert (file_info_files) == ([])
 
         self.file1.deleted = None
         self.file1.deleted_on = datetime.now()
@@ -259,14 +258,14 @@ class TestExportData(TestCase):
 
         result = self.export_data.extract_file_information_json_from_source_storage()
 
-        nt.assert_is_instance(result, tuple)
+        assert isinstance((result), (tuple))
         export_data_json, file_info_json = result
 
         file_info_files = file_info_json.get('files',)
 
-        nt.assert_equal(export_data_json, test_export_data_json)
-        nt.assert_equal(file_info_json.get('institution'), test_file_info_json.get('institution'))
-        nt.assert_equal(file_info_files, [])
+        assert (export_data_json) == (test_export_data_json)
+        assert (file_info_json.get('institution')) == (test_file_info_json.get('institution'))
+        assert (file_info_files) == ([])
 
         self.file1.deleted = None
         self.file1.deleted_on = None
@@ -275,14 +274,14 @@ class TestExportData(TestCase):
 
         result = self.export_data.extract_file_information_json_from_source_storage()
 
-        nt.assert_is_instance(result, tuple)
+        assert isinstance((result), (tuple))
         export_data_json, file_info_json = result
 
         file_info_files = file_info_json.get('files',)
 
-        nt.assert_equal(export_data_json, test_export_data_json)
-        nt.assert_equal(file_info_json.get('institution'), test_file_info_json.get('institution'))
-        nt.assert_equal(file_info_files, [])
+        assert (export_data_json) == (test_export_data_json)
+        assert (file_info_json.get('institution')) == (test_file_info_json.get('institution'))
+        assert (file_info_files) == ([])
 
         self.file1.deleted = None
         self.file1.deleted_on = None
@@ -290,32 +289,31 @@ class TestExportData(TestCase):
         self.file1.save()
 
     def test_process_start_timestamp(self):
-        nt.assert_equal(self.export_data.process_start_timestamp, self.export_data.process_start.strftime('%s'))
+        assert (self.export_data.process_start_timestamp) == (self.export_data.process_start.strftime('%s'))
 
     def test_process_start_display(self):
-        nt.assert_equal(self.export_data.process_start_display,
-                        self.export_data.process_start.strftime('%Y%m%dT%H%M%S'))
+        assert (self.export_data.process_start_display) == (self.export_data.process_start.strftime('%Y%m%dT%H%M%S'))
 
     def test_export_data_folder_name(self):
         expected_value = 'export_{}_{}'.format(self.export_data.source.id, self.export_data.process_start_timestamp)
-        nt.assert_equal(self.export_data.export_data_folder_name, expected_value)
+        assert (self.export_data.export_data_folder_name) == (expected_value)
 
     def test_export_data_folder_path(self):
         expected_value = '/export_{}_{}/'.format(self.export_data.source.id, self.export_data.process_start_timestamp)
-        nt.assert_equal(self.export_data.export_data_folder_path, expected_value)
+        assert (self.export_data.export_data_folder_path) == (expected_value)
 
     def test_export_data_temp_file_path(self):
         res = self.export_data.export_data_temp_file_path
-        nt.assert_greater(len(res), 0)
+        assert (len(res)) > (0)
 
     def test_export_data_files_folder_path(self):
         res = self.export_data.export_data_files_folder_path
-        nt.assert_greater(len(res), 0)
+        assert (len(res)) > (0)
 
     def test_get_source_file_versions_min(self):
         file_info_json = dict(FAKE_DATA).copy()
         res = self.export_data.get_source_file_versions_min(file_info_json)
-        nt.assert_greater(len(res), 0)
+        assert (len(res)) > (0)
 
     def test_create_export_data_folder(self):
         mock_request = mock.MagicMock()
@@ -323,7 +321,7 @@ class TestExportData(TestCase):
         cookie = 'fake_cookie'
         with mock.patch('osf.models.export_data.requests', mock_request):
             res = self.export_data.create_export_data_folder(cookie)
-        nt.assert_equal(res.status_code, 201)
+        assert (res.status_code) == (201)
 
     def test_delete_export_data_folder(self):
         mock_request = mock.MagicMock()
@@ -331,7 +329,7 @@ class TestExportData(TestCase):
         cookie = 'fake_cookie'
         with mock.patch('osf.models.export_data.requests', mock_request):
             res = self.export_data.delete_export_data_folder(cookie)
-        nt.assert_equal(res.status_code, 204)
+        assert (res.status_code) == (204)
 
     def test_delete_export_data_file_from_location(self):
         mock_request = mock.MagicMock()
@@ -339,7 +337,7 @@ class TestExportData(TestCase):
         cookie = 'fake_cookie'
         with mock.patch('osf.models.export_data.requests', mock_request):
             res = self.export_data.delete_export_data_file_from_location(cookie)
-        nt.assert_equal(res.status_code, 204)
+        assert (res.status_code) == (204)
 
     def test_delete_file_info_file_from_location(self):
         mock_request = mock.MagicMock()
@@ -347,7 +345,7 @@ class TestExportData(TestCase):
         cookie = 'fake_cookie'
         with mock.patch('osf.models.export_data.requests', mock_request):
             res = self.export_data.delete_file_info_file_from_location(cookie)
-        nt.assert_equal(res.status_code, 204)
+        assert (res.status_code) == (204)
 
     def test_create_export_data_files_folder(self):
         mock_request = mock.MagicMock()
@@ -355,7 +353,7 @@ class TestExportData(TestCase):
         cookie = 'fake_cookie'
         with mock.patch('osf.models.export_data.requests', mock_request):
             res = self.export_data.create_export_data_files_folder(cookie)
-        nt.assert_equal(res.status_code, 201)
+        assert (res.status_code) == (201)
 
     def test_read_file_info_from_location(self):
         mock_request = mock.MagicMock()
@@ -363,7 +361,7 @@ class TestExportData(TestCase):
         cookie = 'fake_cookie'
         with mock.patch('osf.models.export_data.requests', mock_request):
             res = self.export_data.read_file_info_from_location(cookie)
-        nt.assert_equal(res.status_code, 200)
+        assert (res.status_code) == (200)
 
     def test_read_export_data_from_location(self):
         mock_request = mock.MagicMock()
@@ -371,7 +369,7 @@ class TestExportData(TestCase):
         cookie = 'fake_cookie'
         with mock.patch('osf.models.export_data.requests', mock_request):
             res = self.export_data.read_export_data_from_location(cookie)
-        nt.assert_equal(res.status_code, 200)
+        assert (res.status_code) == (200)
 
     def test_upload_export_data_file(self):
         mock_request = mock.MagicMock()
@@ -380,7 +378,7 @@ class TestExportData(TestCase):
         file_path = 'admin/base/schemas/export-data-schema.json'
         with mock.patch('osf.models.export_data.requests', mock_request):
             res = self.export_data.upload_export_data_file(cookie, file_path)
-        nt.assert_equal(res.status_code, 200)
+        assert (res.status_code) == (200)
 
     def test_read_data_file_from_source(self):
         mock_request = mock.MagicMock()
@@ -391,12 +389,12 @@ class TestExportData(TestCase):
         file_path = '/fake_path'
         with mock.patch('osf.models.export_data.requests', mock_request):
             res = self.export_data.read_data_file_from_source(cookie, project_id, provider, file_path)
-        nt.assert_equal(res.status_code, 200)
+        assert (res.status_code) == (200)
 
     def test_get_data_file_file_path(self):
         file_path = '/fake_path'
         res = self.export_data.get_data_file_file_path(file_path)
-        nt.assert_greater(len(res), 0)
+        assert (len(res)) > (0)
 
     def test_read_data_file_from_location(self):
         mock_request = mock.MagicMock()
@@ -405,7 +403,7 @@ class TestExportData(TestCase):
         file_path = '/fake_path'
         with mock.patch('osf.models.export_data.requests', mock_request):
             res = self.export_data.read_data_file_from_location(cookie, file_path)
-        nt.assert_equal(res.status_code, 200)
+        assert (res.status_code) == (200)
 
     def test_transfer_export_data_file_to_location(self):
         mock_request = mock.MagicMock()
@@ -415,7 +413,7 @@ class TestExportData(TestCase):
         file_path = '/fake_path'
         with mock.patch('osf.models.export_data.requests', mock_request):
             res = self.export_data.transfer_export_data_file_to_location(cookie, provider, file_path)
-        nt.assert_equal(res.status_code, 200)
+        assert (res.status_code) == (200)
 
     def test_copy_export_data_file_to_location(self):
         mock_request = mock.MagicMock()
@@ -427,7 +425,7 @@ class TestExportData(TestCase):
         file_name = 'file_name'
         with mock.patch('osf.models.export_data.requests', mock_request):
             res = self.export_data.copy_export_data_file_to_location(cookie, project_id, provider, file_path, file_name)
-        nt.assert_equal(res.status_code, 200)
+        assert (res.status_code) == (200)
 
     def test_upload_file_info_file(self):
         mock_request = mock.MagicMock()
@@ -436,35 +434,35 @@ class TestExportData(TestCase):
         file_path = 'admin/base/schemas/export-data-schema.json'
         with mock.patch('osf.models.export_data.requests', mock_request):
             res = self.export_data.upload_file_info_file(cookie, file_path)
-        nt.assert_equal(res.status_code, 200)
+        assert (res.status_code) == (200)
 
     def test_get_export_data_file_path(self):
         res = self.export_data.get_export_data_file_path()
-        nt.assert_greater(len(res), 0)
+        assert (len(res)) > (0)
 
     def test_get_export_data_filename(self):
         res = self.export_data.get_export_data_filename()
         expected_value = 'export_data_{}_{}.json'.format(self.export_data.source.guid,
                                                          self.export_data.process_start_timestamp)
-        nt.assert_equal(res, expected_value)
+        assert (res) == (expected_value)
 
     def test_get_file_info_filename(self):
         res = self.export_data.get_file_info_filename()
         expected_value = 'file_info_{}_{}.json'.format(self.export_data.source.guid,
                                                        self.export_data.process_start_timestamp)
-        nt.assert_equal(res, expected_value)
+        assert (res) == (expected_value)
 
     def test_get_hashes_from_metadata(self):
         result = get_hashes_from_metadata(provider_name='s3', extra={'hashes': {'md5': 'test'}}, hash_name='md5')
-        nt.assert_is_not_none(result)
+        assert (result) is not None
 
     def test_get_hashes_from_metadata_dropboxbusiness(self):
         result = get_hashes_from_metadata(provider_name='dropboxbusiness', extra={'hashes': {'dropboxbusiness': 'test'}}, hash_name='sha256')
-        nt.assert_is_not_none(result)
+        assert (result) is not None
 
     def test_get_hashes_from_metadata_dropboxbusiness_dict(self):
         result = get_hashes_from_metadata(provider_name='dropboxbusiness', extra={'hashes': {'dropboxbusiness': {'md5': 'test'}}}, hash_name='md5')
-        nt.assert_is_not_none(result)
+        assert (result) is not None
 
 
 @pytest.mark.django_db
@@ -517,7 +515,7 @@ class TestExportDataInstitutionAddon(TestCase):
         with mock.patch('osf.models.export_data.requests', mock_request):
             with mock.patch('osf.models.export_data.ExportData.process_directory', mock_process_directory):
                 result = self.export_data.extract_file_information_json_from_source_storage()
-                nt.assert_is_not_none(result)
+                assert (result) is not None
 
     def test_extract_file_information_json_from_source_institutional_addon_storage_onedrivebusiness(self):
         mock_request = mock.MagicMock()
@@ -532,7 +530,7 @@ class TestExportDataInstitutionAddon(TestCase):
         with mock.patch('osf.models.export_data.requests', mock_request):
             with mock.patch('osf.models.export_data.ExportData.process_directory', mock_process_directory):
                 result = self.export_data.extract_file_information_json_from_source_storage()
-                nt.assert_is_not_none(result)
+                assert (result) is not None
 
     def test_extract_file_information_json_from_source_institutional_addon_storage_get_file_version_error(self):
         mock_request = mock.MagicMock()
@@ -545,7 +543,7 @@ class TestExportDataInstitutionAddon(TestCase):
         with mock.patch('osf.models.export_data.requests', mock_request):
             with mock.patch('osf.models.export_data.ExportData.process_directory', mock_process_directory):
                 result = self.export_data.extract_file_information_json_from_source_storage()
-                nt.assert_is_not_none(result)
+                assert (result) is not None
 
     def test_process_directory(self):
         test_response = requests.Response()
@@ -558,7 +556,7 @@ class TestExportDataInstitutionAddon(TestCase):
         project_list = []
         with mock.patch('osf.models.export_data.requests', mock_request):
             self.export_data.process_directory(project, '/', project_list)
-        nt.assert_equal(project_list, [])
+        assert (project_list) == ([])
 
 
 @pytest.mark.feature_202210
@@ -593,18 +591,17 @@ class TestExportDataWithRestoreData(TestCase):
         cls.export_data_restore = ExportDataRestoreFactory(export=cls.export_data)
 
     def test_get_all_restored(self):
-        nt.assert_equal(self.export_data.get_all_restored().first(), self.export_data_restore)
+        assert (self.export_data.get_all_restored().first()) == (self.export_data_restore)
 
     def test_has_restored(self):
-        nt.assert_equal(self.export_data.has_restored(), True)
+        assert (self.export_data.has_restored()) == (True)
 
     def test_get_latest_restored(self):
-        nt.assert_equal(self.export_data.get_latest_restored(), self.export_data_restore)
+        assert (self.export_data.get_latest_restored()) == (self.export_data_restore)
 
     def test_get_latest_restored_data_with_destination_id(self):
         destination_id = self.export_data_restore.destination.id
-        nt.assert_equal(self.export_data.get_latest_restored_data_with_destination_id(destination_id),
-                        self.export_data_restore)
+        assert (self.export_data.get_latest_restored_data_with_destination_id(destination_id)) == (self.export_data_restore)
 
 
 @pytest.mark.feature_202210
@@ -617,8 +614,8 @@ class TestDateTruncMixin(TestCase):
     def test_truncate_date(self):
         fake_data = 'fake_value'
         res = self.date_mixin.truncate_date(fake_data)
-        nt.assert_equal(res, fake_data)
+        assert (res) == (fake_data)
 
     def test_truncate_date_none_value(self):
         res = self.date_mixin.truncate_date(None)
-        nt.assert_is_none(res)
+        assert (res) is None

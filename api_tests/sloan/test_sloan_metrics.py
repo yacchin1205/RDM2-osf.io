@@ -6,7 +6,7 @@ import datetime
 import itsdangerous
 import jwe
 import jwt
-import mock
+from unittest import mock
 from django.utils import timezone
 from framework.auth.core import Auth
 from tests.base import OsfTestCase

@@ -1,4 +1,4 @@
-from django.conf.urls import url
+from django.urls import re_path
 
 from api.mapcore import views
 
@@ -6,7 +6,7 @@ app_name = 'osf'
 
 urlpatterns = [
     # Examples:
-    # url(r'^$', 'api.views.home', name='home'),
-    # url(r'^blog/', include('blog.urls')),
-    url(r'^groups/$', views.MapCoreGroupList.as_view(), name=views.MapCoreGroupList.view_name),
+    # re_path(r'^$', 'api.views.home', name='home'),
+    # re_path(r'^blog/', include('blog.urls')),
+    re_path(r'^groups/$', views.MapCoreGroupList.as_view(), name=views.MapCoreGroupList.view_name),
 ]

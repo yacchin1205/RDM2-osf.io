@@ -2,9 +2,8 @@ import json
 import jwe
 import jwt
 
-import mock
+from unittest import mock
 import pytest
-from nose.tools import *  # noqa PEP8 asserts
 
 from api.base import settings
 from api.base.settings.defaults import API_BASE
@@ -234,7 +233,7 @@ class TestGettingShibbolethAttribute:
 
         # email is ignored
         from django.core.exceptions import ObjectDoesNotExist
-        with assert_raises(ObjectDoesNotExist):
+        with pytest.raises(ObjectDoesNotExist):
             OSFUser.objects.get(username=eppn)
 
         user = OSFUser.objects.get(username=tmp_eppn_username)
@@ -392,18 +391,18 @@ class TestUserProfile(OsfTestCase):
         organization_name, organizational_unit = set_user_extended_data(self.user)
 
         self.user.reload()
-        assert_equal(len(self.user.jobs), 2)
+        assert (len(self.user.jobs)) == (2)
         url = api_url_for('serialize_jobs')
         res = self.app.get(
             url,
             auth=self.user.auth,
         )
         for i, job in enumerate(jobs):
-            assert_equal(job, res.json['contents'][i])
+            assert (job) == (res.json['contents'][i])
 
         idp_attr = res.json['idp_attr']
-        assert_equal(idp_attr['institution'], organization_name)
-        assert_equal(idp_attr['department'], organizational_unit)
+        assert (idp_attr['institution']) == (organization_name)
+        assert (idp_attr['department']) == (organizational_unit)
 
     def test_unserialize_and_serialize_schools_with_idp_attr(self):
         schools = [{
@@ -436,15 +435,15 @@ class TestUserProfile(OsfTestCase):
         organization_name, organizational_unit = set_user_extended_data(self.user)
 
         self.user.reload()
-        assert_equal(len(self.user.schools), 2)
+        assert (len(self.user.schools)) == (2)
         url = api_url_for('serialize_schools')
         res = self.app.get(
             url,
             auth=self.user.auth,
         )
         for i, job in enumerate(schools):
-            assert_equal(job, res.json['contents'][i])
+            assert (job) == (res.json['contents'][i])
 
         idp_attr = res.json['idp_attr']
-        assert_equal(idp_attr['institution'], organization_name)
-        assert_equal(idp_attr['department'], organizational_unit)
+        assert (idp_attr['institution']) == (organization_name)
+        assert (idp_attr['department']) == (organizational_unit)

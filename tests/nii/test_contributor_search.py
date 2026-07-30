@@ -1,7 +1,6 @@
 import pytest
-import mock
+from unittest import mock
 
-from nose.tools import *  # noqa PEP8 asserts
 
 from website import settings
 import website.search.search as search
@@ -67,17 +66,15 @@ class TestContributorSearch(OsfTestCase):
 
         # one institution
         contribs = search_contribs(self.user1)
-        assert_equal(sorted(set([u['fullname'] for u in contribs['users']])),
-                     sorted(set(self.inst1_users)))
+        assert (sorted(set([u['fullname'] for u in contribs['users']]))) == (sorted(set(self.inst1_users)))
 
         # two institutions
         contribs = search_contribs(self.user2)
-        assert_equal(sorted(set([u['fullname'] for u in contribs['users']])),
-                     sorted(set(self.inst1_users) | set(self.inst2_users)))
+        assert (sorted(set([u['fullname'] for u in contribs['users']]))) == (sorted(set(self.inst1_users) | set(self.inst2_users)))
 
         # independent (no institution) -> from all institutions
         contribs = search_contribs(self.user3)
-        assert_equal(len(contribs['users']), 7)
+        assert (len(contribs['users'])) == (7)
 
     def test_search_contributors_from_my_institutions_after_rebuild_search(self):
         migrate(delete=False, remove=False,
@@ -90,8 +87,7 @@ class TestContributorSearch(OsfTestCase):
             self.user2._id,
             current_user=self.user1
         )
-        assert_equal(set([u['fullname'] for u in contribs['users']]),
-                     set([self.user2.fullname]))
+        assert (set([u['fullname'] for u in contribs['users']])) == (set([self.user2.fullname]))
 
     def test_search_contributors_by_email(self):
         email2 = self.user2.emails.get()
@@ -104,8 +100,7 @@ class TestContributorSearch(OsfTestCase):
             email2.address,
             current_user=self.user1
         )
-        assert_equal(set([u['fullname'] for u in contribs['users']]),
-                     set([self.user2.fullname]))
+        assert (set([u['fullname'] for u in contribs['users']])) == (set([self.user2.fullname]))
 
 class TestEscape(OsfTestCase):
 
@@ -114,28 +109,27 @@ class TestEscape(OsfTestCase):
         from website.search.util import es_escape
 
         # see https://www.elastic.co/guide/en/elasticsearch/reference/current/query-dsl-query-string-query.html#_reserved_characters
-        assert_equal(es_escape('+-=&|!(){}[]^"~*?:/'),
-                     '\+\-\=\&\|\!\(\)\{\}\[\]\^\\\"\~\*\?\:\/')
-        assert_equal(es_escape('"'), '\\\"')   # " -> \"
-        assert_equal(es_escape('\\'), '\\\\')  # \ -> \\
-        assert_equal(es_escape('><'), '  ')  # whitespace
-        assert_equal(es_escape("'"), "'")  # not escaped
+        assert (es_escape('+-=&|!(){}[]^"~*?:/')) == (r'\+\-\=\&\|\!\(\)\{\}\[\]\^\\\"\~\*\?\:\/')
+        assert (es_escape('"')) == ('\\\"')   # " -> \"
+        assert (es_escape('\\')) == ('\\\\')  # \ -> \\
+        assert (es_escape('><')) == ('  ')  # whitespace
+        assert (es_escape("'")) == ("'")  # not escaped
 
         other_punctuation = '#$%,.;@_`'
-        assert_equal(es_escape(other_punctuation), other_punctuation)
+        assert (es_escape(other_punctuation)) == (other_punctuation)
 
-        assert_equal(es_escape(string.ascii_letters), string.ascii_letters)
-        assert_equal(es_escape(string.octdigits), string.octdigits)
-        assert_equal(es_escape(string.whitespace), string.whitespace)
+        assert (es_escape(string.ascii_letters)) == (string.ascii_letters)
+        assert (es_escape(string.octdigits)) == (string.octdigits)
+        assert (es_escape(string.whitespace)) == (string.whitespace)
 
         hiragana = ''.join([chr(i) for i in range(12353, 12436)])
-        assert_equal(es_escape(hiragana), hiragana)
+        assert (es_escape(hiragana)) == (hiragana)
 
         katakana = ''.join([chr(i) for i in range(12449, 12533)])
-        assert_equal(es_escape(katakana), katakana)
+        assert (es_escape(katakana)) == (katakana)
 
         zenkaku_hankaku = ''.join([chr(i) for i in range(65281, 65440)])
-        assert_equal(es_escape(zenkaku_hankaku), zenkaku_hankaku)
+        assert (es_escape(zenkaku_hankaku)) == (zenkaku_hankaku)
 
 
 # see ./osf_tests/test_elastic_search.py
@@ -206,7 +200,7 @@ class TestSearchMigrationNormalizedField(OsfTestCase):
             self.testname_normalized,
             current_user=self.user1
         )
-        assert_equal(len(contribs['users']), expect_num)
+        assert (len(contribs['users'])) == (expect_num)
 
     # migrate() may not update elasticsearch-data immediately.
     @retry_assertion(retries=10)
@@ -214,7 +208,7 @@ class TestSearchMigrationNormalizedField(OsfTestCase):
         r = search.search(build_query(self.testname_normalized),
                           doc_type='project',
                           index=None, raw=False)
-        assert_equal(len(r['results']), expect_num)
+        assert (len(r['results'])) == (expect_num)
 
     def test_rebuild_search_check_normalized(self):
         self.search_contrib(self.TOTAL_USERS)
@@ -272,8 +266,8 @@ class TestSearchUtils(OsfTestCase):
         }
         res = build_query(start=start, size=size,
                                match_value=match_value, match_key=match_key)
-        assert_is_instance(res, dict)
-        assert_equal(res, expectedResult)
+        assert isinstance((res), (dict))
+        assert (res) == (expectedResult)
 
     def test_build_query_with_match_key_is_email_and_match_value_valid(self):
         match_key = 'emails'
@@ -301,8 +295,8 @@ class TestSearchUtils(OsfTestCase):
         }
         res = build_query(start=start, size=size,
                                match_value=match_value, match_key=match_key)
-        assert_is_instance(res, dict)
-        assert_equal(res, expectedResult)
+        assert isinstance((res), (dict))
+        assert (res) == (expectedResult)
 
     def test_build_query_with_match_key_and_match_value_invalid(self):
         query_body = build_query_string('*')
@@ -318,8 +312,8 @@ class TestSearchUtils(OsfTestCase):
         }
         res = build_query(start=start, size=size,
                                match_value=match_value, match_key=match_key)
-        assert_is_instance(res, dict)
-        assert_equal(res, expectedResult)
+        assert isinstance((res), (dict))
+        assert (res) == (expectedResult)
 
     def test_build_query_with_match_key_invalid_and_match_value(self):
         query_body = build_query_string('*')
@@ -335,27 +329,27 @@ class TestSearchUtils(OsfTestCase):
         }
         res = build_query(start=start, size=size,
                                match_value=match_value, match_key=match_key)
-        assert_is_instance(res, dict)
-        assert_equal(res, expectedResult)
+        assert isinstance((res), (dict))
+        assert (res) == (expectedResult)
 
     def test_validate_email_is_not_none(self):
         self.email = 'roger@queen.com'
         result = validate_email(self.email)
-        assert_equal(result, True)
+        assert (result) == (True)
 
         result2 = validate_email('')
-        assert_equal(result2, False)
+        assert (result2) == (False)
 
         result3 = validate_email('"joe bloggs"@b.c')
-        assert_equal(result3, False)
+        assert (result3) == (False)
 
         result4 = validate_email('a@b.c')
-        assert_equal(result4, False)
+        assert (result4) == (False)
 
         result5 = validate_email('a@b.c@')
-        assert_equal(result5, False)
+        assert (result5) == (False)
 
     def test_validate_email_is_none(self):
         self.email = None
         result = validate_email(self.email)
-        assert_equal(result, False)
+        assert (result) == (False)

@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
-import mock
-from nose.tools import *  # noqa (PEP8 asserts)
+from unittest import mock
 import pytest
 import unittest
 
@@ -32,9 +31,9 @@ class TestIQBRIMSProvider(unittest.TestCase):
         fake_info = {'sub': '12345', 'name': 'fakename', 'profile': 'fakeUrl'}
         mock_client.return_value = fake_info
         res = self.provider.handle_callback(fake_response)
-        assert_equal(res['provider_id'], '12345')
-        assert_equal(res['display_name'], 'fakename')
-        assert_equal(res['profile_url'], 'fakeUrl')
+        assert (res['provider_id']) == ('12345')
+        assert (res['display_name']) == ('fakename')
+        assert (res['profile_url']) == ('fakeUrl')
 
 class TestUserSettings(OAuthAddonUserSettingTestSuiteMixin, unittest.TestCase):
 
@@ -103,31 +102,25 @@ class TestNodeSettings(OAuthAddonNodeSettingsTestSuiteMixin, unittest.TestCase):
         # The first call to .api returns a new object
         api = self.node_settings.api
         mock_gdp.assert_called_once()
-        assert_equal(api, mock_gdp())
+        assert (api) == (mock_gdp())
 
     @mock.patch('addons.iqbrims.models.IQBRIMSProvider')
     def test_api_cached(self, mock_gdp):
         # Repeated calls to .api returns the same object
         self.node_settings._api = 'testapi'
         api = self.node_settings.api
-        assert_false(mock_gdp.called)
-        assert_equal(api, 'testapi')
+        assert not (mock_gdp.called)
+        assert (api) == ('testapi')
 
     def test_selected_folder_name_root(self):
         self.node_settings.folder_id = 'root'
 
-        assert_equal(
-            self.node_settings.selected_folder_name,
-            'Full IQB-RIMS'
-        )
+        assert (self.node_settings.selected_folder_name) == ('Full IQB-RIMS')
 
     def test_selected_folder_name_empty(self):
         self.node_settings.folder_id = None
 
-        assert_equal(
-            self.node_settings.selected_folder_name,
-            ''
-        )
+        assert (self.node_settings.selected_folder_name) == ('')
 
     ## Overrides ##
 
@@ -140,10 +133,10 @@ class TestNodeSettings(OAuthAddonNodeSettingsTestSuiteMixin, unittest.TestCase):
         self.node_settings.set_folder(folder, auth=Auth(self.user))
         self.node_settings.save()
         # Folder was set
-        assert_equal(self.node_settings.folder_id, folder['id'])
+        assert (self.node_settings.folder_id) == (folder['id'])
         # Log was saved
         last_log = self.node.logs.latest()
-        assert_equal(last_log.action, '{0}_folder_selected'.format(self.short_name))
+        assert (last_log.action) == ('{0}_folder_selected'.format(self.short_name))
 
     def test_serialize_settings(self):
         settings = self.node_settings.serialize_waterbutler_settings()
@@ -162,7 +155,7 @@ class TestNodeSettings(OAuthAddonNodeSettingsTestSuiteMixin, unittest.TestCase):
                 u'最終原稿・組図': []
             }
         }
-        assert_equal(settings, expected)
+        assert (settings) == (expected)
 
 
 class TestIQBRIMSNodeReceiver(unittest.TestCase):
@@ -224,11 +217,11 @@ class TestIQBRIMSNodeReceiver(unittest.TestCase):
 
         self.node.save(force_update=True)
 
-        assert_equal(mock_get_folder_info.call_count, 1)
-        assert_equal(mock_get_folder_info.call_args, ((), {'folder_id': self.folder_id}))
+        assert (mock_get_folder_info.call_count) == (1)
+        assert (mock_get_folder_info.call_args) == (((), {'folder_id': self.folder_id}))
 
-        assert_equal(mock_rename_folder.call_count, 1)
-        assert_equal(mock_rename_folder.call_args[0], (self.folder_id, new_folder_title))
+        assert (mock_rename_folder.call_count) == (1)
+        assert (mock_rename_folder.call_args[0]) == ((self.folder_id, new_folder_title))
 
     @mock.patch.object(NodeSettings, 'fetch_access_token')
     @mock.patch.object(IQBRIMSClient, 'rename_folder')
@@ -240,8 +233,8 @@ class TestIQBRIMSNodeReceiver(unittest.TestCase):
 
         self.no_folders_node.save(force_update=True)
 
-        assert_equal(mock_get_folder_info.call_count, 0)
-        assert_equal(mock_rename_folder.call_count, 0)
+        assert (mock_get_folder_info.call_count) == (0)
+        assert (mock_rename_folder.call_count) == (0)
 
     @mock.patch.object(IQBRIMSClient, 'rename_folder')
     def test_update_management_node_folder(self, mock_rename_folder):
@@ -255,7 +248,7 @@ class TestIQBRIMSNodeReceiver(unittest.TestCase):
 
         self.node.save(force_update=True)
 
-        assert_equal(mock_rename_folder.call_count, 0)
+        assert (mock_rename_folder.call_count) == (0)
 
     @mock.patch.object(AbstractNode, 'find_by_institutions')
     def test_update_addon_state_for_iqbrims_option(self, mock_find_by_institutions):
@@ -270,12 +263,12 @@ class TestIQBRIMSNodeReceiver(unittest.TestCase):
         )
         with mock.patch.object(self.user_node, 'add_addon') as mock_add_addon:
             option.save()
-            assert_equal(mock_add_addon.call_count, 1)
+            assert (mock_add_addon.call_count) == (1)
 
         with mock.patch.object(self.user_node, 'delete_addon') as mock_delete_addon:
             option.is_allowed = False
             option.save()
-            assert_equal(mock_delete_addon.call_count, 1)
+            assert (mock_delete_addon.call_count) == (1)
 
     @mock.patch.object(AbstractNode, 'find_by_institutions')
     def test_update_addon_state_for_other_option(self, mock_find_by_institutions):
@@ -290,9 +283,9 @@ class TestIQBRIMSNodeReceiver(unittest.TestCase):
         )
         with mock.patch.object(self.user_node, 'add_addon') as mock_add_addon:
             option.save()
-            assert_equal(mock_add_addon.call_count, 0)
+            assert (mock_add_addon.call_count) == (0)
 
         with mock.patch.object(self.user_node, 'delete_addon') as mock_delete_addon:
             option.is_allowed = False
             option.save()
-            assert_equal(mock_delete_addon.call_count, 0)
+            assert (mock_delete_addon.call_count) == (0)

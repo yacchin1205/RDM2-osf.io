@@ -1,12 +1,11 @@
-from past.builtins import basestring
 import json
-import collections
+from collections.abc import Iterable
 
-import bleach
+from framework.utils import sanitize_html
 
 
 def is_iterable(obj):
-    return isinstance(obj, collections.Iterable)
+    return isinstance(obj, Iterable)
 
 
 def is_iterable_but_not_string(obj):
@@ -31,14 +30,14 @@ def strip_html(unclean, tags=None):
     if unclean is None:
         return u''
     elif isinstance(unclean, dict) or isinstance(unclean, list):
-        return bleach.clean(str(unclean), strip=True, tags=[], attributes=[], styles=[])
+        return sanitize_html(str(unclean), strip=True, tags=set(), attributes=[], styles=set())
     # We make this noop for non-string, non-collection inputs so this function can be used with higher-order
     # functions, such as rapply (recursively applies a function to collections)
     # If it's not a string and not an iterable (string, list, dict, return unclean)
-    elif not isinstance(unclean, basestring) and not is_iterable(unclean):
+    elif not isinstance(unclean, str) and not is_iterable(unclean):
         return unclean
     else:
-        return bleach.clean(unclean, strip=True, tags=tags, attributes=[], styles=[])
+        return sanitize_html(unclean, strip=True, tags=tags, attributes=[], styles=set())
 
 
 # TODO: Remove unescape_entities when mako html safe comes in
@@ -72,7 +71,7 @@ def unescape_entities(value, safe=None):
             unescape_entities(each, safe=safe_characters)
             for each in value
         ]
-    if isinstance(value, basestring):
+    if isinstance(value, str):
         for escape_sequence, character in safe_characters.items():
             value = value.replace(escape_sequence, character)
         return value

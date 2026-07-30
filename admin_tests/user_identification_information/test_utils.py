@@ -1,5 +1,4 @@
 import pytest
-from nose import tools as nt
 
 from addons.dataverse.tests.factories import DataverseNodeSettingsFactory, DataverseAccountFactory
 from addons.github.tests.factories import GitHubNodeSettingsFactory, GitHubAccountFactory
@@ -35,30 +34,30 @@ class TestUtils(AdminTestCase):
         abbr = 'GB'
         results = views.custom_size_abbreviation(size, abbr)
 
-        nt.assert_equal(results[0], 9)
-        nt.assert_equal(results[1], 'GB')
+        assert (results[0]) == (9)
+        assert (results[1]) == ('GB')
 
     def test_custom_size_abbreviation_abbr_is_B(self):
         size = 90000
         abbr = 'B'
         results = views.custom_size_abbreviation(size, abbr)
 
-        nt.assert_equal(results[0], 90)
-        nt.assert_equal(results[1], 'KB')
+        assert (results[0]) == (90)
+        assert (results[1]) == ('KB')
 
     def test_get_list_extend_storage__no_external_accounts(self):
         ExternalAccount.objects.all().delete()
         results = utils.get_list_extend_storage()
-        nt.assert_is_instance(results, dict)
-        nt.assert_equal(len(results), 0)
+        assert isinstance((results), (dict))
+        assert (len(results)) == (0)
 
     def test_get_list_extend_storage__with_branch_name_is_not_defined(self):
         ExternalAccount.objects.all().delete()
         ExternalAccountFactory()
 
         results = utils.get_list_extend_storage()
-        nt.assert_is_instance(results, dict)
-        nt.assert_equal(len(results), 0)
+        assert isinstance((results), (dict))
+        assert (len(results)) == (0)
 
     def test_get_list_extend_storage__with_branch_name_is_folder_name(self):
         """
@@ -83,11 +82,11 @@ class TestUtils(AdminTestCase):
 
         name_set = set()
         results = utils.get_list_extend_storage()
-        nt.assert_is_instance(results, dict)
+        assert isinstance((results), (dict))
 
         for v_set in results.values():
             name_set.update(v_set)
-        nt.assert_in('/Amazon S3', list(name_set)[0])
+        assert ('/Amazon S3') in (list(name_set)[0])
 
     def test_get_list_extend_storage__with_branch_name_is_repo(self):
         """
@@ -106,7 +105,7 @@ class TestUtils(AdminTestCase):
 
         for v_set in results.values():
             name_set.update(v_set)
-        nt.assert_in('/Github name', list(name_set)[0])
+        assert ('/Github name') in (list(name_set)[0])
 
     def test_get_list_extend_storage__with_branch_name_is_folder_path(self):
         """
@@ -125,7 +124,7 @@ class TestUtils(AdminTestCase):
 
         for v_set in results.values():
             name_set.update(v_set)
-        nt.assert_in('/googledrive name', list(name_set)[0])
+        assert ('/googledrive name') in (list(name_set)[0])
 
     def test_get_list_extend_storage__with_branch_name_is_folder(self):
         """
@@ -144,7 +143,7 @@ class TestUtils(AdminTestCase):
 
         for v_set in results.values():
             name_set.update(v_set)
-        nt.assert_in('/dropbox name', list(name_set)[0])
+        assert ('/dropbox name') in (list(name_set)[0])
 
     def test_get_list_extend_storage__with_branch_name_is_index_title(self):
         """
@@ -163,7 +162,7 @@ class TestUtils(AdminTestCase):
 
         for v_set in results.values():
             name_set.update(v_set)
-        nt.assert_in('/weko name', list(name_set)[0])
+        assert ('/weko name') in (list(name_set)[0])
 
     def test_get_list_extend_storage__with_branch_name_is_list_id(self):
         """
@@ -182,7 +181,7 @@ class TestUtils(AdminTestCase):
 
         for v_set in results.values():
             name_set.update(v_set)
-        nt.assert_in('/mendeley name', list(name_set)[0])
+        assert ('/mendeley name') in (list(name_set)[0])
 
     def test_get_list_extend_storage__with_branch_name_is_folder_id(self):
         """
@@ -201,7 +200,7 @@ class TestUtils(AdminTestCase):
 
         for v_set in results.values():
             name_set.update(v_set)
-        nt.assert_in('/owncloud name', list(name_set)[0])
+        assert ('/owncloud name') in (list(name_set)[0])
 
     def test_get_list_extend_storage__with_branch_name_is_dataverse(self):
         """
@@ -220,4 +219,4 @@ class TestUtils(AdminTestCase):
 
         for v_set in results.values():
             name_set.update(v_set)
-        nt.assert_in('/dataverse name', list(name_set)[0])
+        assert ('/dataverse name') in (list(name_set)[0])

@@ -1,4 +1,3 @@
-from nose.tools import assert_is_not_none, assert_equal
 import pytest
 import unittest
 
@@ -41,14 +40,14 @@ class TestNodeSettings(OAuthAddonNodeSettingsTestSuiteMixin, unittest.TestCase):
     def test_serialize_credentials(self):
         credentials = self.node_settings.serialize_waterbutler_credentials()
 
-        assert_is_not_none(self.node_settings.external_account.oauth_secret)
+        assert (self.node_settings.external_account.oauth_secret) is not None
         expected = {
             'host': self.node_settings.external_account.oauth_secret,
             'password': 'meoword',
             'username': 'catname'
         }
 
-        assert_equal(credentials, expected)
+        assert (credentials) == (expected)
 
     def test_serialize_settings(self):
         settings = self.node_settings.serialize_waterbutler_settings()
@@ -56,4 +55,4 @@ class TestNodeSettings(OAuthAddonNodeSettingsTestSuiteMixin, unittest.TestCase):
             'folder': self.node_settings.folder_id,
             'verify_ssl': USE_SSL
         }
-        assert_equal(settings, expected)
+        assert (settings) == (expected)

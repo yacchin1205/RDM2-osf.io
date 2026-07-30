@@ -1,8 +1,7 @@
 # -*- coding: utf-8 -*-
 from rest_framework import status as http_status
 
-import mock
-from nose.tools import *  # noqa
+from unittest import mock
 
 from framework.auth import Auth
 from tests.base import OsfTestCase, get_default_metaschema
@@ -31,9 +30,9 @@ class TestViews(BaseAddonTestCase, OsfTestCase):
         url = self.project.api_url_for('{}_get_user_config'.format(SHORT_NAME))
         res = self.app.get(url, auth=self.user.auth)
         binderhubs = res.json['binderhubs']
-        assert_equal(len(binderhubs), 1)
-        assert_equal(binderhubs[0]['binderhub_url'], 'https://testa.my.site')
-        assert_in('binderhub_oauth_client_secret', binderhubs[0])
+        assert (len(binderhubs)) == (1)
+        assert (binderhubs[0]['binderhub_url']) == ('https://testa.my.site')
+        assert ('binderhub_oauth_client_secret') in (binderhubs[0])
 
         new_binderhub_b = make_binderhub(
             binderhub_url='https://testb.my.site',
@@ -46,11 +45,11 @@ class TestViews(BaseAddonTestCase, OsfTestCase):
         url = self.project.api_url_for('{}_get_user_config'.format(SHORT_NAME))
         res = self.app.get(url, auth=self.user.auth)
         binderhubs = res.json['binderhubs']
-        assert_equal(len(binderhubs), 2)
-        assert_equal(binderhubs[0]['binderhub_url'], 'https://testa.my.site')
-        assert_in('binderhub_oauth_client_secret', binderhubs[0])
-        assert_equal(binderhubs[1]['binderhub_url'], 'https://testb.my.site')
-        assert_in('binderhub_oauth_client_secret', binderhubs[1])
+        assert (len(binderhubs)) == (2)
+        assert (binderhubs[0]['binderhub_url']) == ('https://testa.my.site')
+        assert ('binderhub_oauth_client_secret') in (binderhubs[0])
+        assert (binderhubs[1]['binderhub_url']) == ('https://testb.my.site')
+        assert ('binderhub_oauth_client_secret') in (binderhubs[1])
 
         new_binderhub_c = make_tljh(
             tljh_url='https://testc.my.site',
@@ -62,13 +61,13 @@ class TestViews(BaseAddonTestCase, OsfTestCase):
         url = self.project.api_url_for('{}_get_user_config'.format(SHORT_NAME))
         res = self.app.get(url, auth=self.user.auth)
         binderhubs = res.json['binderhubs']
-        assert_equal(len(binderhubs), 3)
-        assert_equal(binderhubs[0]['binderhub_url'], 'https://testa.my.site')
-        assert_in('binderhub_oauth_client_secret', binderhubs[0])
-        assert_equal(binderhubs[1]['binderhub_url'], 'https://testb.my.site')
-        assert_in('binderhub_oauth_client_secret', binderhubs[1])
-        assert_equal(binderhubs[2]['binderhub_url'], 'https://testc.my.site')
-        assert_in('binderhub_oauth_client_secret', binderhubs[2])
+        assert (len(binderhubs)) == (3)
+        assert (binderhubs[0]['binderhub_url']) == ('https://testa.my.site')
+        assert ('binderhub_oauth_client_secret') in (binderhubs[0])
+        assert (binderhubs[1]['binderhub_url']) == ('https://testb.my.site')
+        assert ('binderhub_oauth_client_secret') in (binderhubs[1])
+        assert (binderhubs[2]['binderhub_url']) == ('https://testc.my.site')
+        assert ('binderhub_oauth_client_secret') in (binderhubs[2])
 
         url = self.project.api_url_for('purge_binderhub_from_user')
         res = self.app.delete_json(
@@ -79,38 +78,38 @@ class TestViews(BaseAddonTestCase, OsfTestCase):
         url = self.project.api_url_for('{}_get_user_config'.format(SHORT_NAME))
         res = self.app.get(url, auth=self.user.auth)
         binderhubs = res.json['binderhubs']
-        assert_equal(len(binderhubs), 2)
-        assert_equal(binderhubs[0]['binderhub_url'], 'https://testa.my.site')
-        assert_in('binderhub_oauth_client_secret', binderhubs[0])
-        assert_equal(binderhubs[1]['binderhub_url'], 'https://testc.my.site')
-        assert_in('binderhub_oauth_client_secret', binderhubs[1])
+        assert (len(binderhubs)) == (2)
+        assert (binderhubs[0]['binderhub_url']) == ('https://testa.my.site')
+        assert ('binderhub_oauth_client_secret') in (binderhubs[0])
+        assert (binderhubs[1]['binderhub_url']) == ('https://testc.my.site')
+        assert ('binderhub_oauth_client_secret') in (binderhubs[1])
 
     def test_binderhub_authorize(self):
         url = self.project.api_url_for('{}_oauth_authorize'.format(SHORT_NAME),
                                        serviceid='binderhub')
         res = self.app.get(url, auth=self.user.auth)
-        assert_equal(res.status_code, http_status.HTTP_302_FOUND)
+        assert (res.status_code) == (http_status.HTTP_302_FOUND)
         url = res.headers['Location']
         parsed = urlparse(url)
         params = parse_qs(parsed.query)
 
-        assert_equal(params['response_type'][0], 'code')
-        assert_equal(params['scope'][0], 'identity')
-        assert_equal(urlparse(params['redirect_uri'][0]).path, '/project/binderhub/callback')
+        assert (params['response_type'][0]) == ('code')
+        assert (params['scope'][0]) == ('identity')
+        assert (urlparse(params['redirect_uri'][0]).path) == ('/project/binderhub/callback')
 
     def test_empty_binder_url(self):
         self.node_settings.set_binder_url('')
         self.node_settings.save()
         url = self.project.api_url_for('{}_get_config'.format(SHORT_NAME))
         res = self.app.get(url, auth=self.user.auth)
-        assert_equal(res.json['binder_url'], settings.DEFAULT_BINDER_URL)
+        assert (res.json['binder_url']) == (settings.DEFAULT_BINDER_URL)
 
     def test_binder_url(self):
         self.node_settings.set_binder_url('URL_1')
         self.node_settings.save()
         url = self.project.api_url_for('{}_get_config'.format(SHORT_NAME))
         res = self.app.get(url, auth=self.user.auth)
-        assert_equal(res.json['binder_url'], 'URL_1')
+        assert (res.json['binder_url']) == ('URL_1')
 
     def test_ember_empty_binder_url(self):
         url = self.project.api_url_for('{}_set_config'.format(SHORT_NAME))
@@ -120,12 +119,12 @@ class TestViews(BaseAddonTestCase, OsfTestCase):
         }, auth=self.user.auth)
         url = self.project.api_url_for('{}_get_config_ember'.format(SHORT_NAME))
         res = self.app.get(url, auth=self.user.auth)
-        assert_equal(res.json['data']['id'], self.project._id)
-        assert_equal(res.json['data']['type'], 'binderhub-config')
+        assert (res.json['data']['id']) == (self.project._id)
+        assert (res.json['data']['type']) == ('binderhub-config')
         binderhubs = res.json['data']['attributes']['binderhubs']
         default_binderhub = [b for b in binderhubs if b['default']][0]
-        assert_equal(default_binderhub['url'], settings.DEFAULT_BINDER_URL)
-        assert_not_in('binderhub_oauth_client_secret', default_binderhub)
+        assert (default_binderhub['url']) == (settings.DEFAULT_BINDER_URL)
+        assert ('binderhub_oauth_client_secret') not in (default_binderhub)
 
     def test_ember_custom_binder_url(self):
         new_binderhub = make_binderhub(
@@ -141,18 +140,15 @@ class TestViews(BaseAddonTestCase, OsfTestCase):
         }, auth=self.user.auth)
         url = self.project.api_url_for('{}_get_config_ember'.format(SHORT_NAME))
         res = self.app.get(url, auth=self.user.auth)
-        assert_equal(res.json['data']['id'], self.project._id)
-        assert_equal(res.json['data']['type'], 'binderhub-config')
+        assert (res.json['data']['id']) == (self.project._id)
+        assert (res.json['data']['type']) == ('binderhub-config')
         binderhubs = res.json['data']['attributes']['binderhubs']
         default_binderhub = [b for b in binderhubs if b['default']][0]
-        assert_equal(default_binderhub['url'], 'https://testa.my.site')
-        assert_in(
-            '/binderhub/binderhub/authorize?binderhub_url=https%3A%2F%2Ftesta.my.site',
-            default_binderhub['authorize_url'],
-        )
-        assert_not_in('binderhub_oauth_client_secret', default_binderhub)
+        assert (default_binderhub['url']) == ('https://testa.my.site')
+        assert ('/binderhub/binderhub/authorize?binderhub_url=https%3A%2F%2Ftesta.my.site') in (default_binderhub['authorize_url'])
+        assert ('binderhub_oauth_client_secret') not in (default_binderhub)
         jupyterhubs = res.json['data']['attributes']['jupyterhubs']
-        assert_equal(len(jupyterhubs), 0)
+        assert (len(jupyterhubs)) == (0)
 
         token = BinderHubToken.objects.create(
             user=self.user,
@@ -168,26 +164,20 @@ class TestViews(BaseAddonTestCase, OsfTestCase):
         }, auth=self.user.auth)
         url = self.project.api_url_for('{}_get_config_ember'.format(SHORT_NAME))
         res = self.app.get(url, auth=self.user.auth)
-        assert_equal(res.json['data']['id'], self.project._id)
-        assert_equal(res.json['data']['type'], 'binderhub-config')
+        assert (res.json['data']['id']) == (self.project._id)
+        assert (res.json['data']['type']) == ('binderhub-config')
         binderhubs = res.json['data']['attributes']['binderhubs']
         default_binderhub = [b for b in binderhubs if b['default']][0]
-        assert_equal(default_binderhub['url'], 'https://testa.my.site')
-        assert_in(
-            '/binderhub/binderhub/authorize?binderhub_url=https%3A%2F%2Ftesta.my.site',
-            default_binderhub['authorize_url'],
-        )
-        assert_not_in('binderhub_oauth_client_secret', default_binderhub)
+        assert (default_binderhub['url']) == ('https://testa.my.site')
+        assert ('/binderhub/binderhub/authorize?binderhub_url=https%3A%2F%2Ftesta.my.site') in (default_binderhub['authorize_url'])
+        assert ('binderhub_oauth_client_secret') not in (default_binderhub)
         jupyterhubs = res.json['data']['attributes']['jupyterhubs']
-        assert_equal(len(jupyterhubs), 1)
+        assert (len(jupyterhubs)) == (1)
         default_jupyterhub = [jh for jh in jupyterhubs
                               if jh['url'] == default_binderhub['jupyterhub_url']][0]
-        assert_equal(default_jupyterhub['max_servers'], None)
-        assert_in(
-            '/binderhub/session?binderhub_url=https%3A%2F%2Ftesta.my.site',
-            default_jupyterhub['logout_url'],
-        )
-        assert_not_equal(len(res.json['data']['attributes']['mpm_releases']), 0)
+        assert (default_jupyterhub['max_servers']) == (None)
+        assert ('/binderhub/session?binderhub_url=https%3A%2F%2Ftesta.my.site') in (default_jupyterhub['logout_url'])
+        assert (len(res.json['data']['attributes']['mpm_releases'])) != (0)
 
         new_binderhub = make_binderhub(
             binderhub_url='https://testa.my.site',
@@ -207,7 +197,7 @@ class TestViews(BaseAddonTestCase, OsfTestCase):
         jupyterhubs = res.json['data']['attributes']['jupyterhubs']
         default_jupyterhub = [jh for jh in jupyterhubs
                               if jh['url'] == default_binderhub['jupyterhub_url']][0]
-        assert_equal(default_jupyterhub['max_servers'], 10)
+        assert (default_jupyterhub['max_servers']) == (10)
 
         new_binderhub = make_binderhub(
             binderhub_url='https://testa.my.site',
@@ -228,7 +218,7 @@ class TestViews(BaseAddonTestCase, OsfTestCase):
         jupyterhubs = res.json['data']['attributes']['jupyterhubs']
         default_jupyterhub = [jh for jh in jupyterhubs
                               if jh['url'] == default_binderhub['jupyterhub_url']][0]
-        assert_equal(default_jupyterhub['max_servers'], None)
+        assert (default_jupyterhub['max_servers']) == (None)
 
     def test_ember_delete_binderhub(self):
         # Put 2 binderhubs on a Node.
@@ -259,14 +249,14 @@ class TestViews(BaseAddonTestCase, OsfTestCase):
             self.project.api_url_for('binderhub_get_config_ember'),
             auth=self.user.auth
         )
-        assert_equal(res.json['data']['id'], self.project._id)
-        assert_equal(res.json['data']['type'], 'binderhub-config')
+        assert (res.json['data']['id']) == (self.project._id)
+        assert (res.json['data']['type']) == ('binderhub-config')
         binderhubs = res.json['data']['attributes']['binderhubs']
-        assert_equal(len(binderhubs), 2)
+        assert (len(binderhubs)) == (2)
         default_binderhub_list = [b for b in binderhubs if b['default']]
-        assert_equal(len(default_binderhub_list), 1)
+        assert (len(default_binderhub_list)) == (1)
         default_binderhub = default_binderhub_list[0]
-        assert_equal(default_binderhub['url'], 'https://first.my.site')
+        assert (default_binderhub['url']) == ('https://first.my.site')
 
         # Delete the second one and check if there remains oly one.
         self.app.delete_json(
@@ -278,7 +268,7 @@ class TestViews(BaseAddonTestCase, OsfTestCase):
             self.project.api_url_for('binderhub_get_config_ember'),
             auth=self.user.auth
         )
-        assert_equal(len(res.json['data']['attributes']['binderhubs']), 1)
+        assert (len(res.json['data']['attributes']['binderhubs'])) == (1)
 
     def test_ember_custom_tljh_url(self):
         new_binderhub = make_tljh(
@@ -291,13 +281,13 @@ class TestViews(BaseAddonTestCase, OsfTestCase):
         }, auth=self.user.auth)
         url = self.project.api_url_for('{}_get_config_ember'.format(SHORT_NAME))
         res = self.app.get(url, auth=self.user.auth)
-        assert_equal(res.json['data']['id'], self.project._id)
-        assert_equal(res.json['data']['type'], 'binderhub-config')
+        assert (res.json['data']['id']) == (self.project._id)
+        assert (res.json['data']['type']) == ('binderhub-config')
         binderhubs = res.json['data']['attributes']['binderhubs']
         default_binderhub = [b for b in binderhubs if b['default']][0]
-        assert_equal(default_binderhub['url'], 'https://testa.my.site')
-        assert_equal(default_binderhub['authorize_url'], None)
-        assert_not_in('binderhub_oauth_client_secret', default_binderhub)
+        assert (default_binderhub['url']) == ('https://testa.my.site')
+        assert (default_binderhub['authorize_url']) == (None)
+        assert ('binderhub_oauth_client_secret') not in (default_binderhub)
 
     def test_logout(self):
         new_binderhub = make_binderhub(
@@ -313,8 +303,8 @@ class TestViews(BaseAddonTestCase, OsfTestCase):
         }, auth=self.user.auth)
         url = self.project.api_url_for('{}_logout'.format(SHORT_NAME))
         res = self.app.delete(url + '?binderhub_url=https%3A%2F%2Ftesta.my.site', auth=self.user.auth)
-        assert_equal(res.json['data']['deleted'], 0)
-        assert_equal(res.json['data']['jupyterhub_logout_url'], 'https://testa.jh.my.site/hub/logout')
+        assert (res.json['data']['deleted']) == (0)
+        assert (res.json['data']['jupyterhub_logout_url']) == ('https://testa.jh.my.site/hub/logout')
 
         token = BinderHubToken.objects.create(
             user=self.user,
@@ -325,8 +315,8 @@ class TestViews(BaseAddonTestCase, OsfTestCase):
         token.save()
         url = self.project.api_url_for('{}_logout'.format(SHORT_NAME))
         res = self.app.delete(url + '?binderhub_url=https%3A%2F%2Ftesta.my.site', auth=self.user.auth)
-        assert_equal(res.json['data']['deleted'], 1)
-        assert_equal(res.json['data']['jupyterhub_logout_url'], 'https://testa.jh.my.site/hub/logout')
+        assert (res.json['data']['deleted']) == (1)
+        assert (res.json['data']['jupyterhub_logout_url']) == ('https://testa.jh.my.site/hub/logout')
 
         new_binderhub = make_binderhub(
             binderhub_url='https://testa.my.site',
@@ -342,8 +332,8 @@ class TestViews(BaseAddonTestCase, OsfTestCase):
         }, auth=self.user.auth)
         url = self.project.api_url_for('{}_logout'.format(SHORT_NAME))
         res = self.app.delete(url + '?binderhub_url=https%3A%2F%2Ftesta.my.site', auth=self.user.auth)
-        assert_equal(res.json['data']['deleted'], 1)
-        assert_equal(res.json['data']['jupyterhub_logout_url'], 'https://testa.jh.my.site/custom/logout')
+        assert (res.json['data']['deleted']) == (1)
+        assert (res.json['data']['jupyterhub_logout_url']) == ('https://testa.jh.my.site/custom/logout')
 
     def test_matlab_product_name_list(self):
         binderhub = make_binderhub(
@@ -360,11 +350,11 @@ class TestViews(BaseAddonTestCase, OsfTestCase):
         url = self.project.api_url_for('{}_get_config_ember'.format(SHORT_NAME))
         res = self.app.get(url, auth=self.user.auth)
         release_names = res.json['data']['attributes']['mpm_releases']
-        assert_not_equal(len(release_names), 0)
+        assert (len(release_names)) != (0)
         for release in release_names:
             url = self.project.api_url_for('get_matlab_product_name_list', release=release)
             res = self.app.get(url, auth=self.user.auth)
-            assert_equal(res.json['data']['type'], 'matlab-product-name-list')
-            assert_equal(res.json['data']['id'], release)
-            assert_equal(res.json['data']['attributes']['release'], release)
-            assert_not_equal(len(res.json['data']['attributes']['names']), 0)
+            assert (res.json['data']['type']) == ('matlab-product-name-list')
+            assert (res.json['data']['id']) == (release)
+            assert (res.json['data']['attributes']['release']) == (release)
+            assert (len(res.json['data']['attributes']['names'])) != (0)

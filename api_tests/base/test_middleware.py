@@ -2,8 +2,7 @@
 from django.http import HttpResponse
 
 from future.moves.urllib.parse import urlparse
-import mock
-from nose.tools import *  # noqa:
+from unittest import mock
 from rest_framework.test import APIRequestFactory
 from django.test.utils import override_settings
 
@@ -40,7 +39,7 @@ class TestCorsMiddleware(MiddlewareTestCase):
         response = HttpResponse()
         self.middleware.process_request(request)
         self.middleware.process_response(request, response)
-        assert_equal(response['Access-Control-Allow-Origin'], domain.geturl())
+        assert (response['Access-Control-Allow-Origin']) == (domain.geturl())
 
     @override_settings(CORS_ORIGIN_ALLOW_ALL=False)
     def test_preprintproviders_added_to_cors_whitelist(self):
@@ -55,7 +54,7 @@ class TestCorsMiddleware(MiddlewareTestCase):
         response = HttpResponse()
         self.middleware.process_request(request)
         self.middleware.process_response(request, response)
-        assert_equal(response['Access-Control-Allow-Origin'], domain.geturl())
+        assert (response['Access-Control-Allow-Origin']) == (domain.geturl())
 
     @override_settings(CORS_ORIGIN_ALLOW_ALL=False)
     def test_cross_origin_request_with_cookies_does_not_get_cors_headers(self):
@@ -66,7 +65,7 @@ class TestCorsMiddleware(MiddlewareTestCase):
         with mock.patch.object(request, 'COOKIES', True):
             self.middleware.process_request(request)
             self.middleware.process_response(request, response)
-        assert_not_in('Access-Control-Allow-Origin', response)
+        assert ('Access-Control-Allow-Origin') not in (response)
 
     @override_settings(CORS_ORIGIN_ALLOW_ALL=False)
     def test_cross_origin_request_with_Authorization_gets_cors_headers(self):
@@ -80,7 +79,7 @@ class TestCorsMiddleware(MiddlewareTestCase):
         response = HttpResponse()
         self.middleware.process_request(request)
         self.middleware.process_response(request, response)
-        assert_equal(response['Access-Control-Allow-Origin'], domain.geturl())
+        assert (response['Access-Control-Allow-Origin']) == (domain.geturl())
 
     @override_settings(CORS_ORIGIN_ALLOW_ALL=False)
     def test_cross_origin_request_with_Authorization_and_cookie_does_not_get_cors_headers(
@@ -96,7 +95,7 @@ class TestCorsMiddleware(MiddlewareTestCase):
         with mock.patch.object(request, 'COOKIES', True):
             self.middleware.process_request(request)
             self.middleware.process_response(request, response)
-        assert_not_in('Access-Control-Allow-Origin', response)
+        assert ('Access-Control-Allow-Origin') not in (response)
 
     @override_settings(CORS_ORIGIN_ALLOW_ALL=False)
     def test_non_institution_preflight_request_requesting_authorization_header_gets_cors_headers(
@@ -112,4 +111,4 @@ class TestCorsMiddleware(MiddlewareTestCase):
         response = HttpResponse()
         self.middleware.process_request(request)
         self.middleware.process_response(request, response)
-        assert_equal(response['Access-Control-Allow-Origin'], domain.geturl())
+        assert (response['Access-Control-Allow-Origin']) == (domain.geturl())

@@ -2,7 +2,6 @@ import pytz
 import datetime
 from tests.base import OsfTestCase
 from osf_tests.factories import UserFactory, NodeLogFactory
-from nose.tools import *  # PEP8 asserts
 from osf.models import NodeLog
 
 from scripts.analytics.node_log_events import NodeLogEvents
@@ -66,5 +65,5 @@ class TestNodeLogAnalytics(OsfTestCase):
             }
         ]
 
-        assert_equals(expected, self.results)
+        assert (expected) == (self.results)
 

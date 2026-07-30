@@ -1,13 +1,12 @@
 # -*- coding: utf-8 -*-
 import datetime
-import mock
+from unittest import mock
 import os
 import pytz
 import shutil
 from addons.osfstorage import settings as osfstorage_settings
 from api.base import settings as api_settings
 from framework.auth import Auth
-from nose import tools as nt
 from osf.models import RdmUserKey, RdmFileTimestamptokenVerifyResult, Guid
 from osf_tests.factories import ProjectFactory, AuthUserFactory
 from tests.base import ApiTestCase, OsfTestCase
@@ -141,14 +140,14 @@ class TestAddTimestamp(ApiTestCase):
         shutil.rmtree(tmp_dir)
 
         ## check add_timestamp func response
-        nt.assert_equal(ret['verify_result'], 1)
-        nt.assert_equal(ret['verify_result_title'], 'OK')
+        assert (ret['verify_result']) == (1)
+        assert (ret['verify_result_title']) == ('OK')
 
         ## check rdmfiletimestamptokenverifyresult record
         rdmfiletimestamptokenverifyresult = RdmFileTimestamptokenVerifyResult.objects.get(file_id=file_node._id)
         osfuser_id = Guid.objects.get(_id=self.user._id).object_id
-        nt.assert_equal(rdmfiletimestamptokenverifyresult.inspection_result_status, 1)
-        nt.assert_equal(rdmfiletimestamptokenverifyresult.verify_user, osfuser_id)
+        assert (rdmfiletimestamptokenverifyresult.inspection_result_status) == (1)
+        assert (rdmfiletimestamptokenverifyresult.verify_user) == (osfuser_id)
 
     def test_add_timestamp_cjkname(self):
         ## create file_node
@@ -178,14 +177,14 @@ class TestAddTimestamp(ApiTestCase):
         shutil.rmtree(tmp_dir)
 
         ## check add_timestamp func response
-        nt.assert_equal(ret['verify_result'], 1)
-        nt.assert_equal(ret['verify_result_title'], 'OK')
+        assert (ret['verify_result']) == (1)
+        assert (ret['verify_result_title']) == ('OK')
 
         ## check rdmfiletimestamptokenverifyresult record
         rdmfiletimestamptokenverifyresult = RdmFileTimestamptokenVerifyResult.objects.get(file_id=file_node._id)
         osfuser_id = Guid.objects.get(_id=self.user._id).object_id
-        nt.assert_equal(rdmfiletimestamptokenverifyresult.inspection_result_status, 1)
-        nt.assert_equal(rdmfiletimestamptokenverifyresult.verify_user, osfuser_id)
+        assert (rdmfiletimestamptokenverifyresult.inspection_result_status) == (1)
+        assert (rdmfiletimestamptokenverifyresult.verify_user) == (osfuser_id)
 
     def test_add_timestamp_over2G(self):
         ## create file_node
@@ -219,14 +218,14 @@ class TestAddTimestamp(ApiTestCase):
         shutil.rmtree(tmp_dir)
 
         ## check add_timestamp func response
-        nt.assert_equal(ret['verify_result'], 1)
-        nt.assert_equal(ret['verify_result_title'], 'OK')
+        assert (ret['verify_result']) == (1)
+        assert (ret['verify_result_title']) == ('OK')
 
         ## check rdmfiletimestamptokenverifyresult record
         rdmfiletimestamptokenverifyresult = RdmFileTimestamptokenVerifyResult.objects.get(file_id=file_node._id)
         osfuser_id = Guid.objects.get(_id=self.user._id).object_id
-        nt.assert_equal(rdmfiletimestamptokenverifyresult.inspection_result_status, 1)
-        nt.assert_equal(rdmfiletimestamptokenverifyresult.verify_user, osfuser_id)
+        assert (rdmfiletimestamptokenverifyresult.inspection_result_status) == (1)
+        assert (rdmfiletimestamptokenverifyresult.verify_user) == (osfuser_id)
 
 class TestTimeStampTokenVerifyCheck(ApiTestCase):
     def setUp(self):
@@ -309,14 +308,14 @@ class TestTimeStampTokenVerifyCheck(ApiTestCase):
         shutil.rmtree(tmp_dir)
 
         ## check timestamp_check func response
-        nt.assert_equal(ret['verify_result'], 1)
-        nt.assert_equal(ret['verify_result_title'], 'OK')
+        assert (ret['verify_result']) == (1)
+        assert (ret['verify_result_title']) == ('OK')
 
         ## check rdmfiletimestamptokenverifyresult record
         rdmfiletimestamptokenverifyresult = RdmFileTimestamptokenVerifyResult.objects.get(file_id=file_node._id)
         osfuser_id = Guid.objects.get(_id=self.user._id).object_id
-        nt.assert_equal(rdmfiletimestamptokenverifyresult.inspection_result_status, 1)
-        nt.assert_equal(rdmfiletimestamptokenverifyresult.verify_user, osfuser_id)
+        assert (rdmfiletimestamptokenverifyresult.inspection_result_status) == (1)
+        assert (rdmfiletimestamptokenverifyresult.verify_user) == (osfuser_id)
 
     def test_timestamp_check_return_status_2(self):
         """
@@ -377,14 +376,14 @@ class TestTimeStampTokenVerifyCheck(ApiTestCase):
         shutil.rmtree(tmp_dir)
 
         ## check timestamp_check func response
-        nt.assert_equal(ret['verify_result'], api_settings.TIME_STAMP_TOKEN_CHECK_NG)
-        nt.assert_equal(ret['verify_result_title'], api_settings.TIME_STAMP_TOKEN_CHECK_NG_MSG)
+        assert (ret['verify_result']) == (api_settings.TIME_STAMP_TOKEN_CHECK_NG)
+        assert (ret['verify_result_title']) == (api_settings.TIME_STAMP_TOKEN_CHECK_NG_MSG)
 
         ## check rdmfiletimestamptokenverifyresult record
         rdmfiletimestamptokenverifyresult = RdmFileTimestamptokenVerifyResult.objects.get(file_id=file_node._id)
         osfuser_id = Guid.objects.get(_id=self.user._id).object_id
-        nt.assert_equal(rdmfiletimestamptokenverifyresult.inspection_result_status, 2)
-        nt.assert_equal(rdmfiletimestamptokenverifyresult.verify_user, osfuser_id)
+        assert (rdmfiletimestamptokenverifyresult.inspection_result_status) == (2)
+        assert (rdmfiletimestamptokenverifyresult.verify_user) == (osfuser_id)
 
     def test_timestamp_check_return_status_3(self):
         """
@@ -427,14 +426,14 @@ class TestTimeStampTokenVerifyCheck(ApiTestCase):
         shutil.rmtree(tmp_dir)
 
         ## check timestamp_check func response
-        nt.assert_equal(ret['verify_result'], api_settings.TIME_STAMP_TOKEN_CHECK_FILE_NOT_FOUND)
-        nt.assert_equal(ret['verify_result_title'], api_settings.TIME_STAMP_TOKEN_CHECK_FILE_NOT_FOUND_MSG)
+        assert (ret['verify_result']) == (api_settings.TIME_STAMP_TOKEN_CHECK_FILE_NOT_FOUND)
+        assert (ret['verify_result_title']) == (api_settings.TIME_STAMP_TOKEN_CHECK_FILE_NOT_FOUND_MSG)
 
         ## check rdmfiletimestamptokenverifyresult record
         rdmfiletimestamptokenverifyresult = RdmFileTimestamptokenVerifyResult.objects.get(file_id=file_node._id)
         osfuser_id = Guid.objects.get(_id=self.user._id).object_id
-        nt.assert_equal(rdmfiletimestamptokenverifyresult.inspection_result_status, 3)
-        nt.assert_equal(rdmfiletimestamptokenverifyresult.verify_user, osfuser_id)
+        assert (rdmfiletimestamptokenverifyresult.inspection_result_status) == (3)
+        assert (rdmfiletimestamptokenverifyresult.verify_user) == (osfuser_id)
 
     def test_timestamp_check_return_status_4(self):
         """
@@ -477,14 +476,14 @@ class TestTimeStampTokenVerifyCheck(ApiTestCase):
         shutil.rmtree(tmp_dir)
 
         ## check timestamp_check func response
-        nt.assert_equal(ret['verify_result'], api_settings.TIME_STAMP_TOKEN_NO_DATA)
-        nt.assert_equal(ret['verify_result_title'], api_settings.TIME_STAMP_TOKEN_NO_DATA_MSG)
+        assert (ret['verify_result']) == (api_settings.TIME_STAMP_TOKEN_NO_DATA)
+        assert (ret['verify_result_title']) == (api_settings.TIME_STAMP_TOKEN_NO_DATA_MSG)
 
         ## check rdmfiletimestamptokenverifyresult record
         rdmfiletimestamptokenverifyresult = RdmFileTimestamptokenVerifyResult.objects.get(file_id=file_node._id)
         osfuser_id = Guid.objects.get(_id=self.user._id).object_id
-        nt.assert_equal(rdmfiletimestamptokenverifyresult.inspection_result_status, 4)
-        nt.assert_equal(rdmfiletimestamptokenverifyresult.verify_user, osfuser_id)
+        assert (rdmfiletimestamptokenverifyresult.inspection_result_status) == (4)
+        assert (rdmfiletimestamptokenverifyresult.verify_user) == (osfuser_id)
 
     def test_timestamp_check_return_status_5(self):
         """
@@ -526,14 +525,14 @@ class TestTimeStampTokenVerifyCheck(ApiTestCase):
         shutil.rmtree(tmp_dir)
 
         ## check timestamp_check func response
-        nt.assert_equal(ret['verify_result'], api_settings.FILE_NOT_EXISTS)
-        nt.assert_equal(ret['verify_result_title'], api_settings.FILE_NOT_EXISTS_MSG)
+        assert (ret['verify_result']) == (api_settings.FILE_NOT_EXISTS)
+        assert (ret['verify_result_title']) == (api_settings.FILE_NOT_EXISTS_MSG)
 
         ## check rdmfiletimestamptokenverifyresult record
         rdmfiletimestamptokenverifyresult = RdmFileTimestamptokenVerifyResult.objects.get(file_id=file_node._id)
         osfuser_id = Guid.objects.get(_id=self.user._id).object_id
-        nt.assert_equal(rdmfiletimestamptokenverifyresult.inspection_result_status, 5)
-        nt.assert_equal(rdmfiletimestamptokenverifyresult.verify_user, osfuser_id)
+        assert (rdmfiletimestamptokenverifyresult.inspection_result_status) == (5)
+        assert (rdmfiletimestamptokenverifyresult.verify_user) == (osfuser_id)
 
     def test_timestamp_check_return_status_6(self):
         """
@@ -577,14 +576,14 @@ class TestTimeStampTokenVerifyCheck(ApiTestCase):
         shutil.rmtree(tmp_dir)
 
         ## check timestamp_check func response
-        nt.assert_equal(ret['verify_result'], api_settings.FILE_NOT_FOUND)
-        nt.assert_equal(ret['verify_result_title'], api_settings.FILE_NOT_FOUND_MSG)
+        assert (ret['verify_result']) == (api_settings.FILE_NOT_FOUND)
+        assert (ret['verify_result_title']) == (api_settings.FILE_NOT_FOUND_MSG)
 
         ## check rdmfiletimestamptokenverifyresult record
         rdmfiletimestamptokenverifyresult = RdmFileTimestamptokenVerifyResult.objects.get(file_id=file_node._id)
         osfuser_id = Guid.objects.get(_id=self.user._id).object_id
-        nt.assert_equal(rdmfiletimestamptokenverifyresult.inspection_result_status, 6)
-        nt.assert_equal(rdmfiletimestamptokenverifyresult.verify_user, osfuser_id)
+        assert (rdmfiletimestamptokenverifyresult.inspection_result_status) == (6)
+        assert (rdmfiletimestamptokenverifyresult.verify_user) == (osfuser_id)
 
 
 class TestRdmUserKey(OsfTestCase):
@@ -611,20 +610,20 @@ class TestRdmUserKey(OsfTestCase):
 
     def test_userkey_generation_check_return_true(self):
         userkey_generation(self.user._id)
-        nt.assert_true(userkey_generation_check(self.user._id))
+        assert (userkey_generation_check(self.user._id))
 
     def test_userkey_generation_check_return_false(self):
-        nt.assert_false(userkey_generation_check(self.user._id))
+        assert not (userkey_generation_check(self.user._id))
 
     def test_userkey_generation(self):
         osfuser_id = Guid.objects.get(_id=self.user._id).object_id
         userkey_generation(self.user._id)
 
         rdmuserkey_pvt_key = RdmUserKey.objects.filter(guid=osfuser_id, key_kind=api_settings.PRIVATE_KEY_VALUE)
-        nt.assert_equal(rdmuserkey_pvt_key.count(), 1)
+        assert (rdmuserkey_pvt_key.count()) == (1)
 
         rdmuserkey_pub_key = RdmUserKey.objects.filter(guid=osfuser_id, key_kind=api_settings.PUBLIC_KEY_VALUE)
-        nt.assert_equal(rdmuserkey_pub_key.count(), 1)
+        assert (rdmuserkey_pub_key.count()) == (1)
 
 
 class TestOSFAbortableResult(OsfTestCase):
@@ -634,7 +633,7 @@ class TestOSFAbortableResult(OsfTestCase):
         mock_ready.return_value = False
 
         task = OSFAbortableAsyncResult('taskid')
-        nt.assert_false(task.ready())
+        assert not (task.ready())
 
     @mock.patch('website.util.timestamp.logger')
     @mock.patch('celery.contrib.abortable.AbortableAsyncResult.ready')
@@ -643,6 +642,6 @@ class TestOSFAbortableResult(OsfTestCase):
         mock_ready.side_effect = AttributeError(msg)
 
         task = OSFAbortableAsyncResult('taskid')
-        nt.assert_true(task.ready())
+        assert (task.ready())
         mock_logger.error.assert_any_call('Failed to get task status! Exception message:')
         mock_logger.error.assert_any_call(msg)

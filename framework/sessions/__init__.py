@@ -13,6 +13,7 @@ from werkzeug.local import LocalProxy
 
 from framework.flask import redirect
 from framework.sessions.utils import remove_session
+from osf.utils.fields import ensure_str
 from website import settings
 
 
@@ -160,7 +161,9 @@ def before_request():
     cookie = request.cookies.get(settings.COOKIE_NAME)
     if cookie:
         try:
-            session_id = itsdangerous.Signer(settings.SECRET_KEY).unsign(cookie)
+            session_id = ensure_str(
+                itsdangerous.Signer(settings.SECRET_KEY).unsign(cookie)
+            )
             user_session = Session.load(session_id) or Session(_id=session_id)
         except itsdangerous.BadData:
             return

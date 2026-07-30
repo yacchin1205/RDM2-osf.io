@@ -1,6 +1,6 @@
 from http import HTTPStatus
 import json
-import mock
+from unittest import mock
 from unittest.mock import patch
 from django.http import Http404
 from django.urls import reverse

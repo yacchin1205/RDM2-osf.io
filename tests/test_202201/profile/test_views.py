@@ -1,8 +1,7 @@
 from __future__ import absolute_import
 from rest_framework import status as http_status
 import pytest
-import mock
-from nose.tools import *
+from unittest import mock
 from website.profile.views import _profile_view
 from website.util import api_url_for
 from tests.base import OsfTestCase
@@ -44,8 +43,8 @@ class TestUserProfile(OsfTestCase):
         res = self.app.put_json(url, header, auth=user1.auth,
                                 expect_errors=True)
 
-        assert_equal(res.status_code, http_status.HTTP_400_BAD_REQUEST)
-        assert_not_equal(res.json['message_long'], None)
+        assert (res.status_code) == (http_status.HTTP_400_BAD_REQUEST)
+        assert (res.json['message_long']) != (None)
 
     @mock.patch('website.settings.ENABLE_USER_MERGE', False)
     def test_user_update_has_temp_account(self):
@@ -70,10 +69,10 @@ class TestUserProfile(OsfTestCase):
 
         res = self.app.put_json(url, header, auth=user1.auth)
 
-        assert_equal(res.status_code, http_status.HTTP_200_OK)
-        assert_equal(len(res.json['profile']['emails']), 2)
-        assert_equal(res.json['user']['_id'], user1._id)
-        assert_true(res.json['user']['is_profile'])
+        assert (res.status_code) == (http_status.HTTP_200_OK)
+        assert (len(res.json['profile']['emails'])) == (2)
+        assert (res.json['user']['_id']) == (user1._id)
+        assert (res.json['user']['is_profile'])
 
     def test_user_update_temp_user_not_exist(self):
         user1 = AuthUserFactory(fullname='fullname_1')
@@ -93,7 +92,7 @@ class TestUserProfile(OsfTestCase):
 
         res = self.app.put_json(url, header, auth=user1.auth,
                                 expect_errors=True)
-        assert_equal(res.status_code, http_status.HTTP_403_FORBIDDEN)
+        assert (res.status_code) == (http_status.HTTP_403_FORBIDDEN)
 
     def test_profile_view_has_temp_user(self):
         user1 = AuthUserFactory(fullname='fullname_1')
@@ -103,8 +102,7 @@ class TestUserProfile(OsfTestCase):
 
         res = _profile_view(user1, is_profile=True, temp_user=user2)
 
-        assert_equal(res['profile']['id'], user1._id)
-        assert_equal(res['profile']['fullname'], user1.fullname)
-        assert_equal(res['profile']['inactive_profile']['id'], user2._id)
-        assert_equal(res['profile']['inactive_profile']['fullname'],
-                     user2.fullname)
+        assert (res['profile']['id']) == (user1._id)
+        assert (res['profile']['fullname']) == (user1.fullname)
+        assert (res['profile']['inactive_profile']['id']) == (user2._id)
+        assert (res['profile']['inactive_profile']['fullname']) == (user2.fullname)

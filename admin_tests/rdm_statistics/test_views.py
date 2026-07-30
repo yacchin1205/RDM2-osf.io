@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-from nose import tools as nt
 from django.test import RequestFactory
 
 from tests.base import AdminTestCase
@@ -14,7 +13,7 @@ from admin_tests.rdm_statistics import factories as rdm_statistics_factories
 from osf.models.user import Institution
 
 from admin.rdm_statistics import views
-from mock import patch
+from unittest.mock import patch
 
 import datetime
 import tempfile
@@ -50,7 +49,7 @@ class TestInstitutionListViewStat(AdminTestCase):
         self.request.user.is_active = True
         self.request.user.is_registered = True
         self.request.user.is_superuser = True
-        nt.assert_true(self.view.test_func())
+        assert (self.view.test_func())
 
     def test_admin_login(self):
         """test institution administrator login"""
@@ -58,7 +57,7 @@ class TestInstitutionListViewStat(AdminTestCase):
         self.request.user.is_registered = True
         self.request.user.is_superuser = False
         self.request.user.is_staff = True
-        nt.assert_true(self.view.test_func())
+        assert (self.view.test_func())
 
     def test_non_admin_login(self):
         """test user not superuser or institution administrator login"""
@@ -66,7 +65,7 @@ class TestInstitutionListViewStat(AdminTestCase):
         self.request.user.is_registered = True
         self.request.user.is_superuser = False
         self.request.user.is_staff = False
-        nt.assert_equal(self.view.test_func(), False)
+        assert (self.view.test_func()) == (False)
 
     def test_non_active_user_login(self):
         """test invalid user login"""
@@ -74,7 +73,7 @@ class TestInstitutionListViewStat(AdminTestCase):
         self.request.user.is_registered = True
         self.request.user.is_superuser = True
         self.request.user.is_staff = True
-        nt.assert_equal(self.view.test_func(), False)
+        assert (self.view.test_func()) == (False)
 
     def test_non_registered_user_login(self):
         """test unregistered user login"""
@@ -82,7 +81,7 @@ class TestInstitutionListViewStat(AdminTestCase):
         self.request.user.is_registered = False
         self.request.user.is_superuser = True
         self.request.user.is_staff = True
-        nt.assert_equal(self.view.test_func(), False)
+        assert (self.view.test_func()) == (False)
 
     def test_super_admin_get(self, *args, **kwargs):
         """test superuser GET method"""
@@ -91,7 +90,7 @@ class TestInstitutionListViewStat(AdminTestCase):
         self.request.user.is_superuser = True
         self.request.user.is_staff = True
         res = self.view.get(self.request, *args, **kwargs)
-        nt.assert_equal(res.status_code, 200)
+        assert (res.status_code) == (200)
 
     def test_admin_get(self, *args, **kwargs):
         """test institution administrator GET method"""
@@ -101,7 +100,7 @@ class TestInstitutionListViewStat(AdminTestCase):
         self.request.user.is_staff = True
         self.request.user.affiliated_institutions.add(self.institution1)
         res = self.view.get(self.request, *args, **kwargs)
-        nt.assert_equal(res.status_code, 302)
+        assert (res.status_code) == (302)
 
 
 class TestclassStatisticsView(AdminTestCase):
@@ -127,7 +126,7 @@ class TestclassStatisticsView(AdminTestCase):
         self.request.user.is_active = True
         self.request.user.is_registered = True
         self.request.user.is_superuser = True
-        nt.assert_true(self.view.test_func())
+        assert (self.view.test_func())
 
     def test_admin_login(self):
         """test institution administrator login"""
@@ -135,7 +134,7 @@ class TestclassStatisticsView(AdminTestCase):
         self.request.user.is_registered = True
         self.request.user.is_superuser = False
         self.request.user.is_staff = True
-        nt.assert_true(self.view.test_func())
+        assert (self.view.test_func())
 
     def test_non_admin_login(self):
         """test user not superuser or institution administrator login"""
@@ -143,7 +142,7 @@ class TestclassStatisticsView(AdminTestCase):
         self.request.user.is_registered = True
         self.request.user.is_superuser = False
         self.request.user.is_staff = False
-        nt.assert_equal(self.view.test_func(), False)
+        assert (self.view.test_func()) == (False)
 
     def test_non_active_user_login(self):
         """test invalid user login"""
@@ -151,7 +150,7 @@ class TestclassStatisticsView(AdminTestCase):
         self.request.user.is_registered = True
         self.request.user.is_superuser = True
         self.request.user.is_staff = True
-        nt.assert_equal(self.view.test_func(), False)
+        assert (self.view.test_func()) == (False)
 
     def test_non_registered_user_login(self):
         """test unregistered user login"""
@@ -159,7 +158,7 @@ class TestclassStatisticsView(AdminTestCase):
         self.request.user.is_registered = False
         self.request.user.is_superuser = True
         self.request.user.is_staff = True
-        nt.assert_equal(self.view.test_func(), False)
+        assert (self.view.test_func()) == (False)
 
     def test_non_affiliated_institution_user_login(self):
         """test user unaffiliated institution login"""
@@ -168,18 +167,18 @@ class TestclassStatisticsView(AdminTestCase):
         self.request.user.is_superuser = False
         self.request.user.is_staff = True
         self.view.kwargs = {'institution_id': self.institution1.id + 1}
-        nt.assert_equal(self.view.test_func(), False)
+        assert (self.view.test_func()) == (False)
         self.view.kwargs = {'institution_id': self.institution1.id}
 
     def test_get_context_data(self, **kwargs):
         """contextのテスト"""
         ctx = self.view.get_context_data(**self.view.kwargs)
-        nt.assert_is_instance(ctx['institution'], Institution)
-        nt.assert_equal(ctx['institution'].id, self.institution1.id)
-        nt.assert_true('current_date' in ctx)
-        nt.assert_true('user' in ctx)
-        nt.assert_true('provider_data_array' in ctx)
-        nt.assert_true('token' in ctx)
+        assert isinstance((ctx['institution']), (Institution))
+        assert (ctx['institution'].id) == (self.institution1.id)
+        assert ('current_date' in ctx)
+        assert ('user' in ctx)
+        assert ('provider_data_array' in ctx)
+        assert ('token' in ctx)
 
 class TestImageView(AdminTestCase):
     """test ImageView"""
@@ -209,7 +208,7 @@ class TestImageView(AdminTestCase):
         self.request.user.is_active = True
         self.request.user.is_registered = True
         self.request.user.is_superuser = True
-        nt.assert_true(self.view.test_func())
+        assert (self.view.test_func())
 
     def test_admin_login(self):
         """test institution administrator login"""
@@ -217,7 +216,7 @@ class TestImageView(AdminTestCase):
         self.request.user.is_registered = True
         self.request.user.is_superuser = False
         self.request.user.is_staff = True
-        nt.assert_true(self.view.test_func())
+        assert (self.view.test_func())
 
     def test_non_admin_login(self):
         """test user not superuser or institution administrator login"""
@@ -225,7 +224,7 @@ class TestImageView(AdminTestCase):
         self.request.user.is_registered = True
         self.request.user.is_superuser = False
         self.request.user.is_staff = False
-        nt.assert_equal(self.view.test_func(), False)
+        assert (self.view.test_func()) == (False)
 
     def test_non_active_user_login(self):
         """test invalid user login"""
@@ -233,7 +232,7 @@ class TestImageView(AdminTestCase):
         self.request.user.is_registered = True
         self.request.user.is_superuser = True
         self.request.user.is_staff = True
-        nt.assert_equal(self.view.test_func(), False)
+        assert (self.view.test_func()) == (False)
 
     def test_non_registered_user_login(self):
         """test unregistered user login"""
@@ -241,7 +240,7 @@ class TestImageView(AdminTestCase):
         self.request.user.is_registered = False
         self.request.user.is_superuser = True
         self.request.user.is_staff = True
-        nt.assert_equal(self.view.test_func(), False)
+        assert (self.view.test_func()) == (False)
 
     def test_non_affiliated_institution_user_login(self):
         """test user unaffiliated institution login"""
@@ -250,7 +249,7 @@ class TestImageView(AdminTestCase):
         self.request.user.is_superuser = False
         self.request.user.is_staff = True
         self.view.kwargs = {'institution_id': self.institution1.id + 1}
-        nt.assert_equal(self.view.test_func(), False)
+        assert (self.view.test_func()) == (False)
         self.view.kwargs = {'institution_id': self.institution1.id}
 
 class TestSendView(AdminTestCase):
@@ -277,7 +276,7 @@ class TestSendView(AdminTestCase):
         self.request.user.is_active = True
         self.request.user.is_registered = True
         self.request.user.is_superuser = True
-        nt.assert_true(self.view.test_func())
+        assert (self.view.test_func())
 
     def test_admin_login(self):
         """test institution administrator login"""
@@ -285,7 +284,7 @@ class TestSendView(AdminTestCase):
         self.request.user.is_registered = True
         self.request.user.is_superuser = False
         self.request.user.is_staff = True
-        nt.assert_true(self.view.test_func())
+        assert (self.view.test_func())
 
     def test_non_admin_login(self):
         """test user not superuser or institution administrator login"""
@@ -293,7 +292,7 @@ class TestSendView(AdminTestCase):
         self.request.user.is_registered = True
         self.request.user.is_superuser = False
         self.request.user.is_staff = False
-        nt.assert_equal(self.view.test_func(), False)
+        assert (self.view.test_func()) == (False)
 
     def test_non_active_user_login(self):
         """test invalid user login"""
@@ -301,7 +300,7 @@ class TestSendView(AdminTestCase):
         self.request.user.is_registered = True
         self.request.user.is_superuser = True
         self.request.user.is_staff = True
-        nt.assert_equal(self.view.test_func(), False)
+        assert (self.view.test_func()) == (False)
 
     def test_non_registered_user_login(self):
         """test unregistered user login"""
@@ -309,7 +308,7 @@ class TestSendView(AdminTestCase):
         self.request.user.is_registered = False
         self.request.user.is_superuser = True
         self.request.user.is_staff = True
-        nt.assert_equal(self.view.test_func(), False)
+        assert (self.view.test_func()) == (False)
 
     def test_non_affiliated_institution_user_login(self):
         """test user unaffiliated institution login"""
@@ -318,19 +317,19 @@ class TestSendView(AdminTestCase):
         self.request.user.is_superuser = False
         self.request.user.is_staff = True
         self.view.kwargs = {'institution_id': self.institution1.id + 1}
-        nt.assert_equal(self.view.test_func(), False)
+        assert (self.view.test_func()) == (False)
         self.view.kwargs = {'institution_id': self.institution1.id}
 
     def test_valid_get(self, *args, **kwargs):
         """test valid GET method"""
         res = self.view.get(self.request, *args, **self.view.kwargs)
-        nt.assert_equal(res.status_code, 200)
+        assert (res.status_code) == (200)
 
     def test_invalid_get(self, *args, **kwargs):
         """test invalid GET method"""
         self.view.kwargs = {'institution_id': 100}
         res = self.view.get(self.request, *args, **self.view.kwargs)
-        nt.assert_equal(res.status_code, 200)
+        assert (res.status_code) == (200)
 
 class TestCreateCSV(AdminTestCase):
     """test ImageView"""
@@ -352,13 +351,13 @@ class TestCreateCSV(AdminTestCase):
 
 def test_simple_auth():
     access_key_hexa = '2a85563b2b0f7d3168199f475365f57da1d56e4bb2ce2b7044eb058ae5e287637e7c636a772682d92c8d6b1830b9a97c5a5dc3de7016c60bde4baa7cc3b38aeb'
-    nt.assert_true(views.simple_auth(access_key_hexa))
+    assert (views.simple_auth(access_key_hexa))
 
 def test_get_start_date():
     end_date = datetime.datetime.now()
     start_date = end_date - datetime.timedelta(weeks=(10))\
         + datetime.timedelta(days=(1))
-    nt.assert_equal(views.get_start_date(end_date), start_date)
+    assert (views.get_start_date(end_date)) == (start_date)
 
 def create_test_file(node, user, filename='test_file', create_guid=True):
     from addons.osfstorage import settings as osfstorage_settings
@@ -424,14 +423,14 @@ class TestGatherView(AdminTestCase):
     def test_get(self, *args, **kwargs):
         resp = json.loads(self.view.get(self, self.request, self.view.args, self.view.kwargs).content)
         # metadata addon is now enabled by default, so we have 3 providers
-        nt.assert_equal(len(resp), 3)
+        assert (len(resp)) == (3)
 
     def test_send_stat_mail(self, *args, **kwargs):
-        nt.assert_equal(views.send_stat_mail(self.request).status_code, 200)
+        assert (views.send_stat_mail(self.request).status_code) == (200)
 
     def test_send_error_mail(self, *args, **kwargs):
         ret = views.send_error_mail(Exception())
-        nt.assert_equal(ret.status_code, 200)
+        assert (ret.status_code) == (200)
 
     def test_send_email(self):
         to_list = [self.user.username]
@@ -442,12 +441,12 @@ class TestGatherView(AdminTestCase):
             'attach_file': 'XYZ',
             'attach_data': 'abc'
         }
-        nt.assert_equal(views.send_email(to_list=to_list, cc_list=cc_list, data=mail_data,)['is_success'], False)
+        assert (views.send_email(to_list=to_list, cc_list=cc_list, data=mail_data,)['is_success']) == (False)
 
     @patch('admin.rdm_statistics.views.render_to_string', return_value='<h1>My First Heading</h1>', autospec=True)
     @patch('admin.rdm_statistics.views.pdfkit', return_value='41', autospec=True)
     def test_get_pdf_data(self, render_to_string, pdfkit):
-        nt.assert_not_equal(views.get_pdf_data(institution=self.institutions[0]).return_value, '41')
+        assert (views.get_pdf_data(institution=self.institutions[0]).return_value) != ('41')
 
     @patch('admin.rdm_statistics.views.pdfkit')
     @patch('admin.rdm_statistics.views.render_to_string')
@@ -459,19 +458,19 @@ class TestGatherView(AdminTestCase):
         self.request.user.is_registered = True
         self.request.user.is_superuser = True
         result = views.create_pdf(self.request, True, **self.view.kwargs)
-        nt.assert_true(result.status_code, 200)
-        nt.assert_true('.pdf' in result['Content-Disposition'].lower())
+        assert (result.status_code), (200)
+        assert ('.pdf' in result['Content-Disposition'].lower())
 
     def test_create_csv(self, **kwargs):
         self.request.user.is_active = True
         self.request.user.is_registered = True
         self.request.user.is_superuser = True
         result = views.create_csv(self.request, **self.view.kwargs)
-        nt.assert_equal(result.status_code, 200)
-        nt.assert_true('.csv' in result['Content-Disposition'].lower())
+        assert (result.status_code) == (200)
+        assert ('.csv' in result['Content-Disposition'].lower())
 
     def test_get_all_statistic_data_csv(self, **kwargs):
-        nt.assert_is_instance(views.get_all_statistic_data_csv(self.institution1, **self.view.kwargs), type([]))
+        assert isinstance((views.get_all_statistic_data_csv(self.institution1, **self.view.kwargs)), (type([])))
 
     @patch('admin.rdm_statistics.views.requests.Session.get', side_effect=mocked_requests_get)
     def test_get_graphs(self, mock_sessionget):
@@ -488,7 +487,7 @@ class TestGatherView(AdminTestCase):
             graph_type='num',
             provider='osfstorage'
         )
-        nt.assert_equal(result['content-type'], 'image/png')
+        assert (result['content-type']) == ('image/png')
 
         result = views.ImageView.as_view()(
             self.request,
@@ -496,7 +495,7 @@ class TestGatherView(AdminTestCase):
             graph_type='size',
             provider='osfstorage'
         )
-        nt.assert_equal(result['content-type'], 'image/png')
+        assert (result['content-type']) == ('image/png')
 
         result = views.ImageView.as_view()(
             self.request,
@@ -504,4 +503,4 @@ class TestGatherView(AdminTestCase):
             graph_type='ext',
             provider='osfstorage'
         )
-        nt.assert_equal(result['content-type'], 'image/png')
+        assert (result['content-type']) == ('image/png')

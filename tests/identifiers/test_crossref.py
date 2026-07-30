@@ -2,11 +2,10 @@
 from __future__ import unicode_literals
 
 import os
-import mock
+from unittest import mock
 import lxml
 import pytest
 import responses
-from nose.tools import *  # noqa
 
 from website import settings
 from website.identifiers.clients import crossref

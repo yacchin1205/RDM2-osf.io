@@ -2,10 +2,9 @@ from __future__ import unicode_literals
 
 import logging
 
-from django.contrib.postgres.fields import JSONField
 from django.db import migrations, transaction
 from django.apps import apps
-from django.db.models import Func, F, Value
+from django.db.models import F, Func, JSONField, Value
 
 from addons.osfstorage.settings import DEFAULT_REGION_ID
 

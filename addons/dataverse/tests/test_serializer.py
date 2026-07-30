@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
-from nose.tools import *  # noqa
-import mock
+from unittest import mock
 import pytest
 
 
@@ -51,4 +50,4 @@ class TestDataverseSerializer(OAuthAddonSerializerTestSuiteMixin, OsfTestCase):
             'host': ea.oauth_key,
             'host_url': 'https://{0}'.format(ea.oauth_key),
         }
-        assert_equal(self.ser.serialize_account(ea), expected)
+        assert (self.ser.serialize_account(ea)) == (expected)

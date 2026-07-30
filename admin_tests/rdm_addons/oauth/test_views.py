@@ -1,8 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import flask
-import mock
-from nose import tools as nt
+from unittest import mock
 from django.test import RequestFactory
 from django.contrib.sessions.middleware import SessionMiddleware
 
@@ -60,42 +59,42 @@ class TestConnectView(AdminTestCase):
     def test_super_admin_login(self):
         """test superuser login"""
         self.request.user.is_superuser = True
-        nt.assert_true(self.view.test_func())
+        assert (self.view.test_func())
 
     def test_admin_login(self):
         """test institution administrator login"""
         self.request.user.is_superuser = False
         self.request.user.is_staff = True
-        nt.assert_true(self.view.test_func())
+        assert (self.view.test_func())
 
     def test_non_admin_login(self):
         """test user not superuser or institution administrator login"""
         self.request.user.is_superuser = False
         self.request.user.is_staff = False
-        nt.assert_equal(self.view.test_func(), False)
+        assert (self.view.test_func()) == (False)
 
     def test_non_active_user_login(self):
         """test invalid user login"""
         self.request.user.is_active = False
-        nt.assert_equal(self.view.test_func(), False)
+        assert (self.view.test_func()) == (False)
 
     def test_non_registered_user_login(self):
         """test unregistered user login"""
         self.request.user.is_registered = False
-        nt.assert_equal(self.view.test_func(), False)
+        assert (self.view.test_func()) == (False)
 
     def test_non_affiliated_institution_user_login(self):
         """test user unaffiliated institution login"""
         self.request.user.is_superuser = False
         self.request.user.is_staff = True
         self.view.kwargs = {'institution_id': self.institution.id + 1}
-        nt.assert_equal(self.view.test_func(), False)
+        assert (self.view.test_func()) == (False)
 
     def test_get(self, *args, **kwargs):
         self.request.user.is_superuser = False
         self.request.user.is_staff = True
         res = self.view.get(self.request, *args, **self.view.kwargs)
-        nt.assert_equal(res.status_code, 302)
+        assert (res.status_code) == (302)
 
 class TestCallbackView(AdminTestCase):
     def setUp(self):
@@ -151,29 +150,29 @@ class TestCallbackView(AdminTestCase):
     def test_super_admin_login(self):
         """test superuser login"""
         self.request.user.is_superuser = True
-        nt.assert_true(self.view.test_func())
+        assert (self.view.test_func())
 
     def test_admin_login(self):
         """test institution administrator login"""
         self.request.user.is_superuser = False
         self.request.user.is_staff = True
-        nt.assert_true(self.view.test_func())
+        assert (self.view.test_func())
 
     def test_non_admin_login(self):
         """test user not superuser or institution administrator login"""
         self.request.user.is_superuser = False
         self.request.user.is_staff = False
-        nt.assert_equal(self.view.test_func(), False)
+        assert (self.view.test_func()) == (False)
 
     def test_non_active_user_login(self):
         """test invalid user login"""
         self.request.user.is_active = False
-        nt.assert_equal(self.view.test_func(), False)
+        assert (self.view.test_func()) == (False)
 
     def test_non_registered_user_login(self):
         """test unregistered user login"""
         self.request.user.is_registered = False
-        nt.assert_equal(self.view.test_func(), False)
+        assert (self.view.test_func()) == (False)
 
     @mock.patch('osf.models.external.OAuth2Session')
     def test_get(self, mock_oauthsession, *args, **kwargs):
@@ -187,11 +186,11 @@ class TestCallbackView(AdminTestCase):
         self.request.user.is_superuser = False
         self.request.user.is_staff = True
         res = self.view.get(self.request, *args, **self.view.kwargs)
-        nt.assert_equal(res.status_code, 302)
+        assert (res.status_code) == (302)
 
         external_account = ExternalAccountTemporary.objects.last()
-        nt.assert_equal(external_account.oauth_key, '123')
-        nt.assert_equal(external_account.refresh_token, 'myrefreshtoken')
+        assert (external_account.oauth_key) == ('123')
+        assert (external_account.refresh_token) == ('myrefreshtoken')
 
 
 class TestCompleteView(AdminTestCase):
@@ -208,11 +207,11 @@ class TestCompleteView(AdminTestCase):
 
     def test_login(self):
         """login test"""
-        nt.assert_true(self.view.test_func())
+        assert (self.view.test_func())
 
     def test_get_context_data(self, *args, **kwargs):
         res = views.CompleteView.as_view()(self.request)
-        nt.assert_equal(res.status_code, 200)
+        assert (res.status_code) == (200)
 
 
 class TestAccountsView(AdminTestCase):
@@ -254,42 +253,42 @@ class TestAccountsView(AdminTestCase):
     def test_super_admin_login(self):
         """test superuser login"""
         self.request.user.is_superuser = True
-        nt.assert_true(self.view.test_func())
+        assert (self.view.test_func())
 
     def test_admin_login(self):
         """test institution administrator login"""
         self.request.user.is_superuser = False
         self.request.user.is_staff = True
-        nt.assert_true(self.view.test_func())
+        assert (self.view.test_func())
 
     def test_non_admin_login(self):
         """test user not superuser or institution administrator login"""
         self.request.user.is_superuser = False
         self.request.user.is_staff = False
-        nt.assert_equal(self.view.test_func(), False)
+        assert (self.view.test_func()) == (False)
 
     def test_non_active_user_login(self):
         """test invalid user login"""
         self.request.user.is_active = False
-        nt.assert_equal(self.view.test_func(), False)
+        assert (self.view.test_func()) == (False)
 
     def test_non_registered_user_login(self):
         """test unregistered user login"""
         self.request.user.is_registered = False
-        nt.assert_equal(self.view.test_func(), False)
+        assert (self.view.test_func()) == (False)
 
     def test_non_affiliated_institution_user_login(self):
         """test user unaffiliated institution login"""
         self.request.user.is_superuser = False
         self.request.user.is_staff = True
         self.view.kwargs = {'institution_id': self.rdm_addon_option.institution.id + 1}
-        nt.assert_equal(self.view.test_func(), False)
+        assert (self.view.test_func()) == (False)
 
     def test_delete(self, *args, **kwargs):
         self.request.user.is_superuser = False
         self.request.user.is_staff = True
-        nt.assert_equal(self.user.external_accounts.count(), 1)
-        nt.assert_equal(self.rdm_addon_option.external_accounts.count(), 1)
+        assert (self.user.external_accounts.count()) == (1)
+        assert (self.rdm_addon_option.external_accounts.count()) == (1)
 
 
 '''

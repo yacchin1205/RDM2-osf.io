@@ -1,15 +1,10 @@
-from __future__ import unicode_literals
-
 import logging
 import inspect
 from functools import wraps
 
-from raven import Client
-
-from website import settings
+from framework import sentry
 
 logger = logging.getLogger(__name__)
-sentry = Client(dsn=settings.SENTRY_DSN, release=settings.VERSION, tags={'App': 'celery'})
 
 # statuses
 FAILED = 'failed'
@@ -19,9 +14,7 @@ COMPLETED = 'completed'
 
 
 def log_to_sentry(message, **kwargs):
-    if not settings.SENTRY_DSN:
-        return logger.warn('send_to_raven called with no SENTRY_DSN')
-    return sentry.captureMessage(message, extra=kwargs)
+    return sentry.log_message(message, extra_data=kwargs)
 
 # Use _index here as to not clutter the namespace for kwargs
 def dispatch(_event, status, _index=None, **kwargs):
@@ -40,8 +33,7 @@ def logged(event, index=None):
             try:
                 res = func(*args, **kwargs)
             except Exception as e:
-                if settings.SENTRY_DSN:
-                    sentry.captureException()
+                sentry.log_exception(e)
                 dispatch(event, FAILED, _index=index, exception=e, **context)
                 raise
             else:
@@ -52,14 +44,14 @@ def logged(event, index=None):
 
 
 def extract_context(func, *args, **kwargs):
-    arginfo = inspect.getargspec(func)
+    arginfo = inspect.getfullargspec(func)
     arg_names = arginfo.args
     defaults = {
         arg_names.pop(-1): kwarg
         for kwarg in (arginfo.defaults or [])
     }
 
-    computed_args = zip(arg_names, args)
+    computed_args = list(zip(arg_names, args))
     if arginfo.varargs:
         computed_args.append(('args', list(args[len(arg_names):])))
 

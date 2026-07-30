@@ -1096,14 +1096,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
                 user_id=self._id,
                 username=self.username
             )
-        except mailchimp_utils.mailchimp.ListNotSubscribedError:
-            pass
-        except mailchimp_utils.mailchimp.InvalidApiKeyError:
-            if not website_settings.ENABLE_EMAIL_SUBSCRIPTIONS:
-                pass
-            else:
-                raise
-        except mailchimp_utils.mailchimp.EmailNotExistsError:
+        except mailchimp_utils.OSFError:
             pass
         # Call to `unsubscribe` above saves, and can lead to stale data
         self.reload()
@@ -2144,7 +2137,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
     class Meta:
         # custom permissions for use in the GakuNin RDM Admin App
         permissions = (
-            ('view_osfuser', 'Can view user details'),
+            # 'view_osfuser' is a built-in Django permission.
         )
 
 @receiver(post_save, sender=OSFUser)

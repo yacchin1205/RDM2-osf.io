@@ -5,7 +5,6 @@ from __future__ import unicode_literals
 import logging
 
 from django.db import migrations, models
-from django.apps import apps
 
 from addons.osfstorage.settings import DEFAULT_REGION_ID, DEFAULT_REGION_NAME
 
@@ -14,17 +13,17 @@ logger = logging.getLogger(__name__)
 BATCHSIZE = 5000
 
 
-def add_regions_to_existing_versions(*args, **kwargs):
-    Region = apps.get_model('addons_osfstorage.region')
-    FileVersion = apps.get_model('osf.fileversion')
+def add_regions_to_existing_versions(apps, schema_editor):
+    Region = apps.get_model('addons_osfstorage', 'Region')
+    FileVersion = apps.get_model('osf', 'FileVersion')
     default_region = Region.objects.get(
         _id=DEFAULT_REGION_ID,
         name=DEFAULT_REGION_NAME,
     )
-    max_pk = FileVersion.objects.aggregate(models.Max('pk'))['pk__max']
+    max_pk = FileVersion.includable_objects.aggregate(models.Max('pk'))['pk__max']
     if max_pk is not None:
         for offset in range(0, max_pk + 1, BATCHSIZE):
-            (FileVersion.objects
+            (FileVersion.includable_objects
                 .filter(pk__gte=offset)
                 .filter(pk__lt=offset + BATCHSIZE)
                 .filter(basefilenode__provider='osfstorage')
@@ -38,7 +37,7 @@ def add_regions_to_existing_versions(*args, **kwargs):
                 )
             )
 
-def remove_regions_from_versions(*args, **kwargs):
+def remove_regions_from_versions(apps, schema_editor):
     # Reverse migration will remove fk field, no need to reset manually
     pass
 
@@ -48,6 +47,7 @@ class Migration(migrations.Migration):
     atomic = False
 
     dependencies = [
+        ('addons_osfstorage', '0005_region_mfr_url'),
         ('osf', '0130_fileversion_region'),
     ]
 

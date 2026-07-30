@@ -1,10 +1,9 @@
 import pytest
 import json
-import mock
+from unittest import mock
 from io import StringIO
 
 import responses
-from nose import tools as nt
 from django.test import RequestFactory
 from django.core.files.uploadedfile import InMemoryUploadedFile
 from scripts.update_taxonomies import update_taxonomies
@@ -111,8 +110,8 @@ class TestPreprintProviderChangeForm(AdminTestCase):
     def test_get_context_data(self):
         self.view.object = self.preprint_provider
         res = self.view.get_context_data()
-        nt.assert_is_instance(res, dict)
-        nt.assert_is_instance(res['import_form'], ImportFileForm)
+        assert isinstance((res), (dict))
+        assert isinstance((res['import_form']), (ImportFileForm))
 
     def test_preprint_provider_form(self):
         formatted_rule = [[[self.parent_1._id], True]]
@@ -130,11 +129,11 @@ class TestPreprintProviderChangeForm(AdminTestCase):
             'preprint_word': 'preprint'
         }
         form = PreprintProviderForm(data=new_data)
-        nt.assert_true(form.is_valid())
+        assert (form.is_valid())
 
         new_provider = form.save()
-        nt.assert_equal(new_provider.name, new_data['name'])
-        nt.assert_equal(new_provider.subjects_acceptable, formatted_rule)
+        assert (new_provider.name) == (new_data['name'])
+        assert (new_provider.subjects_acceptable) == (formatted_rule)
 
     def test_html_fields_are_stripped(self):
         new_data = {
@@ -158,13 +157,13 @@ class TestPreprintProviderChangeForm(AdminTestCase):
         stripped_footer_links = '<p>Xiv: Support | </p>Contact | <a href=""><span class="fa fa-facebook"></span></a><p></p>'
 
         form = PreprintProviderForm(data=new_data)
-        nt.assert_true(form.is_valid())
+        assert (form.is_valid())
 
         new_provider = form.save()
-        nt.assert_equal(new_provider.name, new_data['name'])
-        nt.assert_equal(new_provider.description, stripped_description)
-        nt.assert_equal(new_provider.footer_links, stripped_footer_links)
-        nt.assert_equal(new_provider.advisory_board, stripped_advisory_board)
+        assert (new_provider.name) == (new_data['name'])
+        assert (new_provider.description) == (stripped_description)
+        assert (new_provider.footer_links) == (stripped_footer_links)
+        assert (new_provider.advisory_board) == (stripped_advisory_board)
 
 
 @pytest.mark.enable_implicit_clean
@@ -191,15 +190,15 @@ class TestPreprintProviderExportImport(AdminTestCase):
     def test_post(self):
         res = self.view.get(self.request)
         content_dict = json.loads(res.content)
-        nt.assert_equal(content_dict['fields']['type'], 'osf.preprintprovider')
-        nt.assert_equal(content_dict['fields']['name'], self.preprint_provider.name)
-        nt.assert_equal(res.__getitem__('content-type'), 'text/json')
+        assert (content_dict['fields']['type']) == ('osf.preprintprovider')
+        assert (content_dict['fields']['name']) == (self.preprint_provider.name)
+        assert (res.__getitem__('content-type')) == ('text/json')
 
     def test_certain_fields_not_included(self):
         res = self.view.get(self.request)
         content_dict = json.loads(res.content)
         for field in views.FIELDS_TO_NOT_IMPORT_EXPORT:
-            nt.assert_not_in(field, content_dict['fields'].keys())
+            assert (field) not in (content_dict['fields'].keys())
 
     def test_export_to_import_new_provider(self):
         update_taxonomies('test_bepress_taxonomy.json')
@@ -217,13 +216,13 @@ class TestPreprintProviderExportImport(AdminTestCase):
         provider_id = ''.join([i for i in res.url if i.isdigit()])
         new_provider = PreprintProvider.objects.get(id=provider_id)
 
-        nt.assert_equal(res.status_code, 302)
-        nt.assert_equal(new_provider._id, 'new_id')
-        nt.assert_equal(new_provider.name, 'Awesome New Name')
-        nt.assert_equal(new_provider.subjects.all().count(), 1)
-        nt.assert_equal(new_provider.licenses_acceptable.all().count(), 1)
-        nt.assert_equal(new_provider.subjects.all()[0].text, self.subject.text)
-        nt.assert_equal(new_provider.licenses_acceptable.all()[0].license_id, 'NONE')
+        assert (res.status_code) == (302)
+        assert (new_provider._id) == ('new_id')
+        assert (new_provider.name) == ('Awesome New Name')
+        assert (new_provider.subjects.all().count()) == (1)
+        assert (new_provider.licenses_acceptable.all().count()) == (1)
+        assert (new_provider.subjects.all()[0].text) == (self.subject.text)
+        assert (new_provider.licenses_acceptable.all()[0].license_id) == ('NONE')
 
     def test_export_to_import_new_provider_with_models_out_of_sync(self):
         update_taxonomies('test_bepress_taxonomy.json')
@@ -244,9 +243,9 @@ class TestPreprintProviderExportImport(AdminTestCase):
         provider_id = ''.join([i for i in res.url if i.isdigit()])
         new_provider = PreprintProvider.objects.get(id=provider_id)
 
-        nt.assert_equal(res.status_code, 302)
-        nt.assert_equal(new_provider._id, 'new_id')
-        nt.assert_equal(new_provider.name, 'Awesome New Name')
+        assert (res.status_code) == (302)
+        assert (new_provider._id) == ('new_id')
+        assert (new_provider.name) == ('Awesome New Name')
 
     def test_update_provider_existing_subjects(self):
         # If there are existing subjects for a provider, imported subjects are ignored
@@ -272,12 +271,12 @@ class TestPreprintProviderExportImport(AdminTestCase):
 
         new_provider_id = int(''.join([i for i in res.url if i.isdigit()]))
 
-        nt.assert_equal(res.status_code, 302)
-        nt.assert_equal(new_provider_id, self.preprint_provider.id)
-        nt.assert_equal(self.preprint_provider.subjects.all().count(), 1)
-        nt.assert_equal(self.preprint_provider.licenses_acceptable.all().count(), 1)
-        nt.assert_equal(self.preprint_provider.subjects.all()[0].text, self.subject.text)
-        nt.assert_equal(self.preprint_provider.licenses_acceptable.all()[0].license_id, 'CCBY')
+        assert (res.status_code) == (302)
+        assert (new_provider_id) == (self.preprint_provider.id)
+        assert (self.preprint_provider.subjects.all().count()) == (1)
+        assert (self.preprint_provider.licenses_acceptable.all().count()) == (1)
+        assert (self.preprint_provider.subjects.all()[0].text) == (self.subject.text)
+        assert (self.preprint_provider.licenses_acceptable.all()[0].license_id) == ('CCBY')
 
 
 class TestPreprintProviderList(ProviderListMixinBase):

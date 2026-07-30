@@ -452,7 +452,7 @@
         </div>
         <div class="m-b-sm">
           <p class="wiki-editor-modal-label">${_("Image Size:")}</p>
-          <input id="imageWidth"  data-bind="textInput: imageWidthInput" class="form-control wiki-editor-modal-input" type="text" placeholder="${_('Enter image size (e.g., 300 for pixels, or 50% for percentage)')}" style="font-size:10px">
+          <input id="imageWidth"  data-bind="textInput: imageWidthInput" class="form-control wiki-editor-modal-input" type="text" placeholder="${_('Enter image size (e.g., 300 for pixels, or 50% as a percentage)')}" style="font-size:10px">
           <div id="sizeError" class="text-danger" style="display: none;" data-bind="visible: showSizeError">${_("Invalid size format. Use pixels or percentage.")}</div>
         </div>
       </div>

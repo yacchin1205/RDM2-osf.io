@@ -1,5 +1,5 @@
 import time
-import collections
+from collections.abc import Mapping
 from django.core.exceptions import ImproperlyConfigured
 from rest_framework.parsers import JSONParser
 from rest_framework.exceptions import ParseError, NotAuthenticated
@@ -130,7 +130,7 @@ class JSONAPIParser(JSONParser):
                 return data_collection
 
             else:
-                if not isinstance(data, collections.Mapping):
+                if not isinstance(data, Mapping):
                     raise ParseError('Expected a dictionary of items.')
                 return self.flatten_data(data, parser_context, is_list=False)
 

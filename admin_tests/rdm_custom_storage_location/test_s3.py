@@ -1,8 +1,7 @@
 from django.test import RequestFactory
 from rest_framework import status as http_status
 import json
-import mock
-from nose import tools as nt
+from unittest import mock
 
 from addons.osfstorage.models import Region
 from admin.rdm_custom_storage_location import views
@@ -40,8 +39,8 @@ class TestConnection(AdminTestCase):
             's3_bucket': '',
         }
         request_post_response = self.view_post(params)
-        nt.assert_equals(request_post_response.status_code, http_status.HTTP_400_BAD_REQUEST)
-        nt.assert_in('Provider is missing.', request_post_response.content.decode())
+        assert (request_post_response.status_code) == (http_status.HTTP_400_BAD_REQUEST)
+        assert ('Provider is missing.') in (request_post_response.content.decode())
 
     def test_empty_keys(self):
         params = {
@@ -51,8 +50,8 @@ class TestConnection(AdminTestCase):
             'provider_short_name': '',
         }
         request_post_response = self.view_post(params)
-        nt.assert_equals(request_post_response.status_code, http_status.HTTP_400_BAD_REQUEST)
-        nt.assert_in('Provider is missing.', request_post_response.content.decode())
+        assert (request_post_response.status_code) == (http_status.HTTP_400_BAD_REQUEST)
+        assert ('Provider is missing.') in (request_post_response.content.decode())
 
     def test_invalid_provider(self):
         params = {
@@ -62,8 +61,8 @@ class TestConnection(AdminTestCase):
             'provider_short_name': 'invalidprovider',
         }
         request_post_response = self.view_post(params)
-        nt.assert_equals(request_post_response.status_code, http_status.HTTP_400_BAD_REQUEST)
-        nt.assert_in('Invalid provider.', request_post_response.content.decode())
+        assert (request_post_response.status_code) == (http_status.HTTP_400_BAD_REQUEST)
+        assert ('Invalid provider.') in (request_post_response.content.decode())
 
     def test_empty_keys_with_provider(self):
         params = {
@@ -73,8 +72,8 @@ class TestConnection(AdminTestCase):
             'provider_short_name': 's3',
         }
         request_post_response = self.view_post(params)
-        nt.assert_equals(request_post_response.status_code, http_status.HTTP_400_BAD_REQUEST)
-        nt.assert_in('All the fields above are required.', request_post_response.content.decode())
+        assert (request_post_response.status_code) == (http_status.HTTP_400_BAD_REQUEST)
+        assert ('All the fields above are required.') in (request_post_response.content.decode())
 
     def test_empty_access_key(self):
         params = {
@@ -84,8 +83,8 @@ class TestConnection(AdminTestCase):
             'provider_short_name': 's3',
         }
         request_post_response = self.view_post(params)
-        nt.assert_equals(request_post_response.status_code, http_status.HTTP_400_BAD_REQUEST)
-        nt.assert_in('All the fields above are required.', request_post_response.content.decode())
+        assert (request_post_response.status_code) == (http_status.HTTP_400_BAD_REQUEST)
+        assert ('All the fields above are required.') in (request_post_response.content.decode())
 
     def test_empty_secret_key(self):
         params = {
@@ -95,8 +94,8 @@ class TestConnection(AdminTestCase):
             'provider_short_name': 's3',
         }
         request_post_response = self.view_post(params)
-        nt.assert_equals(request_post_response.status_code, http_status.HTTP_400_BAD_REQUEST)
-        nt.assert_in('All the fields above are required.', request_post_response.content.decode())
+        assert (request_post_response.status_code) == (http_status.HTTP_400_BAD_REQUEST)
+        assert ('All the fields above are required.') in (request_post_response.content.decode())
 
     def test_empty_bucket(self):
         params = {
@@ -106,8 +105,8 @@ class TestConnection(AdminTestCase):
             'provider_short_name': 's3',
         }
         request_post_response = self.view_post(params)
-        nt.assert_equals(request_post_response.status_code, http_status.HTTP_400_BAD_REQUEST)
-        nt.assert_in('All the fields above are required.', request_post_response.content.decode())
+        assert (request_post_response.status_code) == (http_status.HTTP_400_BAD_REQUEST)
+        assert ('All the fields above are required.') in (request_post_response.content.decode())
 
     @mock.patch('addons.s3.views.utils.can_list', return_value=False)
     @mock.patch('addons.s3.views.utils.get_user_info', return_value=True)
@@ -119,8 +118,8 @@ class TestConnection(AdminTestCase):
             'provider_short_name': 's3',
         }
         request_post_response = self.view_post(params)
-        nt.assert_equals(request_post_response.status_code, http_status.HTTP_400_BAD_REQUEST)
-        nt.assert_in('Unable to list buckets.', request_post_response.content.decode())
+        assert (request_post_response.status_code) == (http_status.HTTP_400_BAD_REQUEST)
+        assert ('Unable to list buckets.') in (request_post_response.content.decode())
 
     @mock.patch('addons.s3.views.utils.bucket_exists', return_value=False)
     @mock.patch('addons.s3.views.utils.can_list', return_value=True)
@@ -133,8 +132,8 @@ class TestConnection(AdminTestCase):
             'provider_short_name': 's3',
         }
         request_post_response = self.view_post(params)
-        nt.assert_equals(request_post_response.status_code, http_status.HTTP_400_BAD_REQUEST)
-        nt.assert_in('Invalid bucket', request_post_response.content.decode())
+        assert (request_post_response.status_code) == (http_status.HTTP_400_BAD_REQUEST)
+        assert ('Invalid bucket') in (request_post_response.content.decode())
 
     @mock.patch('addons.s3.views.utils.bucket_exists', return_value=True)
     @mock.patch('addons.s3.views.utils.can_list', return_value=True)
@@ -151,8 +150,8 @@ class TestConnection(AdminTestCase):
             'provider_short_name': 's3',
         }
         request_post_response = self.view_post(params)
-        nt.assert_equals(request_post_response.status_code, http_status.HTTP_200_OK)
-        nt.assert_in('Credentials are valid', request_post_response.content.decode())
+        assert (request_post_response.status_code) == (http_status.HTTP_200_OK)
+        assert ('Credentials are valid') in (request_post_response.content.decode())
 
     @mock.patch('addons.s3.views.utils.get_user_info', return_value=None)
     def test_invalid_credentials(self, mock_uid):
@@ -163,10 +162,10 @@ class TestConnection(AdminTestCase):
             'provider_short_name': 's3',
         }
         request_post_response = self.view_post(params)
-        nt.assert_equals(request_post_response.status_code, http_status.HTTP_400_BAD_REQUEST)
-        nt.assert_in('Unable to access account.\\n'
+        assert (request_post_response.status_code) == (http_status.HTTP_400_BAD_REQUEST)
+        assert ('Unable to access account.\\n'
                 'Check to make sure that the above credentials are valid,'
-                'and that they have permission to list buckets.', request_post_response.content.decode())
+                'and that they have permission to list buckets.') in (request_post_response.content.decode())
 
 
 class TestSaveCredentials(AdminTestCase):
@@ -198,8 +197,8 @@ class TestSaveCredentials(AdminTestCase):
             's3_server_side_encryption': 'False',
         })
 
-        nt.assert_equals(response.status_code, http_status.HTTP_400_BAD_REQUEST)
-        nt.assert_in('Provider is missing.', response.content.decode())
+        assert (response.status_code) == (http_status.HTTP_400_BAD_REQUEST)
+        assert ('Provider is missing.') in (response.content.decode())
 
     def test_invalid_provider(self):
         response = self.view_post({
@@ -211,8 +210,8 @@ class TestSaveCredentials(AdminTestCase):
             'provider_short_name': 'invalidprovider',
         })
 
-        nt.assert_equals(response.status_code, http_status.HTTP_400_BAD_REQUEST)
-        nt.assert_in('Invalid provider.', response.content.decode())
+        assert (response.status_code) == (http_status.HTTP_400_BAD_REQUEST)
+        assert ('Invalid provider.') in (response.content.decode())
 
     @mock.patch('admin.rdm_custom_storage_location.utils.test_s3_connection')
     def test_success(self, mock_testconnection):
@@ -226,20 +225,20 @@ class TestSaveCredentials(AdminTestCase):
             'provider_short_name': 's3',
         })
 
-        nt.assert_equals(response.status_code, http_status.HTTP_200_OK)
-        nt.assert_in('Saved credentials successfully!!', response.content.decode())
+        assert (response.status_code) == (http_status.HTTP_200_OK)
+        assert ('Saved credentials successfully!!') in (response.content.decode())
 
         institution_storage = Region.objects.filter(_id=self.institution._id).first()
-        nt.assert_is_not_none(institution_storage)
-        nt.assert_equals(institution_storage.name, 'My storage')
+        assert (institution_storage) is not None
+        assert (institution_storage.name) == ('My storage')
 
         wb_credentials = institution_storage.waterbutler_credentials
-        nt.assert_equals(wb_credentials['storage']['access_key'], 'Non-empty-access-key')
-        nt.assert_equals(wb_credentials['storage']['secret_key'], 'Non-empty-secret-key')
+        assert (wb_credentials['storage']['access_key']) == ('Non-empty-access-key')
+        assert (wb_credentials['storage']['secret_key']) == ('Non-empty-secret-key')
 
         wb_settings = institution_storage.waterbutler_settings
-        nt.assert_equals(wb_settings['storage']['provider'], 's3')
-        nt.assert_equals(wb_settings['storage']['bucket'], 'Cute bucket')
+        assert (wb_settings['storage']['provider']) == ('s3')
+        assert (wb_settings['storage']['bucket']) == ('Cute bucket')
 
     @mock.patch('admin.rdm_custom_storage_location.utils.test_s3_connection')
     def test_invalid_credentials(self, mock_testconnection):
@@ -254,9 +253,9 @@ class TestSaveCredentials(AdminTestCase):
             'provider_short_name': 's3',
         })
 
-        nt.assert_equals(response.status_code, http_status.HTTP_400_BAD_REQUEST)
-        nt.assert_in('NG', response.content.decode())
-        nt.assert_false(Region.objects.filter(_id=self.institution._id).exists())
+        assert (response.status_code) == (http_status.HTTP_400_BAD_REQUEST)
+        assert ('NG') in (response.content.decode())
+        assert not (Region.objects.filter(_id=self.institution._id).exists())
 
     @mock.patch('admin.rdm_custom_storage_location.utils.test_s3_connection')
     def test_success_superuser(self, mock_testconnection):
@@ -273,17 +272,17 @@ class TestSaveCredentials(AdminTestCase):
             'provider_short_name': 's3',
         })
 
-        nt.assert_equals(response.status_code, http_status.HTTP_200_OK)
-        nt.assert_in('Saved credentials successfully!!', response.content.decode())
+        assert (response.status_code) == (http_status.HTTP_200_OK)
+        assert ('Saved credentials successfully!!') in (response.content.decode())
 
         institution_storage = Region.objects.filter(_id=self.institution._id).first()
-        nt.assert_is_not_none(institution_storage)
-        nt.assert_equals(institution_storage.name, 'My storage')
+        assert (institution_storage) is not None
+        assert (institution_storage.name) == ('My storage')
 
         wb_credentials = institution_storage.waterbutler_credentials
-        nt.assert_equals(wb_credentials['storage']['access_key'], 'Non-empty-access-key')
-        nt.assert_equals(wb_credentials['storage']['secret_key'], 'Non-empty-secret-key')
+        assert (wb_credentials['storage']['access_key']) == ('Non-empty-access-key')
+        assert (wb_credentials['storage']['secret_key']) == ('Non-empty-secret-key')
 
         wb_settings = institution_storage.waterbutler_settings
-        nt.assert_equals(wb_settings['storage']['provider'], 's3')
-        nt.assert_equals(wb_settings['storage']['bucket'], 'Cute bucket')
+        assert (wb_settings['storage']['provider']) == ('s3')
+        assert (wb_settings['storage']['bucket']) == ('Cute bucket')

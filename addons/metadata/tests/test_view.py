@@ -1,8 +1,7 @@
 # -*- coding: utf-8 -*-
 from rest_framework import status as http_status
 
-import mock
-from nose.tools import *  # noqa
+from unittest import mock
 
 from framework.auth import Auth
 from osf.models import BaseFileNode
@@ -32,16 +31,16 @@ class TestViews(BaseAddonTestCase, OsfTestCase):
     def test_no_file_metadata(self):
         url = self.project.api_url_for('{}_get_project'.format(SHORT_NAME))
         res = self.app.get(url, auth=self.user.auth)
-        assert_true('data' in res.json)
-        assert_equals(res.json['data']['type'], 'metadata-node-project')
-        assert_equals(res.json['data']['id'], self.node_settings.owner._id)
-        assert_true('attributes' in res.json['data'])
-        assert_equals(res.json['data']['attributes']['editable'], True)
-        assert_true('features' in res.json['data']['attributes'])
-        assert_true('dataset_importing' in res.json['data']['attributes']['features'])
-        assert_true('exporting' in res.json['data']['attributes']['features'])
-        assert_equals(res.json['data']['attributes']['files'], [])
-        assert_equals(res.json['data']['attributes']['repositories'], [])
+        assert ('data' in res.json)
+        assert (res.json['data']['type']) == ('metadata-node-project')
+        assert (res.json['data']['id']) == (self.node_settings.owner._id)
+        assert ('attributes' in res.json['data'])
+        assert (res.json['data']['attributes']['editable']) == (True)
+        assert ('features' in res.json['data']['attributes'])
+        assert ('dataset_importing' in res.json['data']['attributes']['features'])
+        assert ('exporting' in res.json['data']['attributes']['features'])
+        assert (res.json['data']['attributes']['files']) == ([])
+        assert (res.json['data']['attributes']['repositories']) == ([])
 
     def test_single_file_metadata(self):
         self.node_settings.set_file_metadata('osfstorage/', {
@@ -61,7 +60,7 @@ class TestViews(BaseAddonTestCase, OsfTestCase):
         self.node_settings.save()
         url = self.project.api_url_for('{}_get_project'.format(SHORT_NAME))
         res = self.app.get(url, auth=self.user.auth)
-        assert_equals(res.json['data']['attributes']['files'], [
+        assert (res.json['data']['attributes']['files']) == ([
             {
                 'path': 'osfstorage/',
                 'generated': False,
@@ -102,7 +101,7 @@ class TestSuggestionsViews(BaseAddonTestCase, OsfTestCase):
         url = self.project.api_url_for('{}_file_metadata_suggestions'.format(SHORT_NAME),
                                        filepath='fake')
         res = self.app.get(url, auth=self.user.auth, expect_errors=True)
-        assert_equals(res.status_code, http_status.HTTP_400_BAD_REQUEST)
+        assert (res.status_code) == (http_status.HTTP_400_BAD_REQUEST)
 
     @mock.patch('addons.metadata.settings.KAKEN_ELASTIC_URI', 'http://localhost:9200')
     @mock.patch('addons.metadata.suggestions.kaken.suggest.KakenElasticsearchService')
@@ -171,7 +170,7 @@ class TestSuggestionsViews(BaseAddonTestCase, OsfTestCase):
         # Call combined suggestions endpoint (no keyword filter)
         url = self.project.api_url_for('{}_file_metadata_suggestions'.format(SHORT_NAME), filepath='dir/osfstorage/dir1/')
         res = self.app.get(url, auth=self.user.auth, params={'key[]': ['erad:kenkyusha_no', 'kaken:kenkyusha_shimei'], 'keyword': ''})
-        assert_equals(res.status_code, http_status.HTTP_200_OK)
+        assert (res.status_code) == (http_status.HTTP_200_OK)
 
         suggestions = res.json['data']['attributes']['suggestions']
         keys = [s['key'] for s in suggestions]
@@ -181,11 +180,11 @@ class TestSuggestionsViews(BaseAddonTestCase, OsfTestCase):
         # Order by contributor (self first), then year desc, then key order for ties.
         # Self has ERAD(2020, inst_ja present) and KAKEN(2020, inst_ja empty) -> both kept, ERAD first by key order.
         # Collaborator has ERAD(2019) and KAKEN(2021) -> both kept, KAKEN first by year.
-        assert_equal(len(suggestions), 4)
-        assert_equal(owners[:2], [self.user.erad, self.user.erad])
-        assert_equal(keys[:2], ['erad:kenkyusha_no', 'kaken:kenkyusha_shimei'])
-        assert_equal(owners[2:], [collab.erad, collab.erad])
-        assert_equal(keys[2:], ['kaken:kenkyusha_shimei', 'erad:kenkyusha_no'])
+        assert (len(suggestions)) == (4)
+        assert (owners[:2]) == ([self.user.erad, self.user.erad])
+        assert (keys[:2]) == (['erad:kenkyusha_no', 'kaken:kenkyusha_shimei'])
+        assert (owners[2:]) == ([collab.erad, collab.erad])
+        assert (keys[2:]) == (['kaken:kenkyusha_shimei', 'erad:kenkyusha_no'])
 
     @mock.patch.object(NodeSettings, 'get_metadata_assets')
     def test_dir_with_multiple_keys(self, mock_get_metadata_assets):
@@ -193,8 +192,8 @@ class TestSuggestionsViews(BaseAddonTestCase, OsfTestCase):
         url = self.project.api_url_for('{}_file_metadata_suggestions'.format(SHORT_NAME),
                                        filepath='dir/osfstorage/dir1/')
         res = self.app.get(url, auth=self.user.auth, params={'key[]': ['file-data-number', 'asset:title']})
-        assert_equals(res.status_code, http_status.HTTP_200_OK)
-        assert_equals(res.json, {
+        assert (res.status_code) == (http_status.HTTP_200_OK)
+        assert (res.json) == ({
             'data': {
                 'id': self.project._id,
                 'type': 'file-metadata-suggestion',
@@ -241,8 +240,8 @@ class TestSuggestionsViews(BaseAddonTestCase, OsfTestCase):
             url = self.project.api_url_for('{}_file_metadata_suggestions'.format(SHORT_NAME),
                                            filepath=filepath)
             res = self.app.get(url, auth=self.user.auth, params={'key[]': ['file-data-number', 'asset:title']})
-            assert_equals(res.status_code, http_status.HTTP_200_OK)
-            assert_equals(res.json, {
+            assert (res.status_code) == (http_status.HTTP_200_OK)
+            assert (res.json) == ({
                 'data': {
                     'id': self.project._id,
                     'type': 'file-metadata-suggestion',
@@ -283,8 +282,8 @@ class TestSuggestionsViews(BaseAddonTestCase, OsfTestCase):
         url = self.project.api_url_for('{}_file_metadata_suggestions'.format(SHORT_NAME),
                                        filepath=filepath)
         res = self.app.get(url, params={'key': 'asset:title', 'keyword': 'app'}, auth=self.user.auth)
-        assert_equals(res.status_code, http_status.HTTP_200_OK)
-        assert_equals(res.json, {
+        assert (res.status_code) == (http_status.HTTP_200_OK)
+        assert (res.json) == ({
             'data': {
                 'id': self.project._id,
                 'type': 'file-metadata-suggestion',
@@ -312,7 +311,7 @@ class TestSuggestionsViews(BaseAddonTestCase, OsfTestCase):
         url = self.project.api_url_for('{}_file_metadata_suggestions'.format(SHORT_NAME),
                                        filepath='dir/osfstorage/dir1/')
         res = self.app.get(url, params={'key': 'invalid'}, auth=self.user.auth, expect_errors=True)
-        assert_equals(res.status_code, http_status.HTTP_400_BAD_REQUEST)
+        assert (res.status_code) == (http_status.HTTP_400_BAD_REQUEST)
 
 
 class TestEradCandidatesOrderingView(BaseAddonTestCase, OsfTestCase):
@@ -361,12 +360,12 @@ class TestEradCandidatesOrderingView(BaseAddonTestCase, OsfTestCase):
         url = self.project.api_url_for('{}_get_erad_candidates'.format(SHORT_NAME))
         res = self.app.get(url, auth=self.user.auth)
 
-        assert_equals(res.status_code, http_status.HTTP_200_OK)
+        assert (res.status_code) == (http_status.HTTP_200_OK)
         records = res.json['data']['attributes']['records']
         # Self-first ordering expected, regardless of year
-        assert_equal(len(records), 2)
-        assert_equal(records[0]['erad'], self.user.erad)
-        assert_equal(records[1]['erad'], collaborator.erad)
+        assert (len(records)) == (2)
+        assert (records[0]['erad']) == (self.user.erad)
+        assert (records[1]['erad']) == (collaborator.erad)
 
     @mock.patch('addons.metadata.views.kaken_candidates')
     @mock.patch('addons.metadata.views.erad_candidates')
@@ -403,12 +402,12 @@ class TestEradCandidatesOrderingView(BaseAddonTestCase, OsfTestCase):
         url = self.project.api_url_for('{}_get_erad_candidates'.format(SHORT_NAME))
         res = self.app.get(url, auth=self.user.auth)
 
-        assert_equals(res.status_code, http_status.HTTP_200_OK)
+        assert (res.status_code) == (http_status.HTTP_200_OK)
         records = res.json['data']['attributes']['records']
         # Expect dedupe to keep the self record (first after sorting)
-        assert_equal(len(records), 1)
-        assert_equal(records[0]['erad'], self.user.erad)
-        assert_equal(records[0]['kadai_id'], 'KDUP')
+        assert (len(records)) == (1)
+        assert (records[0]['erad']) == (self.user.erad)
+        assert (records[0]['kadai_id']) == ('KDUP')
 
     @mock.patch('addons.metadata.views.kaken_candidates')
     @mock.patch('addons.metadata.views.erad_candidates')
@@ -438,6 +437,6 @@ class TestEradCandidatesOrderingView(BaseAddonTestCase, OsfTestCase):
 
         url = self.project.api_url_for('{}_get_erad_candidates'.format(SHORT_NAME))
         res = self.app.get(url, auth=self.user.auth)
-        assert_equals(res.status_code, http_status.HTTP_200_OK)
+        assert (res.status_code) == (http_status.HTTP_200_OK)
         records = res.json['data']['attributes']['records']
-        assert_equal([r['erad'] for r in records], [self.user.erad, collab1.erad, collab2.erad])
+        assert ([r['erad'] for r in records]) == ([self.user.erad, collab1.erad, collab2.erad])

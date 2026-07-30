@@ -1,5 +1,3 @@
-from include import IncludeManager
-
 from django.apps import apps
 from django.db import models
 from django.utils import timezone
@@ -8,8 +6,6 @@ from osf.utils.fields import NonNaiveDateTimeField
 
 
 class FileLog(ObjectIDMixin, BaseModel):
-
-    objects = IncludeManager()
 
     DATE_FORMAT = '%m/%d/%Y %H:%M UTC'
 
@@ -38,14 +34,22 @@ class FileLog(ObjectIDMixin, BaseModel):
     actions = ([CHECKED_IN, CHECKED_OUT, FILE_TAG_REMOVED, FILE_TAG_ADDED,
                FILE_MOVED, FILE_COPIED, FOLDER_CREATED, FILE_ADDED, FILE_UPDATED, FILE_REMOVED,
                 FILE_RESTORED, PREPRINT_FILE_UPDATED, ] + list(sum([
-                    config.actions for config in apps.get_app_configs() if config.name.startswith('addons.')
+                    config.actions for config in apps.get_app_configs()
+                    if config.name.startswith('addons.') and hasattr(config, 'actions')
                 ], tuple())))
     action_choices = [(action, action.upper()) for action in actions]
     project_id = models.CharField(max_length=255, null=True, blank=True, db_index=True)
     date = NonNaiveDateTimeField(db_index=True, null=True, blank=True, default=timezone.now)
     # TODO build action choices on the fly with the addon stuff
     action = models.CharField(max_length=255, db_index=True)  # , choices=action_choices)
-    user = models.ForeignKey('OSFUser', related_name='filelogs', db_index=True, null=True, blank=True)
+    user = models.ForeignKey(
+        'OSFUser',
+        related_name='filelogs',
+        db_index=True,
+        null=True,
+        blank=True,
+        on_delete=models.CASCADE,
+    )
     path = models.TextField(null=True)
 
     def __unicode__(self):

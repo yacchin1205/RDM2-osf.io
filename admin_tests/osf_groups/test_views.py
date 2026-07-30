@@ -4,7 +4,6 @@ from admin.osf_groups.views import (
     OSFGroupsFormView
 )
 from admin_tests.utilities import setup_log_view
-from nose import tools as nt
 from django.test import RequestFactory
 
 from tests.base import AdminTestCase
@@ -31,17 +30,17 @@ class TestOSFGroupsView(AdminTestCase):
 
         group = view.get_object()
 
-        nt.assert_equal(self.group.name, group['name'])
-        nt.assert_equal(self.user.fullname, group['creator']['name'])
-        nt.assert_equal(len(group['members']), 1)
-        nt.assert_equal(group['members'][0]['name'], self.user_two.fullname)
-        nt.assert_equal(group['members'][0]['id'], self.user_two._id)
-        nt.assert_equal(len(group['managers']), 1)
-        nt.assert_equal(group['managers'][0]['name'], self.user.fullname)
-        nt.assert_equal(group['managers'][0]['id'], self.user._id)
-        nt.assert_equal([serialize_node_for_groups(self.project, self.group)], group['nodes'])
-        nt.assert_equal(group['nodes'][0]['title'], self.project.title)
-        nt.assert_equal(group['nodes'][0]['permission'], WRITE)
+        assert (self.group.name) == (group['name'])
+        assert (self.user.fullname) == (group['creator']['name'])
+        assert (len(group['members'])) == (1)
+        assert (group['members'][0]['name']) == (self.user_two.fullname)
+        assert (group['members'][0]['id']) == (self.user_two._id)
+        assert (len(group['managers'])) == (1)
+        assert (group['managers'][0]['name']) == (self.user.fullname)
+        assert (group['managers'][0]['id']) == (self.user._id)
+        assert ([serialize_node_for_groups(self.project, self.group)]) == (group['nodes'])
+        assert (group['nodes'][0]['title']) == (self.project.title)
+        assert (group['nodes'][0]['permission']) == (WRITE)
 
 
 class TestOSFGroupsListView(AdminTestCase):
@@ -60,11 +59,11 @@ class TestOSFGroupsListView(AdminTestCase):
 
         queryset = view.get_queryset()
 
-        nt.assert_equal(len(queryset), 3)
+        assert (len(queryset)) == (3)
 
-        nt.assert_in(self.group, queryset)
-        nt.assert_in(self.group2, queryset)
-        nt.assert_in(self.group3, queryset)
+        assert (self.group) in (queryset)
+        assert (self.group2) in (queryset)
+        assert (self.group3) in (queryset)
 
     def test_get_queryset_by_name(self):
         request = RequestFactory().post('/fake_path/?name=Brian')
@@ -72,10 +71,10 @@ class TestOSFGroupsListView(AdminTestCase):
 
         queryset = view.get_queryset()
 
-        nt.assert_equal(len(queryset), 2)
+        assert (len(queryset)) == (2)
 
-        nt.assert_in(self.group, queryset)
-        nt.assert_in(self.group2, queryset)
+        assert (self.group) in (queryset)
+        assert (self.group2) in (queryset)
 
 
 class TestOSFGroupsFormView(AdminTestCase):

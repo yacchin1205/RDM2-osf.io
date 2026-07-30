@@ -1,8 +1,7 @@
 # -*- coding: utf-8 -*-
 import hashlib
 import json
-import mock
-from nose.tools import *  # noqa
+from unittest import mock
 import pytest
 import re
 from urllib.parse import quote
@@ -106,8 +105,8 @@ class TestConfigViews(IQBRIMSAddonTestCase, OAuthAddonConfigViewsTestCaseMixin, 
 
         url = self.project.api_url_for('iqbrims_folder_list', folder_id=folderId)
         res = self.app.get(url, auth=self.user.auth)
-        assert_equal(res.status_code, 200)
-        assert_equal(len(res.json), len(sample_folder_data['items']))
+        assert (res.status_code) == (200)
+        assert (len(res.json)) == (len(sample_folder_data['items']))
 
     @mock.patch.object(IQBRIMSClient, 'about')
     def test_folder_list(self, mock_about):
@@ -165,17 +164,16 @@ class TestStatusViews(IQBRIMSAddonTestCase, OsfTestCase):
         url = self.project.api_url_for('iqbrims_get_status')
         res = self.app.get(url, auth=self.user.auth)
 
-        assert_equal(res.status_code, 200)
-        assert_equal(list(res.json.keys()), ['data'])
-        assert_equal(list(res.json['data'].keys()), ['id', 'type', 'attributes'])
-        assert_equal(res.json['data']['id'], self.project._id)
-        assert_equal(res.json['data']['type'], 'iqbrims-status')
-        assert_equal(list(res.json['data']['attributes'].keys()),
-                     ['state', 'labo_list', 'review_folders', 'is_admin'])
-        assert_equal(res.json['data']['attributes']['state'], 'initialized')
-        assert_equal(len(res.json['data']['attributes']['labo_list']), len(settings.LABO_LIST))
-        assert_equal(res.json['data']['attributes']['review_folders'], iqbrims_views.REVIEW_FOLDERS)
-        assert_equal(res.json['data']['attributes']['is_admin'], False)
+        assert (res.status_code) == (200)
+        assert (list(res.json.keys())) == (['data'])
+        assert (list(res.json['data'].keys())) == (['id', 'type', 'attributes'])
+        assert (res.json['data']['id']) == (self.project._id)
+        assert (res.json['data']['type']) == ('iqbrims-status')
+        assert (list(res.json['data']['attributes'].keys())) == (['state', 'labo_list', 'review_folders', 'is_admin'])
+        assert (res.json['data']['attributes']['state']) == ('initialized')
+        assert (len(res.json['data']['attributes']['labo_list'])) == (len(settings.LABO_LIST))
+        assert (res.json['data']['attributes']['review_folders']) == (iqbrims_views.REVIEW_FOLDERS)
+        assert (res.json['data']['attributes']['is_admin']) == (False)
 
     @mock.patch.object(iqbrims_views, '_get_management_node')
     def test_get_status_with_admin(self, mock_get_management_node):
@@ -184,19 +182,18 @@ class TestStatusViews(IQBRIMSAddonTestCase, OsfTestCase):
         url = self.project.api_url_for('iqbrims_get_status')
         res = self.app.get(url, auth=self.user.auth)
 
-        assert_equal(res.status_code, 200)
-        assert_equal(list(res.json.keys()), ['data'])
-        assert_equal(list(res.json['data'].keys()), ['id', 'type', 'attributes'])
-        assert_equal(res.json['data']['id'], self.project._id)
-        assert_equal(res.json['data']['type'], 'iqbrims-status')
-        assert_equal(list(res.json['data']['attributes'].keys()),
-                     ['state', 'labo_list', 'review_folders', 'is_admin',
+        assert (res.status_code) == (200)
+        assert (list(res.json.keys())) == (['data'])
+        assert (list(res.json['data'].keys())) == (['id', 'type', 'attributes'])
+        assert (res.json['data']['id']) == (self.project._id)
+        assert (res.json['data']['type']) == ('iqbrims-status')
+        assert (list(res.json['data']['attributes'].keys())) == (['state', 'labo_list', 'review_folders', 'is_admin',
                       'task_url'])
-        assert_equal(res.json['data']['attributes']['state'], 'initialized')
-        assert_equal(len(res.json['data']['attributes']['labo_list']), len(settings.LABO_LIST))
-        assert_equal(res.json['data']['attributes']['review_folders'], iqbrims_views.REVIEW_FOLDERS)
-        assert_equal(res.json['data']['attributes']['is_admin'], True)
-        assert_equal(res.json['data']['attributes']['task_url'], settings.FLOWABLE_TASK_URL)
+        assert (res.json['data']['attributes']['state']) == ('initialized')
+        assert (len(res.json['data']['attributes']['labo_list'])) == (len(settings.LABO_LIST))
+        assert (res.json['data']['attributes']['review_folders']) == (iqbrims_views.REVIEW_FOLDERS)
+        assert (res.json['data']['attributes']['is_admin']) == (True)
+        assert (res.json['data']['attributes']['task_url']) == (settings.FLOWABLE_TASK_URL)
 
     @mock.patch.object(iqbrims_views, '_get_management_node')
     def test_get_status_with_other_state(self, mock_get_management_node):
@@ -209,11 +206,11 @@ class TestStatusViews(IQBRIMSAddonTestCase, OsfTestCase):
         url = self.project.api_url_for('iqbrims_get_status')
         res = self.app.get(url, auth=self.user.auth)
 
-        assert_equal(res.status_code, 200)
-        assert_in('data', res.json)
-        assert_in('attributes', res.json['data'])
-        assert_in('state', res.json['data']['attributes'])
-        assert_equal(res.json['data']['attributes']['state'], 'initialized')
+        assert (res.status_code) == (200)
+        assert ('data') in (res.json)
+        assert ('attributes') in (res.json['data'])
+        assert ('state') in (res.json['data']['attributes'])
+        assert (res.json['data']['attributes']['state']) == ('initialized')
 
     @mock.patch.object(iqbrims_views, '_get_management_node')
     def test_set_status(self, mock_get_management_node):
@@ -231,8 +228,8 @@ class TestStatusViews(IQBRIMSAddonTestCase, OsfTestCase):
         }
         res = self.app.patch_json(url, params=payload, auth=self.user.auth)
 
-        assert_equal(res.status_code, 200)
-        assert_equal(res.json, {
+        assert (res.status_code) == (200)
+        assert (res.json) == ({
             'data': {
                 'attributes': status,
                 'type': 'iqbrims-status',
@@ -281,8 +278,8 @@ class TestStatusViews(IQBRIMSAddonTestCase, OsfTestCase):
         }
         res = self.app.patch_json(url, params=payload, auth=self.user.auth)
 
-        assert_equal(res.status_code, 200)
-        assert_equal(res.json, {
+        assert (res.status_code) == (200)
+        assert (res.json) == ({
             'data': {
                 'attributes': status,
                 'type': 'iqbrims-status',
@@ -292,54 +289,53 @@ class TestStatusViews(IQBRIMSAddonTestCase, OsfTestCase):
 
         iqbrims = self.project.get_addon('iqbrims')
         secret = iqbrims.get_secret()
-        assert_is_not_none(secret)
-        assert_equal(iqbrims.folder_id, fake_folder['id'])
-        assert_equal(iqbrims.folder_path, fake_folder['path'])
+        assert (secret) is not None
+        assert (iqbrims.folder_id) == (fake_folder['id'])
+        assert (iqbrims.folder_path) == (fake_folder['path'])
 
-        assert_equal(mock_import_auth_from_management_node.call_count, 1)
-        assert_equal(mock_import_auth_from_management_node.call_args[0], (
+        assert (mock_import_auth_from_management_node.call_count) == (1)
+        assert (mock_import_auth_from_management_node.call_args[0]) == ((
             self.project,
             iqbrims,
             fake_management_project
         ))
 
-        assert_equal(mock_iqbrims_init_folders.call_count, 1)
-        assert_equal(mock_iqbrims_init_folders.call_args[0], (
+        assert (mock_iqbrims_init_folders.call_count) == (1)
+        assert (mock_iqbrims_init_folders.call_args[0]) == ((
             self.project,
             fake_management_project,
             status['state'],
             status['labo_id']
         ))
 
-        assert_equal(mock_update_spreadsheet.call_count, 1)
-        assert_equal(mock_update_spreadsheet.call_args[0], (
+        assert (mock_update_spreadsheet.call_count) == (1)
+        assert (mock_update_spreadsheet.call_args[0]) == ((
             self.project,
             fake_management_project,
             status['state'],
             payload['data']['attributes']
         ))
 
-        assert_equal(mock_flowable_make_request.call_count, 1)
+        assert (mock_flowable_make_request.call_count) == (1)
         name, args, kwargs = mock_flowable_make_request.mock_calls[0]
-        assert_equal(args, ('POST', settings.FLOWABLE_HOST +
+        assert (args) == (('POST', settings.FLOWABLE_HOST +
                                     'service/runtime/process-instances'))
-        assert_equal(json.loads(kwargs['data'])['processDefinitionId'],
-                     settings.FLOWABLE_RESEARCH_APP_ID)
+        assert (json.loads(kwargs['data'])['processDefinitionId']) == (settings.FLOWABLE_RESEARCH_APP_ID)
         vars = json.loads(kwargs['data'])['variables']
-        assert_equal([v for v in vars if v['name'] == 'projectId'][0], {
+        assert ([v for v in vars if v['name'] == 'projectId'][0]) == ({
           'name': 'projectId',
           'type': 'string',
           'value': self.project._id
         })
-        assert_equal([v for v in vars if v['name'] == 'paperFolderPattern'][0], {
+        assert ([v for v in vars if v['name'] == 'paperFolderPattern'][0]) == ({
           'name': 'paperFolderPattern',
           'type': 'string',
           'value': 'deposit/fake_labo_name/%-{}/'.format(self.project._id)
         })
 
-        assert_equal(len(mock_client.grant_access_from_anyone.call_args_list), 1)
-        assert_equal(mock_client.grant_access_from_anyone.call_args_list[0][0][0], 'FOLDER67890')
-        assert_equal(len(mock_client.revoke_access_from_anyone.call_args_list), 0)
+        assert (len(mock_client.grant_access_from_anyone.call_args_list)) == (1)
+        assert (mock_client.grant_access_from_anyone.call_args_list[0][0][0]) == ('FOLDER67890')
+        assert (len(mock_client.revoke_access_from_anyone.call_args_list)) == (0)
 
     @mock.patch.object(IQBRIMSFlowableClient, 'start_workflow')
     @mock.patch.object(iqbrims_views, '_iqbrims_update_spreadsheet')
@@ -376,8 +372,8 @@ class TestStatusViews(IQBRIMSAddonTestCase, OsfTestCase):
         }
         res = self.app.patch_json(url, params=payload, auth=self.user.auth)
 
-        assert_equal(res.status_code, 200)
-        assert_equal(res.json, {
+        assert (res.status_code) == (200)
+        assert (res.json) == ({
             'data': {
                 'attributes': status,
                 'type': 'iqbrims-status',
@@ -387,26 +383,26 @@ class TestStatusViews(IQBRIMSAddonTestCase, OsfTestCase):
 
         iqbrims = self.project.get_addon('iqbrims')
         secret = iqbrims.get_secret()
-        assert_is_not_none(secret)
-        assert_equal(iqbrims.folder_id, fake_folder['id'])
-        assert_equal(iqbrims.folder_path, fake_folder['path'])
+        assert (secret) is not None
+        assert (iqbrims.folder_id) == (fake_folder['id'])
+        assert (iqbrims.folder_path) == (fake_folder['path'])
 
-        assert_equal(mock_import_auth_from_management_node.call_count, 1)
-        assert_equal(mock_import_auth_from_management_node.call_args[0], (
+        assert (mock_import_auth_from_management_node.call_count) == (1)
+        assert (mock_import_auth_from_management_node.call_args[0]) == ((
             self.project,
             iqbrims,
             fake_management_project
         ))
 
-        assert_equal(mock_iqbrims_init_folders.call_count, 1)
-        assert_equal(mock_iqbrims_init_folders.call_args[0], (
+        assert (mock_iqbrims_init_folders.call_count) == (1)
+        assert (mock_iqbrims_init_folders.call_args[0]) == ((
             self.project,
             fake_management_project,
             status['state'],
             status['labo_id']
         ))
 
-        assert_equal(mock_update_spreadsheet.call_count, 0)
+        assert (mock_update_spreadsheet.call_count) == (0)
 
     @mock.patch.object(IQBRIMSFlowableClient, '_make_request')
     @mock.patch.object(iqbrims_views, '_iqbrims_update_spreadsheet')
@@ -443,8 +439,8 @@ class TestStatusViews(IQBRIMSAddonTestCase, OsfTestCase):
         }
         res = self.app.patch_json(url, params=payload, auth=self.user.auth)
 
-        assert_equal(res.status_code, 200)
-        assert_equal(res.json, {
+        assert (res.status_code) == (200)
+        assert (res.json) == ({
             'data': {
                 'attributes': status,
                 'type': 'iqbrims-status',
@@ -454,46 +450,45 @@ class TestStatusViews(IQBRIMSAddonTestCase, OsfTestCase):
 
         iqbrims = self.project.get_addon('iqbrims')
         secret = iqbrims.get_secret()
-        assert_is_not_none(secret)
-        assert_equal(iqbrims.folder_id, fake_folder['id'])
-        assert_equal(iqbrims.folder_path, fake_folder['path'])
+        assert (secret) is not None
+        assert (iqbrims.folder_id) == (fake_folder['id'])
+        assert (iqbrims.folder_path) == (fake_folder['path'])
 
-        assert_equal(mock_import_auth_from_management_node.call_count, 1)
-        assert_equal(mock_import_auth_from_management_node.call_args[0], (
+        assert (mock_import_auth_from_management_node.call_count) == (1)
+        assert (mock_import_auth_from_management_node.call_args[0]) == ((
             self.project,
             iqbrims,
             fake_management_project
         ))
 
-        assert_equal(mock_iqbrims_init_folders.call_count, 1)
-        assert_equal(mock_iqbrims_init_folders.call_args[0], (
+        assert (mock_iqbrims_init_folders.call_count) == (1)
+        assert (mock_iqbrims_init_folders.call_args[0]) == ((
             self.project,
             fake_management_project,
             status['state'],
             status['labo_id']
         ))
 
-        assert_equal(mock_update_spreadsheet.call_count, 1)
-        assert_equal(mock_update_spreadsheet.call_args[0], (
+        assert (mock_update_spreadsheet.call_count) == (1)
+        assert (mock_update_spreadsheet.call_args[0]) == ((
             self.project,
             fake_management_project,
             status['state'],
             payload['data']['attributes']
         ))
 
-        assert_equal(mock_flowable_make_request.call_count, 1)
+        assert (mock_flowable_make_request.call_count) == (1)
         name, args, kwargs = mock_flowable_make_request.mock_calls[0]
-        assert_equal(args, ('POST', settings.FLOWABLE_HOST +
+        assert (args) == (('POST', settings.FLOWABLE_HOST +
                                     'service/runtime/process-instances'))
-        assert_equal(json.loads(kwargs['data'])['processDefinitionId'],
-                     settings.FLOWABLE_SCAN_APP_ID)
+        assert (json.loads(kwargs['data'])['processDefinitionId']) == (settings.FLOWABLE_SCAN_APP_ID)
         vars = json.loads(kwargs['data'])['variables']
-        assert_equal([v for v in vars if v['name'] == 'projectId'][0], {
+        assert ([v for v in vars if v['name'] == 'projectId'][0]) == ({
           'name': 'projectId',
           'type': 'string',
           'value': self.project._id
         })
-        assert_equal([v for v in vars if v['name'] == 'paperFolderPattern'][0], {
+        assert ([v for v in vars if v['name'] == 'paperFolderPattern'][0]) == ({
           'name': 'paperFolderPattern',
           'type': 'string',
           'value': 'check/fake_labo_name/%-{}/'.format(self.project._id)
@@ -542,8 +537,8 @@ class TestStatusViews(IQBRIMSAddonTestCase, OsfTestCase):
         }
         res = self.app.patch_json(url, params=payload, auth=self.user.auth)
 
-        assert_equal(res.status_code, 200)
-        assert_equal(res.json, {
+        assert (res.status_code) == (200)
+        assert (res.json) == ({
             'data': {
                 'attributes': status,
                 'type': 'iqbrims-status',
@@ -553,46 +548,45 @@ class TestStatusViews(IQBRIMSAddonTestCase, OsfTestCase):
 
         iqbrims = self.project.get_addon('iqbrims')
         secret = iqbrims.get_secret()
-        assert_is_not_none(secret)
-        assert_equal(iqbrims.folder_id, fake_folder['id'])
-        assert_equal(iqbrims.folder_path, fake_folder['path'])
+        assert (secret) is not None
+        assert (iqbrims.folder_id) == (fake_folder['id'])
+        assert (iqbrims.folder_path) == (fake_folder['path'])
 
-        assert_equal(mock_import_auth_from_management_node.call_count, 1)
-        assert_equal(mock_import_auth_from_management_node.call_args[0], (
+        assert (mock_import_auth_from_management_node.call_count) == (1)
+        assert (mock_import_auth_from_management_node.call_args[0]) == ((
             self.project,
             iqbrims,
             fake_management_project
         ))
 
-        assert_equal(mock_iqbrims_init_folders.call_count, 1)
-        assert_equal(mock_iqbrims_init_folders.call_args[0], (
+        assert (mock_iqbrims_init_folders.call_count) == (1)
+        assert (mock_iqbrims_init_folders.call_args[0]) == ((
             self.project,
             fake_management_project,
             status['state'],
             status['labo_id']
         ))
 
-        assert_equal(mock_update_spreadsheet.call_count, 1)
-        assert_equal(mock_update_spreadsheet.call_args[0], (
+        assert (mock_update_spreadsheet.call_count) == (1)
+        assert (mock_update_spreadsheet.call_args[0]) == ((
             self.project,
             fake_management_project,
             status['state'],
             payload['data']['attributes']
         ))
 
-        assert_equal(mock_flowable_make_request.call_count, 1)
+        assert (mock_flowable_make_request.call_count) == (1)
         name, args, kwargs = mock_flowable_make_request.mock_calls[0]
-        assert_equal(args, ('POST', 'https://test.somehost.ac.jp/' +
+        assert (args) == (('POST', 'https://test.somehost.ac.jp/' +
                                     'service/runtime/process-instances'))
-        assert_equal(json.loads(kwargs['data'])['processDefinitionId'],
-                     'latest_workflow_id')
+        assert (json.loads(kwargs['data'])['processDefinitionId']) == ('latest_workflow_id')
         vars = json.loads(kwargs['data'])['variables']
-        assert_equal([v for v in vars if v['name'] == 'projectId'][0], {
+        assert ([v for v in vars if v['name'] == 'projectId'][0]) == ({
           'name': 'projectId',
           'type': 'string',
           'value': self.project._id
         })
-        assert_equal([v for v in vars if v['name'] == 'paperFolderPattern'][0], {
+        assert ([v for v in vars if v['name'] == 'paperFolderPattern'][0]) == ({
           'name': 'paperFolderPattern',
           'type': 'string',
           'value': 'deposit/fake_labo_name/%-{}/'.format(self.project._id)
@@ -639,14 +633,14 @@ class TestStorageViews(IQBRIMSAddonTestCase, OsfTestCase):
         res = self.app.delete(url,
                               expect_errors=True).maybe_follow()
 
-        assert_equal(res.status_code, 403)
+        assert (res.status_code) == (403)
 
         url = self.project.api_url_for('iqbrims_get_storage',
                                        folder='paper')
         res = self.app.delete(url, headers={'X-RDM-Token': 'invalid123'},
                               expect_errors=True).maybe_follow()
 
-        assert_equal(res.status_code, 403)
+        assert (res.status_code) == (403)
 
     @mock.patch.object(IQBRIMSWorkflowUserSettings, 'load')
     @mock.patch.object(iqbrims_views, '_get_management_node')
@@ -699,13 +693,13 @@ class TestStorageViews(IQBRIMSAddonTestCase, OsfTestCase):
                                        folder='index')
         res = self.app.get(url, headers={'X-RDM-Token': token})
 
-        assert_equal(res.status_code, 200)
-        assert_equal(res.json['status'], 'processing')
-        assert_equal(res.json['whole']['testkey'], 'testvalue')
+        assert (res.status_code) == (200)
+        assert (res.json['status']) == ('processing')
+        assert (res.json['whole']['testkey']) == ('testvalue')
 
         mock_get_column_values.assert_called_once()
         cargs, _ = mock_get_column_values.call_args
-        assert_equal(cargs[0], 'Management')
+        assert (cargs[0]) == ('Management')
         mock_get_row_values.assert_called_once()
         mock_sheets.assert_called_once()
 
@@ -761,13 +755,13 @@ class TestStorageViews(IQBRIMSAddonTestCase, OsfTestCase):
                                        folder='index')
         res = self.app.get(url, headers={'X-RDM-Token': token})
 
-        assert_equal(res.status_code, 200)
-        assert_equal(res.json['status'], 'processing')
-        assert_equal(res.json['whole']['testkey'], 'testvalue')
+        assert (res.status_code) == (200)
+        assert (res.json['status']) == ('processing')
+        assert (res.json['whole']['testkey']) == ('testvalue')
 
         mock_get_column_values.assert_called_once()
         cargs, _ = mock_get_column_values.call_args
-        assert_equal(cargs[0], 'Files')
+        assert (cargs[0]) == ('Files')
         mock_get_row_values.assert_called_once()
         mock_sheets.assert_called_once()
 
@@ -805,9 +799,9 @@ class TestStorageViews(IQBRIMSAddonTestCase, OsfTestCase):
                                        folder='checklist')
         res = self.app.get(url, headers={'X-RDM-Token': token})
 
-        assert_equal(res.status_code, 200)
-        assert_equal(res.json['status'], 'complete')
-        assert_equal(res.json['whole']['testkey'], 'testvalue')
+        assert (res.status_code) == (200)
+        assert (res.json['status']) == ('complete')
+        assert (res.json['whole']['testkey']) == ('testvalue')
 
     @mock.patch.object(iqbrims_views, '_get_management_node')
     @mock.patch.object(IQBRIMSClient, 'folders')
@@ -843,9 +837,9 @@ class TestStorageViews(IQBRIMSAddonTestCase, OsfTestCase):
                                        folder='checklist')
         res = self.app.get(url, headers={'X-RDM-Token': token})
 
-        assert_equal(res.status_code, 200)
-        assert_equal(res.json['status'], 'complete')
-        assert_equal(res.json['folder_drive_url'], 'https://google/folderid123/')
+        assert (res.status_code) == (200)
+        assert (res.json['status']) == ('complete')
+        assert (res.json['folder_drive_url']) == ('https://google/folderid123/')
 
     @mock.patch.object(iqbrims_views, '_get_management_node')
     @mock.patch.object(IQBRIMSClient, 'folders')
@@ -880,8 +874,8 @@ class TestStorageViews(IQBRIMSAddonTestCase, OsfTestCase):
                                        folder='checklist')
         res = self.app.get(url, headers={'X-RDM-Token': token})
 
-        assert_equal(res.status_code, 200)
-        assert_equal(res.json['status'], 'processing')
+        assert (res.status_code) == (200)
+        assert (res.json['status']) == ('processing')
 
     @mock.patch.object(iqbrims_views, '_get_management_node')
     @mock.patch.object(IQBRIMSClient, 'folders')
@@ -928,13 +922,13 @@ class TestStorageViews(IQBRIMSAddonTestCase, OsfTestCase):
                                        folder='imagelist')
         res = self.app.get(url, headers={'X-RDM-Token': token})
 
-        assert_equal(res.status_code, 200)
-        assert_equal(res.json['status'], 'complete')
-        assert_equal(res.json['folder_drive_url'], 'https://google/folderid456/')
-        assert_equal(len(res.json['management']['urls']), 1)
-        assert_equal(res.json['management']['urls'][0]['path'], u'iqb123/%E6%9C%80%E7%B5%82%E5%8E%9F%E7%A8%BF%E3%83%BB%E7%B5%84%E5%9B%B3/files.txt')
-        assert_true(res.json['management']['urls'][0]['mfr_url'].startswith('http://localhost:7778/export?url=http://localhost:5000/'))
-        assert_equal(res.json['management']['urls'][0]['drive_url'], 'https://google/fileid456b/')
+        assert (res.status_code) == (200)
+        assert (res.json['status']) == ('complete')
+        assert (res.json['folder_drive_url']) == ('https://google/folderid456/')
+        assert (len(res.json['management']['urls'])) == (1)
+        assert (res.json['management']['urls'][0]['path']) == (u'iqb123/%E6%9C%80%E7%B5%82%E5%8E%9F%E7%A8%BF%E3%83%BB%E7%B5%84%E5%9B%B3/files.txt')
+        assert (res.json['management']['urls'][0]['mfr_url'].startswith('http://localhost:7778/export?url=http://localhost:5000/'))
+        assert (res.json['management']['urls'][0]['drive_url']) == ('https://google/fileid456b/')
 
     @mock.patch.object(iqbrims_views, '_get_management_node')
     @mock.patch.object(IQBRIMSClient, 'folders')
@@ -977,8 +971,8 @@ class TestStorageViews(IQBRIMSAddonTestCase, OsfTestCase):
                                        folder='imagelist')
         res = self.app.get(url, headers={'X-RDM-Token': token})
 
-        assert_equal(res.status_code, 200)
-        assert_equal(res.json['status'], 'processing')
+        assert (res.status_code) == (200)
+        assert (res.json['status']) == ('processing')
 
     @mock.patch.object(iqbrims_views, '_get_management_node')
     @mock.patch.object(IQBRIMSClient, 'folders')
@@ -1021,8 +1015,8 @@ class TestStorageViews(IQBRIMSAddonTestCase, OsfTestCase):
                                        folder='imagelist')
         res = self.app.get(url, headers={'X-RDM-Token': token})
 
-        assert_equal(res.status_code, 200)
-        assert_equal(res.json['status'], 'processing')
+        assert (res.status_code) == (200)
+        assert (res.json['status']) == ('processing')
 
     def test_unauthorized_reject_storage(self):
         node_settings = self.project.get_addon('iqbrims')
@@ -1035,14 +1029,14 @@ class TestStorageViews(IQBRIMSAddonTestCase, OsfTestCase):
         res = self.app.delete(url,
                               expect_errors=True).maybe_follow()
 
-        assert_equal(res.status_code, 403)
+        assert (res.status_code) == (403)
 
         url = self.project.api_url_for('iqbrims_reject_storage',
                                        folder='paper')
         res = self.app.delete(url, headers={'X-RDM-Token': 'invalid123'},
                               expect_errors=True).maybe_follow()
 
-        assert_equal(res.status_code, 403)
+        assert (res.status_code) == (403)
 
     @mock.patch.object(iqbrims_views, '_get_management_node')
     @mock.patch.object(IQBRIMSClient, 'create_folder')
@@ -1076,32 +1070,31 @@ class TestStorageViews(IQBRIMSAddonTestCase, OsfTestCase):
                                        folder='checklist')
         res = self.app.delete(url, headers={'X-RDM-Token': token})
 
-        assert_equal(res.status_code, 200)
+        assert (res.status_code) == (200)
 
-        assert_equal(res.json['status'], 'rejected')
+        assert (res.json['status']) == ('rejected')
         mock_rename_folder.assert_called_once()
         cargs, _ = mock_rename_folder.call_args
-        assert_equal(cargs[0], 'rmfolderid123')
+        assert (cargs[0]) == ('rmfolderid123')
         foldername = cargs[1]
-        assert_true(re.match(r'(.*)\.[0-9]+\-[0-9]+',
+        assert (re.match(r'(.*)\.[0-9]+\-[0-9]+',
                              foldername).group(1) == u'チェックリスト')
         mock_create_folder.assert_called_once()
-        assert_equal(mock_create_folder.call_args,
-                     (('1234567890', u'チェックリスト'),))
+        assert (mock_create_folder.call_args) == ((('1234567890', u'チェックリスト'),))
 
         folderurlpath = '/' + quote(foldername.encode('utf8'))
-        assert_equal(res.json['management']['id'], management_project._id)
-        assert_equal(len(res.json['management']['urls']), 2)
-        assert_equal(res.json['management']['urls'][0]['title'], 'test1.pdf')
-        assert_true(res.json['management']['urls'][0]['url'].endswith(folderurlpath + '/test1.pdf'))
-        assert_equal(res.json['management']['urls'][1]['title'], 'test2.pdf')
-        assert_true(res.json['management']['urls'][1]['url'].endswith(folderurlpath + '/test2.pdf'))
-        assert_equal(len(res.json['urls']), 2)
-        assert_equal(res.json['urls'][0]['title'], 'test1.pdf')
-        assert_true(res.json['urls'][0]['url'].endswith(folderurlpath + '/test1.pdf'))
-        assert_equal(res.json['urls'][1]['title'], 'test2.pdf')
-        assert_true(res.json['urls'][1]['url'].endswith(folderurlpath + '/test2.pdf'))
-        assert_equal(res.json['root_folder'], 'iqb123/')
+        assert (res.json['management']['id']) == (management_project._id)
+        assert (len(res.json['management']['urls'])) == (2)
+        assert (res.json['management']['urls'][0]['title']) == ('test1.pdf')
+        assert (res.json['management']['urls'][0]['url'].endswith(folderurlpath + '/test1.pdf'))
+        assert (res.json['management']['urls'][1]['title']) == ('test2.pdf')
+        assert (res.json['management']['urls'][1]['url'].endswith(folderurlpath + '/test2.pdf'))
+        assert (len(res.json['urls'])) == (2)
+        assert (res.json['urls'][0]['title']) == ('test1.pdf')
+        assert (res.json['urls'][0]['url'].endswith(folderurlpath + '/test1.pdf'))
+        assert (res.json['urls'][1]['title']) == ('test2.pdf')
+        assert (res.json['urls'][1]['url'].endswith(folderurlpath + '/test2.pdf'))
+        assert (res.json['root_folder']) == ('iqb123/')
 
     @mock.patch.object(IQBRIMSWorkflowUserSettings, 'load')
     @mock.patch.object(iqbrims_views, '_get_management_node')
@@ -1149,14 +1142,13 @@ class TestStorageViews(IQBRIMSAddonTestCase, OsfTestCase):
                                        folder='index')
         res = self.app.delete(url, headers={'X-RDM-Token': token})
 
-        assert_equal(res.status_code, 200)
-        assert_equal(res.json, {'status': 'rejected',
+        assert (res.status_code) == (200)
+        assert (res.json) == ({'status': 'rejected',
                                 'root_folder': 'iqb123/'})
         mock_update_row.assert_called_once()
-        assert_equal(mock_update_row.call_args, (('Management', ['FALSE'], 0),))
+        assert (mock_update_row.call_args) == ((('Management', ['FALSE'], 0),))
         mock_grant_access_from_anyone.assert_called_once()
-        assert_equal(mock_grant_access_from_anyone.call_args,
-                     (('rmfileid123',),))
+        assert (mock_grant_access_from_anyone.call_args) == ((('rmfileid123',),))
 
     @mock.patch.object(IQBRIMSWorkflowUserSettings, 'load')
     @mock.patch.object(iqbrims_views, '_get_management_node')
@@ -1206,14 +1198,13 @@ class TestStorageViews(IQBRIMSAddonTestCase, OsfTestCase):
                                        folder='index')
         res = self.app.delete(url, headers={'X-RDM-Token': token})
 
-        assert_equal(res.status_code, 200)
-        assert_equal(res.json, {'status': 'rejected',
+        assert (res.status_code) == (200)
+        assert (res.json) == ({'status': 'rejected',
                                 'root_folder': 'iqb123/'})
         mock_update_row.assert_called_once()
-        assert_equal(mock_update_row.call_args, (('Files', ['FALSE'], 0),))
+        assert (mock_update_row.call_args) == ((('Files', ['FALSE'], 0),))
         mock_grant_access_from_anyone.assert_called_once()
-        assert_equal(mock_grant_access_from_anyone.call_args,
-                     (('rmfileid123',),))
+        assert (mock_grant_access_from_anyone.call_args) == ((('rmfileid123',),))
 
     @mock.patch.object(IQBRIMSWorkflowUserSettings, 'load')
     @mock.patch.object(iqbrims_views, '_get_management_node')
@@ -1247,8 +1238,8 @@ class TestStorageViews(IQBRIMSAddonTestCase, OsfTestCase):
                                        folder='scan')
         res = self.app.put(url, headers={'X-RDM-Token': token})
 
-        assert_equal(res.status_code, 200)
-        assert_equal(res.json, {'status': 'processing'})
+        assert (res.status_code) == (200)
+        assert (res.json) == ({'status': 'processing'})
 
     @mock.patch.object(IQBRIMSWorkflowUserSettings, 'load')
     @mock.patch.object(iqbrims_views, '_get_management_node')
@@ -1299,17 +1290,15 @@ class TestStorageViews(IQBRIMSAddonTestCase, OsfTestCase):
                                        folder='scan')
         res = self.app.put(url, headers={'X-RDM-Token': token})
 
-        assert_equal(res.status_code, 200)
-        assert_equal(res.json, {'status': 'complete',
+        assert (res.status_code) == (200)
+        assert (res.json) == ({'status': 'complete',
                                 'url': 'https://a.b/sheet123'})
         mock_get_content.assert_called_once()
-        assert_equal(mock_get_content.call_args, (('fileid123',),))
+        assert (mock_get_content.call_args) == ((('fileid123',),))
         mock_grant_access_from_anyone.assert_called_once()
-        assert_equal(mock_grant_access_from_anyone.call_args,
-                     (('sheet123',),))
+        assert (mock_grant_access_from_anyone.call_args) == ((('sheet123',),))
         mock_add_files.assert_called_once()
-        assert_equal(mock_add_files.call_args,
-                     (('Files', 'ss123', 'Management', 'ss456',
+        assert (mock_add_files.call_args) == ((('Files', 'ss123', 'Management', 'ss456',
                        ['f1.txt', 'f2.txt', 'test/file3.txt', '']),))
 
     @mock.patch.object(IQBRIMSWorkflowUserSettings, 'load')
@@ -1363,17 +1352,15 @@ class TestStorageViews(IQBRIMSAddonTestCase, OsfTestCase):
                                        folder='scan')
         res = self.app.put(url, headers={'X-RDM-Token': token})
 
-        assert_equal(res.status_code, 200)
-        assert_equal(res.json, {'status': 'complete',
+        assert (res.status_code) == (200)
+        assert (res.json) == ({'status': 'complete',
                                 'url': 'https://a.b/sheet123'})
         mock_get_content.assert_called_once()
-        assert_equal(mock_get_content.call_args, (('fileid123',),))
+        assert (mock_get_content.call_args) == ((('fileid123',),))
         mock_grant_access_from_anyone.assert_called_once()
-        assert_equal(mock_grant_access_from_anyone.call_args,
-                     (('sheet123',),))
+        assert (mock_grant_access_from_anyone.call_args) == ((('sheet123',),))
         mock_add_files.assert_called_once()
-        assert_equal(mock_add_files.call_args,
-                     (('Files', 'ss123', 'Files', 'ss123',
+        assert (mock_add_files.call_args) == ((('Files', 'ss123', 'Files', 'ss123',
                        ['f1.txt', 'f2.txt', 'test/file3.txt', '']),))
 
     @mock.patch.object(IQBRIMSWorkflowUserSettings, 'load')
@@ -1425,17 +1412,15 @@ class TestStorageViews(IQBRIMSAddonTestCase, OsfTestCase):
                                        folder='scan')
         res = self.app.put(url, headers={'X-RDM-Token': token})
 
-        assert_equal(res.status_code, 200)
-        assert_equal(res.json, {'status': 'complete',
+        assert (res.status_code) == (200)
+        assert (res.json) == ({'status': 'complete',
                                 'url': 'https://a.b/sheet123'})
         mock_get_content.assert_called_once()
-        assert_equal(mock_get_content.call_args, (('fileid123',),))
+        assert (mock_get_content.call_args) == ((('fileid123',),))
         mock_grant_access_from_anyone.assert_called_once()
-        assert_equal(mock_grant_access_from_anyone.call_args,
-                     (('sheet123',),))
+        assert (mock_grant_access_from_anyone.call_args) == ((('sheet123',),))
         mock_add_files.assert_called_once()
-        assert_equal(mock_add_files.call_args,
-                     (('Files', 'ss123', 'Management', 'ss456',
+        assert (mock_add_files.call_args) == ((('Files', 'ss123', 'Management', 'ss456',
                        ['f1.txt', 'f2.txt', u'test/ファイル3.txt', '']),))
 
     @mock.patch.object(IQBRIMSWorkflowUserSettings, 'load')
@@ -1487,17 +1472,15 @@ class TestStorageViews(IQBRIMSAddonTestCase, OsfTestCase):
                                        folder='scan')
         res = self.app.put(url, headers={'X-RDM-Token': token})
 
-        assert_equal(res.status_code, 200)
-        assert_equal(res.json, {'status': 'complete',
+        assert (res.status_code) == (200)
+        assert (res.json) == ({'status': 'complete',
                                 'url': 'https://a.b/sheet123'})
         mock_get_content.assert_called_once()
-        assert_equal(mock_get_content.call_args, (('fileid123',),))
+        assert (mock_get_content.call_args) == ((('fileid123',),))
         mock_grant_access_from_anyone.assert_called_once()
-        assert_equal(mock_grant_access_from_anyone.call_args,
-                     (('sheet123',),))
+        assert (mock_grant_access_from_anyone.call_args) == ((('sheet123',),))
         mock_add_files.assert_called_once()
-        assert_equal(mock_add_files.call_args,
-                     (('Files', 'ss123', 'Management', 'ss456',
+        assert (mock_add_files.call_args) == ((('Files', 'ss123', 'Management', 'ss456',
                        ['f1.txt', 'f2.txt', u'test/ファイル3.txt', '']),))
         mock_copy_file.assert_called_once()
 
@@ -1536,12 +1519,11 @@ class TestStorageViews(IQBRIMSAddonTestCase, OsfTestCase):
                                        folder='raw')
         res = self.app.put(url, headers={'X-RDM-Token': token})
 
-        assert_equal(res.status_code, 200)
-        assert_equal(res.json, {'status': 'complete'})
+        assert (res.status_code) == (200)
+        assert (res.json) == ({'status': 'complete'})
 
         mock_create_content.assert_called_once()
-        assert_equal(mock_create_content.call_args,
-                     (('folderid123', '.files.txt', 'text/plain', b'files.zip\n'),))
+        assert (mock_create_content.call_args) == ((('folderid123', '.files.txt', 'text/plain', b'files.zip\n'),))
 
     @mock.patch.object(IQBRIMSWorkflowUserSettings, 'load')
     @mock.patch.object(iqbrims_views, '_get_management_node')
@@ -1579,12 +1561,11 @@ class TestStorageViews(IQBRIMSAddonTestCase, OsfTestCase):
                                        folder='raw')
         res = self.app.put(url, headers={'X-RDM-Token': token})
 
-        assert_equal(res.status_code, 200)
-        assert_equal(res.json, {'status': 'complete'})
+        assert (res.status_code) == (200)
+        assert (res.json) == ({'status': 'complete'})
 
         mock_update_content.assert_called_once()
-        assert_equal(mock_update_content.call_args,
-                     (('fileid456', 'text/plain', b'files.zip\n'),))
+        assert (mock_update_content.call_args) == ((('fileid456', 'text/plain', b'files.zip\n'),))
 
     @mock.patch.object(iqbrims_views, '_get_management_node')
     @mock.patch.object(IQBRIMSClient, 'folders')
@@ -1617,8 +1598,8 @@ class TestStorageViews(IQBRIMSAddonTestCase, OsfTestCase):
                                        folder='checklist')
         res = self.app.get(url, headers={'X-RDM-Token': token})
 
-        assert_equal(res.status_code, 200)
-        assert_equal(res.json['comment'], '')
+        assert (res.status_code) == (200)
+        assert (res.json['comment']) == ('')
 
     @mock.patch.object(iqbrims_views, '_get_management_node')
     @mock.patch.object(IQBRIMSClient, 'folders')
@@ -1652,8 +1633,8 @@ class TestStorageViews(IQBRIMSAddonTestCase, OsfTestCase):
                                        folder='checklist')
         res = self.app.get(url, headers={'X-RDM-Token': token})
 
-        assert_equal(res.status_code, 200)
-        assert_equal(res.json['comment'], 'C1234')
+        assert (res.status_code) == (200)
+        assert (res.json['comment']) == ('C1234')
 
     @mock.patch.object(IQBRIMSWorkflowUserSettings, 'load')
     @mock.patch.object(iqbrims_views, '_get_management_node')
@@ -1688,12 +1669,12 @@ class TestStorageViews(IQBRIMSAddonTestCase, OsfTestCase):
         url = self.project.api_url_for('iqbrims_close_index')
         res = self.app.delete(url, headers={'X-RDM-Token': token})
 
-        assert_equal(res.status_code, 200)
-        assert_equal(res.json, {'status': 'complete'})
+        assert (res.status_code) == (200)
+        assert (res.json) == ({'status': 'complete'})
         mock_revoke_access_from_anyone.assert_called_once()
         name, args, kwargs = mock_revoke_access_from_anyone.mock_calls[0]
-        assert_equal(args, ('fileid123',))
-        assert_equal(kwargs, {'drop_all': 1})
+        assert (args) == (('fileid123',))
+        assert (kwargs) == ({'drop_all': 1})
 
     @mock.patch.object(IQBRIMSWorkflowUserSettings, 'load')
     @mock.patch.object(iqbrims_views, '_get_management_node')
@@ -1728,11 +1709,11 @@ class TestStorageViews(IQBRIMSAddonTestCase, OsfTestCase):
         url = self.project.api_url_for('iqbrims_close_index')
         res = self.app.delete(url + '?all=0', headers={'X-RDM-Token': token})
 
-        assert_equal(res.status_code, 200)
-        assert_equal(res.json, {'status': 'complete'})
+        assert (res.status_code) == (200)
+        assert (res.json) == ({'status': 'complete'})
         name, args, kwargs = mock_revoke_access_from_anyone.mock_calls[0]
-        assert_equal(args, ('fileid123',))
-        assert_equal(kwargs, {'drop_all': 0})
+        assert (args) == (('fileid123',))
+        assert (kwargs) == ({'drop_all': 0})
 
 
 class TestNotificationViews(IQBRIMSAddonTestCase, OsfTestCase):
@@ -1781,13 +1762,13 @@ class TestNotificationViews(IQBRIMSAddonTestCase, OsfTestCase):
         res = self.app.post(url,
                             expect_errors=True).maybe_follow()
 
-        assert_equal(res.status_code, 403)
+        assert (res.status_code) == (403)
 
         url = self.project.api_url_for('iqbrims_post_notify')
         res = self.app.post(url, headers={'X-RDM-Token': 'invalid123'},
                             expect_errors=True).maybe_follow()
 
-        assert_equal(res.status_code, 403)
+        assert (res.status_code) == (403)
 
     @mock.patch.object(iqbrims_views, '_get_management_node')
     def test_post_notify_jpn_without_mail(self, mock_get_management_node):
@@ -1801,8 +1782,8 @@ class TestNotificationViews(IQBRIMSAddonTestCase, OsfTestCase):
         token = hashlib.sha256(('secret123' + 'process456' +
                                 self.project._id).encode('utf8')).hexdigest()
 
-        assert_equal(self.project.logs.count(), 2)
-        assert_equal(management_project.logs.count(), 1)
+        assert (self.project.logs.count()) == (2)
+        assert (management_project.logs.count()) == (1)
         url = self.project.api_url_for('iqbrims_post_notify')
         res = self.app.post_json(url, {
           'notify_type': 'test_notify',
@@ -1811,14 +1792,14 @@ class TestNotificationViews(IQBRIMSAddonTestCase, OsfTestCase):
           'notify_body': u'日本語'
         }, headers={'X-RDM-Token': token})
 
-        assert_equal(res.status_code, 200)
-        assert_equal(res.json, {'status': 'complete'})
-        assert_equal(self.project.logs.count(), 2)
-        assert_equal(management_project.logs.count(), 1)
+        assert (res.status_code) == (200)
+        assert (res.json) == ({'status': 'complete'})
+        assert (self.project.logs.count()) == (2)
+        assert (management_project.logs.count()) == (1)
         user_comments = Comment.objects.filter(node=self.project)
-        assert_equal(user_comments.count(), 1)
+        assert (user_comments.count()) == (1)
         admin_comments = Comment.objects.filter(node=management_project)
-        assert_equal(admin_comments.count(), 1)
+        assert (admin_comments.count()) == (1)
 
     @mock.patch.object(iqbrims_views, 'send_mail')
     @mock.patch.object(iqbrims_views, '_get_management_node')
@@ -1834,22 +1815,22 @@ class TestNotificationViews(IQBRIMSAddonTestCase, OsfTestCase):
         token = hashlib.sha256(('secret123' + 'process456' +
                                 self.project._id).encode('utf8')).hexdigest()
 
-        assert_equal(self.project.logs.count(), 2)
-        assert_equal(management_project.logs.count(), 1)
+        assert (self.project.logs.count()) == (2)
+        assert (management_project.logs.count()) == (1)
         url = self.project.api_url_for('iqbrims_post_notify')
         res = self.app.post_json(url, {
           'notify_type': 'test_notify',
           'to': ['admin', 'user']
         }, headers={'X-RDM-Token': token})
 
-        assert_equal(res.status_code, 200)
-        assert_equal(res.json, {'status': 'complete'})
-        assert_equal(self.project.logs.count(), 2)
-        assert_equal(management_project.logs.count(), 1)
+        assert (res.status_code) == (200)
+        assert (res.json) == ({'status': 'complete'})
+        assert (self.project.logs.count()) == (2)
+        assert (management_project.logs.count()) == (1)
         user_comments = Comment.objects.filter(node=self.project)
-        assert_equal(user_comments.count(), 1)
+        assert (user_comments.count()) == (1)
         admin_comments = Comment.objects.filter(node=management_project)
-        assert_equal(admin_comments.count(), 1)
+        assert (admin_comments.count()) == (1)
         assert mock_send_mail.call_args is None
 
     @mock.patch.object(iqbrims_views, 'send_mail')
@@ -1866,22 +1847,22 @@ class TestNotificationViews(IQBRIMSAddonTestCase, OsfTestCase):
         token = hashlib.sha256(('secret123' + 'process456' +
                                 self.project._id).encode('utf8')).hexdigest()
 
-        assert_equal(self.project.logs.count(), 2)
-        assert_equal(management_project.logs.count(), 1)
+        assert (self.project.logs.count()) == (2)
+        assert (management_project.logs.count()) == (1)
         url = self.project.api_url_for('iqbrims_post_notify')
         res = self.app.post_json(url, {
           'notify_type': 'test_notify',
           'to': ['user']
         }, headers={'X-RDM-Token': token})
 
-        assert_equal(res.status_code, 200)
-        assert_equal(res.json, {'status': 'complete'})
-        assert_equal(self.project.logs.count(), 2)
-        assert_equal(management_project.logs.count(), 1)
+        assert (res.status_code) == (200)
+        assert (res.json) == ({'status': 'complete'})
+        assert (self.project.logs.count()) == (2)
+        assert (management_project.logs.count()) == (1)
         user_comments = Comment.objects.filter(node=self.project)
-        assert_equal(user_comments.count(), 1)
+        assert (user_comments.count()) == (1)
         admin_comments = Comment.objects.filter(node=management_project)
-        assert_equal(admin_comments.count(), 0)
+        assert (admin_comments.count()) == (0)
         assert mock_send_mail.call_args is None
 
     @mock.patch.object(iqbrims_views, 'send_mail')
@@ -1898,22 +1879,22 @@ class TestNotificationViews(IQBRIMSAddonTestCase, OsfTestCase):
         token = hashlib.sha256(('secret123' + 'process456' +
                                 self.project._id).encode('utf8')).hexdigest()
 
-        assert_equal(self.project.logs.count(), 2)
-        assert_equal(management_project.logs.count(), 1)
+        assert (self.project.logs.count()) == (2)
+        assert (management_project.logs.count()) == (1)
         url = self.project.api_url_for('iqbrims_post_notify')
         res = self.app.post_json(url, {
           'notify_type': 'test_notify',
           'to': ['admin']
         }, headers={'X-RDM-Token': token})
 
-        assert_equal(res.status_code, 200)
-        assert_equal(res.json, {'status': 'complete'})
-        assert_equal(self.project.logs.count(), 2)
-        assert_equal(management_project.logs.count(), 1)
+        assert (res.status_code) == (200)
+        assert (res.json) == ({'status': 'complete'})
+        assert (self.project.logs.count()) == (2)
+        assert (management_project.logs.count()) == (1)
         user_comments = Comment.objects.filter(node=self.project)
-        assert_equal(user_comments.count(), 0)
+        assert (user_comments.count()) == (0)
         admin_comments = Comment.objects.filter(node=management_project)
-        assert_equal(admin_comments.count(), 1)
+        assert (admin_comments.count()) == (1)
         assert mock_send_mail.call_args is None
 
     @mock.patch.object(iqbrims_views, 'send_mail')
@@ -1930,22 +1911,22 @@ class TestNotificationViews(IQBRIMSAddonTestCase, OsfTestCase):
         token = hashlib.sha256(('secret123' + 'process456' +
                                 self.project._id).encode('utf8')).hexdigest()
 
-        assert_equal(self.project.logs.count(), 2)
-        assert_equal(management_project.logs.count(), 1)
+        assert (self.project.logs.count()) == (2)
+        assert (management_project.logs.count()) == (1)
         url = self.project.api_url_for('iqbrims_post_notify')
         res = self.app.post_json(url, {
           'notify_type': 'imagescan_workflow_start',
           'to': ['admin']
         }, headers={'X-RDM-Token': token})
 
-        assert_equal(res.status_code, 200)
-        assert_equal(res.json, {'status': 'complete'})
-        assert_equal(self.project.logs.count(), 3)
-        assert_equal(management_project.logs.count(), 2)
+        assert (res.status_code) == (200)
+        assert (res.json) == ({'status': 'complete'})
+        assert (self.project.logs.count()) == (3)
+        assert (management_project.logs.count()) == (2)
         user_comments = Comment.objects.filter(node=self.project)
-        assert_equal(user_comments.count(), 0)
+        assert (user_comments.count()) == (0)
         admin_comments = Comment.objects.filter(node=management_project)
-        assert_equal(admin_comments.count(), 1)
+        assert (admin_comments.count()) == (1)
         assert mock_send_mail.call_args is None
 
     @mock.patch.object(iqbrims_views, 'send_mail')
@@ -1962,22 +1943,22 @@ class TestNotificationViews(IQBRIMSAddonTestCase, OsfTestCase):
         token = hashlib.sha256(('secret123' + 'process456' +
                                 self.project._id).encode('utf8')).hexdigest()
 
-        assert_equal(self.project.logs.count(), 2)
-        assert_equal(management_project.logs.count(), 1)
+        assert (self.project.logs.count()) == (2)
+        assert (management_project.logs.count()) == (1)
         url = self.project.api_url_for('iqbrims_post_notify')
         res = self.app.post_json(url, {
           'notify_type': 'imagescan_workflow_start',
           'to': ['user']
         }, headers={'X-RDM-Token': token})
 
-        assert_equal(res.status_code, 200)
-        assert_equal(res.json, {'status': 'complete'})
-        assert_equal(self.project.logs.count(), 3)
-        assert_equal(management_project.logs.count(), 2)
+        assert (res.status_code) == (200)
+        assert (res.json) == ({'status': 'complete'})
+        assert (self.project.logs.count()) == (3)
+        assert (management_project.logs.count()) == (2)
         user_comments = Comment.objects.filter(node=self.project)
-        assert_equal(user_comments.count(), 1)
+        assert (user_comments.count()) == (1)
         admin_comments = Comment.objects.filter(node=management_project)
-        assert_equal(admin_comments.count(), 0)
+        assert (admin_comments.count()) == (0)
         assert mock_send_mail.call_args is None
 
     @mock.patch.object(iqbrims_views, 'send_mail')
@@ -1994,8 +1975,8 @@ class TestNotificationViews(IQBRIMSAddonTestCase, OsfTestCase):
         token = hashlib.sha256(('secret123' + 'process456' +
                                 self.project._id).encode('utf8')).hexdigest()
 
-        assert_equal(self.project.logs.count(), 2)
-        assert_equal(management_project.logs.count(), 1)
+        assert (self.project.logs.count()) == (2)
+        assert (management_project.logs.count()) == (1)
         url = self.project.api_url_for('iqbrims_post_notify')
         res = self.app.post_json(url, {
           'notify_type': 'test_notify',
@@ -2003,21 +1984,21 @@ class TestNotificationViews(IQBRIMSAddonTestCase, OsfTestCase):
           'use_mail': True,
         }, headers={'X-RDM-Token': token})
 
-        assert_equal(res.status_code, 200)
-        assert_equal(res.json, {'status': 'complete'})
-        assert_equal(self.project.logs.count(), 2)
-        assert_equal(management_project.logs.count(), 1)
+        assert (res.status_code) == (200)
+        assert (res.json) == ({'status': 'complete'})
+        assert (self.project.logs.count()) == (2)
+        assert (management_project.logs.count()) == (1)
         user_comments = Comment.objects.filter(node=self.project)
-        assert_equal(user_comments.count(), 1)
+        assert (user_comments.count()) == (1)
         admin_comments = Comment.objects.filter(node=management_project)
-        assert_equal(admin_comments.count(), 1)
-        assert_equal(len(mock_send_mail.call_args_list), 2)
-        assert_equal(mock_send_mail.call_args_list[0][0][0], self.project.contributors[0].emails.all()[0].address)
-        assert_equal(mock_send_mail.call_args_list[0][1]['cc_addr'], management_project.contributors[0].emails.all()[0].address)
-        assert_equal(mock_send_mail.call_args_list[0][1]['replyto'], management_project.contributors[0].emails.all()[0].address)
-        assert_equal(mock_send_mail.call_args_list[1][0][0], management_project.contributors[0].emails.all()[0].address)
-        assert_true(mock_send_mail.call_args_list[1][1]['cc_addr'] is None)
-        assert_true(mock_send_mail.call_args_list[1][1]['replyto'] is None)
+        assert (admin_comments.count()) == (1)
+        assert (len(mock_send_mail.call_args_list)) == (2)
+        assert (mock_send_mail.call_args_list[0][0][0]) == (self.project.contributors[0].emails.all()[0].address)
+        assert (mock_send_mail.call_args_list[0][1]['cc_addr']) == (management_project.contributors[0].emails.all()[0].address)
+        assert (mock_send_mail.call_args_list[0][1]['replyto']) == (management_project.contributors[0].emails.all()[0].address)
+        assert (mock_send_mail.call_args_list[1][0][0]) == (management_project.contributors[0].emails.all()[0].address)
+        assert (mock_send_mail.call_args_list[1][1]['cc_addr'] is None)
+        assert (mock_send_mail.call_args_list[1][1]['replyto'] is None)
 
     @mock.patch.object(iqbrims_views, 'send_mail')
     @mock.patch.object(iqbrims_views, '_get_management_node')
@@ -2035,8 +2016,8 @@ class TestNotificationViews(IQBRIMSAddonTestCase, OsfTestCase):
 
         self.project.contributors[0].emails.create(address='researcher.sub@test.somehost.com')
 
-        assert_equal(self.project.logs.count(), 2)
-        assert_equal(management_project.logs.count(), 1)
+        assert (self.project.logs.count()) == (2)
+        assert (management_project.logs.count()) == (1)
         url = self.project.api_url_for('iqbrims_post_notify')
         res = self.app.post_json(url, {
           'notify_type': 'test_notify',
@@ -2044,21 +2025,21 @@ class TestNotificationViews(IQBRIMSAddonTestCase, OsfTestCase):
           'use_mail': True,
         }, headers={'X-RDM-Token': token})
 
-        assert_equal(res.status_code, 200)
-        assert_equal(res.json, {'status': 'complete'})
-        assert_equal(self.project.logs.count(), 2)
-        assert_equal(management_project.logs.count(), 1)
+        assert (res.status_code) == (200)
+        assert (res.json) == ({'status': 'complete'})
+        assert (self.project.logs.count()) == (2)
+        assert (management_project.logs.count()) == (1)
         user_comments = Comment.objects.filter(node=self.project)
-        assert_equal(user_comments.count(), 1)
+        assert (user_comments.count()) == (1)
         admin_comments = Comment.objects.filter(node=management_project)
-        assert_equal(admin_comments.count(), 1)
-        assert_equal(len(mock_send_mail.call_args_list), 2)
-        assert_equal(mock_send_mail.call_args_list[0][0][0], ','.join([email.address for email in self.project.contributors[0].emails.all()]))
-        assert_equal(mock_send_mail.call_args_list[0][1]['cc_addr'], management_project.contributors[0].emails.all()[0].address)
-        assert_equal(mock_send_mail.call_args_list[0][1]['replyto'], management_project.contributors[0].emails.all()[0].address)
-        assert_equal(mock_send_mail.call_args_list[1][0][0], management_project.contributors[0].emails.all()[0].address)
-        assert_true(mock_send_mail.call_args_list[1][1]['cc_addr'] is None)
-        assert_true(mock_send_mail.call_args_list[1][1]['replyto'] is None)
+        assert (admin_comments.count()) == (1)
+        assert (len(mock_send_mail.call_args_list)) == (2)
+        assert (mock_send_mail.call_args_list[0][0][0]) == (','.join([email.address for email in self.project.contributors[0].emails.all()]))
+        assert (mock_send_mail.call_args_list[0][1]['cc_addr']) == (management_project.contributors[0].emails.all()[0].address)
+        assert (mock_send_mail.call_args_list[0][1]['replyto']) == (management_project.contributors[0].emails.all()[0].address)
+        assert (mock_send_mail.call_args_list[1][0][0]) == (management_project.contributors[0].emails.all()[0].address)
+        assert (mock_send_mail.call_args_list[1][1]['cc_addr'] is None)
+        assert (mock_send_mail.call_args_list[1][1]['replyto'] is None)
 
     @mock.patch.object(iqbrims_views, 'send_mail')
     @mock.patch.object(iqbrims_views, '_get_management_node')
@@ -2076,8 +2057,8 @@ class TestNotificationViews(IQBRIMSAddonTestCase, OsfTestCase):
 
         management_project.contributors[0].emails.create(address='staff.sub@test.somehost.com')
 
-        assert_equal(self.project.logs.count(), 2)
-        assert_equal(management_project.logs.count(), 1)
+        assert (self.project.logs.count()) == (2)
+        assert (management_project.logs.count()) == (1)
         url = self.project.api_url_for('iqbrims_post_notify')
         res = self.app.post_json(url, {
           'notify_type': 'test_notify',
@@ -2085,21 +2066,21 @@ class TestNotificationViews(IQBRIMSAddonTestCase, OsfTestCase):
           'use_mail': True,
         }, headers={'X-RDM-Token': token})
 
-        assert_equal(res.status_code, 200)
-        assert_equal(res.json, {'status': 'complete'})
-        assert_equal(self.project.logs.count(), 2)
-        assert_equal(management_project.logs.count(), 1)
+        assert (res.status_code) == (200)
+        assert (res.json) == ({'status': 'complete'})
+        assert (self.project.logs.count()) == (2)
+        assert (management_project.logs.count()) == (1)
         user_comments = Comment.objects.filter(node=self.project)
-        assert_equal(user_comments.count(), 1)
+        assert (user_comments.count()) == (1)
         admin_comments = Comment.objects.filter(node=management_project)
-        assert_equal(admin_comments.count(), 1)
-        assert_equal(len(mock_send_mail.call_args_list), 2)
-        assert_equal(mock_send_mail.call_args_list[0][0][0], self.project.contributors[0].emails.all()[0].address)
-        assert_equal(set(mock_send_mail.call_args_list[0][1]['cc_addr'].split(',')), set([m.address for m in management_project.contributors[0].emails.all()]))
-        assert_equal(mock_send_mail.call_args_list[0][1]['replyto'], management_project.contributors[0].emails.all()[0].address)
-        assert_equal(mock_send_mail.call_args_list[1][0][0], ','.join([m.address for m in management_project.contributors[0].emails.all()]))
-        assert_true(mock_send_mail.call_args_list[1][1]['cc_addr'] is None)
-        assert_true(mock_send_mail.call_args_list[1][1]['replyto'] is None)
+        assert (admin_comments.count()) == (1)
+        assert (len(mock_send_mail.call_args_list)) == (2)
+        assert (mock_send_mail.call_args_list[0][0][0]) == (self.project.contributors[0].emails.all()[0].address)
+        assert (set(mock_send_mail.call_args_list[0][1]['cc_addr'].split(','))) == (set([m.address for m in management_project.contributors[0].emails.all()]))
+        assert (mock_send_mail.call_args_list[0][1]['replyto']) == (management_project.contributors[0].emails.all()[0].address)
+        assert (mock_send_mail.call_args_list[1][0][0]) == (','.join([m.address for m in management_project.contributors[0].emails.all()]))
+        assert (mock_send_mail.call_args_list[1][1]['cc_addr'] is None)
+        assert (mock_send_mail.call_args_list[1][1]['replyto'] is None)
 
     @mock.patch.object(iqbrims_views, 'send_mail')
     @mock.patch.object(iqbrims_views, '_get_management_node')
@@ -2114,8 +2095,8 @@ class TestNotificationViews(IQBRIMSAddonTestCase, OsfTestCase):
         token = hashlib.sha256(('secret123' + 'process456' +
                                 self.project._id).encode('utf8')).hexdigest()
 
-        assert_equal(self.project.logs.count(), 2)
-        assert_equal(management_project.logs.count(), 1)
+        assert (self.project.logs.count()) == (2)
+        assert (management_project.logs.count()) == (1)
         url = self.project.api_url_for('iqbrims_post_notify')
         body_html = u'''こんにちは。<br>
 連絡です。<br>
@@ -2136,23 +2117,23 @@ URL: http://test.test<br>
           'use_mail': True,
         }, headers={'X-RDM-Token': token})
 
-        assert_equal(res.status_code, 200)
-        assert_equal(res.json, {'status': 'complete'})
-        assert_equal(self.project.logs.count(), 2)
-        assert_equal(management_project.logs.count(), 1)
+        assert (res.status_code) == (200)
+        assert (res.json) == ({'status': 'complete'})
+        assert (self.project.logs.count()) == (2)
+        assert (management_project.logs.count()) == (1)
         user_comments = Comment.objects.filter(node=self.project)
-        assert_equal(user_comments.count(), 1)
+        assert (user_comments.count()) == (1)
         assert user_comments.get().content == comment_html
         admin_comments = Comment.objects.filter(node=management_project)
-        assert_equal(admin_comments.count(), 1)
+        assert (admin_comments.count()) == (1)
         assert admin_comments.get().content == comment_html
-        assert_equal(len(mock_send_mail.call_args_list), 2)
-        assert_equal(mock_send_mail.call_args_list[0][0][0], self.project.contributors[0].emails.all()[0].address)
-        assert_equal(mock_send_mail.call_args_list[0][1]['cc_addr'], management_project.contributors[0].emails.all()[0].address)
-        assert_equal(mock_send_mail.call_args_list[0][1]['replyto'], management_project.contributors[0].emails.all()[0].address)
-        assert_equal(mock_send_mail.call_args_list[1][0][0], management_project.contributors[0].emails.all()[0].address)
-        assert_true(mock_send_mail.call_args_list[1][1]['cc_addr'] is None)
-        assert_true(mock_send_mail.call_args_list[1][1]['replyto'] is None)
+        assert (len(mock_send_mail.call_args_list)) == (2)
+        assert (mock_send_mail.call_args_list[0][0][0]) == (self.project.contributors[0].emails.all()[0].address)
+        assert (mock_send_mail.call_args_list[0][1]['cc_addr']) == (management_project.contributors[0].emails.all()[0].address)
+        assert (mock_send_mail.call_args_list[0][1]['replyto']) == (management_project.contributors[0].emails.all()[0].address)
+        assert (mock_send_mail.call_args_list[1][0][0]) == (management_project.contributors[0].emails.all()[0].address)
+        assert (mock_send_mail.call_args_list[1][1]['cc_addr'] is None)
+        assert (mock_send_mail.call_args_list[1][1]['replyto'] is None)
 
     @mock.patch.object(iqbrims_views, 'send_mail')
     @mock.patch.object(iqbrims_views, '_get_management_node')
@@ -2167,8 +2148,8 @@ URL: http://test.test<br>
         token = hashlib.sha256(('secret123' + 'process456' +
                                 self.project._id).encode('utf8')).hexdigest()
 
-        assert_equal(self.project.logs.count(), 2)
-        assert_equal(management_project.logs.count(), 1)
+        assert (self.project.logs.count()) == (2)
+        assert (management_project.logs.count()) == (1)
         url = self.project.api_url_for('iqbrims_post_notify')
         body_html = ''.join([u'0123456789' for _ in range(0, 101)])
         comment_html = u'**iqbrims_test_notify** ' + body_html[:797] + '...'
@@ -2179,23 +2160,23 @@ URL: http://test.test<br>
           'use_mail': True,
         }, headers={'X-RDM-Token': token})
 
-        assert_equal(res.status_code, 200)
-        assert_equal(res.json, {'status': 'complete'})
-        assert_equal(self.project.logs.count(), 2)
-        assert_equal(management_project.logs.count(), 1)
+        assert (res.status_code) == (200)
+        assert (res.json) == ({'status': 'complete'})
+        assert (self.project.logs.count()) == (2)
+        assert (management_project.logs.count()) == (1)
         user_comments = Comment.objects.filter(node=self.project)
-        assert_equal(user_comments.count(), 1)
+        assert (user_comments.count()) == (1)
         assert user_comments.get().content == comment_html
         admin_comments = Comment.objects.filter(node=management_project)
-        assert_equal(admin_comments.count(), 1)
+        assert (admin_comments.count()) == (1)
         assert admin_comments.get().content == comment_html
-        assert_equal(len(mock_send_mail.call_args_list), 2)
-        assert_equal(mock_send_mail.call_args_list[0][0][0], self.project.contributors[0].emails.all()[0].address)
-        assert_equal(mock_send_mail.call_args_list[0][1]['cc_addr'], management_project.contributors[0].emails.all()[0].address)
-        assert_equal(mock_send_mail.call_args_list[0][1]['replyto'], management_project.contributors[0].emails.all()[0].address)
-        assert_equal(mock_send_mail.call_args_list[1][0][0], management_project.contributors[0].emails.all()[0].address)
-        assert_true(mock_send_mail.call_args_list[1][1]['cc_addr'] is None)
-        assert_true(mock_send_mail.call_args_list[1][1]['replyto'] is None)
+        assert (len(mock_send_mail.call_args_list)) == (2)
+        assert (mock_send_mail.call_args_list[0][0][0]) == (self.project.contributors[0].emails.all()[0].address)
+        assert (mock_send_mail.call_args_list[0][1]['cc_addr']) == (management_project.contributors[0].emails.all()[0].address)
+        assert (mock_send_mail.call_args_list[0][1]['replyto']) == (management_project.contributors[0].emails.all()[0].address)
+        assert (mock_send_mail.call_args_list[1][0][0]) == (management_project.contributors[0].emails.all()[0].address)
+        assert (mock_send_mail.call_args_list[1][1]['cc_addr'] is None)
+        assert (mock_send_mail.call_args_list[1][1]['replyto'] is None)
 
     @mock.patch.object(iqbrims_views, 'send_mail')
     @mock.patch.object(iqbrims_views, '_get_management_node')
@@ -2211,8 +2192,8 @@ URL: http://test.test<br>
         token = hashlib.sha256(('secret123' + 'process456' +
                                 self.project._id).encode('utf8')).hexdigest()
 
-        assert_equal(self.project.logs.count(), 2)
-        assert_equal(management_project.logs.count(), 1)
+        assert (self.project.logs.count()) == (2)
+        assert (management_project.logs.count()) == (1)
         url = self.project.api_url_for('iqbrims_post_notify')
         res = self.app.post_json(url, {
           'notify_type': 'test_notify',
@@ -2221,18 +2202,18 @@ URL: http://test.test<br>
           'use_mail': True,
         }, headers={'X-RDM-Token': token})
 
-        assert_equal(res.status_code, 200)
-        assert_equal(res.json, {'status': 'complete'})
-        assert_equal(self.project.logs.count(), 2)
-        assert_equal(management_project.logs.count(), 1)
+        assert (res.status_code) == (200)
+        assert (res.json) == ({'status': 'complete'})
+        assert (self.project.logs.count()) == (2)
+        assert (management_project.logs.count()) == (1)
         user_comments = Comment.objects.filter(node=self.project)
-        assert_equal(user_comments.count(), 0)
+        assert (user_comments.count()) == (0)
         admin_comments = Comment.objects.filter(node=management_project)
-        assert_equal(admin_comments.count(), 1)
-        assert_equal(len(mock_send_mail.call_args_list), 1)
-        assert_equal(mock_send_mail.call_args_list[0][0][0], self.project.contributors[0].emails.all()[0].address)
-        assert_equal(mock_send_mail.call_args_list[0][1]['cc_addr'], management_project.contributors[0].emails.all()[0].address)
-        assert_equal(mock_send_mail.call_args_list[0][1]['replyto'], management_project.contributors[0].emails.all()[0].address)
+        assert (admin_comments.count()) == (1)
+        assert (len(mock_send_mail.call_args_list)) == (1)
+        assert (mock_send_mail.call_args_list[0][0][0]) == (self.project.contributors[0].emails.all()[0].address)
+        assert (mock_send_mail.call_args_list[0][1]['cc_addr']) == (management_project.contributors[0].emails.all()[0].address)
+        assert (mock_send_mail.call_args_list[0][1]['replyto']) == (management_project.contributors[0].emails.all()[0].address)
 
     @mock.patch.object(IQBRIMSWorkflowUserSettings, 'load')
     @mock.patch.object(iqbrims_views, '_get_management_node')
@@ -2256,8 +2237,8 @@ URL: http://test.test<br>
           'variables': {},
         }, headers={'X-RDM-Token': token})
 
-        assert_equal(res.status_code, 200)
-        assert_equal(res.json, {'notify_type': 'test_notify'})
+        assert (res.status_code) == (200)
+        assert (res.json) == ({'notify_type': 'test_notify'})
 
     @mock.patch.object(IQBRIMSWorkflowUserSettings, 'load')
     @mock.patch.object(iqbrims_views, '_get_management_node')
@@ -2286,10 +2267,10 @@ URL: http://test.test<br>
           'variables': {'var1': 'Variable #1', 'var2': None},
         }, headers={'X-RDM-Token': token})
 
-        assert_equal(res.status_code, 200)
-        assert_equal(res.json['notify_type'], 'test_notify')
-        assert_equal(res.json['notify_body'], 'Variable #1 is Variable #1, Variable #2 is null')
-        assert_equal(res.json['user_email'], True)
+        assert (res.status_code) == (200)
+        assert (res.json['notify_type']) == ('test_notify')
+        assert (res.json['notify_body']) == ('Variable #1 is Variable #1, Variable #2 is null')
+        assert (res.json['user_email']) == (True)
 
 
 class TestWorkflowStateViews(IQBRIMSAddonTestCase, OsfTestCase):
@@ -2312,14 +2293,14 @@ class TestWorkflowStateViews(IQBRIMSAddonTestCase, OsfTestCase):
         res = self.app.post(url,
                             expect_errors=True).maybe_follow()
 
-        assert_equal(res.status_code, 403)
+        assert (res.status_code) == (403)
 
         url = self.project.api_url_for('iqbrims_post_workflow_state',
                                        part='raw')
         res = self.app.post(url, headers={'X-RDM-Token': 'invalid123'},
                             expect_errors=True).maybe_follow()
 
-        assert_equal(res.status_code, 403)
+        assert (res.status_code) == (403)
 
     @mock.patch.object(iqbrims_views, '_get_management_node')
     def test_post_minimal_workflow_state(self, mock_get_management_node):
@@ -2333,8 +2314,8 @@ class TestWorkflowStateViews(IQBRIMSAddonTestCase, OsfTestCase):
         token = hashlib.sha256(('secret123' + 'process456' +
                                 self.project._id).encode('utf8')).hexdigest()
 
-        assert_equal(self.project.logs.count(), 2)
-        assert_equal(management_project.logs.count(), 1)
+        assert (self.project.logs.count()) == (2)
+        assert (management_project.logs.count()) == (1)
         url = self.project.api_url_for('iqbrims_post_workflow_state',
                                        part='raw')
         res = self.app.post_json(url, {
@@ -2342,8 +2323,8 @@ class TestWorkflowStateViews(IQBRIMSAddonTestCase, OsfTestCase):
           'permissions': ['READ', 'WRITE']
         }, headers={'X-RDM-Token': token})
 
-        assert_equal(res.status_code, 200)
-        assert_equal(res.json, {
+        assert (res.status_code) == (200)
+        assert (res.json) == ({
           'status': 'complete',
           'data': {
             'state': 'initialized',
@@ -2391,8 +2372,8 @@ class TestWorkflowStateViews(IQBRIMSAddonTestCase, OsfTestCase):
         token = hashlib.sha256(('secret123' + 'process456' +
                                 self.project._id).encode('utf8')).hexdigest()
 
-        assert_equal(self.project.logs.count(), 2)
-        assert_equal(fake_management_project.logs.count(), 2)
+        assert (self.project.logs.count()) == (2)
+        assert (fake_management_project.logs.count()) == (2)
         url = self.project.api_url_for('iqbrims_post_workflow_state',
                                        part='raw')
         res = self.app.post_json(url, {
@@ -2400,12 +2381,12 @@ class TestWorkflowStateViews(IQBRIMSAddonTestCase, OsfTestCase):
           'permissions': ['READ', 'WRITE', 'UPLOADABLE']
         }, headers={'X-RDM-Token': token})
 
-        assert_equal(len(mock_client.grant_access_from_anyone.call_args_list), 1)
-        assert_equal(mock_client.grant_access_from_anyone.call_args_list[0][0][0], 'FOLDER12345')
-        assert_equal(len(mock_client.revoke_access_from_anyone.call_args_list), 0)
+        assert (len(mock_client.grant_access_from_anyone.call_args_list)) == (1)
+        assert (mock_client.grant_access_from_anyone.call_args_list[0][0][0]) == ('FOLDER12345')
+        assert (len(mock_client.revoke_access_from_anyone.call_args_list)) == (0)
 
-        assert_equal(res.status_code, 200)
-        assert_equal(res.json, {
+        assert (res.status_code) == (200)
+        assert (res.json) == ({
           'status': 'complete',
           'data': {
             'labo_id': 'fake_labo_name',
@@ -2456,8 +2437,8 @@ class TestWorkflowStateViews(IQBRIMSAddonTestCase, OsfTestCase):
         token = hashlib.sha256(('secret123' + 'process456' +
                                 self.project._id).encode('utf8')).hexdigest()
 
-        assert_equal(self.project.logs.count(), 2)
-        assert_equal(fake_management_project.logs.count(), 2)
+        assert (self.project.logs.count()) == (2)
+        assert (fake_management_project.logs.count()) == (2)
         url = self.project.api_url_for('iqbrims_post_workflow_state',
                                        part='raw')
         res = self.app.post_json(url, {
@@ -2465,12 +2446,12 @@ class TestWorkflowStateViews(IQBRIMSAddonTestCase, OsfTestCase):
           'permissions': ['READ', 'WRITE']
         }, headers={'X-RDM-Token': token})
 
-        assert_equal(len(mock_client.revoke_access_from_anyone.call_args_list), 1)
-        assert_equal(mock_client.revoke_access_from_anyone.call_args_list[0][0][0], 'FOLDER12345')
-        assert_equal(len(mock_client.grant_access_from_anyone.call_args_list), 0)
+        assert (len(mock_client.revoke_access_from_anyone.call_args_list)) == (1)
+        assert (mock_client.revoke_access_from_anyone.call_args_list[0][0][0]) == ('FOLDER12345')
+        assert (len(mock_client.grant_access_from_anyone.call_args_list)) == (0)
 
-        assert_equal(res.status_code, 200)
-        assert_equal(res.json, {
+        assert (res.status_code) == (200)
+        assert (res.json) == ({
           'status': 'complete',
           'data': {
             'labo_id': 'fake_labo_name',
@@ -2492,8 +2473,8 @@ class TestWorkflowStateViews(IQBRIMSAddonTestCase, OsfTestCase):
         token = hashlib.sha256(('secret123' + 'process456' +
                                 self.project._id).encode('utf8')).hexdigest()
 
-        assert_equal(self.project.logs.count(), 2)
-        assert_equal(management_project.logs.count(), 1)
+        assert (self.project.logs.count()) == (2)
+        assert (management_project.logs.count()) == (1)
         url = self.project.api_url_for('iqbrims_post_workflow_state',
                                        part='raw')
         res = self.app.post_json(url, {
@@ -2502,8 +2483,8 @@ class TestWorkflowStateViews(IQBRIMSAddonTestCase, OsfTestCase):
           'status': {'is_directly_submit_data': True}
         }, headers={'X-RDM-Token': token})
 
-        assert_equal(res.status_code, 200)
-        assert_equal(res.json, {
+        assert (res.status_code) == (200)
+        assert (res.json) == ({
           'status': 'complete',
           'data': {
             'workflow_raw_state': 'test',

@@ -3,7 +3,7 @@ from osf.exceptions import ValidationValueError
 from django.forms.widgets import TextInput, DateInput
 from osf.models.banner import ScheduledBanner, validate_banner_dates
 
-from django.utils.translation import ugettext_lazy as _
+from django.utils.translation import gettext_lazy as _
 
 ACCEPTABLE_FILE_TYPES = ('svg',)
 

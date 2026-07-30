@@ -32,7 +32,7 @@ def reverse_func(state, schema):
         for wiki_key, version_list in node.wiki_pages_versions.items():
             if version_list:
                 for index, version in enumerate(version_list):
-                    nwp = NodeWikiPage.objects.filter(former_guid=version).include(None)[0]
+                    nwp = NodeWikiPage.objects.filter(former_guid=version)[0]
                     # All NodeWikiPages associated with a certain wiki key on a node point to the same WikiPage.
                     wp = WikiPage.load(version)
                     guid = migrate_guid_referent(Guid.load(version), nwp, nwp_content_type_id)
@@ -62,7 +62,7 @@ def update_comments_viewed_timestamp(node, current_wiki_guid, desired_wiki_objec
     """Replace the current_wiki_object keys in the comments_viewed_timestamp dict with the desired wiki_object_id """
     users_pending_save = []
     # We iterate over .contributor_set instead of .contributors in order
-    # to take advantage of .include('contributor__user')
+    # to take advantage of prefetched contributors
     for contrib in node.contributor_set.all():
         user = contrib.user
         if user.comments_viewed_timestamp.get(current_wiki_guid, None):

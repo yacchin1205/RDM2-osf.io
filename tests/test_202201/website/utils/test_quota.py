@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 import datetime
-import mock
-from nose.tools import *  # noqa (PEP8 asserts)
+from unittest import mock
 import pytest
 from addons.osfstorage.models import OsfStorageFileNode
 from api.base import settings as api_settings
@@ -38,7 +37,7 @@ class TestSaveUsedQuota(OsfTestCase):
 
 
     def test_add_first_file_custom_storage(self):
-        assert_false(UserQuota.objects.filter(user=self.project_creator).exists())
+        assert not (UserQuota.objects.filter(user=self.project_creator).exists())
 
         institution = InstitutionFactory()
         self.user.affiliated_institutions.add(institution)
@@ -72,9 +71,9 @@ class TestSaveUsedQuota(OsfTestCase):
             storage_type=UserQuota.CUSTOM_STORAGE,
             user=self.project_creator
         ).all()
-        assert_equal(len(user_quota), 1)
+        assert (len(user_quota)) == (1)
         user_quota = user_quota[0]
-        assert_equal(user_quota.used, 1200)
+        assert (user_quota.used) == (1200)
 
     def test_add_file(self):
         UserQuota.objects.create(
@@ -109,9 +108,9 @@ class TestSaveUsedQuota(OsfTestCase):
             storage_type=UserQuota.NII_STORAGE,
             user=self.project_creator
         ).all()
-        assert_equal(len(user_quota), 1)
+        assert (len(user_quota)) == (1)
         user_quota = user_quota[0]
-        assert_equal(user_quota.used, 6500)
+        assert (user_quota.used) == (6500)
 
     def test_add_file_custom_storage(self):
         UserQuota.objects.create(
@@ -153,9 +152,9 @@ class TestSaveUsedQuota(OsfTestCase):
             storage_type=UserQuota.CUSTOM_STORAGE,
             user=self.project_creator
         ).all()
-        assert_equal(len(user_quota), 1)
+        assert (len(user_quota)) == (1)
         user_quota = user_quota[0]
-        assert_equal(user_quota.used, 6700)
+        assert (user_quota.used) == (6700)
 
     def test_add_file_negative_size(self):
         quota.update_used_quota(
@@ -178,7 +177,7 @@ class TestSaveUsedQuota(OsfTestCase):
                 }
             }
         )
-        assert_false(UserQuota.objects.filter(user=self.project_creator).exists())
+        assert not (UserQuota.objects.filter(user=self.project_creator).exists())
 
     def test_delete_file(self):
         UserQuota.objects.create(
@@ -216,7 +215,7 @@ class TestSaveUsedQuota(OsfTestCase):
             storage_type=UserQuota.NII_STORAGE,
             user=self.project_creator
         )
-        assert_equal(user_quota.used, 4500)
+        assert (user_quota.used) == (4500)
 
     def test_delete_file_custom_storage(self):
         UserQuota.objects.create(
@@ -261,7 +260,7 @@ class TestSaveUsedQuota(OsfTestCase):
             storage_type=UserQuota.CUSTOM_STORAGE,
             user=self.project_creator
         )
-        assert_equal(user_quota.used, 4300)
+        assert (user_quota.used) == (4300)
 
     def test_delete_file_lower_used_quota(self):
         UserQuota.objects.create(
@@ -299,7 +298,7 @@ class TestSaveUsedQuota(OsfTestCase):
             storage_type=UserQuota.NII_STORAGE,
             user=self.project_creator
         )
-        assert_equal(user_quota.used, 0)
+        assert (user_quota.used) == (0)
 
     @mock.patch('website.util.quota.logging')
     def test_delete_file_invalid_file(self, mock_logging):
@@ -332,7 +331,7 @@ class TestSaveUsedQuota(OsfTestCase):
             storage_type=UserQuota.NII_STORAGE,
             user=self.project_creator
         )
-        assert_equal(user_quota.used, 5500)
+        assert (user_quota.used) == (5500)
         mock_logging.error.assert_called_with('FileNode not found, cannot update used quota!')
 
     @mock.patch('website.util.quota.logging')
@@ -371,7 +370,7 @@ class TestSaveUsedQuota(OsfTestCase):
             storage_type=UserQuota.NII_STORAGE,
             user=self.project_creator
         )
-        assert_equal(user_quota.used, 5500)
+        assert (user_quota.used) == (5500)
         mock_logging.error.assert_called_with('FileInfo not found, cannot update used quota!')
 
     @mock.patch('website.util.quota.logging')
@@ -410,7 +409,7 @@ class TestSaveUsedQuota(OsfTestCase):
             storage_type=UserQuota.NII_STORAGE,
             user=self.project_creator
         )
-        assert_equal(user_quota.used, 5500)
+        assert (user_quota.used) == (5500)
         mock_logging.error.assert_called_with('FileNode is not trashed, cannot update used quota!')
 
     def test_delete_file_without_userquota(self):
@@ -439,7 +438,7 @@ class TestSaveUsedQuota(OsfTestCase):
             }
         )
 
-        assert_false(UserQuota.objects.filter(user=self.project_creator).exists())
+        assert not (UserQuota.objects.filter(user=self.project_creator).exists())
 
     def test_delete_folder(self):
         UserQuota.objects.create(
@@ -510,7 +509,7 @@ class TestSaveUsedQuota(OsfTestCase):
             storage_type=UserQuota.NII_STORAGE,
             user=self.project_creator
         )
-        assert_equal(user_quota.used, 500)
+        assert (user_quota.used) == (500)
 
     def test_edit_file(self):
         UserQuota.objects.create(
@@ -546,7 +545,7 @@ class TestSaveUsedQuota(OsfTestCase):
             storage_type=UserQuota.NII_STORAGE,
             user=self.project_creator
         )
-        assert_equal(user_quota.used, 6000)
+        assert (user_quota.used) == (6000)
 
     def test_edit_file_custom_storage(self):
         UserQuota.objects.create(
@@ -589,7 +588,7 @@ class TestSaveUsedQuota(OsfTestCase):
             storage_type=UserQuota.CUSTOM_STORAGE,
             user=self.project_creator
         )
-        assert_equal(user_quota.used, 6200)
+        assert (user_quota.used) == (6200)
 
     def test_edit_file_negative_size(self):
         UserQuota.objects.create(
@@ -625,7 +624,7 @@ class TestSaveUsedQuota(OsfTestCase):
             storage_type=UserQuota.NII_STORAGE,
             user=self.project_creator
         )
-        assert_equal(user_quota.used, 5500)
+        assert (user_quota.used) == (5500)
 
     def test_edit_file_without_fileinfo(self):
         UserQuota.objects.create(
@@ -660,7 +659,7 @@ class TestSaveUsedQuota(OsfTestCase):
             storage_type=UserQuota.NII_STORAGE,
             user=self.project_creator
         )
-        assert_equal(user_quota.used, 7000)
+        assert (user_quota.used) == (7000)
 
     def test_edit_file_lower_used_quota(self):
         UserQuota.objects.create(
@@ -696,7 +695,7 @@ class TestSaveUsedQuota(OsfTestCase):
             storage_type=UserQuota.NII_STORAGE,
             user=self.project_creator
         )
-        assert_equal(user_quota.used, 0)
+        assert (user_quota.used) == (0)
 
     def test_add_file_when_not_osfstorage(self):
         UserQuota.objects.create(
@@ -731,7 +730,7 @@ class TestSaveUsedQuota(OsfTestCase):
             storage_type=UserQuota.NII_STORAGE,
             user=self.project_creator
         )
-        assert_equal(user_quota.used, 5500)
+        assert (user_quota.used) == (5500)
 
     def test_move_file(self):
         quota.update_used_quota(
@@ -868,9 +867,9 @@ class TestSaveUsedQuota(OsfTestCase):
             storage_type=UserQuota.CUSTOM_STORAGE,
             user=self.project_creator
         ).all()
-        assert_equal(len(user_quota), 1)
+        assert (len(user_quota)) == (1)
         user_quota = user_quota[0]
-        assert_equal(user_quota.used, 7000)
+        assert (user_quota.used) == (7000)
 
     def test_add_folder_with_Amazon_S3(self):
         UserQuota.objects.create(
@@ -918,9 +917,9 @@ class TestSaveUsedQuota(OsfTestCase):
             storage_type=UserQuota.CUSTOM_STORAGE,
             user=self.project_creator
         ).all()
-        assert_equal(len(user_quota), 1)
+        assert (len(user_quota)) == (1)
         user_quota = user_quota[0]
-        assert_equal(user_quota.used, 5000)
+        assert (user_quota.used) == (5000)
 
     def test_delete_file_with_Amazon_S3(self):
         mock_base_file_node = mock.MagicMock()
@@ -957,7 +956,7 @@ class TestSaveUsedQuota(OsfTestCase):
             storage_type=UserQuota.CUSTOM_STORAGE,
             user=self.project_creator
         )
-        assert_equal(user_quota.used, 4500)
+        assert (user_quota.used) == (4500)
 
     def test_delete_folder_with_Amazon_S3(self):
         mock_base_file_node = mock.MagicMock()
@@ -997,4 +996,4 @@ class TestSaveUsedQuota(OsfTestCase):
             storage_type=UserQuota.CUSTOM_STORAGE,
             user=self.project_creator
         )
-        assert_equal(user_quota.used, 4000)
+        assert (user_quota.used) == (4000)

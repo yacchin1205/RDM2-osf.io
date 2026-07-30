@@ -18,7 +18,7 @@ import jwt
 import waffle
 from django.db import transaction
 from django.contrib.contenttypes.models import ContentType
-from elasticsearch import exceptions as es_exceptions
+from elasticsearch6 import exceptions as es_exceptions
 
 from api.base.settings.defaults import SLOAN_ID_COOKIE_NAME
 

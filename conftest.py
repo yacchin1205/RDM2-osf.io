@@ -2,7 +2,7 @@ from __future__ import print_function
 
 import logging
 
-import mock
+from unittest import mock
 import responses
 import pytest
 from faker import Factory
@@ -10,7 +10,7 @@ from website import settings as website_settings
 
 from framework.celery_tasks import app as celery_app
 
-from elasticsearch_dsl.connections import connections
+from elasticsearch6_dsl.connections import connections
 from django.core.management import call_command
 
 logger = logging.getLogger(__name__)
@@ -136,12 +136,13 @@ def es6_client():
 
 
 @pytest.fixture(scope='function', autouse=True)
-def _es_marker(request, es6_client):
+def _es_marker(request):
     """Clear out all indices and index templates before and after
     tests marked with ``es``.
     """
     marker = request.node.get_closest_marker('es')
     if marker:
+        es6_client = request.getfixturevalue('es6_client')
 
         def teardown_es():
             es6_client.indices.delete(index='*')

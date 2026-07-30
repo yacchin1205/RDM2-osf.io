@@ -1,8 +1,7 @@
 from rest_framework import status as http_status
 
-import mock
+from unittest import mock
 import pytest
-from nose.tools import *  # noqa PEP8 asserts
 
 from framework.auth import Auth
 from osf.models import OSFUser
@@ -49,8 +48,8 @@ class TestInvite(OsfTestCase):
             token='faketoken',
         )
         res = self.app.get(url, auth=self.referrer.auth, expect_errors=True)
-        assert_equal(res.status_code, http_status.HTTP_400_BAD_REQUEST)
-        assert_in('This URL does not support LOGIN_BY_EPPN=False', res.text)
+        assert (res.status_code) == (http_status.HTTP_400_BAD_REQUEST)
+        assert ('This URL does not support LOGIN_BY_EPPN=False') in (res.text)
 
     def _common_redirect_to_claim_user_login_by_eppn(self, user2):
         unclaimed_record = self.user.get_unclaimed_record(self.project._primary_key)
@@ -67,19 +66,19 @@ class TestInvite(OsfTestCase):
         )
         url = self.user.get_claim_url(self.project._primary_key)
         res = self.app.get(url, auth=user2.auth)
-        assert_equal(res.status_code, 302)
-        assert_in(verify_url, res.headers.get('Location'))
+        assert (res.status_code) == (302)
+        assert (verify_url) in (res.headers.get('Location'))
         res2 = res.follow(auth=user2.auth)
-        assert_equal(res2.status_code, http_status.HTTP_200_OK)
+        assert (res2.status_code) == (http_status.HTTP_200_OK)
         if user2.have_email:  # existing user
-            assert_in(user2.username, res2.text)
-            assert_in(user2.fullname, res2.text)
-            assert_in(self.user.username, res2.text)
-            assert_not_in(self.user.fullname, res2.text)
+            assert (user2.username) in (res2.text)
+            assert (user2.fullname) in (res2.text)
+            assert (self.user.username) in (res2.text)
+            assert (self.user.fullname) not in (res2.text)
         else:
-            assert_in(self.user.username, res2.text)
-            assert_in(self.user.fullname, res2.text)
-            assert_not_in(user2.username, res2.text)
+            assert (self.user.username) in (res2.text)
+            assert (self.user.fullname) in (res2.text)
+            assert (user2.username) not in (res2.text)
 
     @mock.patch('website.project.views.contributor.LOGIN_BY_EPPN', True)
     def test_redirect_by_existing_user_to_claim_user_login_by_eppn(self):
@@ -105,8 +104,8 @@ class TestInvite(OsfTestCase):
             token='badtoken',
         )
         res = self.app.get(url, auth=self.referrer.auth, expect_errors=400)
-        assert_equal(res.status_code, http_status.HTTP_400_BAD_REQUEST)
-        assert_in('The token in the URL is invalid or has expired.', res.text)
+        assert (res.status_code) == (http_status.HTTP_400_BAD_REQUEST)
+        assert ('The token in the URL is invalid or has expired.') in (res.text)
 
     @mock.patch('website.project.views.contributor.LOGIN_BY_EPPN', True)
     def test_cannot_claim_user_with_eppn_user_who_is_already_contributor(self):
@@ -123,8 +122,8 @@ class TestInvite(OsfTestCase):
             auth=contrib.auth,
             expect_errors=True,
         )
-        assert_equal(res.status_code, http_status.HTTP_400_BAD_REQUEST)
-        assert_in('The logged-in user is already a contributor to this ', res.text)
+        assert (res.status_code) == (http_status.HTTP_400_BAD_REQUEST)
+        assert ('The logged-in user is already a contributor to this ') in (res.text)
 
     def _common_posting_to_claim_user_login_by_eppn(self, user2, send_mail, existing_user):
         if existing_user:
@@ -145,39 +144,39 @@ class TestInvite(OsfTestCase):
         )
         url = self.user.get_claim_url(self.project._primary_key)
         res = self.app.get(url, auth=user2.auth)
-        assert_equal(res.status_code, 302)
-        assert_in(verify_url, res.headers.get('Location'))
+        assert (res.status_code) == (302)
+        assert (verify_url) in (res.headers.get('Location'))
 
         with mock.patch('website.project.views.contributor.mapcore_sync_map_group') as mock1, \
              mock.patch('website.project.views.contributor.mapcore_sync_is_enabled') as mock2:
             mock2.return_value = True
             res2 = self.app.post(verify_url, auth=user2.auth)
-        assert_equal(mock1.call_count, 1)
-        assert_equal(res2.status_code, 302)
-        assert_in(self.project.url, res2.headers.get('Location'))
+        assert (mock1.call_count) == (1)
+        assert (res2.status_code) == (302)
+        assert (self.project.url) in (res2.headers.get('Location'))
 
         user2.reload()  # update have_email
-        assert_true(user2.have_email)
+        assert (user2.have_email)
         if existing_user:
-            assert_equal(send_mail.call_count, 0)
+            assert (send_mail.call_count) == (0)
         else:
-            assert_equal(send_mail.call_count, 1)  # welcome
+            assert (send_mail.call_count) == (1)  # welcome
 
         user2_auth = Auth(OSFUser.objects.get(username=user2.username))
         res3 = res2.follow(auth=user2_auth)
-        assert_equal(res3.status_code, http_status.HTTP_200_OK)
+        assert (res3.status_code) == (http_status.HTTP_200_OK)
 
         self.project.reload()
         self.user.reload()
         user2.reload()
-        assert_equal(self.user.fullname, 'Deleted user')
-        assert_false(self.user.is_active)
-        assert_not_in(self.project._primary_key, self.user.unclaimed_records)
-        assert_not_in(self.user, self.project.contributors)
-        assert_equal(user2.username, expected_username)
-        assert_equal(user2.fullname, expected_fullname)
-        assert_in(user2, self.project.contributors)
-        assert_true(user2.emails.filter(address=self.given_email).exists())
+        assert (self.user.fullname) == ('Deleted user')
+        assert not (self.user.is_active)
+        assert (self.project._primary_key) not in (self.user.unclaimed_records)
+        assert (self.user) not in (self.project.contributors)
+        assert (user2.username) == (expected_username)
+        assert (user2.fullname) == (expected_fullname)
+        assert (user2) in (self.project.contributors)
+        assert (user2.emails.filter(address=self.given_email).exists())
 
     @mock.patch('website.project.views.contributor.LOGIN_BY_EPPN', True)
     @mock.patch('website.project.views.contributor.send_welcome')
@@ -228,7 +227,7 @@ class TestInvite(OsfTestCase):
         send_claim_email(email=given_email, unclaimed_user=unreg_user,
                          node=project)
 
-        assert_true(send_mail.called)
+        assert (send_mail.called)
         send_mail.assert_called_with(
             given_email,
             mails.INVITE_DEFAULT,

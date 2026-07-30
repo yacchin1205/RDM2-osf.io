@@ -1,6 +1,6 @@
 from urllib.parse import urlencode
 
-import mock
+from unittest import mock
 import pytest
 from admin.entitlements import views
 from admin_tests.utilities import setup_user_view
@@ -9,7 +9,6 @@ from django.core.exceptions import PermissionDenied
 from django.db.models.query import QuerySet
 from django.test import RequestFactory
 from django.urls import reverse
-from nose import tools as nt
 from osf.models.institution_entitlement import InstitutionEntitlement
 from osf_tests.factories import (
     AuthUserFactory,
@@ -76,12 +75,12 @@ class TestInstitutionEntitlementList(AdminTestCase):
         self.view.object_list = self.view.get_queryset()
         res = self.view.get_context_data()
 
-        nt.assert_is_instance(res, dict)
-        nt.assert_equal(res['institutions'][0].id, self.institution.id)
-        nt.assert_equal(res['selected_id'], self.institution.id)
-        nt.assert_is_instance(res['entitlements'], QuerySet)
-        nt.assert_is_instance(res['entitlements'][0], InstitutionEntitlement)
-        nt.assert_equal(res['entitlements'][0], self.institutionEntitlement)
+        assert isinstance((res), (dict))
+        assert (res['institutions'][0].id) == (self.institution.id)
+        assert (res['selected_id']) == (self.institution.id)
+        assert isinstance((res['entitlements']), (QuerySet))
+        assert isinstance((res['entitlements'][0]), (InstitutionEntitlement))
+        assert (res['entitlements'][0]) == (self.institutionEntitlement)
 
     def test_get_context_data_is_admin_and_has_affiliated_institutions(self):
         self.institution = InstitutionFactory()
@@ -102,12 +101,12 @@ class TestInstitutionEntitlementList(AdminTestCase):
         self.view.object_list = self.view.get_queryset()
         res = self.view.get_context_data()
 
-        nt.assert_is_instance(res, dict)
-        nt.assert_equal(res['institutions'][0].id, self.institution.id)
-        nt.assert_equal(res['selected_id'], self.institution.id)
-        nt.assert_is_instance(res['entitlements'], QuerySet)
-        nt.assert_is_instance(res['entitlements'][0], InstitutionEntitlement)
-        nt.assert_equal(res['entitlements'][0], self.institutionEntitlement)
+        assert isinstance((res), (dict))
+        assert (res['institutions'][0].id) == (self.institution.id)
+        assert (res['selected_id']) == (self.institution.id)
+        assert isinstance((res['entitlements']), (QuerySet))
+        assert isinstance((res['entitlements'][0]), (InstitutionEntitlement))
+        assert (res['entitlements'][0]) == (self.institutionEntitlement)
 
     def test_get_context_data_raise_PermissionDenied(self):
         self.institution = InstitutionFactory()
@@ -142,9 +141,9 @@ class TestInstitutionEntitlementList(AdminTestCase):
         # Create a list ordered by entitlement
         institution_entitlement_list = sorted(institution_entitlement_list, key=lambda item: item.entitlement)
 
-        nt.assert_equals(set(institution_entitlements), set(institution_entitlement_list))
-        nt.assert_is_instance(institution_entitlements[0], InstitutionEntitlement)
-        nt.assert_equal(len(self.view.get_queryset()), 2)
+        assert (set(institution_entitlements)) == (set(institution_entitlement_list))
+        assert isinstance((institution_entitlements[0]), (InstitutionEntitlement))
+        assert (len(self.view.get_queryset())) == (2)
 
     def test_InstitutionEntitlementList_correct_view_permissions(self):
         user = AuthUserFactory()
@@ -282,7 +281,7 @@ class TestBulkAddInstitutionEntitlement(AdminTestCase):
         response = self.view(request)
 
         mockApi.assert_not_called()
-        nt.assert_equal(response.status_code, 302)
+        assert (response.status_code) == (302)
 
     @mock.patch('admin.entitlements.views.InstitutionEntitlement.objects.create')
     def test_post_entitlement_not_found(self, mockApi):
@@ -298,7 +297,7 @@ class TestBulkAddInstitutionEntitlement(AdminTestCase):
         response = self.view(request)
 
         mockApi.assert_called()
-        nt.assert_equal(response.status_code, 302)
+        assert (response.status_code) == (302)
 
     @pytest.mark.skip
     def test_BulkAddInstitutionEntitlement_no_user_permissions_raises_error(self):
@@ -475,8 +474,8 @@ class TestToggleInstitutionEntitlement(AdminTestCase):
         base_url = reverse('institutions:entitlements')
         query_string = urlencode({'institution_id': self.institution01.id, 'page': 1})
 
-        nt.assert_equal(response.status_code, 302)
-        nt.assert_equal(response.url, '{}?{}'.format(base_url, query_string))
+        assert (response.status_code) == (302)
+        assert (response.url) == ('{}?{}'.format(base_url, query_string))
 
     @pytest.mark.skip
     def test_ToggleInstitutionEntitlement_no_user_permissions_raises_error(self):
@@ -714,8 +713,8 @@ class TestDeleteInstitutionEntitlement(AdminTestCase):
         base_url = reverse('institutions:entitlements')
         query_string = urlencode({'institution_id': self.institution01.id, 'page': 1})
 
-        nt.assert_equal(response.status_code, 302)
-        nt.assert_equal(response.url, '{}?{}'.format(base_url, query_string))
+        assert (response.status_code) == (302)
+        assert (response.url) == ('{}?{}'.format(base_url, query_string))
 
     def test_permission_anonymous(self):
         request = RequestFactory().post(

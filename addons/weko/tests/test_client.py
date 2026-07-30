@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
-import mock
-from mock import call
-from nose.tools import *  # noqa
+import pytest
+from unittest import mock
+from unittest.mock import call
 
 from tests.base import OsfTestCase
 
@@ -31,17 +31,17 @@ class TestWEKOClient(OsfTestCase):
     @mock.patch('requests.get', side_effect=mock_requests_get)
     def test_weko_get_indices(self, get_req_mock):
         indices = self.conn.get_indices()
-        assert_equal(len(indices), 1)
-        assert_equal(indices[0].title, 'Sample Index')
-        assert_equal(indices[0].identifier, 100)
+        assert (len(indices)) == (1)
+        assert (indices[0].title) == ('Sample Index')
+        assert (indices[0].identifier) == (100)
 
     @mock.patch('requests.get', side_effect=mock_requests_get)
     def test_weko_get_index_by_id(self, get_req_mock):
         index = self.conn.get_index_by_id(100)
-        assert_equal(index.title, 'Sample Index')
-        assert_equal(index.identifier, 100)
+        assert (index.title) == ('Sample Index')
+        assert (index.identifier) == (100)
 
-        with assert_raises(ValueError):
+        with pytest.raises(ValueError):
             self.conn.get_index_by_id(101)
 
     @mock.patch('requests.get', side_effect=mock_requests_get)
@@ -49,14 +49,14 @@ class TestWEKOClient(OsfTestCase):
         index = self.conn.get_index_by_id(100)
         items = index.get_items()
 
-        assert_equal(len(items), 1)
-        assert_equal(items[0].title, 'Sample Item')
-        assert_equal(items[0].identifier, 1000)
+        assert (len(items)) == (1)
+        assert (items[0].title) == ('Sample Item')
+        assert (items[0].identifier) == (1000)
 
     @mock.patch('requests.get', side_effect=mock_requests_get)
     def test_weko_get_item_by_id(self, get_req_mock):
         index = self.conn.get_index_by_id(100)
         item = index.get_item_by_id(1000)
 
-        assert_equal(item.title, 'Sample Item')
-        assert_equal(item.identifier, 1000)
+        assert (item.title) == ('Sample Item')
+        assert (item.identifier) == (1000)

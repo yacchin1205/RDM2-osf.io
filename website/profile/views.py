@@ -7,7 +7,7 @@ from rest_framework import status as http_status
 from django.utils import timezone
 from django.core.exceptions import ValidationError
 from flask import request
-import mailchimp
+from mailchimp3.mailchimpclient import MailChimpError
 
 from framework import sentry
 from framework.auth import utils as auth_utils
@@ -27,7 +27,7 @@ from framework.utils import throttle_period_expired
 
 from osf import features
 from osf.models import ApiOAuth2Application, ApiOAuth2PersonalToken, Email, OSFUser, QuickFilesNode
-from osf.exceptions import BlacklistedEmailError
+from osf.exceptions import BlacklistedEmailError, OSFError
 from osf.utils.requests import string_type_request_headers
 from website import mails
 from website import mailchimp_utils
@@ -608,12 +608,12 @@ def update_mailchimp_subscription(user, list_name, subscription, send_goodbye=Tr
     if subscription:
         try:
             mailchimp_utils.subscribe_mailchimp(list_name, user._id)
-        except mailchimp.Error:
+        except (MailChimpError, OSFError):
             pass
     else:
         try:
-            mailchimp_utils.unsubscribe_mailchimp_async(list_name, user._id, username=user.username, send_goodbye=send_goodbye)
-        except mailchimp.Error:
+            mailchimp_utils.unsubscribe_mailchimp_async(list_name, user._id, username=user.username)
+        except (MailChimpError, OSFError):
             # User has already unsubscribed, so nothing to do
             pass
 

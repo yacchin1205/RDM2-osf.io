@@ -1342,8 +1342,7 @@ msgid "Image Size:"
 msgstr ""
 
 #: addons/wiki/templates/edit.mako:438
-#, python-format
-msgid "Enter image size (e.g., 300 for pixels, or 50% for percentage)"
+msgid "Enter image size (e.g., 300 for pixels, or 50% as a percentage)"
 msgstr ""
 
 #: addons/wiki/templates/edit.mako:439

@@ -104,8 +104,6 @@ INSTALLED_APPS = (
     # 3rd party
     'raven.contrib.django.raven_compat',
     'webpack_loader',
-    'django_nose',
-    'password_reset',
 
     # OSF
     'osf',

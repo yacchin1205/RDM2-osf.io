@@ -5,7 +5,7 @@ import logging
 from framework.exceptions import HTTPError
 
 from django.db import transaction
-from flask import request, current_app, has_request_context, _request_ctx_stack
+from flask import request, current_app, has_request_context, g
 from werkzeug.local import LocalProxy
 
 
@@ -16,8 +16,7 @@ logger = logging.getLogger(__name__)
 
 def _get_current_atomic():
     if has_request_context():
-        ctx = _request_ctx_stack.top
-        return getattr(ctx, 'current_atomic', None)
+        return g.get('current_atomic', None)
     return None
 
 current_atomic = LocalProxy(_get_current_atomic)
@@ -41,10 +40,9 @@ def transaction_before_request():
     """
     if view_has_annotation(NO_AUTO_TRANSACTION_ATTR):
         return None
-    ctx = _request_ctx_stack.top
     atomic = transaction.atomic()
     atomic.__enter__()
-    ctx.current_atomic = atomic
+    g.current_atomic = atomic
 
 def transaction_after_request(response, base_status_code_error=500):
     """Teardown transaction after handling the request. Rollback if an

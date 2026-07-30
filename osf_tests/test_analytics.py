@@ -3,10 +3,9 @@
 Unit tests for analytics logic in framework/analytics/__init__.py
 """
 
-import mock
+from unittest import mock
 import pytest
 from django.utils import timezone
-from nose.tools import *  # noqa: F403
 
 from datetime import datetime
 
@@ -24,21 +23,21 @@ class TestAnalytics(OsfTestCase):
         user = UserFactory()
         date = timezone.now()
 
-        assert_equal(analytics.get_total_activity_count(user._id), 0)
-        assert_equal(analytics.get_total_activity_count(user._id), user.get_activity_points())
+        assert (analytics.get_total_activity_count(user._id)) == (0)
+        assert (analytics.get_total_activity_count(user._id)) == (user.get_activity_points())
 
         analytics.increment_user_activity_counters(user._id, 'project_created', date.isoformat())
 
-        assert_equal(analytics.get_total_activity_count(user._id), 1)
-        assert_equal(analytics.get_total_activity_count(user._id), user.get_activity_points())
+        assert (analytics.get_total_activity_count(user._id)) == (1)
+        assert (analytics.get_total_activity_count(user._id)) == (user.get_activity_points())
 
     def test_increment_user_activity_counters(self):
         user = UserFactory()
         date = timezone.now()
 
-        assert_equal(user.get_activity_points(), 0)
+        assert (user.get_activity_points()) == (0)
         analytics.increment_user_activity_counters(user._id, 'project_created', date.isoformat())
-        assert_equal(user.get_activity_points(), 1)
+        assert (user.get_activity_points()) == (1)
 
 
 @pytest.fixture()

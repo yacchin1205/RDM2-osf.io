@@ -4,7 +4,7 @@ from django.http import JsonResponse
 from rest_framework.exceptions import ValidationError
 from rest_framework import permissions as drf_permissions
 from rest_framework.generics import GenericAPIView
-from elasticsearch.exceptions import NotFoundError, RequestError
+from elasticsearch6.exceptions import NotFoundError, RequestError
 
 from framework.auth.oauth_scopes import CoreScopes
 from api.base.permissions import TokenHasScope
@@ -14,7 +14,7 @@ from api.metrics.serializers import PreprintMetricSerializer, RawMetricsSerializ
 from api.metrics.utils import parse_datetimes
 from api.base.views import JSONAPIBaseView
 from api.base.waffle_decorators import require_switch
-from elasticsearch_dsl.connections import get_connection
+from elasticsearch6_dsl.connections import get_connection
 
 from osf.features import ENABLE_RAW_METRICS
 

@@ -1,11 +1,10 @@
 #!/usr/bin/env python3
 # encoding: utf-8
 
-import mock
+from unittest import mock
 
 from tests.base import OsfTestCase
 from osf_tests.factories import UserFactory
-from nose.tools import assert_false
 
 import functools
 
@@ -69,4 +68,4 @@ class TestSentry(OsfTestCase):
     @mock.patch('framework.sentry.sentry.captureException')
     def test_log_not_enabled(self, mock_capture):
         sentry.log_exception()
-        assert_false(mock_capture.called)
+        assert not (mock_capture.called)

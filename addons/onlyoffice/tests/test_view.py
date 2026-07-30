@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """Views tests for the onlyoffice addon."""
 import pytest
-import mock
+from unittest import mock
 
 from addons.onlyoffice.util import _ext_to_app_name_onlyoffice, get_onlyoffice_url, get_file_info
 from addons.onlyoffice.views import onlyoffice_edit_by_onlyoffice, onlyoffice_check_file_info

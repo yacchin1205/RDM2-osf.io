@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 import logging
-import mock
-from nose.tools import *  # noqa
+from unittest import mock
 
 from tests.base import OsfTestCase
 from osf_tests.factories import UserFactory

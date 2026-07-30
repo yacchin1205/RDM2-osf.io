@@ -2,7 +2,7 @@ import datetime
 
 from osf_tests.factories import PreprintFactory, PreprintProviderFactory
 from osf.models import Preprint
-import mock
+from unittest import mock
 import pytest
 import pytz
 import requests

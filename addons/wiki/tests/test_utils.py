@@ -5,13 +5,12 @@ from copy import deepcopy
 from rest_framework import status as http_status
 import json
 import time
-import mock
+from unittest import mock
 import pytest
 import pytz
 import datetime
 import unicodedata
 import uuid
-from nose.tools import *  # noqa
 from unittest.mock import MagicMock
 from tests.base import OsfTestCase, fake
 from osf_tests.factories import (

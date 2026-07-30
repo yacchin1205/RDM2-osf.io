@@ -1,8 +1,7 @@
 from __future__ import absolute_import
 import json
-import mock
+from unittest import mock
 import pytest
-from nose.tools import *
 from framework.auth import Auth
 from osf.utils import permissions
 from tests.base import (
@@ -91,7 +90,7 @@ class TestUserInviteViews(OsfTestCase):
             pid=self.project._id,
         )
         res = self.app.get(claim_url)
-        assert_equal(res.status_code, 200)
+        assert (res.status_code) == (200)
 
 
 class TestConfirmationViewBlockBingPreview(OsfTestCase):
@@ -122,7 +121,7 @@ class TestConfirmationViewBlockBingPreview(OsfTestCase):
             },
             expect_errors=True,
         )
-        assert_equal(res.status_code, 302)
+        assert (res.status_code) == (302)
 
     def test_claim_user_form_contributor_is_none(self):
         referrer = AuthUserFactory()
@@ -143,7 +142,7 @@ class TestConfirmationViewBlockBingPreview(OsfTestCase):
             },
             expect_errors=True,
         )
-        assert_equal(res.status_code, 400)
+        assert (res.status_code) == (400)
 
     @mock.patch('osf.models.node.Node.cancel_invite')
     def test_claim_user_form_not_nodes_removed(self, mock):
@@ -165,7 +164,7 @@ class TestConfirmationViewBlockBingPreview(OsfTestCase):
             },
             expect_errors=True,
         )
-        assert_equal(res.status_code, 400)
+        assert (res.status_code) == (400)
 
 
 @pytest.mark.enable_implicit_clean
@@ -200,11 +199,11 @@ class TestAddingContributorViews(OsfTestCase):
             self.project,
             contrib_data,
             auth=Auth(self.creator))
-        assert_equal(len(res), len(contrib_data))
-        assert_true(res[0]['user'].is_registered)
+        assert (len(res)) == (len(contrib_data))
+        assert (res[0]['user'].is_registered)
 
-        assert_false(res[1]['user'].is_registered)
-        assert_true(res[1]['user']._id)
+        assert not (res[1]['user'].is_registered)
+        assert (res[1]['user']._id)
 
-        assert_false(res[2]['user'].is_registered)
-        assert_true(res[2]['user']._id)
+        assert not (res[2]['user'].is_registered)
+        assert (res[2]['user']._id)

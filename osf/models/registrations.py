@@ -70,9 +70,7 @@ class Registration(AbstractNode):
     )
     registered_date = NonNaiveDateTimeField(db_index=True, null=True, blank=True)
 
-    # This is a NullBooleanField because of inheritance issues with using a BooleanField
-    # TODO: Update to BooleanField(default=False, null=True) when Django is updated to >=2.1
-    external_registration = models.NullBooleanField(default=False)
+    external_registration = models.BooleanField(null=True, blank=True, default=False)
     registered_user = models.ForeignKey(OSFUser,
                                         related_name='related_to',
                                         on_delete=models.SET_NULL,
@@ -517,7 +515,7 @@ class Registration(AbstractNode):
     class Meta:
         # custom permissions for use in the GakuNin RDM Admin App
         permissions = (
-            ('view_registration', 'Can view registration details'),
+            # 'view_registration' is a built-in Django permission.
         )
 
 class DraftRegistrationLog(ObjectIDMixin, BaseModel):

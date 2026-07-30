@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 import itsdangerous
-import mock
+from unittest import mock
 import pytest
 import unittest
 from uuid import UUID

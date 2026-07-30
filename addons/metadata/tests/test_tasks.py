@@ -1,7 +1,7 @@
-import mock
+import pytest
+from unittest import mock
 from datetime import datetime
 
-from nose.tools import assert_false, assert_equal, assert_raises
 
 from addons.metadata import tasks as metadata_tasks
 
@@ -24,7 +24,7 @@ def test_sync_kaken_data_skips_when_disabled(mock_logger, mock_init_app):
         metadata_tasks.sync_kaken_data.run()
 
     mock_logger.info.assert_called_with('KAKEN functionality disabled (KAKEN_ELASTIC_URI is None), skipping sync')
-    assert_false(mock_init_app.called)
+    assert not (mock_init_app.called)
 
 
 @mock.patch('addons.metadata.suggestions.kaken.client.ResourceSyncClient')
@@ -52,7 +52,7 @@ def test_sync_kaken_data_starts_incremental_sync(mock_init_app, mock_do_sync, mo
         mock_sync_log.start_sync.assert_called_once_with(sync_type='incremental')
         mock_do_sync.assert_called_once()
         args, kwargs = mock_do_sync.call_args
-        assert_equal(kwargs.get('dry_run'), False)
+        assert (kwargs.get('dry_run')) == (False)
 
 
 @mock.patch('addons.metadata.suggestions.kaken.client.ResourceSyncClient')
@@ -74,8 +74,8 @@ def test_sync_kaken_data_resumes_incomplete_log(mock_init_app, mock_do_sync, moc
 
         metadata_tasks.sync_kaken_data.run()
 
-        assert_false(mock_sync_log.start_sync.called)
-        assert_false(mock_sync_log.get_last_successful_sync.called)
+        assert not (mock_sync_log.start_sync.called)
+        assert not (mock_sync_log.get_last_successful_sync.called)
         mock_do_sync.assert_called_once()
 
 
@@ -97,7 +97,7 @@ def test_sync_kaken_data_raises_on_failure(mock_init_app, mock_do_sync, mock_es_
         mock_sync_log.get_last_successful_sync.return_value = None
         mock_sync_log.start_sync.return_value = sync_log
 
-        assert_raises(Exception, metadata_tasks.sync_kaken_data.run)
+        pytest.raises(Exception, metadata_tasks.sync_kaken_data.run)
 
 
 @mock.patch('addons.metadata.tasks.logger')

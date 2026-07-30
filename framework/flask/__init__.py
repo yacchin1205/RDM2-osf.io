@@ -25,11 +25,14 @@ app.config['SENTRY_RELEASE'] = settings.VERSION
 app.config['BABEL_TRANSLATION_DIRECTORIES'] = settings.BABEL_TRANSLATION_DIRECTORIES
 app.config['BABEL_DOMAIN'] = settings.BABEL_DOMAIN
 app.config['BABEL_DEFAULT_LOCALE'] = settings.BABEL_DEFAULT_LOCALE
-babel = Babel(app)
 
-@babel.localeselector
 def get_locale():
     return request.accept_languages.best_match(settings.BABEL_LANGUAGES.keys())
+
+
+babel = Babel()
+babel.init_app(app, locale_selector=get_locale)
+
 
 def rm_handler(app, handler_name, func, key=None):
     """Remove a handler from an application.

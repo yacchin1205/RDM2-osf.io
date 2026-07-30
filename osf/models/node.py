@@ -27,7 +27,6 @@ from django.utils.functional import cached_property
 from keen import scoped_keys
 from psycopg2._psycopg import AsIs
 from typedmodels.models import TypedModel, TypedModelManager
-from include import IncludeManager
 from guardian.models import (
     GroupObjectPermissionBase,
     UserObjectPermissionBase,
@@ -208,7 +207,7 @@ class AbstractNodeQuerySet(GuidMixinQuerySet):
         return qs.filter(is_deleted=False)
 
 
-class AbstractNodeManager(TypedModelManager, IncludeManager):
+class AbstractNodeManager(TypedModelManager):
 
     def get_queryset(self):
         qs = AbstractNodeQuerySet(self.model, using=self._db)
@@ -365,7 +364,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
     is_fork = models.BooleanField(default=False, db_index=True)
     is_public = models.BooleanField(default=False, db_index=True)
     is_deleted = models.BooleanField(default=False, db_index=True)
-    access_requests_enabled = models.NullBooleanField(default=True, db_index=True)
+    access_requests_enabled = models.BooleanField(null=True, blank=True, default=True, db_index=True)
 
     custom_citation = models.TextField(blank=True, null=True)
 
@@ -884,8 +883,8 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         return NodeLog.objects.filter(
             node_id=self.id,
             should_hide=False
-        ).order_by('-date').include(
-            'node__guids', 'user__guids', 'original_node__guids', limit_includes=10
+        ).order_by('-date').prefetch_related(
+            'node__guids', 'user__guids', 'original_node__guids',
         )
 
     def get_absolute_url(self):

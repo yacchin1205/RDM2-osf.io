@@ -1,10 +1,10 @@
-import collections
+from collections.abc import Mapping
 import re
 from future.moves.urllib.parse import urlparse
 
 import furl
 import waffle
-from django.core.urlresolvers import resolve, reverse, NoReverseMatch
+from django.urls import resolve, reverse, NoReverseMatch
 from django.core.exceptions import ImproperlyConfigured
 from distutils.version import StrictVersion
 
@@ -1199,7 +1199,7 @@ class JSONAPIListSerializer(ser.ListSerializer):
         errors = {}
         bulk_skip_uneditable = utils.is_truthy(self.context['request'].query_params.get('skip_uneditable', False))
 
-        if isinstance(data, collections.Mapping):
+        if isinstance(data, Mapping):
             errors = data.get('errors', None)
             data = data.get('data', None)
         if enable_esi:

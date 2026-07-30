@@ -1,8 +1,7 @@
 import unittest
 
-from mock import patch, Mock
+from unittest.mock import patch, Mock
 import pytest
-from nose.tools import *  # noqa (PEP8 asserts)
 
 from admin.rdm_addons.utils import get_rdm_addon_option
 
@@ -80,10 +79,10 @@ class TestDropboxBusiness(unittest.TestCase):
         self.f_option.save()
 
     def test_dropboxbusiness_default_is_not_allowed(self):
-        assert_false(self.f_option.is_allowed)
+        assert not (self.f_option.is_allowed)
         self._new_project()
         result = self.project.get_addon('dropboxbusiness')
-        assert_equal(result, None)
+        assert (result) == (None)
 
     def test_dropboxbusiness_no_eppn(self):
         self.user.eppn = None
@@ -91,30 +90,30 @@ class TestDropboxBusiness(unittest.TestCase):
         self._allowed()
         self._new_project()
         result = self.project.get_addon('dropboxbusiness')
-        assert_equal(result, None)
+        assert (result) == (None)
 
     def test_dropboxbusiness_no_institution(self):
         self.user.affiliated_institutions.clear()
         self._allowed()
         self._new_project()
         result = self.project.get_addon('dropboxbusiness')
-        assert_equal(result, None)
+        assert (result) == (None)
 
     def test_dropboxbusiness_no_addon_option(self):
         self.f_option.delete()
         self._allowed()
         self._new_project()
         result = self.project.get_addon('dropboxbusiness')
-        assert_equal(result, None)
+        assert (result) == (None)
 
     def test_dropboxbusiness_automount(self):
         self.f_option.is_allowed = True
         self.f_option.save()
         self._new_project()
         result = self.project.get_addon('dropboxbusiness')
-        assert_true(isinstance(result, NodeSettings))
-        assert_equal(result.admin_dbmid, 'dbmid:dummy')
-        assert_equal(result.team_folder_id, 'dbtid:dummy')
-        assert_equal(result.group_id, 'g:dummy')
+        assert (isinstance(result, NodeSettings))
+        assert (result.admin_dbmid) == ('dbmid:dummy')
+        assert (result.team_folder_id) == ('dbtid:dummy')
+        assert (result.group_id) == ('g:dummy')
 
 

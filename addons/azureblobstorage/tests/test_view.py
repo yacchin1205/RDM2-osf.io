@@ -1,8 +1,7 @@
 # -*- coding: utf-8 -*-
 from rest_framework import status as http_status
 
-import mock
-from nose.tools import *  # noqa
+from unittest import mock
 from azure.common import AzureHttpError
 
 from framework.auth import Auth
@@ -43,8 +42,8 @@ class TestAzureBlobStorageViews(AzureBlobStorageAddonTestCase, OAuthAddonConfigV
             'access_key': '',
             'secret_key': ''
         }, auth=self.user.auth, expect_errors=True)
-        assert_equals(rv.status_int, http_status.HTTP_400_BAD_REQUEST)
-        assert_in('All the fields above are required.', rv.body.decode())
+        assert (rv.status_int) == (http_status.HTTP_400_BAD_REQUEST)
+        assert ('All the fields above are required.') in (rv.body.decode())
 
     def test_azureblobstorage_settings_input_empty_access_key(self):
         url = self.project.api_url_for('azureblobstorage_add_user_account')
@@ -52,8 +51,8 @@ class TestAzureBlobStorageViews(AzureBlobStorageAddonTestCase, OAuthAddonConfigV
             'access_key': '',
             'secret_key': 'Non-empty-secret-key'
         }, auth=self.user.auth, expect_errors=True)
-        assert_equals(rv.status_int, http_status.HTTP_400_BAD_REQUEST)
-        assert_in('All the fields above are required.', rv.body.decode())
+        assert (rv.status_int) == (http_status.HTTP_400_BAD_REQUEST)
+        assert ('All the fields above are required.') in (rv.body.decode())
 
     def test_azureblobstorage_settings_input_empty_secret_key(self):
         url = self.project.api_url_for('azureblobstorage_add_user_account')
@@ -61,8 +60,8 @@ class TestAzureBlobStorageViews(AzureBlobStorageAddonTestCase, OAuthAddonConfigV
             'access_key': 'Non-empty-access-key',
             'secret_key': ''
         }, auth=self.user.auth, expect_errors=True)
-        assert_equals(rv.status_int, http_status.HTTP_400_BAD_REQUEST)
-        assert_in('All the fields above are required.', rv.body.decode())
+        assert (rv.status_int) == (http_status.HTTP_400_BAD_REQUEST)
+        assert ('All the fields above are required.') in (rv.body.decode())
 
     def test_azureblobstorage_settings_rdm_addons_denied(self):
         institution = InstitutionFactory()
@@ -76,8 +75,8 @@ class TestAzureBlobStorageViews(AzureBlobStorageAddonTestCase, OAuthAddonConfigV
             'access_key': 'aldkjf',
             'secret_key': 'las'
         }, auth=self.user.auth, expect_errors=True)
-        assert_equals(rv.status_int, http_status.HTTP_403_FORBIDDEN)
-        assert_in('You are prohibited from using this add-on.', rv.body.decode())
+        assert (rv.status_int) == (http_status.HTTP_403_FORBIDDEN)
+        assert ('You are prohibited from using this add-on.') in (rv.body.decode())
 
     def test_azureblobstorage_set_container_no_settings(self):
         user = AuthUserFactory()
@@ -87,7 +86,7 @@ class TestAzureBlobStorageViews(AzureBlobStorageAddonTestCase, OAuthAddonConfigV
             url, {'azureblobstorage_container': 'hammertofall'}, auth=user.auth,
             expect_errors=True
         )
-        assert_equal(res.status_code, http_status.HTTP_400_BAD_REQUEST)
+        assert (res.status_code) == (http_status.HTTP_400_BAD_REQUEST)
 
     def test_azureblobstorage_set_container_no_auth(self):
 
@@ -99,7 +98,7 @@ class TestAzureBlobStorageViews(AzureBlobStorageAddonTestCase, OAuthAddonConfigV
             url, {'azureblobstorage_container': 'hammertofall'}, auth=user.auth,
             expect_errors=True
         )
-        assert_equal(res.status_code, http_status.HTTP_403_FORBIDDEN)
+        assert (res.status_code) == (http_status.HTTP_403_FORBIDDEN)
 
     def test_azureblobstorage_set_container_registered(self):
         registration = self.project.register_node(
@@ -113,7 +112,7 @@ class TestAzureBlobStorageViews(AzureBlobStorageAddonTestCase, OAuthAddonConfigV
             expect_errors=True,
         )
 
-        assert_equal(res.status_code, http_status.HTTP_400_BAD_REQUEST)
+        assert (res.status_code) == (http_status.HTTP_400_BAD_REQUEST)
 
     @mock.patch('addons.azureblobstorage.views.utils.can_list', return_value=False)
     def test_user_settings_cant_list(self, mock_can_list):
@@ -123,20 +122,20 @@ class TestAzureBlobStorageViews(AzureBlobStorageAddonTestCase, OAuthAddonConfigV
             'secret_key': 'las'
         }, auth=self.user.auth, expect_errors=True)
 
-        assert_in('Unable to list containers.', rv.body.decode())
-        assert_equals(rv.status_int, http_status.HTTP_400_BAD_REQUEST)
+        assert ('Unable to list containers.') in (rv.body.decode())
+        assert (rv.status_int) == (http_status.HTTP_400_BAD_REQUEST)
 
     def test_azureblobstorage_remove_node_settings_owner(self):
         url = self.node_settings.owner.api_url_for('azureblobstorage_deauthorize_node')
         ret = self.app.delete(url, auth=self.user.auth)
         result = self.Serializer().serialize_settings(node_settings=self.node_settings, current_user=self.user)
-        assert_equal(result['nodeHasAuth'], False)
+        assert (result['nodeHasAuth']) == (False)
 
     def test_azureblobstorage_remove_node_settings_unauthorized(self):
         url = self.node_settings.owner.api_url_for('azureblobstorage_deauthorize_node')
         ret = self.app.delete(url, auth=None, expect_errors=True)
 
-        assert_equal(ret.status_code, 401)
+        assert (ret.status_code) == (401)
 
     def test_azureblobstorage_get_node_settings_owner(self):
         self.node_settings.set_auth(self.external_account, self.user)
@@ -146,16 +145,16 @@ class TestAzureBlobStorageViews(AzureBlobStorageAddonTestCase, OAuthAddonConfigV
         res = self.app.get(url, auth=self.user.auth)
 
         result = res.json['result']
-        assert_equal(result['nodeHasAuth'], True)
-        assert_equal(result['userIsOwner'], True)
-        assert_equal(result['folder']['path'], self.node_settings.folder_id)
+        assert (result['nodeHasAuth']) == (True)
+        assert (result['userIsOwner']) == (True)
+        assert (result['folder']['path']) == (self.node_settings.folder_id)
 
     def test_azureblobstorage_get_node_settings_unauthorized(self):
         url = self.node_settings.owner.api_url_for('azureblobstorage_get_config')
         unauthorized = AuthUserFactory()
         ret = self.app.get(url, auth=unauthorized.auth, expect_errors=True)
 
-        assert_equal(ret.status_code, 403)
+        assert (ret.status_code) == (403)
 
     ## Overrides ##
 
@@ -172,14 +171,11 @@ class TestAzureBlobStorageViews(AzureBlobStorageAddonTestCase, OAuthAddonConfigV
         res = self.app.put_json(url, {
             'selected': self.folder
         }, auth=self.user.auth)
-        assert_equal(res.status_code, http_status.HTTP_200_OK)
+        assert (res.status_code) == (http_status.HTTP_200_OK)
         self.project.reload()
         self.node_settings.reload()
-        assert_equal(
-            self.project.logs.latest().action,
-            '{0}_bucket_linked'.format(self.ADDON_SHORT_NAME)
-        )
-        assert_equal(res.json['result']['folder']['name'], self.node_settings.folder_name)
+        assert (self.project.logs.latest().action) == ('{0}_bucket_linked'.format(self.ADDON_SHORT_NAME))
+        assert (res.json['result']['folder']['name']) == (self.node_settings.folder_name)
 
 
 class TestCreateContainer(AzureBlobStorageAddonTestCase, OsfTestCase):
@@ -208,34 +204,34 @@ class TestCreateContainer(AzureBlobStorageAddonTestCase, OsfTestCase):
         self.node_settings.save()
 
     def test_bad_names(self):
-        assert_false(validate_container_name(''))
-        assert_false(validate_container_name('no'))
-        assert_false(validate_container_name('a' * 64))
-        assert_false(validate_container_name(' leadingspace'))
-        assert_false(validate_container_name('trailingspace '))
-        assert_false(validate_container_name('bogus naMe'))
-        assert_false(validate_container_name('.cantstartwithp'))
-        assert_false(validate_container_name('or.endwith.'))
-        assert_false(validate_container_name('..nodoubles'))
-        assert_false(validate_container_name('no_unders_in'))
-        assert_false(validate_container_name('-leadinghyphen'))
-        assert_false(validate_container_name('trailinghyphen-'))
-        assert_false(validate_container_name('Mixedcase'))
-        assert_false(validate_container_name('empty..label'))
-        assert_false(validate_container_name('label-.trailinghyphen'))
-        assert_false(validate_container_name('label.-leadinghyphen'))
-        assert_false(validate_container_name('8.8.8.8'))
-        assert_false(validate_container_name('600.9000.0.28'))
-        assert_false(validate_container_name('no_underscore'))
-        assert_false(validate_container_name('_nounderscoreinfront'))
-        assert_false(validate_container_name('no-underscore-in-back_'))
-        assert_false(validate_container_name('no-underscore-in_the_middle_either'))
+        assert not (validate_container_name(''))
+        assert not (validate_container_name('no'))
+        assert not (validate_container_name('a' * 64))
+        assert not (validate_container_name(' leadingspace'))
+        assert not (validate_container_name('trailingspace '))
+        assert not (validate_container_name('bogus naMe'))
+        assert not (validate_container_name('.cantstartwithp'))
+        assert not (validate_container_name('or.endwith.'))
+        assert not (validate_container_name('..nodoubles'))
+        assert not (validate_container_name('no_unders_in'))
+        assert not (validate_container_name('-leadinghyphen'))
+        assert not (validate_container_name('trailinghyphen-'))
+        assert not (validate_container_name('Mixedcase'))
+        assert not (validate_container_name('empty..label'))
+        assert not (validate_container_name('label-.trailinghyphen'))
+        assert not (validate_container_name('label.-leadinghyphen'))
+        assert not (validate_container_name('8.8.8.8'))
+        assert not (validate_container_name('600.9000.0.28'))
+        assert not (validate_container_name('no_underscore'))
+        assert not (validate_container_name('_nounderscoreinfront'))
+        assert not (validate_container_name('no-underscore-in-back_'))
+        assert not (validate_container_name('no-underscore-in_the_middle_either'))
 
     def test_names(self):
-        assert_true(validate_container_name('imagoodname'))
-        assert_true(validate_container_name('can-have-dashes'))
-        assert_true(validate_container_name('a--------a'))
-        assert_true(validate_container_name('a' * 63))
+        assert (validate_container_name('imagoodname'))
+        assert (validate_container_name('can-have-dashes'))
+        assert (validate_container_name('a--------a'))
+        assert (validate_container_name('a' * 63))
 
 
     @mock.patch('addons.azureblobstorage.views.utils.create_container')
@@ -256,8 +252,8 @@ class TestCreateContainer(AzureBlobStorageAddonTestCase, OsfTestCase):
             auth=self.user.auth
         )
 
-        assert_equal(ret.status_int, http_status.HTTP_200_OK)
-        assert_equal(ret.json, {})
+        assert (ret.status_int) == (http_status.HTTP_200_OK)
+        assert (ret.json) == ({})
 
     @mock.patch('addons.azureblobstorage.views.utils.create_container')
     def test_create_container_fail(self, mock_make):
@@ -268,4 +264,4 @@ class TestCreateContainer(AzureBlobStorageAddonTestCase, OsfTestCase):
         url = '/api/v1/project/{0}/azureblobstorage/newcontainer/'.format(self.project._id)
         ret = self.app.post_json(url, {'container_name': 'doesntevenmatter'}, auth=self.user.auth, expect_errors=True)
 
-        assert_equals(ret.body.decode(), '{"message": "This should work", "title": "Problem connecting to Azure Blob Storage"}')
+        assert (ret.body.decode()) == ('{"message": "This should work", "title": "Problem connecting to Azure Blob Storage"}')

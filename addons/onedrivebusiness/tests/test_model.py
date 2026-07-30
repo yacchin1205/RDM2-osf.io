@@ -1,10 +1,8 @@
 # from nose.tools import *  # noqa
 import unittest
 
-import mock
+from unittest import mock
 import pytest
-from nose.tools import (assert_false, assert_true,
-                        assert_equal, assert_is_none)
 
 from addons.base.tests.models import (
     OAuthAddonNodeSettingsTestSuiteMixin,
@@ -65,16 +63,16 @@ class TestNodeSettings(OAuthAddonNodeSettingsTestSuiteMixin, unittest.TestCase):
         clone, message = self.node_settings.after_register(
             self.node, registration, self.user,
         )
-        assert_is_none(clone)
+        assert (clone) is None
 
     def test_before_register_no_settings(self):
         self.node_settings.user_settings = None
         message = self.node_settings.before_register(self.node, self.user)
-        assert_false(message)
+        assert not (message)
 
     def test_before_register_settings_and_auth(self):
         message = self.node_settings.before_register(self.node, self.user)
-        assert_true(message)
+        assert (message)
 
     @mock.patch('website.archiver.tasks.archive')
     def test_does_not_get_copied_to_registrations(self, mock_archive):
@@ -83,7 +81,7 @@ class TestNodeSettings(OAuthAddonNodeSettingsTestSuiteMixin, unittest.TestCase):
             auth=Auth(user=self.user),
             draft_registration=DraftRegistrationFactory(branched_from=self.node),
         )
-        assert_false(registration.has_addon(SHORT_NAME))
+        assert not (registration.has_addon(SHORT_NAME))
 
     ## Overrides ##
     def test_has_auth(self):
@@ -105,8 +103,8 @@ class TestNodeSettings(OAuthAddonNodeSettingsTestSuiteMixin, unittest.TestCase):
         self.node_settings.folder_id = None
         self.node_settings.user_settings = None
 
-        assert_false(self.node_settings.complete)
-        assert_false(self.node_settings.has_auth)
+        assert not (self.node_settings.complete)
+        assert not (self.node_settings.has_auth)
         external_account = mock.Mock()
         external_account.provider_id = 'user-11'
         external_account.oauth_key = 'key-11'
@@ -134,10 +132,10 @@ class TestNodeSettings(OAuthAddonNodeSettingsTestSuiteMixin, unittest.TestCase):
         mock_get_user_map.return_value = {}
 
         self.node_settings.ensure_team_folder(mock_region_external_account)
-        assert_true(self.node_settings.complete)
-        assert_true(self.node_settings.has_auth)
-        assert_equal(self.node_settings.folder_id, 'mock-folder-1234')
-        assert_true('_GRDM_' in self.node_settings.folder_name)
+        assert (self.node_settings.complete)
+        assert (self.node_settings.has_auth)
+        assert (self.node_settings.folder_id) == ('mock-folder-1234')
+        assert ('_GRDM_' in self.node_settings.folder_name)
 
     @mock.patch('addons.onedrivebusiness.models.get_region_external_account')
     @mock.patch('addons.onedrivebusiness.models.NodeSettings.oauth_provider')
@@ -159,10 +157,10 @@ class TestNodeSettings(OAuthAddonNodeSettingsTestSuiteMixin, unittest.TestCase):
         credentials = self.node_settings.serialize_waterbutler_credentials()
 
         expected = {'token': 'mock-access-token-1234'}
-        assert_equal(credentials, expected)
+        assert (credentials) == (expected)
 
     def test_serialize_settings(self):
         self.node_settings.drive_id = 'drive-1234'
         settings = self.node_settings.serialize_waterbutler_settings()
         expected = {'drive_id': 'drive-1234', 'folder': self.node_settings.folder_id}
-        assert_equal(settings, expected)
+        assert (settings) == (expected)

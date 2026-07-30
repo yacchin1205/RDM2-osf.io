@@ -2,13 +2,12 @@ import copy
 import json
 import uuid
 
-import mock
+from unittest import mock
 import pytest
 import requests
 from datetime import datetime, timezone, timedelta
 from jsonschema import ValidationError, SchemaError
-from mock import patch, MagicMock
-from nose import tools as nt
+from unittest.mock import patch, MagicMock
 from requests import ConnectionError, ReadTimeout, Timeout
 from rest_framework import status
 
@@ -732,8 +731,8 @@ class TestUtils(AdminTestCase):
         utils.write_json_file(json_data, output_file)
         call_args = mock_json_dump.call_args
         mock_json_dump.assert_called()
-        nt.assert_equal(call_args[0][0], json_data)
-        nt.assert_equal(call_args[1], {'ensure_ascii': False, 'indent': 2, 'sort_keys': False})
+        assert (call_args[0][0]) == (json_data)
+        assert (call_args[1]) == ({'ensure_ascii': False, 'indent': 2, 'sort_keys': False})
 
         mock_json_dump_patcher.stop()
 
@@ -759,9 +758,9 @@ class TestUtils(AdminTestCase):
             wb_credentials=self.wb_credentials,
             wb_settings=self.wb_settings,
         )
-        nt.assert_equal(result.waterbutler_credentials, self.wb_credentials)
-        nt.assert_equal(result.waterbutler_settings, self.wb_settings)
-        nt.assert_equal(result.name, 'testname')
+        assert (result.waterbutler_credentials) == (self.wb_credentials)
+        assert (result.waterbutler_settings) == (self.wb_settings)
+        assert (result.name) == ('testname')
 
     def test_update_storage_location__update(self):
         ExportDataLocationFactory(
@@ -776,11 +775,11 @@ class TestUtils(AdminTestCase):
             wb_credentials=self.wb_credentials,
             wb_settings=self.wb_settings,
         )
-        nt.assert_not_equal(result.waterbutler_credentials, {'storage': {}})
-        nt.assert_not_equal(result.waterbutler_settings, {'storage': {}})
-        nt.assert_equal(result.waterbutler_credentials, self.wb_credentials)
-        nt.assert_equal(result.waterbutler_settings, self.wb_settings)
-        nt.assert_equal(result.name, 'testname')
+        assert (result.waterbutler_credentials) != ({'storage': {}})
+        assert (result.waterbutler_settings) != ({'storage': {}})
+        assert (result.waterbutler_credentials) == (self.wb_credentials)
+        assert (result.waterbutler_settings) == (self.wb_settings)
+        assert (result.name) == ('testname')
 
     def test_test_dropboxbusiness_connection__no_option(self):
         mock_get_two_addon_options = mock.MagicMock(return_value=None)
@@ -788,9 +787,9 @@ class TestUtils(AdminTestCase):
                         mock_get_two_addon_options):
             data, status_code = utils.test_dropboxbusiness_connection(self.institution)
             mock_get_two_addon_options.assert_called()
-            nt.assert_equal(status_code, 400)
-            nt.assert_true('message' in data)
-            nt.assert_equal(data.get('message'), 'Invalid Institution ID.: {}'.format(self.institution.id))
+            assert (status_code) == (400)
+            assert ('message' in data)
+            assert (data.get('message')) == ('Invalid Institution ID.: {}'.format(self.institution.id))
 
     def test_test_dropboxbusiness_connection__no_token(self):
         mock_get_two_addon_options_patcher = mock.patch(
@@ -808,9 +807,9 @@ class TestUtils(AdminTestCase):
         data, status_code = utils.test_dropboxbusiness_connection(self.institution)
         mock_get_two_addon_options.assert_called()
         mock_addon_option_to_token.assert_called()
-        nt.assert_equal(status_code, 400)
-        nt.assert_true('message' in data)
-        nt.assert_equal(data.get('message'), 'No tokens.')
+        assert (status_code) == (400)
+        assert ('message' in data)
+        assert (data.get('message')) == ('No tokens.')
 
         mock_addon_option_to_token_patcher.stop()
         mock_get_two_addon_options_patcher.stop()
@@ -836,9 +835,9 @@ class TestUtils(AdminTestCase):
         data, status_code = utils.test_dropboxbusiness_connection(self.institution)
         mock_get_two_addon_options.assert_called()
         mock_addon_option_to_token.assert_called()
-        nt.assert_equal(status_code, 200)
-        nt.assert_true('message' in data)
-        nt.assert_equal(data.get('message'), 'Credentials are valid')
+        assert (status_code) == (200)
+        assert ('message' in data)
+        assert (data.get('message')) == ('Credentials are valid')
 
         mock_TeamInfo_patcher.stop()
         mock_addon_option_to_token_patcher.stop()
@@ -865,9 +864,9 @@ class TestUtils(AdminTestCase):
         data, status_code = utils.test_dropboxbusiness_connection(self.institution)
         mock_get_two_addon_options.assert_called()
         mock_addon_option_to_token.assert_called()
-        nt.assert_equal(status_code, 400)
-        nt.assert_true('message' in data)
-        nt.assert_equal(data.get('message'), 'Invalid tokens.')
+        assert (status_code) == (400)
+        assert ('message' in data)
+        assert (data.get('message')) == ('Invalid tokens.')
 
         mock_TeamInfo_patcher.stop()
         mock_addon_option_to_token_patcher.stop()
@@ -895,8 +894,8 @@ class TestUtils(AdminTestCase):
         )
         mock_test_s3_connection.assert_called()
         mock_update_storage_location.assert_not_called()
-        nt.assert_equal(data, {'message': 'test'})
-        nt.assert_equal(status_code, 400)
+        assert (data) == ({'message': 'test'})
+        assert (status_code) == (400)
 
         mock_test_s3_connection_patcher.stop()
         mock_update_storage_location_patcher.stop()
@@ -923,8 +922,8 @@ class TestUtils(AdminTestCase):
         )
         mock_test_s3_connection.assert_called()
         mock_update_storage_location.assert_called()
-        nt.assert_equal(data, {'message': 'Saved credentials successfully!!'})
-        nt.assert_equal(status_code, 200)
+        assert (data) == ({'message': 'Saved credentials successfully!!'})
+        assert (status_code) == (200)
 
         mock_test_s3_connection_patcher.stop()
         mock_update_storage_location_patcher.stop()
@@ -952,8 +951,8 @@ class TestUtils(AdminTestCase):
         )
         mock_test_s3compat_connection.assert_called()
         mock_update_storage_location.assert_not_called()
-        nt.assert_equal(data, {'message': 'test'})
-        nt.assert_equal(status_code, 400)
+        assert (data) == ({'message': 'test'})
+        assert (status_code) == (400)
 
         mock_test_s3compat_connection_patcher.stop()
         mock_update_storage_location_patcher.stop()
@@ -981,8 +980,8 @@ class TestUtils(AdminTestCase):
         )
         mock_test_s3compat_connection.assert_called()
         mock_update_storage_location.assert_called()
-        nt.assert_equal(data, {'message': 'Saved credentials successfully!!'})
-        nt.assert_equal(status_code, 200)
+        assert (data) == ({'message': 'Saved credentials successfully!!'})
+        assert (status_code) == (200)
 
         mock_test_s3compat_connection_patcher.stop()
         mock_update_storage_location_patcher.stop()
@@ -1010,8 +1009,8 @@ class TestUtils(AdminTestCase):
         )
         mock_test_s3compatsigv4_connection.assert_called()
         mock_update_storage_location.assert_not_called()
-        nt.assert_equal(data, {'message': 'test'})
-        nt.assert_equal(status_code, 400)
+        assert (data) == ({'message': 'test'})
+        assert (status_code) == (400)
 
         mock_test_s3compatsigv4_connection_patcher.stop()
         mock_update_storage_location_patcher.stop()
@@ -1039,8 +1038,8 @@ class TestUtils(AdminTestCase):
         )
         mock_test_s3compatsigv4_connection.assert_called()
         mock_update_storage_location.assert_called()
-        nt.assert_equal(data, {'message': 'Saved credentials successfully!!'})
-        nt.assert_equal(status_code, 200)
+        assert (data) == ({'message': 'Saved credentials successfully!!'})
+        assert (status_code) == (200)
 
         mock_test_s3compatsigv4_connection_patcher.stop()
         mock_update_storage_location_patcher.stop()
@@ -1069,13 +1068,13 @@ class TestUtils(AdminTestCase):
         )
         mock_test_s3compatsigv4_connection.assert_called()
         mock_update_storage_location.assert_called()
-        nt.assert_equal(data, {'message': 'Saved credentials successfully!!'})
-        nt.assert_equal(status_code, 200)
+        assert (data) == ({'message': 'Saved credentials successfully!!'})
+        assert (status_code) == (200)
         # Verify region is included in wb_settings
         call_args = mock_update_storage_location.call_args
         wb_settings = call_args[0][3]  # 4th positional arg
-        nt.assert_in('region', wb_settings['storage'])
-        nt.assert_equal(wb_settings['storage']['region'], 'us-east-1')
+        assert ('region') in (wb_settings['storage'])
+        assert (wb_settings['storage']['region']) == ('us-east-1')
 
         mock_test_s3compatsigv4_connection_patcher.stop()
         mock_update_storage_location_patcher.stop()
@@ -1100,8 +1099,8 @@ class TestUtils(AdminTestCase):
         )
         mock_test_dropboxbusiness_connection.assert_called()
         mock_get_two_addon_options.assert_not_called()
-        nt.assert_equal(data, {'message': 'test'})
-        nt.assert_equal(status_code, 400)
+        assert (data) == ({'message': 'test'})
+        assert (status_code) == (400)
 
         mock_get_two_addon_options_patcher.stop()
         mock_test_dropboxbusiness_connection_patcher.stop()
@@ -1126,7 +1125,7 @@ class TestUtils(AdminTestCase):
         )
         mock_test_dropboxbusiness_connection.assert_called()
         mock_get_two_addon_options.assert_called()
-        nt.assert_is_none(ret)
+        assert (ret) is None
 
         mock_get_two_addon_options_patcher.stop()
         mock_test_dropboxbusiness_connection_patcher.stop()
@@ -1157,7 +1156,7 @@ class TestUtils(AdminTestCase):
         mock_test_dropboxbusiness_connection.assert_called()
         mock_get_two_addon_options.assert_called()
         mock_addon_option_to_token.assert_called()
-        nt.assert_is_none(ret)
+        assert (ret) is None
 
         mock_addon_option_to_token_patcher.stop()
         mock_get_two_addon_options_patcher.stop()
@@ -1219,9 +1218,9 @@ class TestUtils(AdminTestCase):
         mock_get_current_admin_dbmid.assert_called()
         mock_wd_info_for_institutions.assert_called()
         mock_update_storage_location.assert_called()
-        nt.assert_equal(status_code, 200)
-        nt.assert_true('message' in data)
-        nt.assert_equal(data.get('message'), 'Dropbox Business was set successfully!!')
+        assert (status_code) == (200)
+        assert ('message' in data)
+        assert (data.get('message')) == ('Dropbox Business was set successfully!!')
 
         mock_update_storage_location_patcher.stop()
         mock_wd_info_for_institutions_patcher.stop()
@@ -1293,9 +1292,9 @@ class TestUtils(AdminTestCase):
         )
         mock_wd_info_for_institutions.assert_called()
         mock_update_storage_location.assert_called()
-        nt.assert_equal(status_code, 200)
-        nt.assert_true('message' in data)
-        nt.assert_equal(data.get('message'), 'Saved credentials successfully!!')
+        assert (status_code) == (200)
+        assert ('message' in data)
+        assert (data.get('message')) == ('Saved credentials successfully!!')
 
         mock_update_storage_location_patcher.stop()
         mock_wd_info_for_institutions_patcher.stop()
@@ -1324,9 +1323,9 @@ class TestUtils(AdminTestCase):
         )
         mock_wd_info_for_institutions.assert_called()
         mock_update_storage_location.assert_called()
-        nt.assert_equal(status_code, 200)
-        nt.assert_true('message' in data)
-        nt.assert_equal(data.get('message'), 'Saved credentials successfully!!')
+        assert (status_code) == (200)
+        assert ('message' in data)
+        assert (data.get('message')) == ('Saved credentials successfully!!')
 
         mock_update_storage_location_patcher.stop()
         mock_wd_info_for_institutions_patcher.stop()
@@ -1355,8 +1354,8 @@ class TestUtils(AdminTestCase):
         )
         mock_test_owncloud_connection.assert_called()
         mock_save_basic_storage_institutions_credentials_common.assert_not_called()
-        nt.assert_equal(data, {'message': 'test'})
-        nt.assert_equal(status_code, 400)
+        assert (data) == ({'message': 'test'})
+        assert (status_code) == (400)
 
         mock_save_basic_storage_institutions_credentials_common_patcher.stop()
         mock_test_owncloud_connection_patcher.stop()
@@ -1391,9 +1390,9 @@ class TestUtils(AdminTestCase):
         mock_test_owncloud_connection.assert_called()
         mock_wd_info_for_institutions.assert_called()
         mock_update_storage_location.assert_called()
-        nt.assert_equal(status_code, 200)
-        nt.assert_true('message' in data)
-        nt.assert_equal(data.get('message'), 'Saved credentials successfully!!')
+        assert (status_code) == (200)
+        assert ('message' in data)
+        assert (data.get('message')) == ('Saved credentials successfully!!')
 
         mock_update_storage_location_patcher.stop()
         mock_wd_info_for_institutions_patcher.stop()
@@ -1401,41 +1400,41 @@ class TestUtils(AdminTestCase):
 
     def test_validate_exported_data(self):
         # not found schema
-        with nt.assert_raises(FileNotFoundError):
+        with pytest.raises(FileNotFoundError):
             result = utils.validate_exported_data({}, 'fake-schema.json')
-            nt.assert_is_none(result)
+            assert (result) is None
 
         # jsonschema.ValidationError: 'institution' is a required property
         result = utils.validate_exported_data({}, 'file-info-schema.json')
-        nt.assert_false(result)
+        assert not (result)
 
         # normal
         result = utils.validate_exported_data(FAKE_DATA, 'file-info-schema.json')
-        nt.assert_true(result)
+        assert (result)
 
         # test file_5_json don't have sha512 in metadata
         FAKE_DATA['files'].append(file_5_json)
         result = utils.validate_exported_data(FAKE_DATA, 'file-info-schema.json')
-        nt.assert_true(result)
+        assert (result)
 
     def test_validate_file_json(self):
         # not found schema
-        with nt.assert_raises(FileNotFoundError):
+        with pytest.raises(FileNotFoundError):
             result = utils.validate_file_json({}, 'fake-schema.json')
-            nt.assert_is_none(result)
+            assert (result) is None
 
         # jsonschema.ValidationError: 'institution' is a required property
         result = utils.validate_file_json({}, 'file-info-schema.json')
-        nt.assert_false(result)
+        assert not (result)
 
         # normal
         result = utils.validate_file_json(FAKE_DATA, 'file-info-schema.json')
-        nt.assert_true(result)
+        assert (result)
 
         # test file_5_json don't have sha512 in metadata
         FAKE_DATA['files'].append(file_5_json)
         result = utils.validate_file_json(FAKE_DATA, 'file-info-schema.json')
-        nt.assert_true(result)
+        assert (result)
 
     def test_count_file_ng_ok(self):
         # for check Export Data and check Restore Data
@@ -1451,30 +1450,30 @@ class TestUtils(AdminTestCase):
         data_new = utils.process_data_information(files_new)
         res = utils.count_files_ng_ok(data_new, data_old)
         # check properties
-        nt.assert_in('ok', res)
-        nt.assert_in('ng', res)
-        nt.assert_in('total', res)
-        nt.assert_in('list_file_ng', res)
+        assert ('ok') in (res)
+        assert ('ng') in (res)
+        assert ('total') in (res)
+        assert ('list_file_ng') in (res)
         # check quantity
-        nt.assert_equal(res['ok'] + res['ng'], res['total'])
+        assert (res['ok'] + res['ng']) == (res['total'])
         # taken all without limit on the NG file list
-        nt.assert_equal(len(res['list_file_ng']), res['ng'])
+        assert (len(res['list_file_ng'])) == (res['ng'])
         # check properties in each NG file item
         file_info = res['list_file_ng'][0]
-        nt.assert_in('project_id', file_info)
-        nt.assert_in('path', file_info)
-        nt.assert_in('version_id', file_info)
-        nt.assert_in('size', file_info)
-        nt.assert_in('reason', file_info)
+        assert ('project_id') in (file_info)
+        assert ('path') in (file_info)
+        assert ('version_id') in (file_info)
+        assert ('size') in (file_info)
+        assert ('reason') in (file_info)
 
         # case of no change
         data_old = utils.process_data_information(files_old)
         data_new = utils.process_data_information(files_old)
         res = utils.count_files_ng_ok(data_new, data_old)
         # check quantity
-        nt.assert_equal(res['ng'], 0)
-        nt.assert_equal(len(res['list_file_ng']), res['ng'])
-        nt.assert_equal(res['ok'], res['total'])
+        assert (res['ng']) == (0)
+        assert (len(res['list_file_ng'])) == (res['ng'])
+        assert (res['ok']) == (res['total'])
 
     def test_count_file_ng_ok__exclude_location(self):
         # file_id=1~files_len
@@ -1497,31 +1496,31 @@ class TestUtils(AdminTestCase):
         data_new = utils.process_data_information(files_new)
         res = utils.count_files_ng_ok(data_new, data_old)
         # check properties
-        nt.assert_in('ok', res)
-        nt.assert_in('ng', res)
-        nt.assert_in('total', res)
-        nt.assert_in('list_file_ng', res)
+        assert ('ok') in (res)
+        assert ('ng') in (res)
+        assert ('total') in (res)
+        assert ('list_file_ng') in (res)
         # check quantity
-        nt.assert_equal(res['ok'] + res['ng'], res['total'])
+        assert (res['ok'] + res['ng']) == (res['total'])
         # taken all without limit on the NG file list
-        nt.assert_equal(len(res['list_file_ng']), res['ng'])
+        assert (len(res['list_file_ng'])) == (res['ng'])
         # check properties in each NG file item
         file_info = res['list_file_ng'][0]
-        nt.assert_in('project_id', file_info)
-        nt.assert_in('path', file_info)
-        nt.assert_in('version_id', file_info)
-        nt.assert_in('size', file_info)
-        nt.assert_in('reason', file_info)
+        assert ('project_id') in (file_info)
+        assert ('path') in (file_info)
+        assert ('version_id') in (file_info)
+        assert ('size') in (file_info)
+        assert ('reason') in (file_info)
         # check content in 'reason': '"location" not match'
-        nt.assert_in('location', file_info['reason'])
-        nt.assert_in('" not match', file_info['reason'])
+        assert ('location') in (file_info['reason'])
+        assert ('" not match') in (file_info['reason'])
 
         # case of excluding 'location'
         exclude_keys = ['location']
         res = utils.count_files_ng_ok(data_new, data_old, exclude_keys=exclude_keys)
-        nt.assert_equal(res['ng'], 0)
-        nt.assert_equal(len(res['list_file_ng']), res['ng'])
-        nt.assert_equal(res['ok'], res['total'])
+        assert (res['ng']) == (0)
+        assert (len(res['list_file_ng'])) == (res['ng'])
+        assert (res['ok']) == (res['total'])
 
     def test_count_file_ng_ok__same_files_in_other_projects(self):
         # project_id=prj01 file_id=1~files_len
@@ -1543,27 +1542,27 @@ class TestUtils(AdminTestCase):
         print(f'res={res}')
 
         # check properties
-        nt.assert_in('ok', res)
-        nt.assert_in('ng', res)
-        nt.assert_in('total', res)
-        nt.assert_in('list_file_ng', res)
+        assert ('ok') in (res)
+        assert ('ng') in (res)
+        assert ('total') in (res)
+        assert ('list_file_ng') in (res)
 
         # check quantity
-        nt.assert_equal(res['ok'] + res['ng'], res['total'])
+        assert (res['ok'] + res['ng']) == (res['total'])
         # taken all without limit on the NG file list
-        nt.assert_equal(len(res['list_file_ng']), res['ng'])
+        assert (len(res['list_file_ng'])) == (res['ng'])
 
         # check properties in each NG file item
         file_info = res['list_file_ng'][0]
-        nt.assert_in('project_id', file_info)
-        nt.assert_in('path', file_info)
-        nt.assert_in('version_id', file_info)
-        nt.assert_in('size', file_info)
-        nt.assert_in('reason', file_info)
+        assert ('project_id') in (file_info)
+        assert ('path') in (file_info)
+        assert ('version_id') in (file_info)
+        assert ('size') in (file_info)
+        assert ('reason') in (file_info)
 
         # check content in 'reason': '"...project..." not match'
-        nt.assert_not_in('project', file_info['reason'])
-        nt.assert_not_in('" not match', file_info['reason'])
+        assert ('project') not in (file_info['reason'])
+        assert ('" not match') not in (file_info['reason'])
 
 
 @pytest.mark.feature_202210
@@ -1586,7 +1585,7 @@ class TestUtilsForExportData(AdminTestCase):
                 result = utils.validate_exported_data({}, 'file-info-schema.json')
                 mock_from_json.assert_called()
                 mock_validate.assert_called()
-                nt.assert_true(result)
+                assert (result)
 
     def test_validate_exported_data_validation_error(self):
         mock_from_json = MagicMock()
@@ -1599,7 +1598,7 @@ class TestUtilsForExportData(AdminTestCase):
                 result = utils.validate_exported_data({}, 'file-info-schema.json')
                 mock_from_json.assert_called()
                 mock_validate.assert_called()
-                nt.assert_false(result)
+                assert not (result)
 
     def test_validate_exported_data_other_error(self):
         mock_from_json = MagicMock()
@@ -1609,11 +1608,11 @@ class TestUtilsForExportData(AdminTestCase):
 
         with patch(f'{EXPORT_DATA_UTIL_PATH}.from_json', mock_from_json):
             with patch(f'jsonschema.validate', mock_validate):
-                with nt.assert_raises(FileNotFoundError):
+                with pytest.raises(FileNotFoundError):
                     result = utils.validate_exported_data({}, 'fake-schema.json')
                     mock_from_json.assert_called()
                     mock_validate.assert_called()
-                    nt.assert_is_none(result)
+                    assert (result) is None
 
     def test_check_diff(self):
         a_standard = {
@@ -1642,7 +1641,7 @@ class TestUtilsForExportData(AdminTestCase):
 
     def test_check_diff_epsilon(self):
         res = utils.deep_diff(1.2, 2.1, parent_key='section1', epsilon_keys=['section1', 'section2'])
-        nt.assert_equal(res, None)
+        assert (res) == (None)
 
     def test_check_diff_between_list_flip(self):
         a_standard = [
@@ -1670,7 +1669,7 @@ class TestUtilsForExportData(AdminTestCase):
             }
         ]
         res = utils.deep_diff(a_standard, a_new, exclude_keys=['section1', 'section2'])
-        nt.assert_not_equal(res, None)
+        assert (res) != (None)
 
     def test_check_diff_between_list_not_flip(self):
         a_standard = [
@@ -1698,7 +1697,7 @@ class TestUtilsForExportData(AdminTestCase):
             }
         ]
         res = utils.deep_diff(a_new, a_standard, exclude_keys=['section1', 'section2'])
-        nt.assert_not_equal(res, None)
+        assert (res) != (None)
 
     def test_type_dict(self):
         a_standard = {
@@ -1724,7 +1723,7 @@ class TestUtilsForExportData(AdminTestCase):
 
         }
         res = utils.deep_diff(a_new, a_standard, exclude_keys=['section1', 'section2'])
-        nt.assert_not_equal(res, None)
+        assert (res) != (None)
 
     @patch(f'{EXPORT_DATA_UTIL_PATH}.get_file_data')
     def test_check_for_file_existent_on_export_location(self, mock_get_file_data):
@@ -1786,7 +1785,7 @@ class TestUtilsForExportData(AdminTestCase):
                 'reason': 'File does not exist on the Export Storage Location',
             }
         ]
-        nt.assert_equal(result, expected_result)
+        assert (result) == (expected_result)
 
 
 @pytest.mark.feature_202210
@@ -1807,7 +1806,7 @@ class TestUtilsForCheckRestoreData(AdminTestCase):
         data_old = utils.process_data_information(FAKE_DATA['files'])
         data_new = utils.process_data_information(FAKE_DATA_NEW['files'])
         rs = utils.count_files_ng_ok(data_new, data_old)
-        nt.assert_greater(rs['ng'], 0)
+        assert (rs['ng']) > (0)
 
     def test_check_diff(self):
         a_standard = {
@@ -1836,7 +1835,7 @@ class TestUtilsForCheckRestoreData(AdminTestCase):
 
     def test_check_diff_epsilon(self):
         res = utils.deep_diff(1.2, 2.1, parent_key='section1', epsilon_keys=['section1', 'section2'])
-        nt.assert_equal(res, None)
+        assert (res) == (None)
 
     def test_check_diff_between_list_flip(self):
         a_standard = [
@@ -1864,7 +1863,7 @@ class TestUtilsForCheckRestoreData(AdminTestCase):
             }
         ]
         res = utils.deep_diff(a_standard, a_new, exclude_keys=['section1', 'section2'])
-        nt.assert_not_equal(res, None)
+        assert (res) != (None)
 
     def test_check_diff_between_list_not_flip(self):
         a_standard = [
@@ -1892,7 +1891,7 @@ class TestUtilsForCheckRestoreData(AdminTestCase):
             }
         ]
         res = utils.deep_diff(a_new, a_standard, exclude_keys=['section1', 'section2'])
-        nt.assert_not_equal(res, None)
+        assert (res) != (None)
 
     def test_check_diff_between_dict(self):
         a_standard = {
@@ -1918,7 +1917,7 @@ class TestUtilsForCheckRestoreData(AdminTestCase):
 
         }
         res = utils.deep_diff(a_new, a_standard, exclude_keys=['section1', 'section2'])
-        nt.assert_not_equal(res, None)
+        assert (res) != (None)
 
     # check_file_metadata
     def test_check_file_metadata_not_set(self):
@@ -1942,10 +1941,10 @@ class TestUtilsForCheckRestoreData(AdminTestCase):
             'list_file_ng': [],
         }
         result = utils.check_file_metadata(data, export_data_restore, storage_file_info)
-        nt.assert_equal(result.get('ng'), 0)
-        nt.assert_equal(result.get('ok'), 1)
-        nt.assert_equal(result.get('total'), 1)
-        nt.assert_equal(len(result.get('list_file_ng', [])), 0)
+        assert (result.get('ng')) == (0)
+        assert (result.get('ok')) == (1)
+        assert (result.get('total')) == (1)
+        assert (len(result.get('list_file_ng', []))) == (0)
 
     def test_check_file_metadata_add_new_ng(self):
         region = RegionFactory(waterbutler_settings=bulkmount_waterbutler_settings)
@@ -1978,12 +1977,12 @@ class TestUtilsForCheckRestoreData(AdminTestCase):
             metadata={'items': []},
         )
         result = utils.check_file_metadata(data, export_data_restore, storage_file_info)
-        nt.assert_equal(result.get('ng'), 1)
-        nt.assert_equal(result.get('ok'), 0)
-        nt.assert_equal(result.get('total'), 1)
+        assert (result.get('ng')) == (1)
+        assert (result.get('ok')) == (0)
+        assert (result.get('total')) == (1)
         list_file_ng = result.get('list_file_ng', [])
-        nt.assert_equal(len(list_file_ng), 1)
-        nt.assert_equal(list_file_ng[0].get('reason'), 'File metadata is not updated')
+        assert (len(list_file_ng)) == (1)
+        assert (list_file_ng[0].get('reason')) == ('File metadata is not updated')
 
     def test_check_file_metadata_update_ng(self):
         region = RegionFactory(waterbutler_settings=bulkmount_waterbutler_settings)
@@ -2021,12 +2020,12 @@ class TestUtilsForCheckRestoreData(AdminTestCase):
             metadata={'items': []},
         )
         result = utils.check_file_metadata(data, export_data_restore, storage_file_info)
-        nt.assert_equal(result.get('ng'), 1)
-        nt.assert_equal(result.get('ok'), 0)
-        nt.assert_equal(result.get('total'), 1)
+        assert (result.get('ng')) == (1)
+        assert (result.get('ok')) == (0)
+        assert (result.get('total')) == (1)
         list_file_ng = result.get('list_file_ng', [])
-        nt.assert_equal(len(list_file_ng), 1)
-        nt.assert_equal(list_file_ng[0].get('reason'), '"timestamp" not match\nFile metadata is not updated')
+        assert (len(list_file_ng)) == (1)
+        assert (list_file_ng[0].get('reason')) == ('"timestamp" not match\nFile metadata is not updated')
 
     def test_check_file_metadata_ok(self):
         region = RegionFactory(waterbutler_settings=bulkmount_waterbutler_settings)
@@ -2059,10 +2058,10 @@ class TestUtilsForCheckRestoreData(AdminTestCase):
             metadata={'items': []},
         )
         result = utils.check_file_metadata(data, export_data_restore, storage_file_info)
-        nt.assert_equal(result.get('ng'), 0)
-        nt.assert_equal(result.get('ok'), 1)
-        nt.assert_equal(result.get('total'), 1)
-        nt.assert_equal(len(result.get('list_file_ng', [])), 0)
+        assert (result.get('ng')) == (0)
+        assert (result.get('ok')) == (1)
+        assert (result.get('total')) == (1)
+        assert (len(result.get('list_file_ng', []))) == (0)
 
 
 @pytest.mark.feature_202210
@@ -2081,11 +2080,11 @@ class TestUtilsForRestoreData(AdminTestCase):
     # check_for_any_running_restore_process
     def test_check_for_any_running_restore_process_true_result(self):
         result = utils.check_for_any_running_restore_process(self.destination_id)
-        nt.assert_equal(result, True)
+        assert (result) == (True)
 
     def test_check_for_any_running_restore_process_false_result(self):
         result = utils.check_for_any_running_restore_process(-1)
-        nt.assert_equal(result, False)
+        assert (result) == (False)
 
     # validate_file_json
     def test_validate_file_json(self):
@@ -2099,7 +2098,7 @@ class TestUtilsForRestoreData(AdminTestCase):
                 result = utils.validate_file_json({}, 'file-info-schema.json')
                 mock_from_json.assert_called()
                 mock_validate.assert_called()
-                nt.assert_true(result)
+                assert (result)
 
     def test_validate_file_json_validation_error(self):
         mock_from_json = MagicMock()
@@ -2112,7 +2111,7 @@ class TestUtilsForRestoreData(AdminTestCase):
                 result = utils.validate_file_json({}, 'file-info-schema.json')
                 mock_from_json.assert_called()
                 mock_validate.assert_called()
-                nt.assert_false(result)
+                assert not (result)
 
     def test_validate_file_json_schema_error(self):
         mock_from_json = MagicMock()
@@ -2125,7 +2124,7 @@ class TestUtilsForRestoreData(AdminTestCase):
                 result = utils.validate_file_json({}, 'file-info-schema.json')
                 mock_from_json.assert_called()
                 mock_validate.assert_called()
-                nt.assert_false(result)
+                assert not (result)
 
     def test_validate_file_json_other_error(self):
         mock_from_json = MagicMock()
@@ -2135,11 +2134,11 @@ class TestUtilsForRestoreData(AdminTestCase):
 
         with patch(f'{EXPORT_DATA_UTIL_PATH}.from_json', mock_from_json):
             with patch(f'jsonschema.validate', mock_validate):
-                with nt.assert_raises(FileNotFoundError):
+                with pytest.raises(FileNotFoundError):
                     result = utils.validate_file_json({}, 'fake-schema.json')
                     mock_from_json.assert_called()
                     mock_validate.assert_called()
-                    nt.assert_is_none(result)
+                    assert (result) is None
 
     # get_file_data
     def test_get_file_data(self):
@@ -2152,8 +2151,8 @@ class TestUtilsForRestoreData(AdminTestCase):
         with patch('requests.get', mock_get):
             response = utils.get_file_data(TEST_PROJECT_ID, TEST_PROVIDER, '/test/file.txt', None)
             mock_get.assert_called()
-            nt.assert_equal(response.content, b'{}')
-            nt.assert_equal(response.status_code, status.HTTP_200_OK)
+            assert (response.content) == (b'{}')
+            assert (response.status_code) == (status.HTTP_200_OK)
 
     def test_get_file_data_info(self):
         test_response = requests.Response()
@@ -2166,8 +2165,8 @@ class TestUtilsForRestoreData(AdminTestCase):
             response = utils.get_file_data(TEST_PROJECT_ID, TEST_PROVIDER, '/test/file.txt', None,
                                            get_file_info=True)
             mock_get.assert_called()
-            nt.assert_equal(response.content, {})
-            nt.assert_equal(response.status_code, status.HTTP_200_OK)
+            assert (response.content) == ({})
+            assert (response.status_code) == (status.HTTP_200_OK)
 
     def test_get_file_data_with_version(self):
         test_response = requests.Response()
@@ -2179,8 +2178,8 @@ class TestUtilsForRestoreData(AdminTestCase):
         with patch('requests.get', mock_get):
             response = utils.get_file_data(TEST_PROJECT_ID, TEST_PROVIDER, '/test/file.txt', None, version=2)
             mock_get.assert_called()
-            nt.assert_equal(response.content, b'{}')
-            nt.assert_equal(response.status_code, status.HTTP_200_OK)
+            assert (response.content) == (b'{}')
+            assert (response.status_code) == (status.HTTP_200_OK)
 
     def test_get_file_data_from_export_data(self):
         test_response = requests.Response()
@@ -2194,8 +2193,8 @@ class TestUtilsForRestoreData(AdminTestCase):
                                            None,
                                            location_id=self.export_data.location.id)
             mock_get.assert_called()
-            nt.assert_equal(response.content, b'{}')
-            nt.assert_equal(response.status_code, status.HTTP_200_OK)
+            assert (response.content) == (b'{}')
+            assert (response.status_code) == (status.HTTP_200_OK)
 
     # get_files_in_path
     @patch(f'{EXPORT_DATA_UTIL_PATH}.get_file_data')
@@ -2214,7 +2213,7 @@ class TestUtilsForRestoreData(AdminTestCase):
         result = utils.get_files_in_path(ExportData.EXPORT_DATA_FAKE_NODE_ID, TEST_PROVIDER, '/test/',
                                          None)
         mock_get_file_data.assert_called()
-        nt.assert_equal(result, [])
+        assert (result) == ([])
 
     @patch(f'{EXPORT_DATA_UTIL_PATH}.get_file_data')
     def test_get_files_in_path__response_error(self, mock_get_file_data):
@@ -2229,7 +2228,7 @@ class TestUtilsForRestoreData(AdminTestCase):
         result = utils.get_files_in_path(ExportData.EXPORT_DATA_FAKE_NODE_ID, TEST_PROVIDER, '/test/',
                                          None)
         mock_get_file_data.assert_called()
-        nt.assert_equal(result, [])
+        assert (result) == ([])
 
     @patch(f'{EXPORT_DATA_UTIL_PATH}.get_file_data')
     def test_get_files_in_path__response_404_error(self, mock_get_file_data):
@@ -2244,7 +2243,7 @@ class TestUtilsForRestoreData(AdminTestCase):
         result = utils.get_files_in_path(ExportData.EXPORT_DATA_FAKE_NODE_ID, TEST_PROVIDER, '/test/',
                                          None)
         mock_get_file_data.assert_called()
-        nt.assert_equal(result, [])
+        assert (result) == ([])
 
     @patch(f'{EXPORT_DATA_UTIL_PATH}.get_file_data')
     def test_get_files_in_path__addon_no_next_token(self, mock_get_file_data):
@@ -2267,7 +2266,7 @@ class TestUtilsForRestoreData(AdminTestCase):
         result = utils.get_files_in_path(ExportData.EXPORT_DATA_FAKE_NODE_ID, TEST_PROVIDER, '/test/',
                                          None)
         mock_get_file_data.assert_called()
-        nt.assert_equal(result, [{
+        assert (result) == ([{
             'attributes': {
                 'path': '/folder/',
                 'materialized': '/folder/'
@@ -2306,7 +2305,7 @@ class TestUtilsForRestoreData(AdminTestCase):
         result = utils.get_files_in_path(ExportData.EXPORT_DATA_FAKE_NODE_ID, 's3compat', '/test/',
                                          None)
         mock_get_file_data.assert_called()
-        nt.assert_equal(result, [{
+        assert (result) == ([{
             'attributes': {
                 'path': '/folder/',
                 'materialized': '/folder/'
@@ -2328,8 +2327,8 @@ class TestUtilsForRestoreData(AdminTestCase):
         mock_put.return_value = test_response
         with patch('requests.put', mock_put):
             response_body, status_code = utils.create_folder(TEST_PROJECT_ID, TEST_PROVIDER, '/', 'test/', None)
-            nt.assert_equal(response_body, {})
-            nt.assert_equal(status_code, status.HTTP_201_CREATED)
+            assert (response_body) == ({})
+            assert (status_code) == (status.HTTP_201_CREATED)
 
     def test_create_folder_failed(self):
         test_response = requests.Response()
@@ -2339,16 +2338,16 @@ class TestUtilsForRestoreData(AdminTestCase):
         mock_put.return_value = test_response
         with patch('requests.put', mock_put):
             response_body, status_code = utils.create_folder(TEST_PROJECT_ID, TEST_PROVIDER, '/', 'test/', None)
-            nt.assert_is_none(response_body)
-            nt.assert_equal(status_code, status.HTTP_409_CONFLICT)
+            assert (response_body) is None
+            assert (status_code) == (status.HTTP_409_CONFLICT)
 
     def test_create_folder_exception(self):
         mock_put = MagicMock()
         mock_put.side_effect = ConnectionError('Mock test in create folder on storage')
         with patch('requests.put', mock_put):
             response_body, status_code = utils.create_folder(TEST_PROJECT_ID, TEST_PROVIDER, '/', 'test/', None)
-            nt.assert_is_none(response_body)
-            nt.assert_is_none(status_code)
+            assert (response_body) is None
+            assert (status_code) is None
 
     # upload_file
     def test_upload_file(self):
@@ -2361,8 +2360,8 @@ class TestUtilsForRestoreData(AdminTestCase):
         with patch('requests.put', mock_put):
             response_body, status_code = utils.upload_file(TEST_PROJECT_ID, TEST_PROVIDER, '/', {}, 'test.txt',
                                                            None)
-            nt.assert_equal(response_body, {})
-            nt.assert_equal(status_code, status.HTTP_201_CREATED)
+            assert (response_body) == ({})
+            assert (status_code) == (status.HTTP_201_CREATED)
 
     def test_upload_file_failed(self):
         test_response = requests.Response()
@@ -2373,8 +2372,8 @@ class TestUtilsForRestoreData(AdminTestCase):
         with patch('requests.put', mock_put):
             response_body, status_code = utils.upload_file(TEST_PROJECT_ID, TEST_PROVIDER, '/', {}, 'test.txt',
                                                            None)
-            nt.assert_is_none(response_body)
-            nt.assert_equal(status_code, status.HTTP_409_CONFLICT)
+            assert (response_body) is None
+            assert (status_code) == (status.HTTP_409_CONFLICT)
 
     def test_upload_file_exception(self):
         mock_put = MagicMock()
@@ -2383,8 +2382,8 @@ class TestUtilsForRestoreData(AdminTestCase):
         with patch('requests.put', mock_put):
             response_body, status_code = utils.upload_file(TEST_PROJECT_ID, TEST_PROVIDER, '/', {}, 'test.txt',
                                                            None)
-            nt.assert_is_none(response_body)
-            nt.assert_is_none(status_code)
+            assert (response_body) is None
+            assert (status_code) is None
 
     # update_existing_file
     def test_update_existing_file(self):
@@ -2398,8 +2397,8 @@ class TestUtilsForRestoreData(AdminTestCase):
             response_body, status_code = utils.update_existing_file(TEST_PROJECT_ID, TEST_PROVIDER, '/', {},
                                                                     'test.txt',
                                                                     None)
-            nt.assert_equal(response_body, {})
-            nt.assert_equal(status_code, status.HTTP_200_OK)
+            assert (response_body) == ({})
+            assert (status_code) == (status.HTTP_200_OK)
 
     def test_update_existing_file_failed(self):
         test_response = requests.Response()
@@ -2411,8 +2410,8 @@ class TestUtilsForRestoreData(AdminTestCase):
             response_body, status_code = utils.update_existing_file(TEST_PROJECT_ID, TEST_PROVIDER, '/', {},
                                                                     'test.txt',
                                                                     None)
-            nt.assert_is_none(response_body)
-            nt.assert_equal(status_code, status.HTTP_404_NOT_FOUND)
+            assert (response_body) is None
+            assert (status_code) == (status.HTTP_404_NOT_FOUND)
 
     def test_update_existing_file_exception(self):
         mock_put = MagicMock()
@@ -2422,14 +2421,14 @@ class TestUtilsForRestoreData(AdminTestCase):
             response_body, status_code = utils.update_existing_file(TEST_PROJECT_ID, TEST_PROVIDER, '/', {},
                                                                     'test.txt',
                                                                     None)
-            nt.assert_is_none(response_body)
-            nt.assert_is_none(status_code)
+            assert (response_body) is None
+            assert (status_code) is None
 
     # create_folder_path
     def test_create_folder_path__invalid_folder_path(self):
         response = utils.create_folder_path(self.export_data_restore.destination, TEST_PROJECT_ID,
                                             '/folder', [], None)
-        nt.assert_equal(response, None)
+        assert (response) == (None)
 
     @patch(f'{EXPORT_DATA_UTIL_PATH}.create_folders')
     def test_create_folder_path__create_folders(self, mock_create_folders):
@@ -2438,7 +2437,7 @@ class TestUtilsForRestoreData(AdminTestCase):
         response = utils.create_folder_path(self.export_data_restore.destination, TEST_PROJECT_ID,
                                             '/folder/', [], None)
         mock_create_folders.assert_called()
-        nt.assert_equal(response, None)
+        assert (response) == (None)
 
     # create_folders
     @patch(f'{EXPORT_DATA_UTIL_PATH}.create_folder')
@@ -2449,7 +2448,7 @@ class TestUtilsForRestoreData(AdminTestCase):
                                                    [], None)
         mock_get_files_in_path.assert_not_called()
         mock_create_folder.assert_not_called()
-        nt.assert_equal(created_folder_path, '/')
+        assert (created_folder_path) == ('/')
 
     @patch(f'{EXPORT_DATA_UTIL_PATH}.create_folder')
     @patch(f'{EXPORT_DATA_UTIL_PATH}.get_files_in_path')
@@ -2459,7 +2458,7 @@ class TestUtilsForRestoreData(AdminTestCase):
                                                    None, None)
         mock_get_files_in_path.assert_not_called()
         mock_create_folder.assert_not_called()
-        nt.assert_equal(created_folder_path, '/')
+        assert (created_folder_path) == ('/')
 
     @patch(f'{EXPORT_DATA_UTIL_PATH}.create_folder')
     @patch(f'{EXPORT_DATA_UTIL_PATH}.get_files_in_path')
@@ -2483,7 +2482,7 @@ class TestUtilsForRestoreData(AdminTestCase):
                                                    None, None)
         mock_get_files_in_path.assert_called()
         mock_create_folder.assert_called()
-        nt.assert_equal(created_folder_path, '/folder_1/')
+        assert (created_folder_path) == ('/folder_1/')
 
     @patch(f'{EXPORT_DATA_UTIL_PATH}.create_folder')
     @patch(f'{EXPORT_DATA_UTIL_PATH}.get_files_in_path')
@@ -2496,7 +2495,7 @@ class TestUtilsForRestoreData(AdminTestCase):
                                                    None, None)
         mock_get_files_in_path.assert_called()
         mock_create_folder.assert_called()
-        nt.assert_equal(created_folder_path, None)
+        assert (created_folder_path) == (None)
 
     @patch(f'{EXPORT_DATA_UTIL_PATH}.create_folder')
     @patch(f'{EXPORT_DATA_UTIL_PATH}.get_files_in_path')
@@ -2510,7 +2509,7 @@ class TestUtilsForRestoreData(AdminTestCase):
                                                    None, None)
         mock_get_files_in_path.assert_called()
         mock_create_folder.assert_called()
-        nt.assert_equal(created_folder_path, None)
+        assert (created_folder_path) == (None)
 
     @patch(f'{EXPORT_DATA_UTIL_PATH}.create_folder')
     @patch(f'{EXPORT_DATA_UTIL_PATH}.get_files_in_path')
@@ -2529,7 +2528,7 @@ class TestUtilsForRestoreData(AdminTestCase):
                                                    [], None)
         mock_get_files_in_path.assert_called()
         mock_create_folder.assert_not_called()
-        nt.assert_equal(created_folder_path, '/folder_1/')
+        assert (created_folder_path) == ('/folder_1/')
 
     @patch(f'{EXPORT_DATA_UTIL_PATH}.create_folder')
     @patch(f'{EXPORT_DATA_UTIL_PATH}.get_files_in_path')
@@ -2542,12 +2541,12 @@ class TestUtilsForRestoreData(AdminTestCase):
                                                    created_folders, None)
         mock_get_files_in_path.assert_not_called()
         mock_create_folder.assert_not_called()
-        nt.assert_equal(created_folder_path, '/folder_1/')
+        assert (created_folder_path) == ('/folder_1/')
 
     # upload_file_path
     def test_upload_file_path_invalid_file_path(self):
         response = utils.upload_file_path(TEST_PROJECT_ID, TEST_PROVIDER, '/folder/', {}, None)
-        nt.assert_equal(response, {})
+        assert (response) == ({})
 
     @patch(f'{EXPORT_DATA_UTIL_PATH}.upload_file')
     @patch(f'{EXPORT_DATA_UTIL_PATH}.create_folder')
@@ -2574,7 +2573,7 @@ class TestUtilsForRestoreData(AdminTestCase):
         mock_get_file_data.assert_called()
         mock_create_folder.assert_called()
         mock_upload_file.assert_called()
-        nt.assert_equal(response, {})
+        assert (response) == ({})
 
     @patch(f'{EXPORT_DATA_UTIL_PATH}.upload_file')
     @patch(f'{EXPORT_DATA_UTIL_PATH}.create_folder')
@@ -2600,7 +2599,7 @@ class TestUtilsForRestoreData(AdminTestCase):
         mock_get_file_data.assert_called()
         mock_create_folder.assert_called()
         mock_upload_file.assert_called()
-        nt.assert_equal(response, {})
+        assert (response) == ({})
 
     @patch(f'{EXPORT_DATA_UTIL_PATH}.upload_file')
     @patch(f'{EXPORT_DATA_UTIL_PATH}.create_folder')
@@ -2642,7 +2641,7 @@ class TestUtilsForRestoreData(AdminTestCase):
         mock_get_file_data.assert_called()
         mock_create_folder.assert_called()
         mock_upload_file.assert_called()
-        nt.assert_equal(response, {})
+        assert (response) == ({})
 
     @patch(f'{EXPORT_DATA_UTIL_PATH}.upload_file')
     @patch(f'{EXPORT_DATA_UTIL_PATH}.create_folder')
@@ -2685,7 +2684,7 @@ class TestUtilsForRestoreData(AdminTestCase):
         mock_get_file_data.assert_called()
         mock_create_folder.assert_not_called()
         mock_upload_file.assert_called()
-        nt.assert_equal(response, {})
+        assert (response) == ({})
 
     @patch(f'{EXPORT_DATA_UTIL_PATH}.update_existing_file')
     @patch(f'{EXPORT_DATA_UTIL_PATH}.upload_file')
@@ -2747,7 +2746,7 @@ class TestUtilsForRestoreData(AdminTestCase):
         mock_create_folder.assert_not_called()
         mock_update_file.assert_called()
         mock_upload_file.assert_not_called()
-        nt.assert_equal(response, update_file_response_body)
+        assert (response) == (update_file_response_body)
 
     @patch(f'{EXPORT_DATA_UTIL_PATH}.upload_file')
     @patch(f'{EXPORT_DATA_UTIL_PATH}.create_folder')
@@ -2766,7 +2765,7 @@ class TestUtilsForRestoreData(AdminTestCase):
         mock_get_file_data.assert_called()
         mock_create_folder.assert_called()
         mock_upload_file.assert_not_called()
-        nt.assert_equal(response, {})
+        assert (response) == ({})
 
     # copy_file_to_other_storage
     def test_copy_file_to_other_storage(self):
@@ -2780,7 +2779,7 @@ class TestUtilsForRestoreData(AdminTestCase):
             response_body = utils.copy_file_to_other_storage(self.export_data, TEST_PROJECT_ID, TEST_PROVIDER,
                                                              '/test.txt', '/', 'test.txt',
                                                              None)
-            nt.assert_equal(response_body, {})
+            assert (response_body) == ({})
 
     def test_copy_file_to_other_storage_failed(self):
         test_response = requests.Response()
@@ -2792,7 +2791,7 @@ class TestUtilsForRestoreData(AdminTestCase):
             response_body = utils.copy_file_to_other_storage(self.export_data, TEST_PROJECT_ID, TEST_PROVIDER,
                                                              '/test.txt', '/', 'test.txt',
                                                              None)
-            nt.assert_is_none(response_body)
+            assert (response_body) is None
 
     def test_copy_file_to_other_storage_exception(self):
         mock_post = MagicMock()
@@ -2803,7 +2802,7 @@ class TestUtilsForRestoreData(AdminTestCase):
                 self.export_data, TEST_PROJECT_ID, TEST_PROVIDER,
                 '/test.txt', '/', 'test.txt',
                 None)
-            nt.assert_is_none(response_body)
+            assert (response_body) is None
 
     def test_copy_file_to_other_storage_exception_timeout(self):
         mock_post = MagicMock()
@@ -2813,7 +2812,7 @@ class TestUtilsForRestoreData(AdminTestCase):
                 self.export_data, TEST_PROJECT_ID, TEST_PROVIDER,
                 '/test.txt', '/', 'test.txt',
                 None)
-            nt.assert_is_none(response_body)
+            assert (response_body) is None
 
         mock_post = MagicMock()
         mock_post.side_effect = Timeout('test_copy_file_to_other_storage_exception')
@@ -2822,7 +2821,7 @@ class TestUtilsForRestoreData(AdminTestCase):
                 self.export_data, TEST_PROJECT_ID, TEST_PROVIDER,
                 '/test.txt', '/', 'test.txt',
                 None)
-            nt.assert_is_none(response_body)
+            assert (response_body) is None
 
         mock_post = MagicMock()
         mock_post.side_effect = ReadTimeout('test_copy_file_to_other_storage_exception')
@@ -2831,7 +2830,7 @@ class TestUtilsForRestoreData(AdminTestCase):
                 self.export_data, TEST_PROJECT_ID, TEST_PROVIDER,
                 '/test.txt', '/', 'test.txt',
                 None)
-            nt.assert_is_none(response_body)
+            assert (response_body) is None
 
     # copy_file_from_location_to_destination
     def test_copy_file_from_location_to_destination__invalid_file_path(self):
@@ -2839,7 +2838,7 @@ class TestUtilsForRestoreData(AdminTestCase):
             self.export_data, TEST_PROVIDER, TEST_PROJECT_ID,
             '/', '/folder/',
             [], None)
-        nt.assert_equal(response, None)
+        assert (response) == (None)
 
     @patch(f'{EXPORT_DATA_UTIL_PATH}.copy_file_to_other_storage')
     @patch(f'{EXPORT_DATA_UTIL_PATH}.create_folders')
@@ -2854,7 +2853,7 @@ class TestUtilsForRestoreData(AdminTestCase):
             [], None)
         mock_create_folders.assert_called()
         mock_copy_file.assert_called()
-        nt.assert_equal(response, {})
+        assert (response) == ({})
 
     @patch(f'{EXPORT_DATA_UTIL_PATH}.copy_file_to_other_storage')
     @patch(f'{EXPORT_DATA_UTIL_PATH}.create_folders')
@@ -2869,7 +2868,7 @@ class TestUtilsForRestoreData(AdminTestCase):
             [], None)
         mock_create_folders.assert_called()
         mock_copy_file.assert_not_called()
-        nt.assert_equal(response, None)
+        assert (response) == (None)
 
     # prepare_file_node_for_add_on_storage
     def test_prepare_file_node_for_add_on_storage(self):
@@ -2894,47 +2893,47 @@ class TestUtilsForRestoreData(AdminTestCase):
                 # Test for each add-on storages
                 utils.prepare_file_node_for_add_on_storage(project._id, provider_name, file_path)
                 file_node_query_set = BaseFileNode.objects.filter(provider=provider_name, _path=file_path)
-                nt.assert_true(file_node_query_set.exists())
+                assert (file_node_query_set.exists())
                 file_node = file_node_query_set.first()
-                nt.assert_true(file_node.name)
-                nt.assert_true(file_node.materialized_path)
-                nt.assert_true(file_node.last_touched)
+                assert (file_node.name)
+                assert (file_node.materialized_path)
+                assert (file_node.last_touched)
 
     def test_prepare_file_node_for_add_on_storage_bulk_mount_storage(self):
         project = ProjectFactory()
         utils.prepare_file_node_for_add_on_storage(project._id, 'osfstorage', '/text_file.txt')
         file_node_query_set = BaseFileNode.objects.filter(provider='osfstorage', _path='/text_file.txt')
-        nt.assert_false(file_node_query_set.exists())
+        assert not (file_node_query_set.exists())
 
     def test_prepare_file_node_for_add_on_storage_draft_node(self):
         draft_node = DraftNodeFactory()
         utils.prepare_file_node_for_add_on_storage(draft_node._id, 's3compatinstitutions', '/text_file.txt')
         file_node_query_set = BaseFileNode.objects.filter(provider='s3compatinstitutions', _path='/text_file.txt')
-        nt.assert_false(file_node_query_set.exists())
+        assert not (file_node_query_set.exists())
 
     # is_add_on_storage
     def test_is_add_on_storage(self):
         # missing provider
-        nt.assert_is_none(utils.is_add_on_storage(None))
-        nt.assert_is_none(utils.is_add_on_storage('osf_storage'))
+        assert (utils.is_add_on_storage(None)) is None
+        assert (utils.is_add_on_storage('osf_storage')) is None
 
         # only addon method providers
-        nt.assert_true(utils.is_add_on_storage('nextcloudinstitutions'))
-        nt.assert_true(utils.is_add_on_storage('s3compatinstitutions'))
-        nt.assert_true(utils.is_add_on_storage('ociinstitutions'))
-        nt.assert_true(utils.is_add_on_storage('dropboxbusiness'))
-        nt.assert_true(utils.is_add_on_storage('onedrivebusiness'))
+        assert (utils.is_add_on_storage('nextcloudinstitutions'))
+        assert (utils.is_add_on_storage('s3compatinstitutions'))
+        assert (utils.is_add_on_storage('ociinstitutions'))
+        assert (utils.is_add_on_storage('dropboxbusiness'))
+        assert (utils.is_add_on_storage('onedrivebusiness'))
 
         # only bulk-mount method providers
-        nt.assert_false(utils.is_add_on_storage('swift'))
-        nt.assert_false(utils.is_add_on_storage('box'))
-        nt.assert_false(utils.is_add_on_storage('nextcloud'))
-        nt.assert_false(utils.is_add_on_storage('osfstorage'))
-        nt.assert_false(utils.is_add_on_storage('onedrive'))
-        nt.assert_false(utils.is_add_on_storage('googledrive'))
-        nt.assert_false(utils.is_add_on_storage('owncloud'))
-        nt.assert_false(utils.is_add_on_storage('s3compat'))
-        nt.assert_false(utils.is_add_on_storage('s3'))
+        assert not (utils.is_add_on_storage('swift'))
+        assert not (utils.is_add_on_storage('box'))
+        assert not (utils.is_add_on_storage('nextcloud'))
+        assert not (utils.is_add_on_storage('osfstorage'))
+        assert not (utils.is_add_on_storage('onedrive'))
+        assert not (utils.is_add_on_storage('googledrive'))
+        assert not (utils.is_add_on_storage('owncloud'))
+        assert not (utils.is_add_on_storage('s3compat'))
+        assert not (utils.is_add_on_storage('s3'))
 
     # update_file_metadata
     def test_update_file_metadata_project_not_found(self):
@@ -2957,7 +2956,7 @@ class TestUtilsForRestoreData(AdminTestCase):
         utils.update_file_metadata(None, source_provider, destination_provider, file_path)
         new_metadata = FileMetadata.objects.filter(project=metadata_node_settings,
                                                    path=f'{destination_provider}{file_path}')
-        nt.assert_false(new_metadata.exists())
+        assert not (new_metadata.exists())
 
     def test_update_file_metadata_no_update(self):
         user = AuthUserFactory()
@@ -2979,7 +2978,7 @@ class TestUtilsForRestoreData(AdminTestCase):
         utils.update_file_metadata(None, 'osfstorage', destination_provider, file_path)
         new_metadata = FileMetadata.objects.filter(project=metadata_node_settings,
                                                    path=f'{destination_provider}{file_path}')
-        nt.assert_false(new_metadata.exists())
+        assert not (new_metadata.exists())
 
     def test_update_file_metadata(self):
         user = AuthUserFactory()
@@ -3001,7 +3000,7 @@ class TestUtilsForRestoreData(AdminTestCase):
         utils.update_file_metadata(project._id, source_provider, destination_provider, file_path)
         new_metadata = FileMetadata.objects.filter(project=metadata_node_settings,
                                                    path=f'{destination_provider}{file_path}')
-        nt.assert_true(new_metadata.exists())
+        assert (new_metadata.exists())
 
     # update_all_folders_metadata
     def test_update_all_folders_metadata_invalid_input(self):
@@ -3024,7 +3023,7 @@ class TestUtilsForRestoreData(AdminTestCase):
         utils.update_all_folders_metadata(None, destination_provider)
         new_metadata = FileMetadata.objects.filter(project=metadata_node_settings, folder=True,
                                                    path=f'{destination_provider}{folder_path}')
-        nt.assert_false(new_metadata.exists())
+        assert not (new_metadata.exists())
 
     def test_update_all_folders_metadata(self):
         user = AuthUserFactory()
@@ -3050,4 +3049,4 @@ class TestUtilsForRestoreData(AdminTestCase):
         utils.update_all_folders_metadata(institution, destination_provider)
         new_metadata = FileMetadata.objects.filter(project=metadata_node_settings, folder=True,
                                                    path=f'{destination_provider}{folder_path}')
-        nt.assert_true(new_metadata.exists())
+        assert (new_metadata.exists())

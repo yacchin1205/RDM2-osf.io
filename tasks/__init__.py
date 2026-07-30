@@ -15,7 +15,7 @@ import invoke
 from invoke import Collection
 
 from website import settings
-from .utils import pip_install, bin_prefix
+from .utils import bin_prefix
 
 
 try:
@@ -28,7 +28,6 @@ logging.getLogger('invoke').setLevel(logging.CRITICAL)
 
 # gets the root path for all the scripts that rely on it
 HERE = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..'))
-WHEELHOUSE_PATH = os.environ.get('WHEELHOUSE')
 NO_TESTS_COLLECTED = 5
 ns = Collection()
 
@@ -274,63 +273,13 @@ def mailserver(ctx, host='localhost', port=1025):
 @task
 def syntax(ctx):
     """Use pre-commit to run formatters and linters."""
-    ctx.run('pre-commit run --all-files --show-diff-on-failure', echo=True)
-
-
-@task(aliases=['req'])
-def requirements(ctx, base=False, addons=False, release=False, dev=False, all=False):
-    """Install python dependencies.
-
-    Examples:
-        inv requirements
-        inv requirements --all
-
-    You should use --all for updating your developement environment.
-    --all will install (in order): addons, dev and the base requirements.
-
-    By default, base requirements will run. However, if any set of addons, release, or dev are chosen, base
-    will have to be mentioned explicitly in order to run. This is to remain compatible with previous usages. Release
-    requirements will prevent dev, and base from running.
-    """
-    if all:
-        base = True
-        addons = True
-        dev = True
-    if not(addons or dev):
-        base = True
-    if release or addons:
-        addon_requirements(ctx)
-    # "release" takes precedence
-    if release:
-        req_file = os.path.join(HERE, 'requirements', 'release.txt')
-        ctx.run(
-            pip_install(req_file),
-            echo=True
-        )
-    else:
-        if dev:  # then dev requirements
-            req_file = os.path.join(HERE, 'requirements', 'dev.txt')
-            ctx.run(
-                pip_install(req_file),
-                echo=True
-            )
-
-        if base:  # then base requirements
-            req_file = os.path.join(HERE, 'requirements.txt')
-            ctx.run(
-                pip_install(req_file),
-                echo=True
-            )
-    # fix URITemplate name conflict h/t @github
-    ctx.run('pip3 uninstall uritemplate.py --yes || true')
-    ctx.run('pip3 install --no-cache-dir uritemplate.py==0.3.0')
+    ctx.run('python3 -m pre_commit run --all-files --show-diff-on-failure', echo=True)
 
 
 @task
 def test_module(ctx, module=None, numprocesses=None, nocapture=False, params=None, coverage=False, testmon=False):
     """Helper for running tests.
     """
-    from past.builtins import basestring
     os.environ['DJANGO_SETTINGS_MODULE'] = 'osf_tests.settings'
     import pytest
     if not numprocesses:
@@ -353,14 +302,14 @@ def test_module(ctx, module=None, numprocesses=None, nocapture=False, params=Non
     if not nocapture:
         args += ['-s']
     if numprocesses > 1:
-        args += ['-n {}'.format(numprocesses), '--max-slave-restart=0']
-    modules = [module] if isinstance(module, basestring) else module
+        args += [f'-n {numprocesses}', '--max-worker-restart=0']
+    modules = [module] if isinstance(module, str) else module
     args.extend(modules)
     if testmon:
         args.extend(['--testmon'])
 
     if params:
-        params = [params] if isinstance(params, basestring) else params
+        params = [params] if isinstance(params, str) else params
         args.extend(params)
 
     retcode = pytest.main(args)
@@ -514,23 +463,10 @@ def remove_failures_from_testmon(ctx, db_path=None):
     ctx.run('echo {} failures purged from travis cache'.format(tests_decached))
 
 @task
-def travis_setup(ctx):
-    ctx.run('npm install -g bower', echo=True)
-
-    with open('package.json', 'r') as fobj:
-        package_json = json.load(fobj)
-        ctx.run('npm install @centerforopenscience/list-of-licenses@{}'.format(package_json['dependencies']['@centerforopenscience/list-of-licenses']), echo=True)
-
-    with open('bower.json', 'r') as fobj:
-        bower_json = json.load(fobj)
-        ctx.run('bower install {}'.format(bower_json['dependencies']['styles']), echo=True)
-
-@task
 def test_travis_addons(ctx, numprocesses=None, coverage=False, testmon=False):
     """
     Run half of the tests to help travis go faster.
     """
-    travis_setup(ctx)
     syntax(ctx)
     test_addons(ctx, numprocesses=numprocesses, coverage=coverage, testmon=testmon)
 
@@ -539,7 +475,6 @@ def test_travis_website(ctx, numprocesses=None, coverage=False, testmon=False):
     """
     Run other half of the tests to help travis go faster.
     """
-    travis_setup(ctx)
     test_website(ctx, numprocesses=numprocesses, coverage=coverage, testmon=testmon)
 
 
@@ -547,19 +482,16 @@ def test_travis_website(ctx, numprocesses=None, coverage=False, testmon=False):
 def test_travis_api1_and_js(ctx, numprocesses=None, coverage=False, testmon=False):
     # TODO: Uncomment when https://github.com/travis-ci/travis-ci/issues/8836 is resolved
     # karma(ctx)
-    travis_setup(ctx)
     test_api1(ctx, numprocesses=numprocesses, coverage=coverage, testmon=testmon)
 
 
 @task
 def test_travis_api2(ctx, numprocesses=None, coverage=False, testmon=False):
-    travis_setup(ctx)
     test_api2(ctx, numprocesses=numprocesses, coverage=coverage, testmon=testmon)
 
 
 @task
 def test_travis_api3_and_osf(ctx, numprocesses=None, coverage=False, testmon=False):
-    travis_setup(ctx)
     test_api3(ctx, numprocesses=numprocesses, coverage=coverage, testmon=testmon)
 
 @task
@@ -568,51 +500,6 @@ def karma(ctx, travis=False):
     if travis:
         return ctx.run('yarn test-travis', echo=True)
     ctx.run('yarn test', echo=True)
-
-
-@task
-def wheelhouse(ctx, addons=False, release=False, dev=False, pty=True):
-    """Build wheels for python dependencies.
-
-    Examples:
-
-        inv wheelhouse --dev
-        inv wheelhouse --addons
-        inv wheelhouse --release
-    """
-    if release or addons:
-        for directory in os.listdir(settings.ADDON_PATH):
-            path = os.path.join(settings.ADDON_PATH, directory)
-            if os.path.isdir(path):
-                req_file = os.path.join(path, 'requirements.txt')
-                if os.path.exists(req_file):
-                    cmd = ('pip3 wheel --find-links={} -r {} --wheel-dir={} ').format(WHEELHOUSE_PATH, req_file, WHEELHOUSE_PATH)
-                    ctx.run(cmd, pty=pty)
-    if release:
-        req_file = os.path.join(HERE, 'requirements', 'release.txt')
-    elif dev:
-        req_file = os.path.join(HERE, 'requirements', 'dev.txt')
-    else:
-        req_file = os.path.join(HERE, 'requirements.txt')
-    cmd = 'pip3 wheel --find-links={} -r {} --wheel-dir={} '.format(WHEELHOUSE_PATH, req_file, WHEELHOUSE_PATH)
-    ctx.run(cmd, pty=pty)
-
-
-@task
-def addon_requirements(ctx):
-    """Install all addon requirements."""
-    for directory in os.listdir(settings.ADDON_PATH):
-        path = os.path.join(settings.ADDON_PATH, directory)
-
-        requirements_file = os.path.join(path, 'requirements.txt')
-        if os.path.isdir(path) and os.path.isfile(requirements_file):
-            print('Installing requirements for {0}'.format(directory))
-            ctx.run(
-                pip_install(requirements_file),
-                echo=True
-            )
-
-    print('Finished installing addon requirements')
 
 
 @task

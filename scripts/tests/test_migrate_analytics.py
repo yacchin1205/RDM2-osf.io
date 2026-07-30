@@ -1,6 +1,5 @@
 import pytz
 from dateutil.parser import parse
-from nose.tools import *  # noqa
 
 from tests.base import OsfTestCase
 from scripts.analytics.migrate_analytics import generate_events_between_events, fill_in_event_gaps
@@ -60,23 +59,23 @@ class TestMigrateAnalytics(OsfTestCase):
         generated_events = generate_events_between_events([self.day_one, self.day_two], self.keen_event)
 
         # Only for the first gap, so 3/13, 3/14, 3/15
-        assert_equal(len(generated_events), 3)
+        assert (len(generated_events)) == (3)
         returned_dates = [event['keen']['timestamp'] for event in generated_events]
         expected_dates = ['2016-03-{}T00:00:00+00:00'.format(i) for i in range(13, 16)]
-        assert_equals(returned_dates, expected_dates)
+        assert (returned_dates) == (expected_dates)
 
         # check the totals are the same as the first event
         returned_totals = [event['nodes']['total'] for event in generated_events]
         expected_totals = [self.keen_event['nodes']['total'] for i in range(len(generated_events))]
-        assert_equals(returned_totals, expected_totals)
+        assert (returned_totals) == (expected_totals)
 
     def test_fill_in_event_gaps(self):
         filled_in_events = fill_in_event_gaps('test', [self.keen_event, self.keen_event_2, self.keen_event_3])
 
         # Should generate for 5 days total - 3/13, 3/14, 3/15, 3/17 and  3/18
-        assert_equal(len(filled_in_events), 5)
+        assert (len(filled_in_events)) == (5)
 
         returned_dates = [event['keen']['timestamp'] for event in filled_in_events]
         expected_dates = ['2016-03-{}T00:00:00+00:00'.format(i) for i in range(13, 16)]
         expected_dates += ['2016-03-{}T00:00:00+00:00'.format(i) for i in range(17, 19)]
-        assert_equals(returned_dates, expected_dates)
+        assert (returned_dates) == (expected_dates)

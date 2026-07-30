@@ -780,7 +780,7 @@ def move_file_node_update(file_node, src_provider, dest_provider, metadata=None)
 
     if metadata is not None:
         path = metadata.get('path', None)
-        if path is not None and path is not '' and dest_provider != 'osfstorage':
+        if path is not None and path != '' and dest_provider != 'osfstorage':
             if path[0] != '/':
                 path = '/' + path
             file_node.path = path

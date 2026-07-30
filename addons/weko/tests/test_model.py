@@ -1,5 +1,4 @@
-import mock
-from nose.tools import *  # noqa
+from unittest import mock
 import pytest
 import unittest
 
@@ -82,16 +81,16 @@ class TestNodeSettings(OAuthAddonNodeSettingsTestSuiteMixin, unittest.TestCase):
     def test_before_register_no_settings(self):
         self.node_settings.user_settings = None
         message = self.node_settings.before_register(self.node, self.user)
-        assert_false(message)
+        assert not (message)
 
     def test_before_register_no_auth(self):
         self.node_settings.external_account = None
         message = self.node_settings.before_register(self.node, self.user)
-        assert_false(message)
+        assert not (message)
 
     def test_before_register_settings_and_auth(self):
         message = self.node_settings.before_register(self.node, self.user)
-        assert_true(message)
+        assert (message)
 
     @mock.patch('website.archiver.tasks.archive')
     def test_does_not_get_copied_to_registrations(self, mock_archive):
@@ -100,7 +99,7 @@ class TestNodeSettings(OAuthAddonNodeSettingsTestSuiteMixin, unittest.TestCase):
             auth=Auth(user=self.user),
             draft_registration=DraftRegistrationFactory(branched_from=self.node),
         )
-        assert_false(registration.has_addon('weko'))
+        assert not (registration.has_addon('weko'))
 
     ## Overrides ##
 
@@ -114,7 +113,7 @@ class TestNodeSettings(OAuthAddonNodeSettingsTestSuiteMixin, unittest.TestCase):
             'token': self.node_settings.external_account.oauth_key,
             'user_id': self.node_settings.external_account.provider_id.split(':')[1],
         }
-        assert_equal(credentials, expected)
+        assert (credentials) == (expected)
 
     def test_create_log(self):
         action = 'file_added'
@@ -126,15 +125,9 @@ class TestNodeSettings(OAuthAddonNodeSettingsTestSuiteMixin, unittest.TestCase):
             metadata={'path': path, 'materialized': path},
         )
         self.node.reload()
-        assert_equal(self.node.logs.count(), nlog + 1)
-        assert_equal(
-            self.node.logs.latest().action,
-            '{0}_{1}'.format(self.short_name, action),
-        )
-        assert_equal(
-            self.node.logs.latest().params['filename'],
-            path
-        )
+        assert (self.node.logs.count()) == (nlog + 1)
+        assert (self.node.logs.latest().action) == ('{0}_{1}'.format(self.short_name, action))
+        assert (self.node.logs.latest().params['filename']) == (path)
 
     def test_set_folder(self):
         index_id = '1234567890'
@@ -146,23 +139,23 @@ class TestNodeSettings(OAuthAddonNodeSettingsTestSuiteMixin, unittest.TestCase):
                 index_id,
                 auth=Auth(self.user),
             )
-            assert_true(mock_client.get_index_by_id.called)
+            assert (mock_client.get_index_by_id.called)
         self.node_settings.save()
         # Container was set
-        assert_equal(self.node_settings.index_id, index_id)
+        assert (self.node_settings.index_id) == (index_id)
         # Log was saved
         print(self.node.logs)
         last_log = self.node.logs.latest()
-        assert_equal(last_log.action, '{0}_index_linked'.format(self.short_name))
+        assert (last_log.action) == ('{0}_index_linked'.format(self.short_name))
 
     def test_serialize_settings(self):
         settings = self.node_settings.serialize_waterbutler_settings()
-        assert_equal(settings['nid'], self.node._id)
-        assert_equal(settings['index_id'], self.node_settings.index_id)
-        assert_equal(settings['index_title'], self.node_settings.index_title)
-        assert_true('url' in settings and settings['url'])
-        assert_equal(settings['default_storage_provider'], 'osfstorage')
-        assert_true('default_storage' in settings and settings['default_storage'])
+        assert (settings['nid']) == (self.node._id)
+        assert (settings['index_id']) == (self.node_settings.index_id)
+        assert (settings['index_title']) == (self.node_settings.index_title)
+        assert ('url' in settings and settings['url'])
+        assert (settings['default_storage_provider']) == ('osfstorage')
+        assert ('default_storage' in settings and settings['default_storage'])
 
     def test_serialize_settings_with_institutional_storage(self):
         osfstorage = self.node.get_addon('osfstorage')
@@ -178,7 +171,7 @@ class TestNodeSettings(OAuthAddonNodeSettingsTestSuiteMixin, unittest.TestCase):
         )
         osfstorage.region = new_region
         osfstorage.save()
-        assert_false(osfstorage.has_auth)
+        assert not (osfstorage.has_auth)
 
         storage = self.node.add_addon('s3compatinstitutions', auth=Auth(self.node.creator))
         self.node.save()
@@ -190,8 +183,8 @@ class TestNodeSettings(OAuthAddonNodeSettingsTestSuiteMixin, unittest.TestCase):
         storage.addon_option = addon_option
         storage.folder_id = '1234567890'
         storage.save()
-        assert_true(storage.complete)
+        assert (storage.complete)
 
         settings = self.node_settings.serialize_waterbutler_settings()
-        assert_equal(settings['default_storage_provider'], 's3compatinstitutions')
-        assert_true('default_storage' in settings and settings['default_storage'])
+        assert (settings['default_storage_provider']) == ('s3compatinstitutions')
+        assert ('default_storage' in settings and settings['default_storage'])

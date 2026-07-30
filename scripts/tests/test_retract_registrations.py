@@ -3,7 +3,6 @@
 from datetime import timedelta
 
 from django.utils import timezone
-from nose.tools import *  # noqa
 
 from tests.base import OsfTestCase
 from osf_tests.factories import RegistrationFactory, UserFactory
@@ -22,10 +21,10 @@ class TestRetractRegistrations(OsfTestCase):
         self.registration.save()
 
     def test_new_retraction_should_not_be_retracted(self):
-        assert_false(self.registration.is_retracted)
+        assert not (self.registration.is_retracted)
 
         main(dry_run=False)
-        assert_false(self.registration.is_retracted)
+        assert not (self.registration.is_retracted)
 
     def test_should_not_retract_pending_retraction_less_than_48_hours_old(self):
         # Retraction#iniation_date is read only
@@ -36,10 +35,10 @@ class TestRetractRegistrations(OsfTestCase):
         )
         # setattr(self.registration.retraction, 'initiation_date', (timezone.now() - timedelta(hours=47)))
         self.registration.retraction.save()
-        assert_false(self.registration.is_retracted)
+        assert not (self.registration.is_retracted)
 
         main(dry_run=False)
-        assert_false(self.registration.is_retracted)
+        assert not (self.registration.is_retracted)
 
     def test_should_retract_pending_retraction_that_is_48_hours_old(self):
         # Retraction#iniation_date is read only
@@ -49,10 +48,10 @@ class TestRetractRegistrations(OsfTestCase):
             safe=True
         )
         self.registration.retraction.save()
-        assert_false(self.registration.is_retracted)
+        assert not (self.registration.is_retracted)
 
         main(dry_run=False)
-        assert_true(self.registration.is_retracted)
+        assert (self.registration.is_retracted)
 
     def test_should_retract_pending_retraction_more_than_48_hours_old(self):
         # Retraction#iniation_date is read only
@@ -62,10 +61,10 @@ class TestRetractRegistrations(OsfTestCase):
             safe=True
         )
         self.registration.retraction.save()
-        assert_false(self.registration.is_retracted)
+        assert not (self.registration.is_retracted)
 
         main(dry_run=False)
-        assert_true(self.registration.is_retracted)
+        assert (self.registration.is_retracted)
 
     def test_retraction_adds_to_parent_projects_log(self):
         initial_project_logs = len(self.registration.registered_from.logs)
@@ -76,9 +75,9 @@ class TestRetractRegistrations(OsfTestCase):
             safe=True
         )
         self.registration.retraction.save()
-        assert_false(self.registration.is_retracted)
+        assert not (self.registration.is_retracted)
 
         main(dry_run=False)
-        assert_true(self.registration.is_retracted)
+        assert (self.registration.is_retracted)
         # Logs: Created, made public, retraction initiated, retracted approved
-        assert_equal(len(self.registration.registered_from.logs), initial_project_logs + 1)
+        assert (len(self.registration.registered_from.logs)) == (initial_project_logs + 1)

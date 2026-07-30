@@ -1,5 +1,3 @@
-from include import IncludeManager
-
 from django.apps import apps
 from django.db import models
 from osf.models.base import BaseModel, ObjectIDMixin
@@ -13,8 +11,6 @@ class PreprintLog(ObjectIDMixin, BaseModel):
         'preprint': 'preprint__guids___id',
         'user': 'user__guids___id',
     }
-
-    objects = IncludeManager()
 
     DATE_FORMAT = '%m/%d/%Y %H:%M UTC'
 
@@ -93,7 +89,10 @@ class PreprintLog(ObjectIDMixin, BaseModel):
         CONFIRM_HAM,
         FLAG_SPAM,
         CONFIRM_SPAM,
-    ] + list(sum([config.actions for config in apps.get_app_configs() if config.name.startswith('addons.')], tuple())))
+    ] + list(sum([
+        config.actions for config in apps.get_app_configs()
+        if config.name.startswith('addons.') and hasattr(config, 'actions')
+    ], tuple())))
 
     action_choices = [(action, action.upper()) for action in actions]
     # TODO build action choices on the fly with the addon stuff

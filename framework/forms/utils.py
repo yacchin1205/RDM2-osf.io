@@ -1,10 +1,11 @@
-import bleach
 from future.moves.urllib.parse import quote, unquote
+
+from framework.utils import sanitize_html
 
 # TODO: Test me @jmcarp
 
 def sanitize(s, **kwargs):
-    return bleach.clean(s, **kwargs)
+    return sanitize_html(s, **kwargs)
 
 
 def process_data(data, func):

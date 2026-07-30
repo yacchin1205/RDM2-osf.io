@@ -1,4 +1,3 @@
-from nose.tools import *  # noqa: F403
 
 from tests.base import AdminTestCase
 
@@ -14,12 +13,12 @@ class TestGuidForm(AdminTestCase):
         form = GuidForm({
             'guid': guid,
         })
-        assert_true(form.is_valid())
-        assert_equal(form.cleaned_data.get('guid'), guid)
+        assert (form.is_valid())
+        assert (form.cleaned_data.get('guid')) == (guid)
 
     def test_blank_data(self):
         form = GuidForm({})
-        assert_false(form.is_valid())
-        assert_equal(form.errors, {
+        assert not (form.is_valid())
+        assert (form.errors) == ({
             'guid': [u'This field is required.'],
         })

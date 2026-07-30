@@ -2,8 +2,7 @@ from io import BytesIO
 from django.test import RequestFactory
 from rest_framework import status as http_status
 import json
-import mock
-from nose import tools as nt
+from unittest import mock
 
 from addons.osfstorage.models import Region
 from addons.nextcloudinstitutions import settings
@@ -51,9 +50,9 @@ class TestSaveCredentials(AdminTestCase):
             'provider_short_name': 'nextcloudinstitutions',
         })
 
-        nt.assert_equals(response.status_code, http_status.HTTP_400_BAD_REQUEST)
-        nt.assert_in('NG', response.content.decode())
-        nt.assert_false(Region.objects.filter(_id=self.institution._id).exists())
+        assert (response.status_code) == (http_status.HTTP_400_BAD_REQUEST)
+        assert ('NG') in (response.content.decode())
+        assert not (Region.objects.filter(_id=self.institution._id).exists())
 
     @mock.patch('admin.rdm_custom_storage_location.utils.test_owncloud_connection')
     def test_success(self, mock_testconnection):
@@ -68,27 +67,27 @@ class TestSaveCredentials(AdminTestCase):
             'provider_short_name': 'nextcloudinstitutions',
         })
 
-        nt.assert_equals(response.status_code, http_status.HTTP_200_OK)
-        nt.assert_in('Saved credentials successfully!!', response.content.decode())
+        assert (response.status_code) == (http_status.HTTP_200_OK)
+        assert ('Saved credentials successfully!!') in (response.content.decode())
 
         institution_storage = Region.objects.filter(_id=self.institution._id).first()
-        nt.assert_is_not_none(institution_storage)
-        nt.assert_equals(institution_storage.name, 'My storage')
+        assert (institution_storage) is not None
+        assert (institution_storage.name) == ('My storage')
 
         addonoption = RdmAddonOption.objects.filter(institution=self.institution).first()
         external_account = addonoption.external_accounts.first()
-        nt.assert_is_not_none(external_account)
-        nt.assert_equals(external_account.provider, 'nextcloudinstitutions')
-        nt.assert_equals(external_account.provider_id, 'https://valid.nextcloud.net:admin')
-        nt.assert_equals(external_account.oauth_secret, 'https://valid.nextcloud.net')
-        nt.assert_equals(external_account.oauth_key, '1234')
+        assert (external_account) is not None
+        assert (external_account.provider) == ('nextcloudinstitutions')
+        assert (external_account.provider_id) == ('https://valid.nextcloud.net:admin')
+        assert (external_account.oauth_secret) == ('https://valid.nextcloud.net')
+        assert (external_account.oauth_key) == ('1234')
 
         wb_credentials = institution_storage.waterbutler_credentials
-        nt.assert_equals(wb_credentials['storage'], {})
+        assert (wb_credentials['storage']) == ({})
 
         wb_settings = institution_storage.waterbutler_settings
-        nt.assert_equals(wb_settings['storage']['provider'], 'nextcloudinstitutions')
-        nt.assert_equals(wb_settings['disabled'], True)
+        assert (wb_settings['storage']['provider']) == ('nextcloudinstitutions')
+        assert (wb_settings['disabled']) == (True)
 
     @mock.patch('admin.rdm_custom_storage_location.utils.test_owncloud_connection')
     def test_success_superuser(self, mock_testconnection):
@@ -106,27 +105,27 @@ class TestSaveCredentials(AdminTestCase):
             'provider_short_name': 'nextcloudinstitutions',
         })
 
-        nt.assert_equals(response.status_code, http_status.HTTP_200_OK)
-        nt.assert_in('Saved credentials successfully!!', response.content.decode())
+        assert (response.status_code) == (http_status.HTTP_200_OK)
+        assert ('Saved credentials successfully!!') in (response.content.decode())
 
         institution_storage = Region.objects.filter(_id=self.institution._id).first()
-        nt.assert_is_not_none(institution_storage)
-        nt.assert_equals(institution_storage.name, 'My storage')
+        assert (institution_storage) is not None
+        assert (institution_storage.name) == ('My storage')
 
         addonoption = RdmAddonOption.objects.filter(institution=self.institution).first()
         external_account = addonoption.external_accounts.first()
-        nt.assert_is_not_none(external_account)
-        nt.assert_equals(external_account.provider, 'nextcloudinstitutions')
-        nt.assert_equals(external_account.provider_id, 'https://valid.nextcloud.net:admin')
-        nt.assert_equals(external_account.oauth_secret, 'https://valid.nextcloud.net')
-        nt.assert_equals(external_account.oauth_key, '1234')
+        assert (external_account) is not None
+        assert (external_account.provider) == ('nextcloudinstitutions')
+        assert (external_account.provider_id) == ('https://valid.nextcloud.net:admin')
+        assert (external_account.oauth_secret) == ('https://valid.nextcloud.net')
+        assert (external_account.oauth_key) == ('1234')
 
         wb_credentials = institution_storage.waterbutler_credentials
-        nt.assert_equals(wb_credentials['storage'], {})
+        assert (wb_credentials['storage']) == ({})
 
         wb_settings = institution_storage.waterbutler_settings
-        nt.assert_equals(wb_settings['storage']['provider'], 'nextcloudinstitutions')
-        nt.assert_equals(wb_settings['disabled'], True)
+        assert (wb_settings['storage']['provider']) == ('nextcloudinstitutions')
+        assert (wb_settings['disabled']) == (True)
 
 
 class TestFetchCredentialsView(AdminTestCase):
@@ -158,25 +157,25 @@ class TestFetchCredentialsView(AdminTestCase):
         response = self.view_post({
             'provider_short_name': 'nextcloudinstitutions',
         })
-        nt.assert_equals(response.status_code, http_status.HTTP_200_OK)
+        assert (response.status_code) == (http_status.HTTP_200_OK)
         response_body = json.loads(response.content.decode())
-        nt.assert_equal(response_body.get('nextcloudinstitutions_host'), '')
-        nt.assert_equal(response_body.get('nextcloudinstitutions_username'), '')
-        nt.assert_equal(response_body.get('nextcloudinstitutions_password'), '')
-        nt.assert_equal(response_body.get('nextcloudinstitutions_notification_secret'), None)
-        nt.assert_equal(response_body.get('nextcloudinstitutions_folder'), settings.DEFAULT_BASE_FOLDER)
+        assert (response_body.get('nextcloudinstitutions_host')) == ('')
+        assert (response_body.get('nextcloudinstitutions_username')) == ('')
+        assert (response_body.get('nextcloudinstitutions_password')) == ('')
+        assert (response_body.get('nextcloudinstitutions_notification_secret')) == (None)
+        assert (response_body.get('nextcloudinstitutions_folder')) == (settings.DEFAULT_BASE_FOLDER)
 
     def test_post(self):
         response = self.view_post({
             'provider_short_name': 'nextcloudinstitutions',
         })
-        nt.assert_equals(response.status_code, http_status.HTTP_200_OK)
+        assert (response.status_code) == (http_status.HTTP_200_OK)
         response_body = json.loads(response.content.decode())
-        nt.assert_equal(response_body.get('nextcloudinstitutions_host'), '')
-        nt.assert_equal(response_body.get('nextcloudinstitutions_username'), '')
-        nt.assert_equal(response_body.get('nextcloudinstitutions_password'), '')
-        nt.assert_equal(response_body.get('nextcloudinstitutions_notification_secret'), None)
-        nt.assert_equal(response_body.get('nextcloudinstitutions_folder'), settings.DEFAULT_BASE_FOLDER)
+        assert (response_body.get('nextcloudinstitutions_host')) == ('')
+        assert (response_body.get('nextcloudinstitutions_username')) == ('')
+        assert (response_body.get('nextcloudinstitutions_password')) == ('')
+        assert (response_body.get('nextcloudinstitutions_notification_secret')) == (None)
+        assert (response_body.get('nextcloudinstitutions_folder')) == (settings.DEFAULT_BASE_FOLDER)
 
     def test_post_superuser(self):
         self.user.affiliated_institutions.clear()
@@ -185,36 +184,36 @@ class TestFetchCredentialsView(AdminTestCase):
         response = self.view_post({
             'provider_short_name': 'nextcloudinstitutions',
         })
-        nt.assert_equals(response.status_code, http_status.HTTP_200_OK)
+        assert (response.status_code) == (http_status.HTTP_200_OK)
         response_body = json.loads(response.content.decode())
-        nt.assert_equal(response_body.get('nextcloudinstitutions_host'), '')
-        nt.assert_equal(response_body.get('nextcloudinstitutions_username'), '')
-        nt.assert_equal(response_body.get('nextcloudinstitutions_password'), '')
-        nt.assert_equal(response_body.get('nextcloudinstitutions_notification_secret'), None)
-        nt.assert_equal(response_body.get('nextcloudinstitutions_folder'), settings.DEFAULT_BASE_FOLDER)
+        assert (response_body.get('nextcloudinstitutions_host')) == ('')
+        assert (response_body.get('nextcloudinstitutions_username')) == ('')
+        assert (response_body.get('nextcloudinstitutions_password')) == ('')
+        assert (response_body.get('nextcloudinstitutions_notification_secret')) == (None)
+        assert (response_body.get('nextcloudinstitutions_folder')) == (settings.DEFAULT_BASE_FOLDER)
 
     def test_get_default(self):
         response = self.view_get('provider_short_name=nextcloudinstitutions')
-        nt.assert_equals(response.status_code, http_status.HTTP_200_OK)
+        assert (response.status_code) == (http_status.HTTP_200_OK)
         response_body = json.loads(response.content.decode())
-        nt.assert_equal(response_body.get('nextcloudinstitutions_host'), '')
-        nt.assert_equal(response_body.get('nextcloudinstitutions_username'), '')
-        nt.assert_equal(response_body.get('nextcloudinstitutions_password'), '')
-        nt.assert_equal(response_body.get('nextcloudinstitutions_notification_secret'), None)
-        nt.assert_equal(response_body.get('nextcloudinstitutions_folder'), settings.DEFAULT_BASE_FOLDER)
+        assert (response_body.get('nextcloudinstitutions_host')) == ('')
+        assert (response_body.get('nextcloudinstitutions_username')) == ('')
+        assert (response_body.get('nextcloudinstitutions_password')) == ('')
+        assert (response_body.get('nextcloudinstitutions_notification_secret')) == (None)
+        assert (response_body.get('nextcloudinstitutions_folder')) == (settings.DEFAULT_BASE_FOLDER)
 
     def test_get_default_superuser(self):
         self.user.affiliated_institutions.clear()
         self.user.is_superuser = True
         self.user.save()
         response = self.view_get('provider_short_name=nextcloudinstitutions')
-        nt.assert_equals(response.status_code, http_status.HTTP_200_OK)
+        assert (response.status_code) == (http_status.HTTP_200_OK)
         response_body = json.loads(response.content.decode())
-        nt.assert_equal(response_body.get('nextcloudinstitutions_host'), '')
-        nt.assert_equal(response_body.get('nextcloudinstitutions_username'), '')
-        nt.assert_equal(response_body.get('nextcloudinstitutions_password'), '')
-        nt.assert_equal(response_body.get('nextcloudinstitutions_notification_secret'), None)
-        nt.assert_equal(response_body.get('nextcloudinstitutions_folder'), settings.DEFAULT_BASE_FOLDER)
+        assert (response_body.get('nextcloudinstitutions_host')) == ('')
+        assert (response_body.get('nextcloudinstitutions_username')) == ('')
+        assert (response_body.get('nextcloudinstitutions_password')) == ('')
+        assert (response_body.get('nextcloudinstitutions_notification_secret')) == (None)
+        assert (response_body.get('nextcloudinstitutions_folder')) == (settings.DEFAULT_BASE_FOLDER)
 
 
 class TestUserMapView(AdminTestCase):
@@ -266,13 +265,13 @@ class TestUserMapView(AdminTestCase):
             'nextcloudinstitutions_notification_secret': '',
             'provider': 'nextcloudinstitutions',
         }, self.test_binary_data)
-        nt.assert_equals(response.status_code, http_status.HTTP_200_OK)
+        assert (response.status_code) == (http_status.HTTP_200_OK)
         response_body = json.loads(response.content.decode())
-        nt.assert_equal(response_body.get('OK'), 1)
-        nt.assert_equal(response_body.get('NG'), 0)
-        nt.assert_equal(response_body.get('provider_name'), 'nextcloudinstitutions')
-        nt.assert_equal(response_body.get('report'), [])
-        nt.assert_equal(response_body.get('user_to_extuser'), {self.user._id: 'test'})
+        assert (response_body.get('OK')) == (1)
+        assert (response_body.get('NG')) == (0)
+        assert (response_body.get('provider_name')) == ('nextcloudinstitutions')
+        assert (response_body.get('report')) == ([])
+        assert (response_body.get('user_to_extuser')) == ({self.user._id: 'test'})
 
     def test_post_clear(self):
         response = self.view_post({
@@ -285,13 +284,13 @@ class TestUserMapView(AdminTestCase):
             'provider': 'nextcloudinstitutions',
             'clear': True,
         }, self.test_binary_data)
-        nt.assert_equals(response.status_code, http_status.HTTP_200_OK)
+        assert (response.status_code) == (http_status.HTTP_200_OK)
         response_body = json.loads(response.content.decode())
-        nt.assert_equal(response_body.get('OK'), 0)
-        nt.assert_equal(response_body.get('NG'), 0)
-        nt.assert_equal(response_body.get('provider_name'), 'nextcloudinstitutions')
-        nt.assert_equal(response_body.get('report'), [])
-        nt.assert_equal(response_body.get('user_to_extuser'), {})
+        assert (response_body.get('OK')) == (0)
+        assert (response_body.get('NG')) == (0)
+        assert (response_body.get('provider_name')) == ('nextcloudinstitutions')
+        assert (response_body.get('report')) == ([])
+        assert (response_body.get('user_to_extuser')) == ({})
 
     def test_post_ng_invalid_format(self):
         response = self.view_post({
@@ -303,13 +302,13 @@ class TestUserMapView(AdminTestCase):
             'nextcloudinstitutions_notification_secret': '',
             'provider': 'nextcloudinstitutions',
         }, self.test_binary_data_invalid_format)
-        nt.assert_equals(response.status_code, http_status.HTTP_400_BAD_REQUEST)
+        assert (response.status_code) == (http_status.HTTP_400_BAD_REQUEST)
         response_body = json.loads(response.content.decode())
-        nt.assert_equal(response_body.get('OK'), 0)
-        nt.assert_equal(response_body.get('NG'), 1)
-        nt.assert_equal(response_body.get('provider_name'), 'nextcloudinstitutions')
-        nt.assert_equal(response_body.get('report')[0], 'NG, INVALID_FORMAT: ')
-        nt.assert_equal(response_body.get('user_to_extuser'), {})
+        assert (response_body.get('OK')) == (0)
+        assert (response_body.get('NG')) == (1)
+        assert (response_body.get('provider_name')) == ('nextcloudinstitutions')
+        assert (response_body.get('report')[0]) == ('NG, INVALID_FORMAT: ')
+        assert (response_body.get('user_to_extuser')) == ({})
 
     def test_post_ng(self):
         response = self.view_post({
@@ -322,15 +321,15 @@ class TestUserMapView(AdminTestCase):
             'provider': 'nextcloudinstitutions',
             'check_extuser': True,
         }, self.test_binary_data_ng)
-        nt.assert_equals(response.status_code, http_status.HTTP_400_BAD_REQUEST)
+        assert (response.status_code) == (http_status.HTTP_400_BAD_REQUEST)
         response_body = json.loads(response.content.decode())
-        nt.assert_equal(response_body.get('OK'), 0)
-        nt.assert_equal(response_body.get('NG'), 3)
-        nt.assert_equal(response_body.get('provider_name'), 'nextcloudinstitutions')
-        nt.assert_equal(response_body.get('report')[0], 'NG, EMPTY_EXTUSER: ')
-        nt.assert_equal(response_body.get('report')[1], 'NG, EMPTY_USER: ')
-        nt.assert_equal(response_body.get('report')[2], 'NG, UNKNOWN_USER: ')
-        nt.assert_equal(response_body.get('user_to_extuser'), {})
+        assert (response_body.get('OK')) == (0)
+        assert (response_body.get('NG')) == (3)
+        assert (response_body.get('provider_name')) == ('nextcloudinstitutions')
+        assert (response_body.get('report')[0]) == ('NG, EMPTY_EXTUSER: ')
+        assert (response_body.get('report')[1]) == ('NG, EMPTY_USER: ')
+        assert (response_body.get('report')[2]) == ('NG, UNKNOWN_USER: ')
+        assert (response_body.get('user_to_extuser')) == ({})
 
     def test_post_ng_superuser(self):
         self.user.affiliated_institutions.clear()
@@ -345,15 +344,15 @@ class TestUserMapView(AdminTestCase):
             'nextcloudinstitutions_notification_secret': '',
             'provider': 'nextcloudinstitutions',
         }, self.test_binary_data_ng)
-        nt.assert_equals(response.status_code, http_status.HTTP_400_BAD_REQUEST)
+        assert (response.status_code) == (http_status.HTTP_400_BAD_REQUEST)
         response_body = json.loads(response.content.decode())
-        nt.assert_equal(response_body.get('OK'), 0)
-        nt.assert_equal(response_body.get('NG'), 3)
-        nt.assert_equal(response_body.get('provider_name'), 'nextcloudinstitutions')
-        nt.assert_equal(response_body.get('report')[0], 'NG, EMPTY_EXTUSER: ')
-        nt.assert_equal(response_body.get('report')[1], 'NG, EMPTY_USER: ')
-        nt.assert_equal(response_body.get('report')[2], 'NG, UNKNOWN_USER: ')
-        nt.assert_equal(response_body.get('user_to_extuser'), {})
+        assert (response_body.get('OK')) == (0)
+        assert (response_body.get('NG')) == (3)
+        assert (response_body.get('provider_name')) == ('nextcloudinstitutions')
+        assert (response_body.get('report')[0]) == ('NG, EMPTY_EXTUSER: ')
+        assert (response_body.get('report')[1]) == ('NG, EMPTY_USER: ')
+        assert (response_body.get('report')[2]) == ('NG, UNKNOWN_USER: ')
+        assert (response_body.get('user_to_extuser')) == ({})
 
     def test_get(self):
         response = self.view_get({
@@ -363,8 +362,8 @@ class TestUserMapView(AdminTestCase):
                        f'#Please input External users into the second column.\r\n' \
                        f'{self.user._id.upper()},,{self.user.fullname.encode("utf-8")}\r\n'
         binary_content = test_content.encode('utf-8')
-        nt.assert_equals(response.status_code, http_status.HTTP_200_OK)
-        nt.assert_equals(response.content, binary_content)
+        assert (response.status_code) == (http_status.HTTP_200_OK)
+        assert (response.content) == (binary_content)
 
     def test_get_superuser(self):
         self.user.affiliated_institutions.clear()
@@ -375,5 +374,5 @@ class TestUserMapView(AdminTestCase):
         })
         test_content = '#User_GUID(or ePPN),External_UserID,Fullname(ignored)\r\n'
         binary_content = test_content.encode('utf-8')
-        nt.assert_equals(response.status_code, http_status.HTTP_200_OK)
-        nt.assert_equals(response.content, binary_content)
+        assert (response.status_code) == (http_status.HTTP_200_OK)
+        assert (response.content) == (binary_content)

@@ -1,10 +1,9 @@
 # -*- coding: utf-8 -*-
 
-import mock
+from unittest import mock
 from datetime import timedelta
 
 from django.utils import timezone
-from nose.tools import *  # noqa
 
 from tests.base import OsfTestCase
 from osf_tests.factories import AuthUserFactory, NodeFactory, EmbargoTerminationApprovalFactory, RegistrationFactory, EmbargoFactory
@@ -55,16 +54,16 @@ class TestApproveEmbargoTerminations(OsfTestCase):
 
     def test_get_pending_embargo_termination_requests_returns_only_unapproved(self):
         targets = get_pending_embargo_termination_requests()
-        assert_equal(targets.count(), 1)
-        assert_equal(targets.first()._id, self.registration2.embargo_termination_approval._id)
+        assert (targets.count()) == (1)
+        assert (targets.first()._id) == (self.registration2.embargo_termination_approval._id)
 
     def test_main_auto_approves_embargo_termination_request(self):
         for node in self.registration2.node_and_primary_descendants():
-            assert_false(node.is_public)
-            assert_true(node.is_embargoed)
+            assert not (node.is_public)
+            assert (node.is_embargoed)
         main()
         for node in self.registration2.node_and_primary_descendants():
             node.reload()
-            assert_true(node.is_public)
-            assert_equal(node.embargo_termination_approval.state, Sanction.APPROVED)
-            assert_false(node.is_embargoed)
+            assert (node.is_public)
+            assert (node.embargo_termination_approval.state) == (Sanction.APPROVED)
+            assert not (node.is_embargoed)

@@ -1,10 +1,7 @@
 # -*- coding: utf-8 -*-
 from rest_framework import status as http_status
 
-from boto.exception import S3ResponseError
-import mock
-from nose.tools import (assert_equal, assert_equals,
-    assert_true, assert_in, assert_false)
+from unittest import mock
 import pytest
 
 from framework.auth import Auth
@@ -74,16 +71,16 @@ class TestOneDriveBusinessViews(OneDriveBusinessAddonTestCase, OAuthAddonConfigV
         res = self.app.get(url, auth=self.user.auth)
 
         result = res.json['result']
-        assert_equal(result['nodeHasAuth'], True)
-        assert_equal(result['userIsOwner'], True)
-        assert_equal(result['folder']['path'], self.node_settings.folder_id)
+        assert (result['nodeHasAuth']) == (True)
+        assert (result['userIsOwner']) == (True)
+        assert (result['folder']['path']) == (self.node_settings.folder_id)
 
     def test_onedrivebusiness_get_node_settings_unauthorized(self):
         url = self.node_settings.owner.api_url_for('onedrivebusiness_get_config')
         unauthorized = AuthUserFactory()
         ret = self.app.get(url, auth=unauthorized.auth, expect_errors=True)
 
-        assert_equal(ret.status_code, 403)
+        assert (ret.status_code) == (403)
 
     ## Overrides ##
 

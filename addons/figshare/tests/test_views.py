@@ -2,8 +2,7 @@
 # encoding: utf-8
 
 from rest_framework import status as http_status
-import mock
-from nose.tools import assert_equal
+from unittest import mock
 import pytest
 
 from addons.base.tests.views import (
@@ -38,17 +37,11 @@ class TestConfigViews(FigshareAddonTestCase, OAuthAddonConfigViewsTestCaseMixin,
         res = self.app.put_json(url, {
             'selected': self.folder
         }, auth=self.user.auth)
-        assert_equal(res.status_code, http_status.HTTP_200_OK)
+        assert (res.status_code) == (http_status.HTTP_200_OK)
         self.project.reload()
-        assert_equal(
-            self.project.logs.latest().action,
-            '{0}_folder_selected'.format(self.ADDON_SHORT_NAME)
-        )
-        assert_equal(
-            self.project.logs.latest().params['folder'],
-            self.folder['path']
-        )
-        assert_equal(res.json['result']['folder']['path'], self.folder['path'])
+        assert (self.project.logs.latest().action) == ('{0}_folder_selected'.format(self.ADDON_SHORT_NAME))
+        assert (self.project.logs.latest().params['folder']) == (self.folder['path'])
+        assert (res.json['result']['folder']['path']) == (self.folder['path'])
 
     @mock.patch.object(FigshareClient, 'userinfo')
     def test_get_config(self, mock_about):

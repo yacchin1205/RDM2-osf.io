@@ -1,8 +1,8 @@
+import pytest
 from django.db import transaction
 from django.test import RequestFactory
 from django.http import Http404
 from django.utils import timezone
-from nose import tools as nt
 from datetime import timedelta
 
 from osf.models import Comment, SpamStatus
@@ -79,7 +79,7 @@ class TestSpamListView(AdminTestCase):
 
     def test_get_spam(self):
         res = list(self.view.get_queryset())
-        nt.assert_equal(len(res), 6)
+        assert (len(res)) == (6)
         response_list = [r._id for r in res]
         should_be = [
             self.comment_6._id,
@@ -89,15 +89,15 @@ class TestSpamListView(AdminTestCase):
             self.comment_2._id,
             self.comment_1._id
         ]
-        nt.assert_list_equal(should_be, response_list)
+        assert (should_be) == (response_list)
 
     def test_get_context_data(self):
         self.view.object_list = self.view.get_queryset()
         res = self.view.get_context_data()
-        nt.assert_is_instance(res['spam'], list)
-        nt.assert_is_instance(res['spam'][0], dict)
-        nt.assert_equal(res['status'], '1')
-        nt.assert_equal(res['page_number'], 1)
+        assert isinstance((res['spam']), (list))
+        assert isinstance((res['spam'][0]), (dict))
+        assert (res['status']) == ('1')
+        assert (res['page_number']) == (1)
 
 
 class TestSpamDetail(AdminTestCase):
@@ -112,51 +112,51 @@ class TestSpamDetail(AdminTestCase):
     def test_confirm_spam(self):
         form_data = {'confirm': str(SpamStatus.SPAM)}
         form = ConfirmForm(data=form_data)
-        nt.assert_true(form.is_valid())
+        assert (form.is_valid())
         view = SpamDetail()
         view = setup_form_view(
             view, self.request, form, spam_id=self.comment._id)
         with transaction.atomic():
             view.form_valid(form)
         obj = AdminLogEntry.objects.latest(field_name='action_time')
-        nt.assert_equal(obj.object_id, self.comment._id)
-        nt.assert_in('Confirmed SPAM:', obj.message())
+        assert (obj.object_id) == (self.comment._id)
+        assert ('Confirmed SPAM:') in (obj.message())
 
     def test_confirm_ham(self):
         form_data = {'confirm': str(SpamStatus.HAM)}
         form = ConfirmForm(data=form_data)
-        nt.assert_true(form.is_valid())
+        assert (form.is_valid())
         view = SpamDetail()
         view = setup_form_view(
             view, self.request, form, spam_id=self.comment._id)
         with transaction.atomic():
             view.form_valid(form)
         obj = AdminLogEntry.objects.latest(field_name='action_time')
-        nt.assert_equal(obj.object_id, self.comment._id)
-        nt.assert_in('Confirmed HAM:', obj.message())
+        assert (obj.object_id) == (self.comment._id)
+        assert ('Confirmed HAM:') in (obj.message())
 
     def test_form_valid_bad_id(self):
         form = ConfirmForm()
         view = SpamDetail()
         view = setup_form_view(view, self.request, form, spam_id='a1')
-        with nt.assert_raises(Http404):
+        with pytest.raises(Http404):
             view.form_valid(form)
 
     def test_get_context_data(self):
         view = SpamDetail()
         view = setup_view(view, self.request, spam_id=self.comment._id)
         res = view.get_context_data()
-        nt.assert_equal(res['status'], '1')
-        nt.assert_equal(res['page_number'], '1')
-        nt.assert_is_instance(res['comment'], dict)
-        nt.assert_equal(res['SPAM_STATUS'].UNKNOWN, SpamStatus.UNKNOWN)
-        nt.assert_equal(res['SPAM_STATUS'].SPAM, SpamStatus.SPAM)
-        nt.assert_equal(res['SPAM_STATUS'].HAM, SpamStatus.HAM)
-        nt.assert_equal(res['SPAM_STATUS'].FLAGGED, SpamStatus.FLAGGED)
+        assert (res['status']) == ('1')
+        assert (res['page_number']) == ('1')
+        assert isinstance((res['comment']), (dict))
+        assert (res['SPAM_STATUS'].UNKNOWN) == (SpamStatus.UNKNOWN)
+        assert (res['SPAM_STATUS'].SPAM) == (SpamStatus.SPAM)
+        assert (res['SPAM_STATUS'].HAM) == (SpamStatus.HAM)
+        assert (res['SPAM_STATUS'].FLAGGED) == (SpamStatus.FLAGGED)
 
     def test_get_context_data_bad_id(self):
         view = setup_view(SpamDetail(), self.request, spam_id='a1')
-        with nt.assert_raises(Http404):
+        with pytest.raises(Http404):
             view.get_context_data()
 
 
@@ -171,7 +171,7 @@ class TestEmailView(AdminTestCase):
 
     def test_get_object_bad_id(self):
         view = setup_view(EmailView(), self.request, spam_id='a1')
-        with nt.assert_raises(Http404):
+        with pytest.raises(Http404):
             view.get_object()
 
 
@@ -210,13 +210,13 @@ class TestUserSpamListView(AdminTestCase):
 
     def test_get_user_spam(self):
         res = list(self.view.get_queryset())
-        nt.assert_equal(len(res), 4)
+        assert (len(res)) == (4)
 
     def test_get_context_data(self):
         self.view.object_list = self.view.get_queryset()
         res = self.view.get_context_data()
-        nt.assert_is_instance(res['spam'], list)
-        nt.assert_is_instance(res['spam'][0], dict)
-        nt.assert_equal(res['status'], '1')
-        nt.assert_equal(res['page_number'], 1)
-        nt.assert_equal(res['user_id'], self.user_1._id)
+        assert isinstance((res['spam']), (list))
+        assert isinstance((res['spam'][0]), (dict))
+        assert (res['status']) == ('1')
+        assert (res['page_number']) == (1)
+        assert (res['user_id']) == (self.user_1._id)

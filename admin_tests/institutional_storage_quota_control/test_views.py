@@ -6,7 +6,6 @@ from addons.osfstorage.models import Region
 from admin.institutional_storage_quota_control import views
 from django.test import RequestFactory
 from django.urls import reverse
-from nose import tools as nt
 from osf.models import UserQuota
 from admin_tests.utilities import setup_view
 from osf_tests.factories import (
@@ -57,8 +56,8 @@ class TestUpdateQuotaUserListByInstitutionStorageID(AdminTestCase):
             {'maxQuota': max_quota})
         request.user = self.anon
         response = self.view(request, institution_id=self.institution01.id)
-        nt.assert_equal(response.status_code, 302)
-        nt.assert_in('login', str(response))
+        assert (response.status_code) == (302)
+        assert ('login') in (str(response))
 
     def test__user(self):
         max_quota = 50
@@ -85,12 +84,12 @@ class TestUpdateQuotaUserListByInstitutionStorageID(AdminTestCase):
         request.user = self.superuser
         response = self.view(request, institution_id=self.institution01.id)
 
-        nt.assert_equal(response.status_code, 302)
+        assert (response.status_code) == (302)
         new_user_quota_1 = UserQuota.objects.filter(
             user=self.institution01_admin, storage_type=UserQuota.CUSTOM_STORAGE
         ).first()
-        nt.assert_is_not_none(new_user_quota_1)
-        nt.assert_equal(new_user_quota_1.max_quota, new_max_quota)
+        assert (new_user_quota_1) is not None
+        assert (new_user_quota_1.max_quota) == (new_max_quota)
 
         # update user quota of inst01
         request = RequestFactory().post(
@@ -100,12 +99,12 @@ class TestUpdateQuotaUserListByInstitutionStorageID(AdminTestCase):
         request.user = self.superuser
         response = self.view(request, institution_id=self.institution01.id)
 
-        nt.assert_equal(response.status_code, 302)
+        assert (response.status_code) == (302)
         upd_user_quota_1 = UserQuota.objects.filter(
             user=self.institution01_admin, storage_type=UserQuota.CUSTOM_STORAGE
         ).first()
-        nt.assert_equal(upd_user_quota_1.max_quota, upd_max_quota)
-        nt.assert_equal(upd_user_quota_1.id, new_user_quota_1.id)
+        assert (upd_user_quota_1.max_quota) == (upd_max_quota)
+        assert (upd_user_quota_1.id) == (new_user_quota_1.id)
 
         # create user quota of inst02
         region2 = RegionFactory(_id=self.institution02.guid)
@@ -118,12 +117,12 @@ class TestUpdateQuotaUserListByInstitutionStorageID(AdminTestCase):
         request.user = self.superuser
         response = self.view(request, institution_id=self.institution02.id)
 
-        nt.assert_equal(response.status_code, 302)
+        assert (response.status_code) == (302)
         new_user_quota_2 = UserQuota.objects.filter(
             user=self.institution02_admin, storage_type=UserQuota.CUSTOM_STORAGE
         ).first()
-        nt.assert_is_not_none(new_user_quota_2)
-        nt.assert_equal(new_user_quota_2.max_quota, new_max_quota)
+        assert (new_user_quota_2) is not None
+        assert (new_user_quota_2.max_quota) == (new_max_quota)
 
     def test__institutional_admin(self):
         new_max_quota = 100
@@ -139,12 +138,12 @@ class TestUpdateQuotaUserListByInstitutionStorageID(AdminTestCase):
         request.user = self.institution01_admin
         response = self.view(request, institution_id=self.institution01.id)
 
-        nt.assert_equal(response.status_code, 302)
+        assert (response.status_code) == (302)
         new_user_quota_1 = UserQuota.objects.filter(
             user=self.institution01_admin, storage_type=UserQuota.CUSTOM_STORAGE
         ).first()
-        nt.assert_is_not_none(new_user_quota_1)
-        nt.assert_equal(new_user_quota_1.max_quota, new_max_quota)
+        assert (new_user_quota_1) is not None
+        assert (new_user_quota_1.max_quota) == (new_max_quota)
 
         # create user quota of inst02
         request = RequestFactory().post(
@@ -162,7 +161,7 @@ class TestUpdateQuotaUserListByInstitutionStorageID(AdminTestCase):
                     kwargs={'institution_id': 0}),
             {'maxQuota': new_max_quota})
         request.user = self.institution01_admin
-        with nt.assert_raises(Http404):
+        with pytest.raises(Http404):
             self.view(request, institution_id=0)
 
     def test_post__institution_use_nii_storage(self):
@@ -175,7 +174,7 @@ class TestUpdateQuotaUserListByInstitutionStorageID(AdminTestCase):
                     kwargs={'institution_id': self.institution01.id}),
             {'maxQuota': new_max_quota})
         request.user = self.superuser
-        with nt.assert_raises(Http404):
+        with pytest.raises(Http404):
             self.view(request, institution_id=self.institution01.id)
 
     def test_post__max_quota_value_is_none(self):
@@ -189,12 +188,12 @@ class TestUpdateQuotaUserListByInstitutionStorageID(AdminTestCase):
             {})
         request.user = self.institution01_admin
         response = self.view(request, institution_id=self.institution01.id)
-        nt.assert_equal(response.status_code, 302)
+        assert (response.status_code) == (302)
         new_user_quota = UserQuota.objects.filter(
             user=self.institution01_admin, storage_type=UserQuota.CUSTOM_STORAGE
         ).first()
-        nt.assert_is_not_none(new_user_quota)
-        nt.assert_equal(new_user_quota.max_quota, api_settings.DEFAULT_MAX_QUOTA)
+        assert (new_user_quota) is not None
+        assert (new_user_quota.max_quota) == (api_settings.DEFAULT_MAX_QUOTA)
 
     def test_post__invalid_max_quota_value(self):
         new_max_quota = 'test'
@@ -208,12 +207,12 @@ class TestUpdateQuotaUserListByInstitutionStorageID(AdminTestCase):
             {'maxQuota': new_max_quota})
         request.user = self.institution01_admin
         response = self.view(request, institution_id=self.institution01.id)
-        nt.assert_equal(response.status_code, 302)
+        assert (response.status_code) == (302)
         new_user_quota = UserQuota.objects.filter(
             user=self.institution01_admin, storage_type=UserQuota.CUSTOM_STORAGE
         ).first()
-        nt.assert_is_not_none(new_user_quota)
-        nt.assert_equal(new_user_quota.max_quota, api_settings.DEFAULT_MAX_QUOTA)
+        assert (new_user_quota) is not None
+        assert (new_user_quota.max_quota) == (api_settings.DEFAULT_MAX_QUOTA)
 
     def test_post__max_quota_negative(self):
         new_max_quota = -100
@@ -227,12 +226,12 @@ class TestUpdateQuotaUserListByInstitutionStorageID(AdminTestCase):
             {'maxQuota': new_max_quota})
         request.user = self.institution01_admin
         response = self.view(request, institution_id=self.institution01.id)
-        nt.assert_equal(response.status_code, 302)
+        assert (response.status_code) == (302)
         new_user_quota = UserQuota.objects.filter(
             user=self.institution01_admin, storage_type=UserQuota.CUSTOM_STORAGE
         ).first()
-        nt.assert_is_not_none(new_user_quota)
-        nt.assert_equal(new_user_quota.max_quota, api_settings.DEFAULT_MAX_QUOTA)
+        assert (new_user_quota) is not None
+        assert (new_user_quota.max_quota) == (api_settings.DEFAULT_MAX_QUOTA)
 
     def test_post__max_quota_too_large(self):
         new_max_quota = 1000000000000
@@ -246,12 +245,12 @@ class TestUpdateQuotaUserListByInstitutionStorageID(AdminTestCase):
             {'maxQuota': new_max_quota})
         request.user = self.institution01_admin
         response = self.view(request, institution_id=self.institution01.id)
-        nt.assert_equal(response.status_code, 302)
+        assert (response.status_code) == (302)
         new_user_quota = UserQuota.objects.filter(
             user=self.institution01_admin, storage_type=UserQuota.CUSTOM_STORAGE
         ).first()
-        nt.assert_is_not_none(new_user_quota)
-        nt.assert_equal(new_user_quota.max_quota, api_settings.DEFAULT_MAX_QUOTA)
+        assert (new_user_quota) is not None
+        assert (new_user_quota.max_quota) == (api_settings.DEFAULT_MAX_QUOTA)
 
 
 class TestUserListByInstitutionStorageID(AdminTestCase):
@@ -294,8 +293,8 @@ class TestUserListByInstitutionStorageID(AdminTestCase):
         )
         request.user = self.anon
         response = self.view(request, institution_id=self.institution01.id)
-        nt.assert_equal(response.status_code, 302)
-        nt.assert_in('login', str(response))
+        assert (response.status_code) == (302)
+        assert ('login') in (str(response))
 
     def test__user(self):
         request = RequestFactory().get(
@@ -305,7 +304,7 @@ class TestUserListByInstitutionStorageID(AdminTestCase):
             )
         )
         request.user = self.user
-        with nt.assert_raises(PermissionDenied):
+        with pytest.raises(PermissionDenied):
             self.view(request, institution_id=self.institution01.id)
 
     def test__superuser(self):
@@ -318,7 +317,7 @@ class TestUserListByInstitutionStorageID(AdminTestCase):
         )
         request.user = self.superuser
         response = self.view(request, institution_id=self.institution01.id)
-        nt.assert_equal(response.status_code, 200)
+        assert (response.status_code) == (200)
 
         # access inst02
         request = RequestFactory().get(
@@ -329,7 +328,7 @@ class TestUserListByInstitutionStorageID(AdminTestCase):
         )
         request.user = self.superuser
         response = self.view(request, institution_id=self.institution02.id)
-        nt.assert_equal(response.status_code, 200)
+        assert (response.status_code) == (200)
 
         # access non-existent institution
         request = RequestFactory().get(
@@ -352,7 +351,7 @@ class TestUserListByInstitutionStorageID(AdminTestCase):
         )
         request.user = self.institution01_admin
         response = self.view(request, institution_id=self.institution01.id)
-        nt.assert_equal(response.status_code, 200)
+        assert (response.status_code) == (200)
 
         # access inst02
         request = RequestFactory().get(
@@ -390,9 +389,9 @@ class TestUserListByInstitutionStorageID(AdminTestCase):
         view.institution_id = self.institution01.id
         user_list = view.get_userlist()
 
-        nt.assert_equal(len(user_list), 1)
-        nt.assert_equal(user_list[0]['fullname'], self.institution01_admin.fullname)
-        nt.assert_equal(user_list[0]['quota'], api_settings.DEFAULT_MAX_QUOTA)
+        assert (len(user_list)) == (1)
+        assert (user_list[0]['fullname']) == (self.institution01_admin.fullname)
+        assert (user_list[0]['quota']) == (api_settings.DEFAULT_MAX_QUOTA)
 
     def test_get_institution(self):
         request = RequestFactory().get(
@@ -408,7 +407,7 @@ class TestUserListByInstitutionStorageID(AdminTestCase):
         view.institution_id = self.institution01.id
         institution = view.get_institution()
 
-        nt.assert_equal(institution, self.institution01)
+        assert (institution) == (self.institution01)
 
     def test_get_institution__not_found(self):
         # Institution is deleted
@@ -423,7 +422,7 @@ class TestUserListByInstitutionStorageID(AdminTestCase):
 
         view = setup_view(self.view_instance, request,
                           institution_id=institution.id)
-        with nt.assert_raises(Http404):
+        with pytest.raises(Http404):
             view.get_institution()
 
         # Institution does not exist
@@ -437,7 +436,7 @@ class TestUserListByInstitutionStorageID(AdminTestCase):
 
         view = setup_view(self.view_instance, request,
                           institution_id=0)
-        with nt.assert_raises(Http404):
+        with pytest.raises(Http404):
             view.get_institution()
 
         # Institution use NII Storage
@@ -453,7 +452,7 @@ class TestUserListByInstitutionStorageID(AdminTestCase):
 
         view = setup_view(self.view_instance, request,
                           institution_id=self.institution01.id)
-        with nt.assert_raises(Http404):
+        with pytest.raises(Http404):
             view.get_institution()
 
     def test__institution_id_not_exist(self):
@@ -510,13 +509,13 @@ class TestAccessInstitutionStorageList(AdminTestCase):
         request = RequestFactory().get(reverse(self.view_name))
         request.user = self.anon
         response = self.view(request)
-        nt.assert_equal(response.status_code, 302)
-        nt.assert_in('login', str(response))
+        assert (response.status_code) == (302)
+        assert ('login') in (str(response))
 
     def test__user(self):
         request = RequestFactory().get(reverse(self.view_name))
         request.user = AuthUserFactory()
-        with nt.assert_raises(PermissionDenied):
+        with pytest.raises(PermissionDenied):
             self.view(request)
 
     def test__superuser(self):
@@ -524,13 +523,13 @@ class TestAccessInstitutionStorageList(AdminTestCase):
         request = RequestFactory().get(reverse(self.view_name))
         request.user = self.superuser
         response = self.view(request)
-        nt.assert_equal(response.status_code, 200)
+        assert (response.status_code) == (200)
 
     def test__institutional_admin(self):
         request = RequestFactory().get(reverse(self.view_name))
         request.user = self.institution01_admin
         response = self.view(request, institution_id=self.institution01.id)
-        nt.assert_equal(response.status_code, 302)
+        assert (response.status_code) == (302)
 
 
 class TestInstitutionStorageListByAdmin(AdminTestCase):
@@ -559,9 +558,8 @@ class TestInstitutionStorageListByAdmin(AdminTestCase):
             institution_id=self.institution.id
         )
 
-        nt.assert_equal(response.status_code, 302)
-        nt.assert_equal(response.url,
-                        '/institutional_storage_quota_control'
+        assert (response.status_code) == (302)
+        assert (response.url) == ('/institutional_storage_quota_control'
                         '/user_list_by_institution_id/{}/'.format(
                             self.institution.id
                         ))
@@ -579,13 +577,10 @@ class TestInstitutionStorageListByAdmin(AdminTestCase):
 
         response = self.view(request)
 
-        nt.assert_equal(response.status_code, 200)
-        nt.assert_is_not_none(Region.objects.filter(id=region1.id))
-        nt.assert_is_not_none(Region.objects.filter(id=region2.id))
-        nt.assert_is_instance(
-            response.context_data['view'],
-            views.InstitutionStorageList
-        )
+        assert (response.status_code) == (200)
+        assert (Region.objects.filter(id=region1.id)) is not None
+        assert (Region.objects.filter(id=region2.id)) is not None
+        assert isinstance((response.context_data['view']), (views.InstitutionStorageList))
 
     def test_get_query_set(self):
         request = RequestFactory().get(reverse(self.view_name))
@@ -594,9 +589,9 @@ class TestInstitutionStorageListByAdmin(AdminTestCase):
         view = setup_view(view, request)
         query_set = view.get_queryset()
 
-        nt.assert_equal(query_set.exists(), True)
-        nt.assert_equal(query_set.first().id, self.institution.id)
-        nt.assert_equal(query_set.first().storage_name, self.region.name)
+        assert (query_set.exists()) == (True)
+        assert (query_set.first().id) == (self.institution.id)
+        assert (query_set.first().storage_name) == (self.region.name)
 
     def test_get_context_data(self):
         request = RequestFactory().get(reverse(self.view_name))
@@ -607,8 +602,8 @@ class TestInstitutionStorageListByAdmin(AdminTestCase):
 
         res = view.get_context_data()
 
-        nt.assert_is_instance(res, dict)
-        nt.assert_is_instance(res['view'], views.InstitutionStorageList)
+        assert isinstance((res), (dict))
+        assert isinstance((res['view']), (views.InstitutionStorageList))
 
 
 class TestInstitutionStorageListBySuperUser(AdminTestCase):
@@ -637,11 +632,8 @@ class TestInstitutionStorageListBySuperUser(AdminTestCase):
 
         response = self.view(request)
 
-        nt.assert_equal(response.status_code, 200)
-        nt.assert_is_instance(
-            response.context_data['view'],
-            views.InstitutionStorageList
-        )
+        assert (response.status_code) == (200)
+        assert isinstance((response.context_data['view']), (views.InstitutionStorageList))
 
     def test_get_query_set(self):
         request = RequestFactory().get(reverse(self.view_name))
@@ -650,5 +642,5 @@ class TestInstitutionStorageListBySuperUser(AdminTestCase):
         view = setup_view(view, request)
         query_set = view.get_queryset()
 
-        nt.assert_equal(query_set.exists(), True)
-        nt.assert_equal(len(query_set), 2)
+        assert (query_set.exists()) == (True)
+        assert (len(query_set)) == (2)

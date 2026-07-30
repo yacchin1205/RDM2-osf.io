@@ -4,10 +4,9 @@
 
 from __future__ import absolute_import
 
-import mock
+from unittest import mock
 import pytest
 from framework.auth import Auth
-from nose.tools import *  # noqa PEP8 asserts
 from tests.base import (
     OsfTestCase,
 )
@@ -46,8 +45,8 @@ class TestComponentRemove(OsfTestCase):
         url = self.project.api_url_for('component_remove')
         res = self.app.delete_json(url, {'node_id': self.project._id}, auth=self.auth)
         res_data = res.json
-        assert_equal(res.status_code, 200)
-        assert_equal(res_data.get('url'), '/dashboard/')
+        assert (res.status_code) == (200)
+        assert (res_data.get('url')) == ('/dashboard/')
         mock_update_user_used_quota_method.assert_called()
 
     @mock.patch('website.util.quota.update_user_used_quota')
@@ -56,6 +55,6 @@ class TestComponentRemove(OsfTestCase):
         url = child_node.api_url_for('component_remove')
         res = self.app.delete_json(url, {'node_id': child_node._id}, auth=self.auth)
         res_data = res.json
-        assert_equal(res.status_code, 200)
-        assert_equal(res_data.get('url'), child_node.parent_node.url)
+        assert (res.status_code) == (200)
+        assert (res_data.get('url')) == (child_node.parent_node.url)
         mock_update_user_used_quota_method.assert_not_called()
