@@ -184,32 +184,38 @@ class RawMetricsView(GenericAPIView):
 
     @require_switch(ENABLE_RAW_METRICS)
     def get(self, request, *args, djelme_backend_name, url_path, **kwargs):
-        return JsonResponse(self._do_es_request(
-            djelme_backend_name,
-            method='GET',
-            path=url_path,
-            query_params=request.GET,
-        ))
+        return JsonResponse(
+            self._do_es_request(
+                djelme_backend_name,
+                method='GET',
+                path=url_path,
+                query_params=request.GET,
+            ),
+        )
 
     @require_switch(ENABLE_RAW_METRICS)
     def post(self, request, *args, djelme_backend_name, url_path, **kwargs):
-        return JsonResponse(self._do_es_request(
-            djelme_backend_name,
-            method='POST',
-            path=url_path,
-            query_params=request.GET,
-            body=json.loads(request.body),
-        ))
+        return JsonResponse(
+            self._do_es_request(
+                djelme_backend_name,
+                method='POST',
+                path=url_path,
+                query_params=request.GET,
+                body=json.loads(request.body),
+            ),
+        )
 
     @require_switch(ENABLE_RAW_METRICS)
     def put(self, request, *args, djelme_backend_name, url_path, **kwargs):
-        return JsonResponse(self._do_es_request(
-            djelme_backend_name,
-            method='PUT',
-            path=url_path,
-            query_params=request.GET,
-            body=json.loads(request.body),
-        ))
+        return JsonResponse(
+            self._do_es_request(
+                djelme_backend_name,
+                method='PUT',
+                path=url_path,
+                query_params=request.GET,
+                body=json.loads(request.body),
+            ),
+        )
 
     def _do_es_request(self, djelme_backend_name, method, path, query_params, body=None):
         client = self._get_es_client(djelme_backend_name)
