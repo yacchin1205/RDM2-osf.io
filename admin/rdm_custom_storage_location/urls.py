@@ -1,6 +1,7 @@
 from django.urls import include, re_path
 from . import views
 
+app_name = 'admin'
 
 urlpatterns = [
     re_path(r'^external_acc_update/(?P<access_token>-?\w+)/$', views.external_acc_update, name='external_acc_update'),

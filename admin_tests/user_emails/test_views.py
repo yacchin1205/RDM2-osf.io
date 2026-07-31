@@ -275,7 +275,7 @@ class TestUserEmailSearchList(AdminTestCase):
 
 def add_session_to_request(request):
     """Annotate a request object with a session"""
-    middleware = SessionMiddleware()
+    middleware = SessionMiddleware(lambda request: None)
     middleware.process_request(request)
     request.session.save()
 

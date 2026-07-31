@@ -1,6 +1,7 @@
 from django.urls import re_path
 from . import views
 
+app_name = 'admin'
 
 urlpatterns = [
     re_path(r'^connect/(?P<addon_name>\w+)/(?P<institution_id>-?[0-9]+)/$', views.ConnectView.as_view(), name='connect'),

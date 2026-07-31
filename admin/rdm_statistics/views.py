@@ -160,8 +160,8 @@ class ProviderData(object):
         self.x_tk.sort()
         self.left = np.unique(list(map(lambda x: x.strftime('%Y-%m-%d'), self.date_list)))
         cols = ['left', 'height', 'type']
-        self.size_df = pd.DataFrame(index=[], columns=cols)
-        self.number_df = pd.DataFrame(index=[], columns=cols)
+        size_dataframes = []
+        number_dataframes = []
         for ext in self.ext_list:
             ext = ext.replace('$', '\\$')
             size_row_list = []
@@ -175,12 +175,18 @@ class ProviderData(object):
                     sum_number += entry.subtotal_file_number
                 size_row_list.append(sum_size)
                 number_row_list.append(sum_number)
-            self.size_df = self.size_df.append(pd.DataFrame({'left': self.left,
-                                                             'height': size_row_list,
-                                                             'type': ext}))
-            self.number_df = self.number_df.append(pd.DataFrame({'left': self.left,
-                                                                 'height': number_row_list,
-                                                                 'type': ext}))
+            size_dataframes.append(pd.DataFrame({
+                'left': self.left,
+                'height': size_row_list,
+                'type': ext,
+            }))
+            number_dataframes.append(pd.DataFrame({
+                'left': self.left,
+                'height': number_row_list,
+                'type': ext,
+            }))
+        self.size_df = pd.concat(size_dataframes) if size_dataframes else pd.DataFrame(columns=cols)
+        self.number_df = pd.concat(number_dataframes) if number_dataframes else pd.DataFrame(columns=cols)
         self.size_df.fillna(0)
         self.number_df.fillna(0)
 

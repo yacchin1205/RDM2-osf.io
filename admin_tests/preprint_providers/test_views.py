@@ -148,13 +148,13 @@ class TestPreprintProviderChangeForm(AdminTestCase):
             'subjects_acceptable': '[]',
             'advisory_board': '<div><ul><li>Bill<i class="fa fa-twitter"></i> Nye</li></ul></div>',
             'description': '<span>Open Preprints <code>Open</code> Science<script></script></span>',
-            'footer_links': '<p>Xiv: <script>Support</script> | <pre>Contact<pre> | <a href=""><span class="fa fa-facebook"></span></a></p>',
+            'footer_links': '<p>Xiv: <script>Support</script> | Contact | <a href=""><span class="fa fa-facebook"></span></a></p>',
             'preprint_word': 'preprint'
         }
 
         stripped_advisory_board = '<div><ul><li>Bill Nye</li></ul></div>'
         stripped_description = '<span>Open Preprints Open Science</span>'
-        stripped_footer_links = '<p>Xiv: Support | </p>Contact | <a href=""><span class="fa fa-facebook"></span></a><p></p>'
+        stripped_footer_links = '<p>Xiv: Support | Contact | <a href=""><span class="fa fa-facebook"></span></a></p>'
 
         form = PreprintProviderForm(data=new_data)
         assert (form.is_valid())

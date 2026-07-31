@@ -48,6 +48,11 @@ FAKE_EXPORT_DATA_JSON = {
 }
 
 
+def forget_fake_task_results():
+    celery_app.AsyncResult(FAKE_TASK_ID).forget()
+    celery_app.AsyncResult(FAKE_TASK_ID[:-1] + '1').forget()
+
+
 class TestGetTaskResult(unittest.TestCase):
     def test_dict_input(self):
         result = {'key': 'value'}
@@ -417,6 +422,7 @@ class TestSeparateFailedFiles(unittest.TestCase):
 class TestExportDataProcess(unittest.TestCase):
     def setUp(self):
         super(TestExportDataProcess, self).setUp()
+        forget_fake_task_results()
         celery_app.conf.update({
             'task_always_eager': False,
             'task_eager_propagates': False,
@@ -754,6 +760,7 @@ class TestExportDataProcess(unittest.TestCase):
 class TestExportDataRollbackProcess(unittest.TestCase):
     def setUp(self):
         super(TestExportDataRollbackProcess, self).setUp()
+        forget_fake_task_results()
         celery_app.conf.update({
             'task_always_eager': False,
             'task_eager_propagates': False,
@@ -1859,6 +1866,7 @@ class TestCheckRunningExportActionView(AdminTestCase):
 class TestCheckExportDataProcessStatus(AdminTestCase):
     def setUp(self):
         super(TestCheckExportDataProcessStatus, self).setUp()
+        forget_fake_task_results()
         celery_app.conf.update({
             'task_always_eager': False,
             'task_eager_propagates': False,

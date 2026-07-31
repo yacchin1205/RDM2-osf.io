@@ -321,7 +321,7 @@ class ProcessCustomTaxonomy(PermissionRequiredMixin, View):
             provider = RegistrationProvider.objects.get(id=provider_form.cleaned_data['provider_id'])
             try:
                 taxonomy_json = json.loads(provider_form.cleaned_data['custom_taxonomy_json'])
-                if request.is_ajax():
+                if request.META.get('HTTP_X_REQUESTED_WITH') == 'XMLHttpRequest':
                     # An ajax request is for validation only, so run that validation!
                     try:
                         response_data = validate_input(

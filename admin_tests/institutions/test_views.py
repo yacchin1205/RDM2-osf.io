@@ -8,6 +8,7 @@ from django.urls import reverse
 from unittest import mock
 from django.test import RequestFactory
 from django.contrib.auth.models import Permission, AnonymousUser
+from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import PermissionDenied
 
 from addons.osfstorage.models import Region
@@ -20,7 +21,7 @@ from osf_tests.factories import (
     ProjectFactory,
     RegionFactory
 )
-from osf.models import Institution, Node, UserQuota, OSFUser
+from osf.models import AbstractNode, Institution, Node, UserQuota, OSFUser
 
 from admin_tests.utilities import setup_form_view, setup_user_view, setup_view
 
@@ -274,7 +275,10 @@ class TestAffiliatedNodeList(AdminTestCase):
         self.institution = InstitutionFactory()
 
         self.user = AuthUserFactory()
-        self.view_node = Permission.objects.get(codename='view_node')
+        self.view_node = Permission.objects.filter(
+            codename='view_node',
+            content_type_id=ContentType.objects.get_for_model(AbstractNode).id,
+        ).first()
         self.user.user_permissions.add(self.view_node)
         self.user.affiliated_institutions.add(self.institution)
         self.user.save()

@@ -1,6 +1,7 @@
 from django.urls import re_path
 from . import views
 
+app_name = 'admin'
 
 urlpatterns = [
     re_path(r'^oauth/accounts/(?P<external_account_id>\w+)/(?P<institution_id>-?[0-9]+)/$', views.OAuthView.as_view(), name='oauth'),

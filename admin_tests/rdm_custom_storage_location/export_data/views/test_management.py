@@ -1193,7 +1193,7 @@ class TestDeleteExportDataView(AdminTestCase):
         request.POST = {'list_id_export_data': f'{self.export_data_01.id}#', 'selected_source_id': self.region_inst_01.id,
                         'selected_location_id': self.export_data_01_location.id, 'delete_permanently': 'off',
                         'institution_id': self.institution01.id}
-        self.institution01_admin.affiliated_institutions = []
+        self.institution01_admin.affiliated_institutions.clear()
         request.user = self.institution01_admin
         with self.assertRaises(PermissionDenied):
             management.DeleteExportDataView.as_view()(request)
@@ -1427,7 +1427,7 @@ class TestRevertExportData(AdminTestCase):
         # admin not in institution
         request.POST = {'list_id_export_data': f'{self.export_data_01.id}#', 'selected_source_id': self.region_inst_01.id,
                         'selected_location_id': self.export_data_01_location.id, 'institution_id': self.institution01.id}
-        self.institution01_admin.affiliated_institutions = []
+        self.institution01_admin.affiliated_institutions.clear()
         request.user = self.institution01_admin
         with self.assertRaises(PermissionDenied):
             management.RevertExportDataView.as_view()(request)

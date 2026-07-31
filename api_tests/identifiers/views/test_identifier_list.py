@@ -481,7 +481,9 @@ class TestNodeIdentifierCreate:
 
     @pytest.fixture()
     def client(self):
-        return DataCiteClient(base_url='https://mds.fake.datacite.org', prefix=settings.DATACITE_PREFIX)
+        with mock.patch.object(settings, 'DATACITE_USERNAME', 'test'), \
+                mock.patch.object(settings, 'DATACITE_PASSWORD', 'test'):
+            yield DataCiteClient(base_url='https://mds.fake.datacite.org', prefix=settings.DATACITE_PREFIX)
 
     @responses.activate
     def test_create_identifier(self, app, resource, client, identifier_url, identifier_payload, user,

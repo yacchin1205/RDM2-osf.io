@@ -1,6 +1,7 @@
 from django.urls import include, re_path
 from . import views
 
+app_name = 'admin'
 
 urlpatterns = [
     re_path(r'^$', views.InstitutionListView.as_view(), name='institutions'),

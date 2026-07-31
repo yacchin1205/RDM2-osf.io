@@ -223,7 +223,6 @@ class TestPermissionTestConnection(AdminTestCase):
             json.dumps(params),
             content_type='application/json'
         )
-        request.is_ajax()
         request.user = self.user
         return views.TestConnectionView.as_view()(request, institution_id=self.institution_id)
 
@@ -267,12 +266,12 @@ class TestPermissionTestConnection(AdminTestCase):
         self.user.save()
 
         response = self.view_post({})
-        self.assertEquals(response.status_code, 400)
-        self.assertEquals(response.content, b'{"message": "Provider is missing."}')
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.content, b'{"message": "Provider is missing."}')
 
         response = self.view_post({'provider_short_name': 'test'})
-        self.assertEquals(response.status_code, 400)
-        self.assertEquals(response.content, b'{"message": "Invalid provider."}')
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.content, b'{"message": "Invalid provider."}')
 
     def test_superuser_institution_not_exist(self):
         self.user.is_staff = True
@@ -281,8 +280,8 @@ class TestPermissionTestConnection(AdminTestCase):
         self.institution_id = -1
 
         response = self.view_post({'provider_short_name': 'test'})
-        self.assertEquals(response.status_code, 404)
-        self.assertEquals(response.content, b'{"message": "Institution does not exist"}')
+        self.assertEqual(response.status_code, 404)
+        self.assertEqual(response.content, b'{"message": "Institution does not exist"}')
 
 
 class TestPermissionSaveCredentials(AdminTestCase):
@@ -298,7 +297,6 @@ class TestPermissionSaveCredentials(AdminTestCase):
             json.dumps(params),
             content_type='application/json'
         )
-        request.is_ajax()
         request.user = self.user
         return views.SaveCredentialsView.as_view()(request, institution_id=self.institution_id)
 
@@ -342,12 +340,12 @@ class TestPermissionSaveCredentials(AdminTestCase):
         self.user.save()
 
         response = self.view_post({})
-        self.assertEquals(response.status_code, 400)
-        self.assertEquals(response.content, b'{"message": "Provider is missing."}')
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.content, b'{"message": "Provider is missing."}')
 
         response = self.view_post({'provider_short_name': 'test'})
-        self.assertEquals(response.status_code, 400)
-        self.assertEquals(response.content, b'{"message": "Storage name is missing."}')
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.content, b'{"message": "Storage name is missing."}')
 
     def test_superuser_institution_not_exist(self):
         self.user.is_staff = True
@@ -356,8 +354,8 @@ class TestPermissionSaveCredentials(AdminTestCase):
         self.institution_id = -1
 
         response = self.view_post({'provider_short_name': 'test'})
-        self.assertEquals(response.status_code, 404)
-        self.assertEquals(response.content, b'{"message": "Institution does not exist"}')
+        self.assertEqual(response.status_code, 404)
+        self.assertEqual(response.content, b'{"message": "Institution does not exist"}')
 
 
 class TestPermissionFetchCredentialsView(AdminTestCase):
@@ -372,7 +370,6 @@ class TestPermissionFetchCredentialsView(AdminTestCase):
             json.dumps(params),
             content_type='application/json'
         )
-        request.is_ajax()
         request.user = self.user
         return views.FetchCredentialsView.as_view()(request, institution_id=self.institution_id)
 
@@ -401,8 +398,8 @@ class TestPermissionFetchCredentialsView(AdminTestCase):
         assert isinstance((response), (HttpResponse))
 
         response = self.view_post({'provider_short_name': 'test'})
-        self.assertEquals(response.status_code, 400)
-        self.assertEquals(response.content, b'{"message": "unsupported"}')
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.content, b'{"message": "unsupported"}')
 
     def test_staff_with_other_institution(self):
         institution = InstitutionFactory()
@@ -420,12 +417,12 @@ class TestPermissionFetchCredentialsView(AdminTestCase):
         self.user.save()
 
         response = self.view_post({})
-        self.assertEquals(response.status_code, 400)
-        self.assertEquals(response.content, b'{"message": "Provider is missing."}')
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.content, b'{"message": "Provider is missing."}')
 
         response = self.view_post({'provider_short_name': 'test'})
-        self.assertEquals(response.status_code, 400)
-        self.assertEquals(response.content, b'{"message": "unsupported"}')
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.content, b'{"message": "unsupported"}')
 
     def test_superuser_institution_not_exist(self):
         self.user.is_staff = True
@@ -434,8 +431,8 @@ class TestPermissionFetchCredentialsView(AdminTestCase):
         self.institution_id = -1
 
         response = self.view_post({'provider_short_name': 'test'})
-        self.assertEquals(response.status_code, 404)
-        self.assertEquals(response.content, b'{"message": "Institution does not exist"}')
+        self.assertEqual(response.status_code, 404)
+        self.assertEqual(response.content, b'{"message": "Institution does not exist"}')
 
 
 class TestPermissionFetchTemporaryToken(AdminTestCase):
@@ -451,7 +448,6 @@ class TestPermissionFetchTemporaryToken(AdminTestCase):
             json.dumps(params),
             content_type='application/json'
         )
-        request.is_ajax()
         request.user = self.user
         return views.FetchTemporaryTokenView.as_view()(request, institution_id=self.institution_id)
 
@@ -495,12 +491,12 @@ class TestPermissionFetchTemporaryToken(AdminTestCase):
         self.user.save()
 
         response = self.view_post({})
-        self.assertEquals(response.status_code, 400)
-        self.assertEquals(response.content, b'{"message": "Provider is missing."}')
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.content, b'{"message": "Provider is missing."}')
 
         response = self.view_post({'provider_short_name': 'test'})
-        self.assertEquals(response.status_code, 400)
-        self.assertEquals(response.content, b'{"message": "Oauth permission procedure was canceled"}')
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.content, b'{"message": "Oauth permission procedure was canceled"}')
 
     def test_superuser_institution_not_exist(self):
         self.user.is_staff = True
@@ -509,8 +505,8 @@ class TestPermissionFetchTemporaryToken(AdminTestCase):
         self.institution_id = -1
 
         response = self.view_post({'provider_short_name': 'test'})
-        self.assertEquals(response.status_code, 404)
-        self.assertEquals(response.content, b'{"message": "Institution does not exist"}')
+        self.assertEqual(response.status_code, 404)
+        self.assertEqual(response.content, b'{"message": "Institution does not exist"}')
 
 
 class TestPermissionRemoveTemporaryAuthData(AdminTestCase):
@@ -525,7 +521,6 @@ class TestPermissionRemoveTemporaryAuthData(AdminTestCase):
             json.dumps(params),
             content_type='application/json'
         )
-        request.is_ajax()
         request.user = self.user
         return views.RemoveTemporaryAuthData.as_view()(request, institution_id=self.institution_id)
 
@@ -569,7 +564,7 @@ class TestPermissionRemoveTemporaryAuthData(AdminTestCase):
         self.user.save()
 
         response = self.view_post({})
-        self.assertEquals(response.status_code, 200)
+        self.assertEqual(response.status_code, 200)
 
     def test_superuser_institution_not_exist(self):
         self.user.is_staff = True
@@ -578,8 +573,8 @@ class TestPermissionRemoveTemporaryAuthData(AdminTestCase):
         self.institution_id = -1
 
         response = self.view_post({})
-        self.assertEquals(response.status_code, 404)
-        self.assertEquals(response.content, b'{"message": "Institution does not exist"}')
+        self.assertEqual(response.status_code, 404)
+        self.assertEqual(response.content, b'{"message": "Institution does not exist"}')
 
 
 class TestPermissionUserMapView(AdminTestCase):
@@ -594,7 +589,6 @@ class TestPermissionUserMapView(AdminTestCase):
             'fake_path',
             data=params,
         )
-        request.is_ajax()
         request.user = self.user
         request.FILES['usermap'] = self.test_binary_data
         return views.UserMapView.as_view()(request, institution_id=self.institution_id)
@@ -605,7 +599,6 @@ class TestPermissionUserMapView(AdminTestCase):
             data=params,
             content_type='application/json',
         )
-        request.is_ajax()
         request.user = self.user
         return views.UserMapView.as_view()(request, institution_id=self.institution_id)
 
@@ -650,11 +643,11 @@ class TestPermissionUserMapView(AdminTestCase):
         self.user.save()
 
         response = self.view_post({})
-        self.assertEquals(response.status_code, 400)
-        self.assertEquals(response.content, b'{"message": "Provider is missing."}')
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.content, b'{"message": "Provider is missing."}')
 
         response = self.view_post({'provider': 'test'})
-        self.assertEquals(response.status_code, 200)
+        self.assertEqual(response.status_code, 200)
 
     def test_post_superuser_institution_not_exist(self):
         self.user.is_staff = True
@@ -663,8 +656,8 @@ class TestPermissionUserMapView(AdminTestCase):
         self.institution_id = -1
 
         response = self.view_post({'provider': 'test'})
-        self.assertEquals(response.status_code, 404)
-        self.assertEquals(response.content, b'{"message": "Institution does not exist"}')
+        self.assertEqual(response.status_code, 404)
+        self.assertEqual(response.content, b'{"message": "Institution does not exist"}')
 
     # GET
     def test_get_unauthorized(self):
@@ -707,8 +700,8 @@ class TestPermissionUserMapView(AdminTestCase):
         self.user.save()
 
         response = self.view_get({})
-        self.assertEquals(response.status_code, 400)
-        self.assertEquals(response.content, b'{"message": "Provider is missing."}')
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.content, b'{"message": "Provider is missing."}')
 
     def test_get_superuser_institution_not_exist(self):
         self.user.is_staff = True
@@ -717,5 +710,5 @@ class TestPermissionUserMapView(AdminTestCase):
         self.institution_id = -1
 
         response = self.view_get({'provider': 'test'})
-        self.assertEquals(response.status_code, 404)
-        self.assertEquals(response.content, b'{"message": "Institution does not exist"}')
+        self.assertEqual(response.status_code, 404)
+        self.assertEqual(response.content, b'{"message": "Institution does not exist"}')

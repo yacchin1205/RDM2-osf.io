@@ -39,6 +39,11 @@ EXPORT_DATA_UTIL_PATH = 'admin.rdm_custom_storage_location.export_data.utils'
 EXPORT_DATA_TASK_PATH = 'admin.rdm_custom_storage_location.tasks'
 
 
+def forget_fake_task_results():
+    celery_app.AsyncResult(FAKE_TASK_ID).forget()
+    celery_app.AsyncResult(FAKE_TASK_ID[:-1] + '1').forget()
+
+
 # Test cases for initializing ProcessError
 @pytest.mark.feature_202210
 def test_init_process_error():
@@ -287,7 +292,7 @@ class TestRestoreDataActionView(AdminTestCase):
         request = APIRequestFactory().post('restore_export_data', {
             'destination_id': self.region_inst_02.id,
         })
-        self.institution02_admin.affiliated_institutions = []
+        self.institution02_admin.affiliated_institutions.clear()
         request.user = self.institution02_admin
         view.request = request
         view.kwargs = {
@@ -486,7 +491,7 @@ class TestCheckTaskStatusRestoreDataActionView(AdminTestCase):
             'task_id': self.restore_data_01.task_id,
             'task_type': 'Restore'
         })
-        self.institution01_admin.affiliated_institutions = []
+        self.institution01_admin.affiliated_institutions.clear()
         request.user = self.institution01_admin
         view.request = request
         view.kwargs = {
@@ -509,6 +514,7 @@ class TestCheckTaskStatusRestoreDataActionView(AdminTestCase):
 @pytest.mark.feature_202210
 class TestRestoreDataFunction(AdminTestCase):
     def setUp(self):
+        forget_fake_task_results()
         celery_app.conf.update({
             'task_always_eager': False,
             'task_eager_propagates': False,
@@ -1501,12 +1507,7 @@ class TestStopRestoreDataActionView(AdminTestCase):
     def setUpTestData(cls):
         cls.export_data_restore = ExportDataRestoreFactory.create(task_id=FAKE_TASK_ID,
                                                                   status=ExportData.STATUS_RUNNING)
-        cls.task = AbortableTask()
-        cls.task.request_stack = LocalStack()
-        cls.task.request.id = FAKE_TASK_ID
-        cls.task.update_state(state=states.PENDING, meta={'current_restore_step': 1})
         cls.new_task_id = '00000000-0000-0000-0000-000000000001'
-        cls.new_task = AbortableAsyncResult(cls.new_task_id)
         cls.view = restore.StopRestoreDataActionView()
         cls.view.kwargs = {
             'export_id': cls.export_data_restore.export.id,
@@ -1547,10 +1548,15 @@ class TestStopRestoreDataActionView(AdminTestCase):
         cls.institution02_admin.save()
 
     def setUp(self):
+        forget_fake_task_results()
         celery_app.conf.update({
             'task_always_eager': False,
             'task_eager_propagates': False,
         })
+        self.task = AbortableTask()
+        self.task.request_stack = LocalStack()
+        self.task.request.id = FAKE_TASK_ID
+        self.task.update_state(state=states.PENDING, meta={'current_restore_step': 1})
 
     def test_init(self):
         assert (self.view.kwargs.get('export_id')) == (self.export_data_restore.export.id)
@@ -1760,7 +1766,7 @@ class TestStopRestoreDataActionView(AdminTestCase):
             'task_id': self.restore_data_02.task_id,
             'destination_id': self.restore_data_02.destination.id,
         })
-        self.institution02_admin.affiliated_institutions = []
+        self.institution02_admin.affiliated_institutions.clear()
         request.user = self.institution02_admin
         view.request = request
         view.kwargs = {
@@ -1968,7 +1974,7 @@ class TestCheckRunningRestoreActionView(AdminTestCase):
         request = APIRequestFactory().get('check_running_restore', {
             'destination_id': self.region_inst_02.id,
         })
-        self.institution02_admin.affiliated_institutions = []
+        self.institution02_admin.affiliated_institutions.clear()
         request.user = self.institution02_admin
         view.request = request
         view.kwargs = {

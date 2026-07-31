@@ -30,7 +30,6 @@ class TestConnection(AdminTestCase):
             json.dumps(params),
             content_type='application/json'
         )
-        request.is_ajax()
         request.user = self.user
         return views.TestConnectionView.as_view()(request, institution_id=self.institution.id)
 
@@ -149,7 +148,6 @@ class TestSaveCredentials(AdminTestCase):
             json.dumps(params),
             content_type='application/json'
         )
-        request.is_ajax()
         request.user = self.user
         return views.SaveCredentialsView.as_view()(request, institution_id=self.institution.id)
 
@@ -287,13 +285,11 @@ class TestFetchCredentialsView(AdminTestCase):
             json.dumps(params),
             content_type='application/json'
         )
-        request.is_ajax()
         request.user = self.user
         return views.FetchCredentialsView.as_view()(request, institution_id=self.institution.id)
 
     def view_get(self, url_params):
         request = RequestFactory().get('/fake_path?{}'.format(url_params))
-        request.is_ajax()
         request.user = self.user
         return views.FetchCredentialsView.as_view()(request, institution_id=self.institution.id)
 

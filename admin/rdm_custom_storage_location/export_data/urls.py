@@ -3,6 +3,8 @@ from django.urls import re_path
 
 from .views import location, institutional_storage, management, restore, export
 
+app_name = 'admin'
+
 urlpatterns = [
     # to register export data storage location
     re_path(r'^storage_location/$',

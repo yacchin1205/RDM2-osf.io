@@ -42,7 +42,6 @@ class TestFetchToken(AdminTestCase):
             json.dumps(params),
             content_type='application/json'
         )
-        request.is_ajax()
         request.user = self.user
         return views.FetchTemporaryTokenView.as_view()(request, institution_id=self.institution.id)
 
@@ -117,7 +116,6 @@ class TestSaveCredentials(AdminTestCase):
             json.dumps(params),
             content_type='application/json'
         )
-        request.is_ajax()
         request.user = self.user
         return views.SaveCredentialsView.as_view()(request, institution_id=self.institution.id)
 
@@ -340,7 +338,6 @@ class TestRemoveTemporaryAuthData(AdminTestCase):
             json.dumps(params),
             content_type='application/json'
         )
-        request.is_ajax()
         request.user = self.user
         return views.RemoveTemporaryAuthData.as_view()(request, institution_id=self.institution.id)
 

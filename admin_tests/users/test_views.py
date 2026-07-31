@@ -893,7 +893,7 @@ class TestUserMerge(AdminTestCase):
         assert (valid_form.is_valid())
 
         view.form_valid(valid_form)
-        assert (mock_merge_user.called_with())
+        mock_merge_user.assert_called_with(user_merged)
 
 
 class TestGetUserQuota(AdminTestCase):

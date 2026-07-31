@@ -85,10 +85,11 @@ class TestUserSettingsUpdateTwoFactor:
 
     def test_update_two_factor_enabled(self, app, user_one, url, payload):
         # Invalid data type
-        payload['data']['attributes']['two_factor_enabled'] = 'Yes'
+        # DRF 3.15 accepts several string representations such as "Yes".
+        payload['data']['attributes']['two_factor_enabled'] = 'yEp'
         res = app.patch_json_api(url, payload, auth=user_one.auth, expect_errors=True)
         assert res.status_code == 400
-        assert res.json['errors'][0]['detail'] == '"Yes" is not a valid boolean.'
+        assert res.json['errors'][0]['detail'] == 'Must be a valid boolean.'
 
         # Already disabled - nothing happens, still disabled
         payload['data']['attributes']['two_factor_enabled'] = False
@@ -211,7 +212,7 @@ class TestUserSettingsUpdateMailingList:
         res = app.patch_json_api(url, bad_payload, auth=user_one.auth, expect_errors=True)
 
         assert res.status_code == 400
-        assert res.json['errors'][0]['detail'] == u'"22" is not a valid boolean.'
+        assert res.json['errors'][0]['detail'] == 'Must be a valid boolean.'
 
     def test_anonymous_patch_401(self, app, url, payload):
         res = app.patch_json_api(url, payload, expect_errors=True)

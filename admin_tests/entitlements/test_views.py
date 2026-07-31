@@ -203,7 +203,7 @@ class TestInstitutionEntitlementList(AdminTestCase):
         # admin not in institution
         request = RequestFactory().get(reverse('institutions:entitlements')
                                         + '?institution_id=' + str(self.institution01.id))
-        self.institution02_admin.affiliated_institutions = []
+        self.institution02_admin.affiliated_institutions.clear()
         request.user = self.institution02_admin
 
         with self.assertRaises(PermissionDenied):
@@ -573,7 +573,7 @@ class TestToggleInstitutionEntitlement(AdminTestCase):
             reverse('institutions:entitlement_toggle',
                     kwargs={'institution_id': self.institution01.id, 'entitlement_id': self.entitlement_1.id})
         )
-        self.institution02_admin.affiliated_institutions = []
+        self.institution02_admin.affiliated_institutions.clear()
         request.user = self.institution02_admin
 
         with self.assertRaises(PermissionDenied):
@@ -780,7 +780,7 @@ class TestDeleteInstitutionEntitlement(AdminTestCase):
             reverse('institutions:entitlement_delete',
                     kwargs={'institution_id': self.institution01.id, 'entitlement_id': self.entitlement_1.id})
         )
-        self.institution02_admin.affiliated_institutions = []
+        self.institution02_admin.affiliated_institutions.clear()
         request.user = self.institution02_admin
 
         with self.assertRaises(PermissionDenied):

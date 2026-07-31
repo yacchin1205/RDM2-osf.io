@@ -35,7 +35,6 @@ class TestConnection(AdminTestCase):
             json.dumps(params),
             content_type='application/json'
         )
-        request.is_ajax()
         request.user = self.user
         return views.TestConnectionView.as_view()(request, institution_id=self.institution_id)
 
@@ -128,7 +127,6 @@ class TestSaveCredentials(AdminTestCase):
             json.dumps(params),
             content_type='application/json'
         )
-        request.is_ajax()
         request.user = self.user
         return views.SaveCredentialsView.as_view()(request, institution_id=self.institution.id)
 

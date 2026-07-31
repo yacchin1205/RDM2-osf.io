@@ -99,7 +99,7 @@ class TestUserIdentificationListView(AdminTestCase):
         assert (res.status_code) == (200)
 
     def test__permission_admin_without_institution(self):
-        self.admin_user.affiliated_institutions = []
+        self.admin_user.affiliated_institutions.clear()
         self.request.user = self.admin_user
         with pytest.raises(PermissionDenied):
             views.UserIdentificationAdminListView.as_view()(self.request)
@@ -173,7 +173,7 @@ class TestUserIdentificationDetailView(AdminTestCase):
             views.UserIdentificationDetailAdminView.as_view()(self.request, guid=self.user._id)
 
     def test__permission_admin_without_institution(self):
-        self.admin_user.affiliated_institutions = []
+        self.admin_user.affiliated_institutions.clear()
         self.request.user = self.admin_user
         with pytest.raises(PermissionDenied):
             views.UserIdentificationDetailAdminView.as_view()(self.request)
@@ -241,7 +241,7 @@ class TestExportFileCSVAdminView(AdminTestCase):
         assert (res.status_code) == (200)
 
     def test__permission_admin_without_institution(self):
-        self.admin_user.affiliated_institutions = []
+        self.admin_user.affiliated_institutions.clear()
         self.request.user = self.admin_user
         with pytest.raises(PermissionDenied):
             views.ExportFileCSVAdminView.as_view()(self.request)

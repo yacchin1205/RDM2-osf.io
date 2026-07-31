@@ -118,7 +118,7 @@ class TestSpamDetail(AdminTestCase):
             view, self.request, form, spam_id=self.comment._id)
         with transaction.atomic():
             view.form_valid(form)
-        obj = AdminLogEntry.objects.latest(field_name='action_time')
+        obj = AdminLogEntry.objects.latest('action_time')
         assert (obj.object_id) == (self.comment._id)
         assert ('Confirmed SPAM:') in (obj.message())
 
@@ -131,7 +131,7 @@ class TestSpamDetail(AdminTestCase):
             view, self.request, form, spam_id=self.comment._id)
         with transaction.atomic():
             view.form_valid(form)
-        obj = AdminLogEntry.objects.latest(field_name='action_time')
+        obj = AdminLogEntry.objects.latest('action_time')
         assert (obj.object_id) == (self.comment._id)
         assert ('Confirmed HAM:') in (obj.message())
 

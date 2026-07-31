@@ -1,6 +1,8 @@
 from django.urls import re_path
 from . import views
 
+app_name = 'admin'
+
 urlpatterns = [
     re_path(r'^$', views.ProjectLimitNumberSettingListView.as_view(), name='list-setting'),
     re_path(r'^create/$', views.ProjectLimitNumberSettingCreateView.as_view(), name='create-setting'),

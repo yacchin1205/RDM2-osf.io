@@ -19,8 +19,9 @@ from admin.base.utils import render_bad_request_response
 from admin.project_limit_number import utils
 from admin.rdm.utils import RdmPermissionMixin
 from django.contrib.auth.mixins import UserPassesTestMixin
+from django.contrib.contenttypes.models import ContentType
 from osf.models import Institution, ProjectLimitNumberSetting, ProjectLimitNumberSettingAttribute, ProjectLimitNumberTemplate, \
-    ProjectLimitNumberTemplateAttribute, ProjectLimitNumberDefault, AbstractNode, UserExtendedData
+    ProjectLimitNumberTemplateAttribute, ProjectLimitNumberDefault, AbstractNode, OSFUser, UserExtendedData
 from django.db.models import F, Max, Value, Count
 from admin.base import settings
 from django.http import Http404, JsonResponse, HttpResponse
@@ -996,7 +997,7 @@ class UserListView(RdmPermissionMixin, UserPassesTestMixin, View):
             FROM osf_osfuser AS u
             JOIN osf_guid AS g
                 ON u.id = g.object_id
-                AND g.content_type_id = 1
+                AND g.content_type_id = %s
             JOIN osf_osfuser_affiliated_institutions AS ui
                 ON u.id = ui.osfuser_id
             """
@@ -1011,7 +1012,8 @@ class UserListView(RdmPermissionMixin, UserPassesTestMixin, View):
             query += f' AND {include_osf_user_query_string}'
 
         # Execute the raw query
-        params = logic_condition_params + [institution_id] + include_osf_user_params
+        osf_user_content_type_id = ContentType.objects.get_for_model(OSFUser).id
+        params = logic_condition_params + [osf_user_content_type_id, institution_id] + include_osf_user_params
         with connection.cursor() as cursor:
             # Call execute with params is a list attribute value user input to prevent SQL injection
             cursor.execute(query, params)
@@ -1057,7 +1059,7 @@ class UserListView(RdmPermissionMixin, UserPassesTestMixin, View):
             FROM osf_osfuser AS u
             JOIN osf_guid AS g
                 ON u.id = g.object_id
-                AND g.content_type_id = 1
+                AND g.content_type_id = %s
             JOIN osf_osfuser_affiliated_institutions AS ui
                 ON u.id = ui.osfuser_id
             """
@@ -1078,7 +1080,8 @@ class UserListView(RdmPermissionMixin, UserPassesTestMixin, View):
         formatted_query = query.format(include_osf_user_query)
 
         # Execute the raw query
-        params = logic_condition_params + [institution_id] + include_osf_user_params + [page]
+        osf_user_content_type_id = ContentType.objects.get_for_model(OSFUser).id
+        params = logic_condition_params + [osf_user_content_type_id, institution_id] + include_osf_user_params + [page]
         with connection.cursor() as cursor:
             # Call execute with params is a list attribute value user input to prevent SQL injection
             cursor.execute(formatted_query, params)
@@ -1290,7 +1293,7 @@ class ExportUserListCSVView(RdmPermissionMixin, UserPassesTestMixin, View):
             FROM osf_osfuser AS u
             JOIN osf_guid AS g
                 ON u.id = g.object_id
-                AND g.content_type_id = 1
+                AND g.content_type_id = %s
             JOIN osf_osfuser_affiliated_institutions AS ui
                 ON u.id = ui.osfuser_id
             """
@@ -1309,7 +1312,8 @@ class ExportUserListCSVView(RdmPermissionMixin, UserPassesTestMixin, View):
         formatted_query = query.format(include_osf_user_query)
 
         # Execute the raw query
-        params = logic_condition_params + [institution_id] + include_osf_user_params
+        osf_user_content_type_id = ContentType.objects.get_for_model(OSFUser).id
+        params = logic_condition_params + [osf_user_content_type_id, institution_id] + include_osf_user_params
         with connection.cursor() as cursor:
             # Call execute with params is a list attribute value user input to prevent SQL injection
             cursor.execute(formatted_query, params)
