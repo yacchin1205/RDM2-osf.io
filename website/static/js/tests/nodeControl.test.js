@@ -20,11 +20,12 @@ describe.skip('nodeControl', () => {
     describe('ViewModels', () => {
         describe('ProjectViewModel', () => {
             var server;
-            var vm = new nodeControl._ProjectViewModel(nodeData);
-            var endpoints = [
-                {method: 'POST', url: vm.apiUrl + 'identifiers/', response: {doi: '24601', ark: '24601'}}
-            ];
+            var vm;
             before(() => {
+                vm = new nodeControl._ProjectViewModel(nodeData);
+                var endpoints = [
+                    {method: 'POST', url: vm.apiUrl + 'identifiers/', response: {doi: '24601', ark: '24601'}}
+                ];
                 server = utils.createServer(sinon, endpoints);
             });
             after(() => {

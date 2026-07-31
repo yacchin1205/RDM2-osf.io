@@ -21,13 +21,15 @@ describe('registrationModal', () => {
     var vm = new RegistrationModal(
         confirm,
         [],
-        null
+        null,
+        {requiresApproval: false}
     );
     beforeEach(() => {
         vm = new RegistrationModal(
             confirm,
             [],
-            null
+            null,
+            {requiresApproval: false}
         );
     });
     afterEach(() => {
@@ -38,6 +40,7 @@ describe('registrationModal', () => {
         it('takes a confirm method as a callback for bootbox success', () => {
             var end = vm.embargoEndDate();
             var args = {
+                nodesToRegister: vm.nodesSelected(),
                 registrationChoice: vm.registrationChoice(),
                 embargoEndDate: end,
                 embargoIsLongEnough: vm.embargoIsLongEnough(end),
@@ -54,7 +57,8 @@ describe('registrationModal', () => {
                 {
                     validator: validate,
                     message: 'Bad, bad, bad.'
-                }
+                },
+                {requiresApproval: false}
             );
             var d = new Date();
             d.setDate(d.getDate() + 3);

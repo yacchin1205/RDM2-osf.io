@@ -38,6 +38,9 @@ module.exports = {
         'website/static/vendor/bower_components/jquery/dist/jquery.js',
         'website/static/vendor/bower_components/jquery-ui/jquery-ui.js',
         'website/static/vendor/bower_components/bootstrap/dist/js/bootstrap.js',
+        'website/static/vendor/bower_components/raven-js/dist/raven.js',
+        // Context vars normally injected by the mako templates
+        'website/static/js/tests/karma-context.js',
         // Only need to target one file, which will load all files in tests/ that
         // match *.test.js, including addons tests
         'website/static/js/tests/tests.webpack.js',

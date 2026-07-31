@@ -19,13 +19,15 @@ describe('mithrilHelpers', () => {
     });
 
     describe('apiV2Config', () => {
+        var mockParams = {method: 'GET', url: '/v2/'};
+
         it('can be called with no arguments', () => {
             var func = mHelpers.apiV2Config();
             assert.isFunction(func);
             var mockXHR = {
                 setRequestHeader: function() {}
             };
-            assert.doesNotThrow(func.bind(this, mockXHR), Error);
+            assert.doesNotThrow(func.bind(this, mockXHR, mockParams), Error);
         });
 
         it('sets withCredentials to true by default', () => {
@@ -33,7 +35,7 @@ describe('mithrilHelpers', () => {
             var mockXHR = {
                 setRequestHeader: function() {}
             };
-            func(mockXHR);
+            func(mockXHR, mockParams);
             assert.isTrue(mockXHR.withCredentials);
         });
 
@@ -42,7 +44,7 @@ describe('mithrilHelpers', () => {
             var mockXHR = {
                 setRequestHeader: function() {}
             };
-            func(mockXHR);
+            func(mockXHR, mockParams);
             assert.isFalse(mockXHR.withCredentials);
         });
     });

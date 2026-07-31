@@ -77,6 +77,8 @@ done
 mkdir -p user_key_info
 cp root_cert_verifycate.pem user_key_info/
 if [ "$TEST_BUILD" = "api1_and_js" ]; then
+    apk add --no-cache chromium
+    export CHROME_BIN=/usr/bin/chromium-browser
     python3 -m invoke assets --dev
 fi
 python3 -m invoke "test-travis-${TEST_BUILD//_/-}" -n 1
