@@ -381,6 +381,8 @@ def set_up_index(idx):
         search.create_index(index=index)
         logger.info('Reindexing {0} to {1}_v1'.format(idx, idx))
         es_client().indices.create(index=idx, ignore=[400])  # HTTP 400 if index already exists
+        # Index creation can be acknowledged before its primary shards are readable.
+        es_client().cluster.health(index=idx, wait_for_status='yellow')
         helpers.reindex(es_client(), idx, index)
         logger.info('Deleting {} index'.format(idx))
         es_client().indices.delete(index=idx)
