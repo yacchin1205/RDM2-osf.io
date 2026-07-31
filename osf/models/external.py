@@ -10,6 +10,7 @@ from django.utils import timezone
 from flask import request
 from oauthlib.oauth2 import (AccessDeniedError, InvalidGrantError,
     TokenExpiredError, MissingTokenError)
+from oauthlib.oauth2.rfc6749.errors import CustomOAuth2Error
 from requests.exceptions import HTTPError as RequestsHTTPError
 from requests_oauthlib import OAuth1Session, OAuth2Session
 
@@ -289,7 +290,7 @@ class ExternalProvider(object, with_metaclass(ExternalProviderMeta)):
                     client_secret=self.client_secret,
                     code=request.args.get('code'),
                 )
-            except (MissingTokenError, RequestsHTTPError):
+            except (MissingTokenError, RequestsHTTPError, CustomOAuth2Error):
                 raise HTTPError(http_status.HTTP_503_SERVICE_UNAVAILABLE)
         # pre-set as many values as possible for the ``ExternalAccount``
         info = self._default_handle_callback(response)

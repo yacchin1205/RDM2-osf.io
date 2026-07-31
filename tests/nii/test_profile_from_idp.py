@@ -60,7 +60,7 @@ def make_payload(
     return jwe.encrypt(jwt.encode({
         'sub': eppn,
         'data': json.dumps(data)
-    }, settings.JWT_SECRET, algorithm='HS256'), settings.JWE_SECRET)
+    }, settings.JWT_SECRET, algorithm='HS256').encode(), settings.JWE_SECRET)
 
 
 @pytest.mark.django_db
@@ -386,7 +386,7 @@ class TestUserProfile(OsfTestCase):
         }]
         payload = {'contents': jobs}
         url = api_url_for('unserialize_jobs')
-        self.app.put_json(url, payload, auth=self.user.auth)
+        self.app.put(url, json=payload, auth=self.user.auth)
 
         organization_name, organizational_unit = set_user_extended_data(self.user)
 
@@ -430,7 +430,7 @@ class TestUserProfile(OsfTestCase):
         }]
         payload = {'contents': schools}
         url = api_url_for('unserialize_schools')
-        self.app.put_json(url, payload, auth=self.user.auth)
+        self.app.put(url, json=payload, auth=self.user.auth)
 
         organization_name, organizational_unit = set_user_extended_data(self.user)
 

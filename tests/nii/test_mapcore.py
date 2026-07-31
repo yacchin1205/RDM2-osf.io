@@ -1029,7 +1029,7 @@ class TestViewsWithMAPCore(OsfTestCase):
         assert (mock_ember.call_count) == (0)
         mapcore_oauth_start_url = web_url_for('mapcore_oauth_start')
         assert (mapcore_oauth_start_url + '?next_url=') in (res.headers.get('Location'))
-        res2 = res.follow(auth=self.me.auth)
+        res2 = self.app.get(res.location, auth=self.me.auth)
         assert (mock_ac.call_count) == (1)
 
     @mock.patch('nii.mapcore.MAPCORE_CLIENTID', 'test_my_projects')
@@ -1045,7 +1045,7 @@ class TestViewsWithMAPCore(OsfTestCase):
         assert (mock_sync.call_count) == (1)
         mapcore_oauth_start_url = web_url_for('mapcore_oauth_start')
         assert (mapcore_oauth_start_url + '?next_url=') in (res.headers.get('Location'))
-        res2 = res.follow(auth=self.me.auth)
+        res2 = self.app.get(res.location, auth=self.me.auth)
         assert (mock_ac.call_count) == (1)
 
     @mock.patch('nii.mapcore.MAPCORE_CLIENTID', 'test_view_project')
@@ -1062,7 +1062,7 @@ class TestViewsWithMAPCore(OsfTestCase):
         assert (mock_sync2.call_count) == (1)
         mapcore_oauth_start_url = web_url_for('mapcore_oauth_start')
         assert (mapcore_oauth_start_url + '?next_url=') in (res.headers.get('Location'))
-        res2 = res.follow(auth=self.me.auth)
+        res2 = self.app.get(res.location, auth=self.me.auth)
         assert (mock_ac.call_count) == (1)
 
     @mock.patch('nii.mapcore.MAPCORE_CLIENTID', 'test_dashboard')
@@ -1131,8 +1131,8 @@ class TestViewsWithMAPCore(OsfTestCase):
     def test_edit_node_title(self, mock_sync3, mock_sync2, mock_sync1):
         url = '/api/v1/project/{0}/edit/'.format(self.project._id)
         # The title is changed though posting form data
-        self.app.post_json(url, {'name': 'title', 'value': 'Bacon'},
-                           auth=self.me.auth).maybe_follow()
+        self.app.post(url, json={'name': 'title', 'value': 'Bacon'},
+                           auth=self.me.auth, follow_redirects=True)
         assert (mock_sync1.call_count) == (1)
         assert (mock_sync2.call_count) == (1)
         assert (mock_sync3.call_count) == (1)
@@ -1149,8 +1149,8 @@ class TestViewsWithMAPCore(OsfTestCase):
     @mock.patch('nii.mapcore.mapcore_api_is_available0')
     def test_edit_description(self, mock_sync3, mock_sync2, mock_sync1):
         url = '/api/v1/project/{0}/edit/'.format(self.project._id)
-        self.app.post_json(url,
-                           {'name': 'description', 'value': 'Deep-fried'},
+        self.app.post(url,
+                           json={'name': 'description', 'value': 'Deep-fried'},
                            auth=self.me.auth)
         assert (mock_sync1.call_count) == (1)
         assert (mock_sync2.call_count) == (1)
@@ -1181,15 +1181,15 @@ class TestViewsWithMAPCore(OsfTestCase):
             'visible': False,
         })
 
-        self.app.post_json(
+        self.app.post(
             url,
-            {
+            json={
                 'users': [dict2, dict3],
                 'node_ids': [project._id],
             },
             content_type='application/json',
-            auth=self.me.auth,
-        ).maybe_follow()
+            auth=self.me.auth, follow_redirects=True,
+        )
         assert (mock_sync1.call_count) == (1)
         assert (mock_sync2.call_count) == (1)
         assert (mock_sync3.call_count) == (1)
@@ -1228,9 +1228,9 @@ class TestViewsWithMAPCore(OsfTestCase):
         )
 
         url = project.api_url + 'contributors/manage/'
-        self.app.post_json(
+        self.app.post(
             url,
-            {
+            json={
                 'contributors': [
                     {'id': reg_user2._id,
                      'permission': permissions.ADMIN,
@@ -1265,9 +1265,9 @@ class TestViewsWithMAPCore(OsfTestCase):
         # User 1 removes user2
         payload = {'contributorID': self.user2._id,
                    'nodeIDs': [self.project._id]}
-        self.app.post(url, json.dumps(payload),
+        self.app.post(url, data=json.dumps(payload),
                       content_type='application/json',
-                      auth=self.me.auth).maybe_follow()
+                      auth=self.me.auth, follow_redirects=True)
         assert (mock_sync1.call_count) == (1)
         assert (mock_sync2.call_count) == (1)
         assert (mock_sync3.call_count) == (1)

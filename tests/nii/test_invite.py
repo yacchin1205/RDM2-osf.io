@@ -47,7 +47,7 @@ class TestInvite(OsfTestCase):
             uid=self.user._id,
             token='faketoken',
         )
-        res = self.app.get(url, auth=self.referrer.auth, expect_errors=True)
+        res = self.app.get(url, auth=self.referrer.auth)
         assert (res.status_code) == (http_status.HTTP_400_BAD_REQUEST)
         assert ('This URL does not support LOGIN_BY_EPPN=False') in (res.text)
 
@@ -68,7 +68,7 @@ class TestInvite(OsfTestCase):
         res = self.app.get(url, auth=user2.auth)
         assert (res.status_code) == (302)
         assert (verify_url) in (res.headers.get('Location'))
-        res2 = res.follow(auth=user2.auth)
+        res2 = self.app.get(res.location, auth=user2.auth)
         assert (res2.status_code) == (http_status.HTTP_200_OK)
         if user2.have_email:  # existing user
             assert (user2.username) in (res2.text)
@@ -103,7 +103,7 @@ class TestInvite(OsfTestCase):
             uid=self.user._id,
             token='badtoken',
         )
-        res = self.app.get(url, auth=self.referrer.auth, expect_errors=400)
+        res = self.app.get(url, auth=self.referrer.auth)
         assert (res.status_code) == (http_status.HTTP_400_BAD_REQUEST)
         assert ('The token in the URL is invalid or has expired.') in (res.text)
 
@@ -118,9 +118,7 @@ class TestInvite(OsfTestCase):
         res = self.app.get(
             url,
             auth=contrib.auth,
-        ).follow(
-            auth=contrib.auth,
-            expect_errors=True,
+            follow_redirects=True,
         )
         assert (res.status_code) == (http_status.HTTP_400_BAD_REQUEST)
         assert ('The logged-in user is already a contributor to this ') in (res.text)
@@ -163,7 +161,7 @@ class TestInvite(OsfTestCase):
             assert (send_mail.call_count) == (1)  # welcome
 
         user2_auth = Auth(OSFUser.objects.get(username=user2.username))
-        res3 = res2.follow(auth=user2_auth)
+        res3 = self.app.get(res2.location, auth=user2_auth)
         assert (res3.status_code) == (http_status.HTTP_200_OK)
 
         self.project.reload()

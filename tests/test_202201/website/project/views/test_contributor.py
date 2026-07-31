@@ -57,9 +57,9 @@ class TestProjectViews(OsfTestCase):
     def test_project_contributor_re_invite(self, mock_finalize_invitation):
         url = self.project.api_url_for('project_contributor_re_invite')
         payload = {'guid': self.user2._id}
-        self.app.post(url, json.dumps(payload),
+        self.app.post(url, data=json.dumps(payload),
                       content_type='application/json',
-                      auth=self.auth).maybe_follow()
+                      auth=self.auth, follow_redirects=True)
         self.project.reload()
         mock_finalize_invitation.assert_called()
 
@@ -113,14 +113,8 @@ class TestConfirmationViewBlockBingPreview(OsfTestCase):
         )
         project.save()
 
-        claim_url = user.get_claim_url(project._primary_key)
-        res = self.app.get(
-            claim_url,
-            {
-                'cancel': 'true'
-            },
-            expect_errors=True,
-        )
+        claim_url = user.get_claim_url(project._primary_key) + '&cancel=true'
+        res = self.app.get(claim_url)
         assert (res.status_code) == (302)
 
     def test_claim_user_form_contributor_is_none(self):
@@ -133,15 +127,9 @@ class TestConfirmationViewBlockBingPreview(OsfTestCase):
             email=given_email,
             auth=Auth(user=referrer)
         )
-        claim_url = user.get_claim_url(project._primary_key)
+        claim_url = user.get_claim_url(project._primary_key) + '&cancel=true'
         claim_url = claim_url.replace(user._id, 'abcde')
-        res = self.app.get(
-            claim_url,
-            {
-                'cancel': 'true',
-            },
-            expect_errors=True,
-        )
+        res = self.app.get(claim_url)
         assert (res.status_code) == (400)
 
     @mock.patch('osf.models.node.Node.cancel_invite')
@@ -156,14 +144,8 @@ class TestConfirmationViewBlockBingPreview(OsfTestCase):
             email=given_email,
             auth=Auth(user=referrer)
         )
-        claim_url = user.get_claim_url(project._primary_key)
-        res = self.app.get(
-            claim_url,
-            {
-                'cancel': 'true',
-            },
-            expect_errors=True,
-        )
+        claim_url = user.get_claim_url(project._primary_key) + '&cancel=true'
+        res = self.app.get(claim_url)
         assert (res.status_code) == (400)
 
 
@@ -176,7 +158,6 @@ class TestAddingContributorViews(OsfTestCase):
         self.project = ProjectFactory(creator=self.creator)
         self.auth = Auth(self.project.creator)
         # Authenticate all requests
-        self.app.authenticate(*self.creator.auth)
         contributor_added.connect(notify_added_contributor)
 
     def test_deserialize_contributors_temp_account(self):

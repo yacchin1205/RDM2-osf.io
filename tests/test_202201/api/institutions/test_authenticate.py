@@ -65,7 +65,7 @@ def make_payload(
             },
             settings.JWT_SECRET,
             algorithm='HS256'
-        ),
+        ).encode(),
         settings.JWE_SECRET
     )
 

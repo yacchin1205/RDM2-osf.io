@@ -9,6 +9,21 @@ from osf_tests.factories import UserFactory, UnregUserFactory
 
 class TestValidation(OsfTestCase):
 
+    def test_no_html_validator_allows_missing_optional_value(self):
+        class MockForm(Form):
+            name = Field('Name', [forms.NoHtmlCharacters()])
+
+        assert MockForm().validate()
+
+    def test_no_html_validator_rejects_html(self):
+        class MockForm(Form):
+            name = Field('Name', [forms.NoHtmlCharacters()])
+
+        form = MockForm(name='<strong>Name</strong>')
+
+        assert not form.validate()
+        assert 'name' in form.errors
+
     def test_unique_email_validator(self):
         class MockForm(Form):
             username = Field('Username', [forms.UniqueEmail()])

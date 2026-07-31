@@ -22,6 +22,7 @@ RUN apk add --no-cache --virtual .run-deps \
     libffi \
     libev \
     libevent \
+    openssl \
     && yarn global add bower \
     && mkdir -p /var/www \
     && chown www-data:www-data /var/www

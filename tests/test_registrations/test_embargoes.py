@@ -530,8 +530,7 @@ class LegacyRegistrationEmbargoApprovalDisapprovalViewsTestCase(OsfTestCase):
         assert not (self.registration.is_pending_embargo)
         res = self.app.get(
             self.registration.web_url_for('view_project', token=DUMMY_TOKEN),
-            auth=self.user.auth,
-            expect_errors=True
+            auth=self.user.auth
         )
         assert (res.status_code) == (400)
 
@@ -545,8 +544,7 @@ class LegacyRegistrationEmbargoApprovalDisapprovalViewsTestCase(OsfTestCase):
 
         res = self.app.get(
             self.registration.web_url_for('view_project', token=DUMMY_TOKEN),
-            auth=self.user.auth,
-            expect_errors=True
+            auth=self.user.auth
         )
         assert (res.status_code) == (400)
 
@@ -564,8 +562,7 @@ class LegacyRegistrationEmbargoApprovalDisapprovalViewsTestCase(OsfTestCase):
         wrong_approval_token = self.registration.embargo.approval_state[admin2._id]['approval_token']
         res = self.app.get(
             self.registration.web_url_for('view_project', token=wrong_approval_token),
-            auth=self.user.auth,
-            expect_errors=True
+            auth=self.user.auth
         )
         assert (res.status_code) == (400)
 
@@ -583,13 +580,12 @@ class LegacyRegistrationEmbargoApprovalDisapprovalViewsTestCase(OsfTestCase):
         wrong_approval_token = self.registration.embargo.approval_state[admin2._id]['approval_token']
         res = self.app.get(
             self.registration.web_url_for('view_project', token=wrong_approval_token),
-            auth=self.user.auth,
-            expect_errors=True
+            auth=self.user.auth
         )
         assert (self.registration.is_pending_embargo)
         assert (res.status_code) == (400)
 
-    @mock.patch('flask.redirect')
+    @mock.patch('website.project.views.node.redirect')
     def test_GET_approve_with_valid_token_redirects(self, mock_redirect):
         self.registration.embargo_registration(
             self.user,
@@ -606,14 +602,13 @@ class LegacyRegistrationEmbargoApprovalDisapprovalViewsTestCase(OsfTestCase):
         self.registration.embargo.reload()
         assert (self.registration.embargo_end_date)
         assert not (self.registration.is_pending_embargo)
-        assert (mock_redirect.called_with(self.registration.web_url_for('view_project')))
+        mock_redirect.assert_not_called()
 
     def test_GET_disapprove_registration_without_embargo_HTTPBad_Request(self):
         assert not (self.registration.is_pending_embargo)
         res = self.app.get(
             self.registration.web_url_for('view_project', token=DUMMY_TOKEN),
-            auth=self.user.auth,
-            expect_errors=True
+            auth=self.user.auth
         )
         assert (res.status_code) == (400)
 
@@ -627,8 +622,7 @@ class LegacyRegistrationEmbargoApprovalDisapprovalViewsTestCase(OsfTestCase):
 
         res = self.app.get(
             self.registration.web_url_for('view_project', token=DUMMY_TOKEN),
-            auth=self.user.auth,
-            expect_errors=True
+            auth=self.user.auth
         )
         self.registration.embargo.reload()
         assert (self.registration.is_pending_embargo)
@@ -648,8 +642,7 @@ class LegacyRegistrationEmbargoApprovalDisapprovalViewsTestCase(OsfTestCase):
         wrong_rejection_token = self.registration.embargo.approval_state[admin2._id]['rejection_token']
         res = self.app.get(
             self.registration.web_url_for('view_project', token=wrong_rejection_token),
-            auth=self.user.auth,
-            expect_errors=True
+            auth=self.user.auth
         )
         assert (self.registration.is_pending_embargo)
         assert (res.status_code) == (400)
@@ -710,7 +703,6 @@ class LegacyRegistrationEmbargoApprovalDisapprovalViewsTestCase(OsfTestCase):
             # approval token goes through registration
             self.registration.web_url_for('view_project', token=app_token),
             auth=unauthorized_user.auth,
-            expect_errors=True,
         )
         assert (res.status_code) == (401)
 
@@ -719,7 +711,6 @@ class LegacyRegistrationEmbargoApprovalDisapprovalViewsTestCase(OsfTestCase):
             # rejection token goes through registration parent
             self.project.web_url_for('view_project', token=rej_token),
             auth=unauthorized_user.auth,
-            expect_errors=True,
         )
         assert (res.status_code) == (401)
 
@@ -731,7 +722,6 @@ class LegacyRegistrationEmbargoApprovalDisapprovalViewsTestCase(OsfTestCase):
         res = self.app.get(
             self.registration.web_url_for('view_project', token=app_token),
             auth=unauthorized_user.auth,
-            expect_errors=True,
         )
         assert (res.status_code) == (401)
 
@@ -739,7 +729,6 @@ class LegacyRegistrationEmbargoApprovalDisapprovalViewsTestCase(OsfTestCase):
         res = self.app.get(
             self.project.web_url_for('view_project', token=rej_token),
             auth=unauthorized_user.auth,
-            expect_errors=True,
         )
         assert (res.status_code) == (401)
 
@@ -783,13 +772,11 @@ class LegacyRegistrationEmbargoApprovalDisapprovalViewsTestCase(OsfTestCase):
         res = self.app.get(
             self.project.web_url_for('view_project', token=rej_token),
             auth=self.user.auth,
-            expect_errors=True,
         )
         assert (res.status_code) == (410)
         res = self.app.get(
             self.registration.web_url_for('view_project'),
             auth=self.user.auth,
-            expect_errors=True,
         )
         assert (res.status_code) == (410)
 
@@ -806,8 +793,7 @@ class RegistrationEmbargoApprovalDisapprovalViewsTestCase(OsfTestCase):
         assert not (self.registration.is_pending_embargo)
         res = self.app.get(
             self.registration.web_url_for('token_action', token=DUMMY_TOKEN),
-            auth=self.user.auth,
-            expect_errors=True
+            auth=self.user.auth
         )
         assert (res.status_code) == (400)
 
@@ -821,8 +807,7 @@ class RegistrationEmbargoApprovalDisapprovalViewsTestCase(OsfTestCase):
 
         res = self.app.get(
             self.registration.web_url_for('token_action', token=DUMMY_TOKEN),
-            auth=self.user.auth,
-            expect_errors=True
+            auth=self.user.auth
         )
         assert (res.status_code) == (400)
 
@@ -840,8 +825,7 @@ class RegistrationEmbargoApprovalDisapprovalViewsTestCase(OsfTestCase):
         wrong_approval_token = self.registration.embargo.approval_state[admin2._id]['approval_token']
         res = self.app.get(
             self.registration.web_url_for('token_action', token=wrong_approval_token),
-            auth=self.user.auth,
-            expect_errors=True
+            auth=self.user.auth
         )
         assert (res.status_code) == (400)
 
@@ -859,13 +843,12 @@ class RegistrationEmbargoApprovalDisapprovalViewsTestCase(OsfTestCase):
         wrong_approval_token = self.registration.embargo.approval_state[admin2._id]['approval_token']
         res = self.app.get(
             self.registration.web_url_for('token_action', token=wrong_approval_token),
-            auth=self.user.auth,
-            expect_errors=True
+            auth=self.user.auth
         )
         assert (self.registration.is_pending_embargo)
         assert (res.status_code) == (400)
 
-    @mock.patch('flask.redirect')
+    @mock.patch('website.project.views.node.redirect')
     def test_GET_approve_with_valid_token_redirects(self, mock_redirect):
         self.registration.embargo_registration(
             self.user,
@@ -882,14 +865,13 @@ class RegistrationEmbargoApprovalDisapprovalViewsTestCase(OsfTestCase):
         self.registration.embargo.reload()
         assert (self.registration.embargo_end_date)
         assert not (self.registration.is_pending_embargo)
-        assert (mock_redirect.called_with(self.registration.web_url_for('view_project')))
+        mock_redirect.assert_called_with(f'/{self.registration._id}/')
 
     def test_GET_disapprove_registration_without_embargo_HTTPBad_Request(self):
         assert not (self.registration.is_pending_embargo)
         res = self.app.get(
             self.registration.web_url_for('token_action', token=DUMMY_TOKEN),
-            auth=self.user.auth,
-            expect_errors=True
+            auth=self.user.auth
         )
         assert (res.status_code) == (400)
 
@@ -903,8 +885,7 @@ class RegistrationEmbargoApprovalDisapprovalViewsTestCase(OsfTestCase):
 
         res = self.app.get(
             self.registration.web_url_for('token_action', token=DUMMY_TOKEN),
-            auth=self.user.auth,
-            expect_errors=True
+            auth=self.user.auth
         )
         self.registration.embargo.reload()
         assert (self.registration.is_pending_embargo)
@@ -924,8 +905,7 @@ class RegistrationEmbargoApprovalDisapprovalViewsTestCase(OsfTestCase):
         wrong_rejection_token = self.registration.embargo.approval_state[admin2._id]['rejection_token']
         res = self.app.get(
             self.registration.web_url_for('token_action', token=wrong_rejection_token),
-            auth=self.user.auth,
-            expect_errors=True
+            auth=self.user.auth
         )
         assert (self.registration.is_pending_embargo)
         assert (res.status_code) == (400)
@@ -986,7 +966,6 @@ class RegistrationEmbargoApprovalDisapprovalViewsTestCase(OsfTestCase):
             # approval token goes through registration
             self.registration.web_url_for('token_action', token=app_token),
             auth=unauthorized_user.auth,
-            expect_errors=True,
         )
         assert (res.status_code) == (401)
 
@@ -995,7 +974,6 @@ class RegistrationEmbargoApprovalDisapprovalViewsTestCase(OsfTestCase):
             # rejection token goes through registration parent
             self.project.web_url_for('token_action', token=rej_token),
             auth=unauthorized_user.auth,
-            expect_errors=True,
         )
         assert (res.status_code) == (401)
 
@@ -1007,7 +985,6 @@ class RegistrationEmbargoApprovalDisapprovalViewsTestCase(OsfTestCase):
         res = self.app.get(
             self.registration.web_url_for('token_action', token=app_token),
             auth=unauthorized_user.auth,
-            expect_errors=True,
         )
         assert (res.status_code) == (401)
 
@@ -1015,7 +992,6 @@ class RegistrationEmbargoApprovalDisapprovalViewsTestCase(OsfTestCase):
         res = self.app.get(
             self.project.web_url_for('token_action', token=rej_token),
             auth=unauthorized_user.auth,
-            expect_errors=True,
         )
         assert (res.status_code) == (401)
 
@@ -1059,13 +1035,11 @@ class RegistrationEmbargoApprovalDisapprovalViewsTestCase(OsfTestCase):
         res = self.app.get(
             self.project.web_url_for('token_action', token=rej_token),
             auth=self.user.auth,
-            expect_errors=True,
         )
         assert (res.status_code) == (410)
         res = self.app.get(
             self.registration.web_url_for('token_action'),
             auth=self.user.auth,
-            expect_errors=True,
         )
         assert (res.status_code) == (410)
 
@@ -1210,7 +1184,7 @@ class RegistrationEmbargoViewsTestCase(OsfTestCase):
         approval_token = self.registration.embargo.approval_state[self.user._id]['approval_token']
         approval_url = self.registration.web_url_for('token_action', token=approval_token)
 
-        res = self.app.get(approval_url, auth=non_contributor.auth, expect_errors=True)
+        res = self.app.get(approval_url, auth=non_contributor.auth)
         self.registration.reload()
         assert (http_status.HTTP_401_UNAUTHORIZED) == (res.status_code)
         assert (self.registration.is_pending_embargo)
@@ -1228,7 +1202,7 @@ class RegistrationEmbargoViewsTestCase(OsfTestCase):
         rejection_token = self.registration.embargo.approval_state[self.user._id]['rejection_token']
         approval_url = self.registration.web_url_for('token_action', token=rejection_token)
 
-        res = self.app.get(approval_url, auth=non_contributor.auth, expect_errors=True)
+        res = self.app.get(approval_url, auth=non_contributor.auth)
         assert (http_status.HTTP_401_UNAUTHORIZED) == (res.status_code)
         assert (self.registration.is_pending_embargo)
         assert (self.registration.embargo.state) == (Embargo.UNAPPROVED)

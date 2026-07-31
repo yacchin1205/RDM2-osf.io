@@ -52,7 +52,7 @@ class TestSloanMetrics(OsfTestCase):
             metrics={'uri': settings.MFR_SERVER_URL},
             provider='osfstorage'), **kwargs),
             'exp': timezone.now() + datetime.timedelta(seconds=settings.WATERBUTLER_JWT_EXPIRATION),
-        }, settings.WATERBUTLER_JWT_SECRET, algorithm=settings.WATERBUTLER_JWT_ALGORITHM), self.JWE_KEY)}
+        }, settings.WATERBUTLER_JWT_SECRET, algorithm=settings.WATERBUTLER_JWT_ALGORITHM).encode(), self.JWE_KEY)}
         return api_url_for('get_auth', **options)
 
     @mock.patch('osf.metrics.PreprintDownload.record_for_preprint')

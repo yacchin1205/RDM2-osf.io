@@ -78,7 +78,7 @@ class TestContributorSearch(OsfTestCase):
 
     def test_search_contributors_from_my_institutions_after_rebuild_search(self):
         migrate(delete=False, remove=False,
-                index=None, app=self.app.app)
+                index=None, app=self.app.application)
         # after migrate (= rebuild_search)
         self.test_search_contributors_from_my_institutions()
 
@@ -94,7 +94,7 @@ class TestContributorSearch(OsfTestCase):
         email2.address = 'test@example.com'
         email2.save()
         migrate(delete=False, remove=False,
-                index=None, app=self.app.app)
+                index=None, app=self.app.application)
         time.sleep(10)
         contribs = search.search_contributor(
             email2.address,
@@ -221,7 +221,7 @@ class TestSearchMigrationNormalizedField(OsfTestCase):
         self.search_project(self.TOTAL_PROJECTS)
 
         migrate(delete=False, remove=True,
-                index=None, app=self.app.app)
+                index=None, app=self.app.application)
         # after migrate (= rebuild_search)
         self.search_contrib(self.TOTAL_USERS)
         self.search_project(self.TOTAL_PROJECTS)
@@ -229,7 +229,7 @@ class TestSearchMigrationNormalizedField(OsfTestCase):
     def test_rebuild_search_check_not_normalized(self):
         with mock.patch('website.search_migration.migrate.fill_and_normalize'):
             migrate(delete=False, remove=True,
-                    index=None, app=self.app.app)
+                    index=None, app=self.app.application)
             # after migrate (= rebuild_search)
 
         self.search_contrib(0)

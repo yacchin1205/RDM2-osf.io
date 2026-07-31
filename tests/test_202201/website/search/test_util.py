@@ -55,7 +55,7 @@ class TestContributorSearch(OsfTestCase):
         email2.address = 'test@example.com'
         email2.save()
         migrate(delete=False, remove=False,
-                index=None, app=self.app.app)
+                index=None, app=self.app.application)
         time.sleep(10)
         contribs = search.search_contributor(
             email2.address,

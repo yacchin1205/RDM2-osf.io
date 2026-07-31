@@ -182,7 +182,7 @@ def use_ja_analyzer(func):
 
     return wrapped
 
-def setup(cls, self, create_obj=True):
+def setup_search_test(cls, self, create_obj=True):
     super(cls, self).setUp()
     search.delete_all()
     search.create_index(None)
@@ -292,30 +292,27 @@ def query_private_search(self, qs, user, category=None, version=1, sort=None):
     if category:
         url = url + category + '/'
     DEBUG('query_private_search: url=', url)
-    res = self.app.post_json(
+    res = self.app.post(
         url,
-        build_private_search_query(qs, version=version, sort=sort),
-        auth=user.auth,
-        expect_errors=True
+        json=build_private_search_query(qs, version=version, sort=sort),
+        auth=user.auth
     )
     DEBUG('query_private_search: res=', res.json)
     return res, res.json.get('results')
 
 def query_public_search(self, qs, user):
-    res = self.app.post_json(
+    res = self.app.post(
         api_url_for('search_search'),
-        build_query(qs),
-        auth=user.auth,
-        expect_errors=True
+        json=build_query(qs),
+        auth=user.auth
     )
     return res, res.json.get('results')
 
 def query_search_contributor(self, qs, user):
     res = self.app.get(
         api_url_for('search_contributor'),
-        {'query': qs, 'page': 0, 'size': 100},
-        auth=user.auth,
-        expect_errors=True
+        query_string={'query': qs, 'page': 0, 'size': 100},
+        auth=user.auth
     )
     DEBUG('query_search_contributor', res)
     return res, res.json.get('users')
@@ -361,7 +358,7 @@ def retry_call_func(func, **kwargs):
 @enable_private_search
 def rebuild_search(self_):
     migrate(delete=False, remove=True,
-            index=None, app=self_.app.app)
+            index=None, app=self_.app.application)
 
 def run_after_rebuild_search(self_, func, **kwargs):
     # _use_migrate = False の場合は rebuild_search を実行しない。
@@ -407,7 +404,7 @@ class TestSearchJapanese(OsfTestCase):
     @enable_private_search
     @use_ja_analyzer
     def setUp(self):
-        setup(TestSearchJapanese, self, create_obj=False)
+        setup_search_test(TestSearchJapanese, self, create_obj=False)
 
     @enable_private_search
     @use_ja_analyzer
@@ -781,7 +778,7 @@ class TestSearchBugfix(OsfTestCase):
     @enable_private_search
     @use_ja_analyzer
     def setUp(self):
-        setup(TestSearchBugfix, self, create_obj=False)
+        setup_search_test(TestSearchBugfix, self, create_obj=False)
 
     @enable_private_search
     @use_ja_analyzer
@@ -1058,7 +1055,7 @@ class TestPrivateSearch(OsfTestCase):
 
     @enable_private_search
     def setUp(self):
-        setup(TestPrivateSearch, self)
+        setup_search_test(TestPrivateSearch, self)
 
     @enable_private_search
     def tearDown(self):
@@ -1835,11 +1832,10 @@ class TestPrivateSearch(OsfTestCase):
             return build_query(query_string)
 
         def bad_request(query):
-            res = self.app.post_json(
+            res = self.app.post(
                 api_url_for('search_search'),
-                query,
-                auth=self.user1.auth,
-                expect_errors=True
+                json=query,
+                auth=self.user1.auth
             )
             assert (res.status_code) == (400)
 
@@ -1856,18 +1852,16 @@ class TestPrivateSearch(OsfTestCase):
         検索ページの場合は、リダイレクトすることを確認する。
         """
         qs = 'てすと'
-        res = self.app.post_json(
+        res = self.app.post(
             api_url_for('search_search'),
-            build_private_search_query(qs),
-            auth=None,
-            expect_errors=True
+            json=build_private_search_query(qs),
+            auth=None
         )
         assert (res.status_code) == (401)  # Unauthorized
 
         res = self.app.get(
             api_url_for('search_search'),
-            auth=None,
-            expect_errors=True
+            auth=None
         )
         assert (res.status_code) == (401)  # Unauthorized
 
@@ -1894,7 +1888,7 @@ class TestSearchExt(OsfTestCase):
 
     @enable_private_search
     def setUp(self):
-        setup(TestSearchExt, self)
+        setup_search_test(TestSearchExt, self)
 
     @enable_private_search
     def tearDown(self):
@@ -2112,7 +2106,7 @@ class TestSearchHighlight(OsfTestCase):
 
     @enable_private_search
     def setUp(self):
-        setup(TestSearchHighlight, self, create_obj=False)
+        setup_search_test(TestSearchHighlight, self, create_obj=False)
 
     @enable_private_search
     def tearDown(self):
@@ -2500,7 +2494,7 @@ class TestSearchSort(OsfTestCase):
 
     @enable_private_search
     def setUp(self):
-        setup(TestSearchSort, self, create_obj=False)
+        setup_search_test(TestSearchSort, self, create_obj=False)
 
     @enable_private_search
     def tearDown(self):
@@ -2762,7 +2756,7 @@ class TestSearchSort(OsfTestCase):
 class TestOriginalSearch(OsfTestCase):
 
     def setUp(self):
-        setup(TestOriginalSearch, self)
+        setup_search_test(TestOriginalSearch, self)
 
     def tearDown(self):
         tear_down(TestOriginalSearch, self)

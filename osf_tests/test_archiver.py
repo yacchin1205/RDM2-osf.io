@@ -493,13 +493,11 @@ class TestArchiverTasks(ArchiverTestCase):
         with mock.patch.object(BaseStorageAddon, '_get_file_tree') as mock_file_tree:
             mock_file_tree.return_value = FILE_TREE
             results = [stat_addon(addon, self.archive_job._id) for addon in ['osfstorage']]
-        with mock.patch.object(celery, 'group') as mock_group:
-            archive_node(results, self.archive_job._id)
-        archive_osfstorage_signature = archive_addon.si(
-            'osfstorage',
-            self.archive_job._id
+        archive_node(results, self.archive_job._id)
+        mock_archive_addon.assert_called_with(
+            addon_short_name='osfstorage',
+            job_pk=self.archive_job._id,
         )
-        assert(mock_group.called_with(archive_osfstorage_signature))
 
     @use_fake_addons
     def test_archive_node_fail(self):
@@ -537,38 +535,36 @@ class TestArchiverTasks(ArchiverTestCase):
         with mock.patch.object(BaseStorageAddon, '_get_file_tree') as mock_file_tree:
             mock_file_tree.return_value = FILE_TREE
             results = [stat_addon(addon, self.archive_job._id) for addon in ['osfstorage', 'dropbox']]
-        with mock.patch.object(celery, 'group') as mock_group:
-            archive_node(results, self.archive_job._id)
-        archive_dropbox_signature = archive_addon.si(
-            'dropbox',
-            self.archive_job._id
+        archive_node(results, self.archive_job._id)
+        mock_archive_addon.assert_called_with(
+            addon_short_name='dropbox',
+            job_pk=self.archive_job._id,
         )
-        assert(mock_group.called_with(archive_dropbox_signature))
 
     @mock.patch('website.archiver.tasks.make_copy_request.delay')
     def test_archive_addon(self, mock_make_copy_request):
         archive_addon('osfstorage', self.archive_job._id)
         assert (self.archive_job.get_target('osfstorage').status) == (ARCHIVER_INITIATED)
         cookie = self.user.get_or_create_cookie()
-        assert(mock_make_copy_request.called_with(
-            self.archive_job._id,
-            settings.WATERBUTLER_URL + '/ops/copy',
-            data=dict(
-                source=dict(
-                    cookie=cookie,
-                    nid=self.src._id,
-                    provider='osfstorage',
-                    path='/',
-                ),
-                destination=dict(
-                    cookie=cookie,
-                    nid=self.dst._id,
-                    provider=settings.ARCHIVE_PROVIDER,
-                    path='/',
-                ),
-                rename='Archive of OSF Storage',
-            )
-        ))
+        source_provider = self.src.get_addon('osfstorage')
+        expected_url = waterbutler_api_url_for(
+            self.src._id,
+            'osfstorage',
+            _internal=True,
+            base_url=self.src.osfstorage_region.waterbutler_url,
+            cookie=cookie.decode(),
+        )
+        mock_make_copy_request.assert_called_with(
+            job_pk=self.archive_job._id,
+            url=expected_url,
+            data={
+                'action': 'copy',
+                'path': '/',
+                'rename': source_provider.archive_folder_name,
+                'resource': self.archive_job.info()[1]._id,
+                'provider': 'osfstorage',
+            },
+        )
 
     def test_archive_success(self):
         node = factories.NodeFactory(creator=self.user)

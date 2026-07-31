@@ -25,7 +25,7 @@ class TestUpdateUser(OsfTestCase):
                               'confirmed': True},
                              {'address': email, 'primary': False,
                               'confirmed': False}]}
-        res = self.app.put_json(url, header, auth=self.user.auth)
+        res = self.app.put(url, json=header, auth=self.user.auth)
         assert (res.status_code) == (200)
         assert ('emails') in (res.json['profile'])
         assert (len(res.json['profile']['emails'])) == (2)
@@ -42,7 +42,7 @@ class TestUpdateUser(OsfTestCase):
                               'confirmed': True},
                              {'address': existing_user.username,
                               'primary': False, 'confirmed': False}]}
-        res = self.app.put_json(url, header, auth=self.user.auth, expect_errors=True)
+        res = self.app.put(url, json=header, auth=self.user.auth)
         assert (res.status_code) == (400)
         assert (res.json['message_long']) in ('Existing email address')
         assert (send_mail.call_count) == (0)
@@ -65,7 +65,7 @@ class TestUpdateUser(OsfTestCase):
                               'confirmed': True},
                              {'address': unreg_user.username,
                               'primary': False, 'confirmed': False}]}
-        res = self.app.put_json(url, header, auth=self.user.auth, expect_errors=True)
+        res = self.app.put(url, json=header, auth=self.user.auth)
         assert (res.status_code) == (400)
         assert (res.json['message_long']) in ('Existing email address')
         assert (send_mail.call_count) == (0)
@@ -81,7 +81,7 @@ class TestUpdateUser(OsfTestCase):
                               'primary': True, 'confirmed': True},
                              {'address': existing_user.username,
                               'primary': False, 'confirmed': False}]}
-        res = self.app.put_json(url, header, auth=self.user.auth, expect_errors=True)
+        res = self.app.put(url, json=header, auth=self.user.auth)
         assert (res.status_code) == (200)
         assert ('emails') in (res.json['profile'])
         assert (send_mail.call_count) == (1)

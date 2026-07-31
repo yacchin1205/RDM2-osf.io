@@ -2,9 +2,8 @@
 # -*- coding: utf-8 -*-
 import pytest
 import unittest
-from webtest_plus import TestApp as WebtestApp  # py.test tries to collect `TestApp`
 from unittest import mock
-from future.moves.urllib.parse import urlparse, urljoin, quote
+from future.moves.urllib.parse import urlparse, urljoin, quote_plus
 from rest_framework import status as http_status
 
 from flask import Flask
@@ -80,8 +79,8 @@ class TestAuthUtils(OsfTestCase):
         user.reload()
         token = user.get_confirmation_token(user.username)
 
-        res = self.app.get('/confirm/{}/{}'.format(user._id, token), allow_redirects=False)
-        res = res.follow()
+        res = self.app.get('/confirm/{}/{}'.format(user._id, token))
+        res = self.app.resolve_redirect(res)
 
         assert (res.status_code) == (302)
         assert ('login?service=') in (res.location)
@@ -101,7 +100,7 @@ class TestAuthUtils(OsfTestCase):
         self.app.set_cookie(settings.COOKIE_NAME, user.get_or_create_cookie().decode())
         res = self.app.get('/confirm/{}/{}'.format(user._id, token))
 
-        res = res.follow()
+        res = self.app.resolve_redirect(res)
 
         assert (res.status_code) == (302)
         assert ('/') == (urlparse(res.location).path)
@@ -138,12 +137,10 @@ class TestAuthUtils(OsfTestCase):
         ticket = fake.md5()
         resp = cas.make_response_from_ticket(ticket, service_url)
         assert (resp.status_code) == (302), ('redirect to CAS login')
-        assert ('/login?service=') in (resp.location)
+        assert (quote_plus('/login?service=')) in (resp.location)
 
-        # the valid username will be double quoted as it is furl quoted in both get_login_url and get_logout_url in order
-        username_quoted = quote(quote(user.username, safe='@'), safe='@')
-        assert ('username={}'.format(username_quoted)) in (resp.location)
-        assert ('verification_key={}'.format(user.verification_key)) in (resp.location)
+        assert (quote_plus('username={}'.format(quote_plus(user.username)))) in (resp.location)
+        assert (quote_plus('verification_key={}'.format(quote_plus(user.verification_key)))) in (resp.location)
 
     @mock.patch('framework.auth.cas.get_user_from_cas_resp')
     @mock.patch('framework.auth.cas.CasClient.service_validate')
@@ -229,7 +226,7 @@ class TestAuthUtils(OsfTestCase):
             'password': 'brutusisajerk'
         }
 
-        self.app.post_json(url, sign_up_data)
+        self.app.post(url, json=sign_up_data)
         assert (len(mock_mail.call_args_list)) == (1)
         args, kwargs = mock_mail.call_args
         assert (args) == ((
@@ -238,7 +235,7 @@ class TestAuthUtils(OsfTestCase):
             'html'
         ))
 
-        self.app.post_json(url, sign_up_data)
+        self.app.post(url, json=sign_up_data)
         assert (len(mock_mail.call_args_list)) == (2)
         args, kwargs = mock_mail.call_args
         assert (args) == ((
@@ -286,7 +283,7 @@ class TestPrivateLink(OsfTestCase):
         def project_get(**kwargs):
             return 'success', 200
 
-        self.app = WebtestApp(self.flaskapp)
+        self.app = self.flaskapp.test_client()
 
         self.user = AuthUserFactory()
         self.project = ProjectFactory(is_public=False)
@@ -298,16 +295,15 @@ class TestPrivateLink(OsfTestCase):
     def test_has_private_link_key(self, mock_from_kwargs):
         mock_from_kwargs.return_value = Auth(user=None)
         res = self.app.get('/project/{0}'.format(self.project._primary_key),
-            {'view_only': self.link.key})
-        res = res.follow()
+            query_string={'view_only': self.link.key}, follow_redirects=True)
         assert (res.status_code) == (200)
-        assert (res.body.decode()) == ('success')
+        assert (res.text) == ('success')
 
     @mock.patch('website.project.decorators.Auth.from_kwargs')
     def test_does_not_have_key(self, mock_from_kwargs):
         mock_from_kwargs.return_value = Auth(user=None)
         res = self.app.get('/project/{0}'.format(self.project._primary_key),
-            {'key': None})
+            query_string={'key': None})
         assert_is_redirect(res)
 
 
@@ -426,7 +422,7 @@ class TestMustBeContributorDecorator(AuthAppTestCase):
                 nid=node._id,
                 user=self.public_project.creator,
             )
-        assert (exc_info.exception.code) == (403)
+        assert (exc_info.value.code) == (403)
 
     def test_must_be_contributor_parent_write_private_project(self):
         user = UserFactory()
@@ -439,7 +435,7 @@ class TestMustBeContributorDecorator(AuthAppTestCase):
                 nid=node._id,
                 user=self.private_project.creator,
             )
-        assert (exc_info.exception.code) == (403)
+        assert (exc_info.value.code) == (403)
 
 
 @must_be_contributor_or_public
@@ -535,7 +531,7 @@ class TestMustBeContributorOrPublicDecorator(AuthAppTestCase):
                 nid=node._id,
                 user=contrib,
             )
-        assert (exc_info.exception.code) == (403)
+        assert (exc_info.value.code) == (403)
 
     def test_must_be_contributor_parent_write_private_project(self):
         user = UserFactory()
@@ -549,7 +545,7 @@ class TestMustBeContributorOrPublicDecorator(AuthAppTestCase):
                 nid=node._id,
                 user=contrib,
             )
-        assert (exc_info.exception.code) == (403)
+        assert (exc_info.value.code) == (403)
 
 
 @must_be_contributor_or_public_but_not_anonymized
@@ -583,7 +579,7 @@ class TestMustBeContributorOrPublicButNotAnonymizedDecorator(AuthAppTestCase):
         @must_be_contributor_or_public_but_not_anonymized
         def project_get(**kwargs):
             return 'success', 200
-        self.app = WebtestApp(self.flaskapp)
+        self.app = self.flaskapp.test_client()
 
     def test_must_be_contributor_when_user_is_contributor_and_public_project(self):
         result = view_that_needs_contributor_or_public_but_not_anonymized(
@@ -659,7 +655,7 @@ class TestMustBeContributorOrPublicButNotAnonymizedDecorator(AuthAppTestCase):
                 nid=node._id,
                 user=self.public_project.creator,
             )
-        assert (exc_info.exception.code) == (403)
+        assert (exc_info.value.code) == (403)
 
     def test_must_be_contributor_parent_write_private_project(self):
         user = UserFactory()
@@ -672,22 +668,22 @@ class TestMustBeContributorOrPublicButNotAnonymizedDecorator(AuthAppTestCase):
                 nid=node._id,
                 user=self.private_project.creator,
             )
-        assert (exc_info.exception.code) == (403)
+        assert (exc_info.value.code) == (403)
 
     @mock.patch('website.project.decorators.Auth.from_kwargs')
     def test_decorator_does_allow_anonymous_link_public_project(self, mock_from_kwargs):
         mock_from_kwargs.return_value = Auth(user=None)
         res = self.app.get('/project/{0}'.format(self.public_project._primary_key),
-            {'view_only': self.anonymized_link_to_public_project.key})
-        res = res.follow()
+            query_string={'view_only': self.anonymized_link_to_public_project.key},
+            follow_redirects=True)
         assert (res.status_code) == (200)
 
     @mock.patch('website.project.decorators.Auth.from_kwargs')
     def test_decorator_does_not_allow_anonymous_link_private_project(self, mock_from_kwargs):
         mock_from_kwargs.return_value = Auth(user=None)
         res = self.app.get('/project/{0}'.format(self.private_project._primary_key),
-                           {'view_only': self.anonymized_link_to_private_project.key})
-        res = res.follow(expect_errors=True)
+                           query_string={'view_only': self.anonymized_link_to_private_project.key},
+                           follow_redirects=True)
         assert (res.status_code) == (500)
 
 @must_be_logged_in
@@ -736,7 +732,7 @@ class TestPermissionDecorators(AuthAppTestCase):
         mock_to_nodes.return_value = (None, project)
         with pytest.raises(HTTPError) as ctx:
             thriller(node=project)
-        assert (ctx.exception.code) == (http_status.HTTP_403_FORBIDDEN)
+        assert (ctx.value.code) == (http_status.HTTP_403_FORBIDDEN)
 
     @mock.patch('website.project.decorators._kwargs_to_nodes')
     @mock.patch('framework.auth.decorators.Auth.from_kwargs')
@@ -746,7 +742,7 @@ class TestPermissionDecorators(AuthAppTestCase):
         mock_to_nodes.return_value = (None, project)
         with pytest.raises(HTTPError) as ctx:
             thriller(node=project)
-        assert (ctx.exception.code) == (http_status.HTTP_401_UNAUTHORIZED)
+        assert (ctx.value.code) == (http_status.HTTP_401_UNAUTHORIZED)
 
 
 def needs_addon_view(**kwargs):

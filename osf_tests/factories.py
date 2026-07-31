@@ -56,8 +56,7 @@ class UserFactory(DjangoModelFactory):
     fullname = factory.Sequence(lambda n: 'Freddie Mercury{0}'.format(n))
 
     username = factory.LazyFunction(fake_email)
-    password = factory.PostGenerationMethodCall('set_password',
-                                                'queenfan86')
+    password = factory.PostGenerationMethodCall('set_password', 'queenfan86', notify=False)
     is_registered = True
     date_confirmed = factory.Faker('date_time_this_decade', tzinfo=pytz.utc)
     merged_by = None
@@ -70,10 +69,8 @@ class UserFactory(DjangoModelFactory):
     def _build(cls, target_class, *args, **kwargs):
         emails = kwargs.pop('emails', [])
         instance = super(DjangoModelFactory, cls)._build(target_class, *args, **kwargs)
-        if emails:
-            # Save for M2M population
-            instance.set_unusable_password()
-            instance.save()
+        instance.set_unusable_password()
+        instance.save()
         for email in emails:
             instance.emails.create(address=email)
         return instance
@@ -82,10 +79,8 @@ class UserFactory(DjangoModelFactory):
     def _create(cls, target_class, *args, **kwargs):
         emails = kwargs.pop('emails', [])
         instance = super(DjangoModelFactory, cls)._create(target_class, *args, **kwargs)
-        if emails and not instance.pk:
-            # Save for M2M population
-            instance.set_unusable_password()
-            instance.save()
+        instance.set_unusable_password()
+        instance.save()
         for email in emails:
             instance.emails.create(address=email)
         return instance

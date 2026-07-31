@@ -300,6 +300,8 @@ def get_auth(auth, **kwargs):
                 return json_renderer(err)
             if cas_resp.authenticated:
                 auth.user = OSFUser.load(cas_resp.user)
+            else:
+                raise HTTPError(http_status.HTTP_403_FORBIDDEN)
 
     # get data payload
     try:
@@ -307,7 +309,7 @@ def get_auth(auth, **kwargs):
             jwe.decrypt(request.args.get('payload', '').encode('utf-8'), WATERBUTLER_JWE_KEY),
             settings.WATERBUTLER_JWT_SECRET,
             options={'require_exp': True},
-            algorithm=settings.WATERBUTLER_JWT_ALGORITHM
+            algorithms=[settings.WATERBUTLER_JWT_ALGORITHM]
         )['data']
     except (jwt.InvalidTokenError, KeyError) as err:
         sentry.log_message(str(err))
@@ -464,7 +466,7 @@ def get_auth(auth, **kwargs):
                     'data': payload_data
                 },
                 settings.WATERBUTLER_JWT_SECRET,
-                algorithm=settings.WATERBUTLER_JWT_ALGORITHM),
+                algorithm=settings.WATERBUTLER_JWT_ALGORITHM).encode(),
             WATERBUTLER_JWE_KEY
         ).decode()
     }

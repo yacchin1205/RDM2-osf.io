@@ -103,13 +103,13 @@ class TestAddonAuth(OsfTestCase):
             metrics={'uri': settings.MFR_SERVER_URL},
             provider=self.node_addon.config.short_name), **kwargs),
             'exp': timezone.now() + datetime.timedelta(seconds=settings.WATERBUTLER_JWT_EXPIRATION),
-        }, settings.WATERBUTLER_JWT_SECRET, algorithm=settings.WATERBUTLER_JWT_ALGORITHM), self.JWE_KEY)}
+        }, settings.WATERBUTLER_JWT_SECRET, algorithm=settings.WATERBUTLER_JWT_ALGORITHM).encode(), self.JWE_KEY)}
         return api_url_for('get_auth', **options)
 
     def test_auth_download(self):
         url = self.build_url()
         res = self.app.get(url, auth=self.user.auth)
-        data = jwt.decode(jwe.decrypt(res.json['payload'].encode('utf-8'), self.JWE_KEY), settings.WATERBUTLER_JWT_SECRET, algorithm=settings.WATERBUTLER_JWT_ALGORITHM)['data']
+        data = jwt.decode(jwe.decrypt(res.json['payload'].encode('utf-8'), self.JWE_KEY), settings.WATERBUTLER_JWT_SECRET, algorithms=[settings.WATERBUTLER_JWT_ALGORITHM])['data']
         assert (data['auth']) == (views.make_auth(self.user))
         assert (data['credentials']) == (self.node_addon.serialize_waterbutler_credentials())
         assert (data['settings']) == (self.node_addon.serialize_waterbutler_settings())
@@ -126,7 +126,7 @@ class TestAddonAuth(OsfTestCase):
     def test_auth_render_action_requires_read_permission(self):
         node = ProjectFactory(is_public=False)
         url = self.build_url(action='render', nid=node._id)
-        res = self.app.get(url, auth=self.user.auth, expect_errors=True)
+        res = self.app.get(url, auth=self.user.auth)
         assert (res.status_code) == (403)
 
     def test_auth_export_action_returns_200(self):
@@ -137,19 +137,19 @@ class TestAddonAuth(OsfTestCase):
     def test_auth_export_action_requires_read_permission(self):
         node = ProjectFactory(is_public=False)
         url = self.build_url(action='export', nid=node._id)
-        res = self.app.get(url, auth=self.user.auth, expect_errors=True)
+        res = self.app.get(url, auth=self.user.auth)
         assert (res.status_code) == (403)
 
     def test_auth_missing_args(self):
         url = self.build_url(cookie=None)
-        res = self.app.get(url, expect_errors=True)
+        res = self.app.get(url)
         assert (res.status_code) == (401)
 
     def test_auth_bad_cookie(self):
         url = self.build_url(cookie=self.cookie)
-        res = self.app.get(url, expect_errors=True)
+        res = self.app.get(url)
         assert (res.status_code) == (200)
-        data = jwt.decode(jwe.decrypt(res.json['payload'].encode('utf-8'), self.JWE_KEY), settings.WATERBUTLER_JWT_SECRET, algorithm=settings.WATERBUTLER_JWT_ALGORITHM)['data']
+        data = jwt.decode(jwe.decrypt(res.json['payload'].encode('utf-8'), self.JWE_KEY), settings.WATERBUTLER_JWT_SECRET, algorithms=[settings.WATERBUTLER_JWT_ALGORITHM])['data']
         assert (data['auth']) == (views.make_auth(self.user))
         assert (data['credentials']) == (self.node_addon.serialize_waterbutler_credentials())
         assert (data['settings']) == (self.node_addon.serialize_waterbutler_settings())
@@ -160,12 +160,12 @@ class TestAddonAuth(OsfTestCase):
 
     def test_auth_cookie(self):
         url = self.build_url(cookie=self.cookie[::-1])
-        res = self.app.get(url, expect_errors=True)
+        res = self.app.get(url)
         assert (res.status_code) == (401)
 
     def test_auth_missing_addon(self):
         url = self.build_url(provider='queenhub')
-        res = self.app.get(url, expect_errors=True, auth=self.user.auth)
+        res = self.app.get(url, auth=self.user.auth)
         assert (res.status_code) == (400)
 
     def test_auth_missing_action(self):
@@ -174,16 +174,16 @@ class TestAddonAuth(OsfTestCase):
             metrics={'uri': settings.MFR_SERVER_URL},
             provider=self.node_addon.config.short_name)),
             'exp': timezone.now() + datetime.timedelta(seconds=settings.WATERBUTLER_JWT_EXPIRATION),
-        }, settings.WATERBUTLER_JWT_SECRET, algorithm=settings.WATERBUTLER_JWT_ALGORITHM), self.JWE_KEY)}
+        }, settings.WATERBUTLER_JWT_SECRET, algorithm=settings.WATERBUTLER_JWT_ALGORITHM).encode(), self.JWE_KEY)}
         url = api_url_for('get_auth', **options)
-        res = self.app.get(url, expect_errors=True, auth=self.user.auth)
+        res = self.app.get(url, auth=self.user.auth)
         assert (res.status_code) == (400)
 
     @mock.patch('addons.base.views.cas.get_client')
     def test_auth_bad_bearer_token(self, mock_cas_client):
         mock_cas_client.return_value = mock.Mock(profile=mock.Mock(return_value=cas.CasResponse(authenticated=False)))
         url = self.build_url()
-        res = self.app.get(url, headers={'Authorization': 'Bearer invalid_access_token'}, expect_errors=True)
+        res = self.app.get(url, headers={'Authorization': 'Bearer invalid_access_token'})
         assert (res.status_code) == (403)
 
     def test_action_downloads_marks_version_as_seen(self):
@@ -256,7 +256,7 @@ class TestAddonAuth(OsfTestCase):
             cookie=self.cookie[::-1],
             nid=ExportData.EXPORT_DATA_FAKE_NODE_ID,
         )
-        res = self.app.get(url, auth=self.user.auth, expect_errors=True)
+        res = self.app.get(url, auth=self.user.auth)
         assert (res.status_code) == (400)
 
     def test_auth__with_fake_node__not_allowed_location_id(self):
@@ -265,7 +265,7 @@ class TestAddonAuth(OsfTestCase):
             nid=ExportData.EXPORT_DATA_FAKE_NODE_ID,
             location_id=1,
         )
-        res = self.app.get(url, auth=self.user.auth, expect_errors=True)
+        res = self.app.get(url, auth=self.user.auth)
         assert (res.status_code) == (403)
 
     def test_auth__with_fake_node__default_location_id(self):
@@ -278,12 +278,12 @@ class TestAddonAuth(OsfTestCase):
             location_id=location.id,
             metrics={'uri': settings.MFR_SERVER_URL+'?callback_log=False'},
         )
-        res = self.app.get(url, auth=self.user.auth, expect_errors=True)
+        res = self.app.get(url, auth=self.user.auth)
         assert (res.status_code) == (200)
         data = jwt.decode(
             jwe.decrypt(res.json['payload'].encode('utf-8'), self.JWE_KEY),
             settings.WATERBUTLER_JWT_SECRET,
-            algorithm=settings.WATERBUTLER_JWT_ALGORITHM
+            algorithms=[settings.WATERBUTLER_JWT_ALGORITHM]
         )['data']
         assert (data['auth']) == (views.make_auth(self.user))
         assert (data['credentials']) == ({})
@@ -291,7 +291,6 @@ class TestAddonAuth(OsfTestCase):
         assert (data['callback_url']) == ('')
 
     def test_auth__user_is_None(self):
-        none_auth = Auth()
         # default location
         location = ExportDataLocationFactory(institution_guid=Institution.INSTITUTION_DEFAULT)
 
@@ -301,7 +300,7 @@ class TestAddonAuth(OsfTestCase):
             location_id=location.id,
             metrics={'uri': settings.MFR_SERVER_URL + '?callback_log=False'},
         )
-        res = self.app.get(url, auth=none_auth, expect_errors=True)
+        res = self.app.get(url)
         assert (res.status_code) == (401)
 
 
@@ -399,7 +398,7 @@ class TestAddonLogs(OsfTestCase):
         })
         nlogs = self.node.logs.count()
 
-        self.app.put_json(url, payload, headers={'Content-Type': 'application/json'})
+        self.app.put(url, json=payload, headers={'Content-Type': 'application/json'})
         self.node.reload()
         assert (self.node.logs.count()) == (nlogs + 1)
         nodelog_count2 = NodeLog.objects.all().count()
@@ -437,7 +436,7 @@ class TestAddonLogs(OsfTestCase):
             }
         })
         nlogs = self.node.logs.count()
-        self.app.put_json(url, payload, headers={'Content-Type': 'application/json'})
+        self.app.put(url, json=payload, headers={'Content-Type': 'application/json'})
         self.node.reload()
         assert (self.node.logs.count()) == (nlogs + 1)
         # # Mocking form_message and perform so that the payload need not be exact.
@@ -464,7 +463,7 @@ class TestAddonLogs(OsfTestCase):
                 'version': '1'
             }
         }, provider='osfstorage')
-        resp = self.app.put_json(url, payload, headers={'Content-Type': 'application/json'})
+        resp = self.app.put(url, json=payload, headers={'Content-Type': 'application/json'})
         assert resp.status_code == 200
 
     def test_add_log_missing_args(self):
@@ -472,11 +471,10 @@ class TestAddonLogs(OsfTestCase):
         url = self.node.api_url_for('create_waterbutler_log')
         payload = self.build_payload(metadata={'path': path}, auth=None)
         nlogs = self.node.logs.count()
-        res = self.app.put_json(
+        res = self.app.put(
             url,
-            payload,
+            json=payload,
             headers={'Content-Type': 'application/json'},
-            expect_errors=True,
         )
         assert (res.status_code) == (400)
         self.node.reload()
@@ -487,11 +485,10 @@ class TestAddonLogs(OsfTestCase):
         url = self.node.api_url_for('create_waterbutler_log')
         payload = self.build_payload(metadata={'path': path}, auth={'id': None})
         nlogs = self.node.logs.count()
-        res = self.app.put_json(
+        res = self.app.put(
             url,
-            payload,
+            json=payload,
             headers={'Content-Type': 'application/json'},
-            expect_errors=True,
         )
         assert (res.status_code) == (400)
         self.node.reload()
@@ -503,11 +500,10 @@ class TestAddonLogs(OsfTestCase):
         url = node.api_url_for('create_waterbutler_log')
         payload = self.build_payload(metadata={'path': path})
         nlogs = node.logs.count()
-        res = self.app.put_json(
+        res = self.app.put(
             url,
-            payload,
+            json=payload,
             headers={'Content-Type': 'application/json'},
-            expect_errors=True,
         )
         assert (res.status_code) == (400)
         self.node.reload()
@@ -518,11 +514,10 @@ class TestAddonLogs(OsfTestCase):
         url = self.node.api_url_for('create_waterbutler_log')
         payload = self.build_payload(metadata={'path': path}, action='dance')
         nlogs = self.node.logs.count()
-        res = self.app.put_json(
+        res = self.app.put(
             url,
-            payload,
+            json=payload,
             headers={'Content-Type': 'application/json'},
-            expect_errors=True,
         )
         assert (res.status_code) == (400)
         self.node.reload()
@@ -551,9 +546,9 @@ class TestAddonLogs(OsfTestCase):
                 'kind': 'file',
             },
         )
-        self.app.put_json(
+        self.app.put(
             url,
-            payload,
+            json=payload,
             headers={'Content-Type': 'application/json'}
         )
         self.node.reload()
@@ -573,7 +568,7 @@ class TestAddonLogs(OsfTestCase):
         file_node = create_test_file(node=self.node, user=self.user, filename=filename)
         file_node._path = '/' + filename
         file_node.save()
-        self.app.put_json(wb_log_url, self.build_payload(metadata={
+        self.app.put(wb_log_url, json=self.build_payload(metadata={
             'provider': 'github',
             'name': filename,
             'materialized': '/' + filename,
@@ -593,7 +588,7 @@ class TestAddonLogs(OsfTestCase):
 
         # Rename the file
         newfilename = 'file_ver2'
-        self.app.put_json(wb_log_url, self.build_payload(
+        self.app.put(wb_log_url, json=self.build_payload(
             action='rename',
             metadata={
                 'path': '/' + newfilename,
@@ -636,7 +631,7 @@ class TestAddonLogs(OsfTestCase):
         file_node = create_test_file(node=self.node, user=self.user, filename=filename)
         file_node._path = '/' + filename
         file_node.save()
-        self.app.put_json(wb_log_url, self.build_payload(metadata={
+        self.app.put(wb_log_url, json=self.build_payload(metadata={
             'provider': 'github',
             'name': filename,
             'materialized': filepath,
@@ -656,7 +651,7 @@ class TestAddonLogs(OsfTestCase):
 
         # Rename the folder
         newfoldername = 'folder_ver2'
-        self.app.put_json(wb_log_url, self.build_payload(
+        self.app.put(wb_log_url, json=self.build_payload(
             action='rename',
             metadata={
                 'path': '/' + newfoldername,
@@ -697,7 +692,7 @@ class TestAddonLogs(OsfTestCase):
         file_node = create_test_file(node=self.node, user=self.user, filename=filename)
         file_node._path = '/' + filename
         file_node.save()
-        self.app.put_json(wb_log_url, self.build_payload(metadata={
+        self.app.put(wb_log_url, json=self.build_payload(metadata={
             'provider': 'github',
             'name': filename,
             'materialized': '/' + filename,
@@ -717,7 +712,7 @@ class TestAddonLogs(OsfTestCase):
 
         # Move the file
         movedfilepath = 'cool_folder/' + filename
-        self.app.put_json(wb_log_url, self.build_payload(
+        self.app.put(wb_log_url, json=self.build_payload(
             action='move',
             metadata={
                 'path': '/' + movedfilepath,
@@ -761,7 +756,7 @@ class TestAddonLogs(OsfTestCase):
         file_node = create_test_file(node=self.node, user=self.user, filename=filename)
         file_node._path = '/' + folderpath + filename
         file_node.save()
-        self.app.put_json(wb_log_url, self.build_payload(metadata={
+        self.app.put(wb_log_url, json=self.build_payload(metadata={
             'provider': 'github',
             'name': filename,
             'materialized': '/' + folderpath + filename,
@@ -781,7 +776,7 @@ class TestAddonLogs(OsfTestCase):
 
         # Move the folder
         movedfolderpath = 'trash_bin/{}/'.format(foldername)
-        self.app.put_json(wb_log_url, self.build_payload(
+        self.app.put(wb_log_url, json=self.build_payload(
             action='move',
             metadata={
                 'path': '/' + movedfolderpath,
@@ -823,7 +818,7 @@ class TestAddonLogs(OsfTestCase):
         file_node = create_test_file(node=self.node, user=self.user, filename=filename)
         file_node._path = '/' + filename
         file_node.save()
-        self.app.put_json(wb_log_url, self.build_payload(metadata={
+        self.app.put(wb_log_url, json=self.build_payload(metadata={
             'provider': 'github',
             'name': filename,
             'materialized': '/' + filename,
@@ -842,7 +837,7 @@ class TestAddonLogs(OsfTestCase):
         assert ('/' + filename) == (created_file.path)
 
         # Delete the file
-        self.app.put_json(wb_log_url, self.build_payload(
+        self.app.put(wb_log_url, json=self.build_payload(
             action='delete',
             metadata={
                 'provider': 'github',
@@ -876,7 +871,7 @@ class TestAddonLogs(OsfTestCase):
         file_node = create_test_file(node=self.node, user=self.user, filename=filename)
         file_node._path = '/' + folderpath + filename
         file_node.save()
-        self.app.put_json(wb_log_url, self.build_payload(metadata={
+        self.app.put(wb_log_url, json=self.build_payload(metadata={
             'provider': 'github',
             'name': filename,
             'materialized': '/' + folderpath + filename,
@@ -896,7 +891,7 @@ class TestAddonLogs(OsfTestCase):
 
         # Remove the folder
         movedfolderpath = 'trash_bin/{}/'.format(foldername)
-        self.app.put_json(wb_log_url, self.build_payload(
+        self.app.put(wb_log_url, json=self.build_payload(
             action='delete',
             metadata={
                 'provider': 'github',
@@ -928,7 +923,7 @@ class TestAddonLogs(OsfTestCase):
         file_node = create_test_file(node=self.node, user=self.user, filename=filename)
         file_node._path = '/' + filename
         file_node.save()
-        self.app.put_json(wb_log_url, self.build_payload(metadata={
+        self.app.put(wb_log_url, json=self.build_payload(metadata={
             'provider': 'github',
             'name': filename,
             'materialized': '/' + filename,
@@ -967,11 +962,10 @@ class TestAddonLogs(OsfTestCase):
                                          request_meta={'url': wb_url},
                                          action=action)
             nlogs = self.node.logs.count()
-            res = self.app.put_json(
+            res = self.app.put(
                 url,
-                payload,
+                json=payload,
                 headers={'Content-Type': 'application/json'},
-                expect_errors=False,
             )
             assert (res.status_code) == (200)
 
@@ -998,7 +992,7 @@ class TestAddonLogs(OsfTestCase):
             }
         })
         nlogs = self.node.logs.count()
-        self.app.put_json(url, payload, headers={'Content-Type': 'application/json'})
+        self.app.put(url, json=payload, headers={'Content-Type': 'application/json'})
         self.node.reload()
         assert (self.node.logs.count()) == (nlogs + 1)
         assert('urls' in self.node.logs.filter(action='osf_storage_file_added')[0].params)
@@ -1010,7 +1004,7 @@ class TestAddonLogs(OsfTestCase):
         url = self.node.api_url_for('create_waterbutler_log')
         payload = self.build_payload(metadata={'materialized': path, 'kind': 'folder', 'path': path, 'size': 1000})
         nlogs = self.node.logs.count()
-        self.app.put_json(url, payload, headers={'Content-Type': 'application/json'})
+        self.app.put(url, json=payload, headers={'Content-Type': 'application/json'})
         self.node.reload()
         assert (self.node.logs.count()) == (nlogs + 1)
         assert('urls' not in self.node.logs.filter(action='osf_storage_file_added')[0].params)
@@ -1126,7 +1120,7 @@ class TestAddonLogsDifferentProvider(OsfTestCase):
         file_node = create_test_file(node=self.node, user=self.user, filename=filename)
         file_node._path = '/' + filename
         file_node.save()
-        self.app.put_json(wb_log_url, self.build_payload(metadata={
+        self.app.put(wb_log_url, json=self.build_payload(metadata={
             'provider': src_provider,
             'name': filename,
             'materialized': '/' + filename,
@@ -1147,7 +1141,7 @@ class TestAddonLogsDifferentProvider(OsfTestCase):
 
         # Move the file
         movedfilepath = 'cool_folder/' + filename
-        self.app.put_json(wb_log_url, self.build_payload(
+        self.app.put(wb_log_url, json=self.build_payload(
             action='move',
             metadata={
                 'path': '/' + movedfilepath,
@@ -1202,12 +1196,12 @@ class TestCheckAuth(OsfTestCase):
         user2 = AuthUserFactory()
         with pytest.raises(HTTPError) as exc_info:
             views.check_access(self.node, Auth(user=user2), 'download', None)
-        assert (exc_info.exception.code) == (403)
+        assert (exc_info.value.code) == (403)
 
     def test_not_has_permission_not_logged_in(self):
         with pytest.raises(HTTPError) as exc_info:
             views.check_access(self.node, Auth(), 'download', None)
-        assert (exc_info.exception.code) == (401)
+        assert (exc_info.value.code) == (401)
 
     def test_has_permission_on_parent_node_upload_pass_if_registration(self):
         component_admin = AuthUserFactory()
@@ -1262,7 +1256,7 @@ class TestCheckOAuth(OsfTestCase):
         assert not (component.has_permission(self.user, WRITE))
         with pytest.raises(HTTPError) as exc_info:
             views.check_access(component, Auth(user=self.user), 'download', cas_resp)
-        assert (exc_info.exception.code) == (403)
+        assert (exc_info.value.code) == (403)
 
     def test_has_permission_private_no_scope_forbidden(self):
         component_admin = AuthUserFactory()
@@ -1273,7 +1267,7 @@ class TestCheckOAuth(OsfTestCase):
         assert not (component.has_permission(self.user, WRITE))
         with pytest.raises(HTTPError) as exc_info:
             views.check_access(component, Auth(user=self.user), 'download', cas_resp)
-        assert (exc_info.exception.code) == (403)
+        assert (exc_info.value.code) == (403)
 
     def test_has_permission_public_irrelevant_scope_allowed(self):
         component_admin = AuthUserFactory()
@@ -1294,7 +1288,7 @@ class TestCheckOAuth(OsfTestCase):
         assert not (component.has_permission(self.user, WRITE))
         with pytest.raises(HTTPError) as exc_info:
             views.check_access(component, Auth(user=self.user), 'download', cas_resp)
-        assert (exc_info.exception.code) == (403)
+        assert (exc_info.value.code) == (403)
 
     def test_has_permission_decommissioned_scope_no_error(self):
         component_admin = AuthUserFactory()
@@ -1327,7 +1321,7 @@ class TestCheckOAuth(OsfTestCase):
         assert (component.has_permission(self.user, WRITE))
         with pytest.raises(HTTPError) as exc_info:
             views.check_access(component, Auth(user=self.user), 'upload', cas_resp)
-        assert (exc_info.exception.code) == (403)
+        assert (exc_info.value.code) == (403)
 
 
 def assert_urls_equal(url1, url2):
@@ -1607,7 +1601,7 @@ class TestAddonFileViews(OsfTestCase):
             # First view generated GUID
             self.app.get(url, auth=self.user.auth)
 
-            self.app.get(url + '?version=invalid', auth=self.user.auth, expect_errors=True)
+            self.app.get(url + '?version=invalid', auth=self.user.auth)
 
             assert (BaseFileNode.load(file_node._id)) is not None
             assert (TrashedFileNode.load(file_node._id)) is None
@@ -1624,8 +1618,7 @@ class TestAddonFileViews(OsfTestCase):
                 provider='github',
                 action='download'
             ),
-            auth=self.user.auth,
-            expect_errors=True
+            auth=self.user.auth
         )
 
         assert (resp.status_code) == (401)
@@ -1638,8 +1631,7 @@ class TestAddonFileViews(OsfTestCase):
                 provider='wiki',
                 action='download'
             ),
-            auth=self.user.auth,
-            expect_errors=True
+            auth=self.user.auth
         )
 
         assert (resp.status_code) == (400)
@@ -1675,8 +1667,7 @@ class TestAddonFileViews(OsfTestCase):
                 provider='github',
                 action='download'
             ),
-            auth=self.user.auth,
-            expect_errors=True
+            auth=self.user.auth
         )
 
         assert (resp.status_code) == (400)
@@ -1693,8 +1684,7 @@ class TestAddonFileViews(OsfTestCase):
                 provider='github',
                 action='download'
             ),
-            auth=self.user.auth,
-            expect_errors=True
+            auth=self.user.auth
         )
 
         assert (resp.status_code) == (401)
@@ -1713,8 +1703,7 @@ class TestAddonFileViews(OsfTestCase):
                 path=folder._id,
                 provider='osfstorage',
             ),
-            auth=self.user.auth,
-            expect_errors=True
+            auth=self.user.auth
         )
 
         assert (resp.status_code) == (400)
@@ -2072,4 +2061,3 @@ class TestViewUtils(OsfTestCase):
         # connect/disconnect from them, think osfstorage, there's no node-cfg for that.
         default_addons = [addon['short_name'] for addon in addon_dicts if addon['default']]
         assert not any('/{}/'.format(addon) in asset_paths for addon in default_addons)
-

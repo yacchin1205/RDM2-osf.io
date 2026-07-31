@@ -191,7 +191,7 @@ class TestCampaignsAuthViews(OsfTestCase):
         for key, value in self.campaigns.items():
             resp = self.app.get(value['url_register'])
             assert (resp.status_code) == (http_status.HTTP_200_OK)
-            assert (value['title_register']) in (resp)
+            assert (value['title_register']) in (resp.text)
 
     def test_campaign_login_logged_in(self):
         for key, value in self.campaigns.items():
@@ -232,7 +232,7 @@ class TestRegistrationThroughCampaigns(OsfTestCase):
             kwargs = {
                 'uid': user._id,
             }
-            with self.app.app.test_request_context(), mock_auth(user):
+            with self.app.application.test_request_context(), mock_auth(user):
                 res = auth_views.confirm_email_get(token, **kwargs)
                 assert (res.status_code) == (http_status.HTTP_302_FOUND)
                 assert (res.location) == (campaigns.campaign_url_for(key))

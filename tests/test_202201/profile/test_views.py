@@ -40,8 +40,7 @@ class TestUserProfile(OsfTestCase):
             ]
         }
 
-        res = self.app.put_json(url, header, auth=user1.auth,
-                                expect_errors=True)
+        res = self.app.put(url, json=header, auth=user1.auth)
 
         assert (res.status_code) == (http_status.HTTP_400_BAD_REQUEST)
         assert (res.json['message_long']) != (None)
@@ -67,7 +66,7 @@ class TestUserProfile(OsfTestCase):
             ]
         }
 
-        res = self.app.put_json(url, header, auth=user1.auth)
+        res = self.app.put(url, json=header, auth=user1.auth)
 
         assert (res.status_code) == (http_status.HTTP_200_OK)
         assert (len(res.json['profile']['emails'])) == (2)
@@ -90,8 +89,7 @@ class TestUserProfile(OsfTestCase):
             ]
         }
 
-        res = self.app.put_json(url, header, auth=user1.auth,
-                                expect_errors=True)
+        res = self.app.put(url, json=header, auth=user1.auth)
         assert (res.status_code) == (http_status.HTTP_403_FORBIDDEN)
 
     def test_profile_view_has_temp_user(self):

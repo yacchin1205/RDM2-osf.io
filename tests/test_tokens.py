@@ -33,7 +33,7 @@ class TestTokenHandler(OsfTestCase):
         self.encoded_token = jwt.encode(
             self.payload,
             self.secret,
-            algorithm=settings.JWT_ALGORITHM).decode()
+            algorithm=settings.JWT_ALGORITHM)
 
     def test_encode(self):
         assert (encode(self.payload)) == (self.encoded_token)
@@ -57,17 +57,22 @@ class TestTokenHandler(OsfTestCase):
         with pytest.raises(TokenHandlerNotFound):
             token.to_response()
 
-    @mock.patch('osf.utils.tokens.handlers.sanction_handler')
-    def test_token_process_with_valid_action(self, mock_handler):
-        self.payload['action'] = 'approve_registration_approval'
+    def test_token_process_with_valid_action(self):
+        action = 'approve_registration_approval'
+        self.payload['action'] = action
+        self.encoded_token = jwt.encode(
+            self.payload,
+            self.secret,
+            algorithm=settings.JWT_ALGORITHM
+        )
         token = TokenHandler.from_payload(self.payload)
-        token.to_response()
-        assert (mock_handler.called_with(
-                'registration',
-                'approve',
-                self.payload,
-                self.encoded_token
-            ))
+        with mock.patch.object(token, 'HANDLERS') as mock_handlers:
+            token.to_response()
+        mock_handlers.get.assert_called_once_with(action)
+        mock_handlers.get.return_value.assert_called_with(
+            self.payload,
+            self.encoded_token
+        )
 
 class SanctionTokenHandlerBase(OsfTestCase):
 

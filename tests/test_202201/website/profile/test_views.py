@@ -73,7 +73,7 @@ class TestUserProfileExtend(OsfTestCase):
         }
 
         url = api_url_for('unserialize_names')
-        res = self.app.put_json(url, names, auth=self.user.auth)
+        res = self.app.put(url, json=names, auth=self.user.auth)
         assert (res.status_code) == (200)
         self.user.reload()
 
@@ -95,7 +95,7 @@ class TestUserProfileExtend(OsfTestCase):
         )
 
         assert (response.status_code) == (200)
-        response_data = response.body
+        response_data = response.data
         response_data = json.loads(response_data)
         assert (response_data['full']) == (self.user.fullname)
         assert (response_data['given']) == (self.user.given_name)
@@ -135,9 +135,9 @@ class TestUserProfileExtend(OsfTestCase):
             'ongoing': False,
         }
 
-        self.app.put_json(
+        self.app.put(
             url,
-            payload,
+            json=payload,
             auth=self.user.auth
         )
 
@@ -208,9 +208,9 @@ class TestUserProfileExtend(OsfTestCase):
             'department_ja': 'Change Department',
         }
 
-        self.app.put_json(
+        self.app.put(
             url,
-            payload,
+            json=payload,
             auth=self.user.auth
         )
 
@@ -231,7 +231,7 @@ class TestUserProfileExtend(OsfTestCase):
         )
 
         assert (response.status_code) == (200)
-        response_data = response.body
+        response_data = response.data
         response_data = json.loads(response_data)
 
         assert (response_data['full']) == (self.user.fullname)
@@ -253,9 +253,9 @@ class TestUserProfileExtend(OsfTestCase):
             'erad': erad
         }
 
-        self.app.put_json(
+        self.app.put(
             url,
-            payload,
+            json=payload,
             auth=self.user.auth,
         )
         self.user.reload()

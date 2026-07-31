@@ -1622,7 +1622,7 @@ class TestPreprintPermissions(OsfTestCase):
         with pytest.raises(ValueError) as e:
             self.preprint.set_published(False, auth=Auth(self.user), save=True)
 
-        assert ('Cannot unpublish') in (str(e.exception))
+        assert ('Cannot unpublish') in (str(e.value))
 
     def test_set_title_permissions(self):
         original_title = self.preprint.title
@@ -2212,7 +2212,10 @@ class TestOnPreprintUpdatedTask(OsfTestCase):
         user.save()
 
         node = format_user(user)
-        assert {x.attrs['uri'] for x in node.get_related()} == {user.absolute_url}
+        assert {x.attrs['uri'] for x in node.get_related()} == {
+            user.absolute_url,
+            'mailto:{}'.format(user.username),
+        }
 
     def test_verified_orcid(self):
         user = UserFactory.build(is_registered=True)
@@ -2220,7 +2223,12 @@ class TestOnPreprintUpdatedTask(OsfTestCase):
         user.save()
 
         node = format_user(user)
-        assert {x.attrs['uri'] for x in node.get_related()} == {'fake-orcid', user.absolute_url, user.profile_image_url()}
+        assert {x.attrs['uri'] for x in node.get_related()} == {
+            'fake-orcid',
+            user.absolute_url,
+            user.profile_image_url(),
+            'mailto:{}'.format(user.username),
+        }
 
     def test_unverified_orcid(self):
         user = UserFactory.build(is_registered=True)
@@ -2228,7 +2236,11 @@ class TestOnPreprintUpdatedTask(OsfTestCase):
         user.save()
 
         node = format_user(user)
-        assert {x.attrs['uri'] for x in node.get_related()} == {user.absolute_url, user.profile_image_url()}
+        assert {x.attrs['uri'] for x in node.get_related()} == {
+            user.absolute_url,
+            user.profile_image_url(),
+            'mailto:{}'.format(user.username),
+        }
 
 
 class TestPreprintConfirmationEmails(OsfTestCase):
@@ -2297,13 +2309,13 @@ class TestPreprintOsfStorage(OsfTestCase):
             nid=self.preprint._id,
             provider='osfstorage'), **kwargs),
             'exp': timezone.now() + datetime.timedelta(seconds=500),
-        }, settings.WATERBUTLER_JWT_SECRET, algorithm=settings.WATERBUTLER_JWT_ALGORITHM), self.JWE_KEY)}
+        }, settings.WATERBUTLER_JWT_SECRET, algorithm=settings.WATERBUTLER_JWT_ALGORITHM).encode(), self.JWE_KEY)}
         return self.preprint.api_url_for('get_auth', **options)
 
     def test_auth_download(self):
         url = self.build_url(cookie=self.cookie)
         res = self.app.get(url, auth=Auth(user=self.user))
-        data = jwt.decode(jwe.decrypt(res.json['payload'].encode('utf-8'), self.JWE_KEY), settings.WATERBUTLER_JWT_SECRET, algorithm=settings.WATERBUTLER_JWT_ALGORITHM)['data']
+        data = jwt.decode(jwe.decrypt(res.json['payload'].encode('utf-8'), self.JWE_KEY), settings.WATERBUTLER_JWT_SECRET, algorithms=[settings.WATERBUTLER_JWT_ALGORITHM])['data']
         assert (data['credentials']) == (self.preprint.serialize_waterbutler_credentials())
         assert (data['settings']) == (self.preprint.serialize_waterbutler_settings())
         expected_url = furl.furl(self.preprint.api_url_for('create_waterbutler_log', _absolute=True, _internal=True))
@@ -2333,14 +2345,14 @@ class TestCheckPreprintAuth(OsfTestCase):
         self.preprint.save()
         with pytest.raises(HTTPError) as exc_info:
             views.check_access(self.preprint, Auth(user=user2), 'download', None)
-        assert (exc_info.exception.code) == (403)
+        assert (exc_info.value.code) == (403)
 
     def test_not_has_permission_not_logged_in(self):
         self.preprint.is_published = False
         self.preprint.save()
         with pytest.raises(HTTPError) as exc_info:
             views.check_access(self.preprint, Auth(), 'download', None)
-        assert (exc_info.exception.code) == (401)
+        assert (exc_info.value.code) == (401)
 
     def test_check_access_withdrawn_preprint_file(self):
         self.preprint.date_withdrawn = timezone.now()
@@ -2348,24 +2360,24 @@ class TestCheckPreprintAuth(OsfTestCase):
         # Unauthenticated
         with pytest.raises(HTTPError) as exc_info:
             views.check_access(self.preprint, Auth(), 'download', None)
-        assert (exc_info.exception.code) == (401)
+        assert (exc_info.value.code) == (401)
 
         # Noncontributor
         user2 = AuthUserFactory()
         with pytest.raises(HTTPError) as exc_info:
             views.check_access(self.preprint, Auth(user2), 'download', None)
-        assert (exc_info.exception.code) == (403)
+        assert (exc_info.value.code) == (403)
 
         # Read contributor
         self.preprint.add_contributor(user2, READ, save=True)
         with pytest.raises(HTTPError) as exc_info:
             views.check_access(self.preprint, Auth(user2), 'download', None)
-        assert (exc_info.exception.code) == (403)
+        assert (exc_info.value.code) == (403)
 
         # Admin contributor
         with pytest.raises(HTTPError) as exc_info:
             views.check_access(self.preprint, Auth(self.user), 'download', None)
-        assert (exc_info.exception.code) == (403)
+        assert (exc_info.value.code) == (403)
 
 
 
@@ -2414,7 +2426,7 @@ class TestPreprintOsfStorageLogs(OsfTestCase):
         url = self.preprint.api_url_for('create_waterbutler_log')
         payload = self.build_payload(metadata={'materialized': path, 'kind': 'file', 'path': path})
         nlogs = self.preprint.logs.count()
-        self.app.put_json(url, payload, headers={'Content-Type': 'application/json'})
+        self.app.put(url, json=payload, headers={'Content-Type': 'application/json'})
         self.preprint.reload()
         assert (self.preprint.logs.count()) == (nlogs + 1)
 
@@ -2423,11 +2435,10 @@ class TestPreprintOsfStorageLogs(OsfTestCase):
         url = self.preprint.api_url_for('create_waterbutler_log')
         payload = self.build_payload(metadata={'materialized': path, 'kind': 'file', 'path': path}, auth=None)
         nlogs = self.preprint.logs.count()
-        res = self.app.put_json(
+        res = self.app.put(
             url,
-            payload,
+            json=payload,
             headers={'Content-Type': 'application/json'},
-            expect_errors=True,
         )
         assert (res.status_code) == (400)
         self.preprint.reload()
@@ -2438,11 +2449,10 @@ class TestPreprintOsfStorageLogs(OsfTestCase):
         url = self.preprint.api_url_for('create_waterbutler_log')
         payload = self.build_payload(metadata={'materialized': path, 'kind': 'file', 'path': path}, auth={'id': None})
         nlogs = self.preprint.logs.count()
-        res = self.app.put_json(
+        res = self.app.put(
             url,
-            payload,
+            json=payload,
             headers={'Content-Type': 'application/json'},
-            expect_errors=True,
         )
         assert (res.status_code) == (400)
         self.preprint.reload()
@@ -2453,11 +2463,10 @@ class TestPreprintOsfStorageLogs(OsfTestCase):
         url = self.preprint.api_url_for('create_waterbutler_log')
         payload = self.build_payload(metadata={'materialized': path, 'kind': 'file', 'path': path}, action='dance')
         nlogs = self.preprint.logs.count()
-        res = self.app.put_json(
+        res = self.app.put(
             url,
-            payload,
+            json=payload,
             headers={'Content-Type': 'application/json'},
-            expect_errors=True,
         )
         assert (res.status_code) == (400)
         self.preprint.reload()
@@ -2489,9 +2498,9 @@ class TestPreprintOsfStorageLogs(OsfTestCase):
                 'kind': 'file',
             },
         )
-        self.app.put_json(
+        self.app.put(
             url,
-            payload,
+            json=payload,
             headers={'Content-Type': 'application/json'}
         )
         self.preprint.reload()
@@ -2509,11 +2518,10 @@ class TestPreprintOsfStorageLogs(OsfTestCase):
                                          request_meta={'url': wb_url},
                                          action=action)
             nlogs = self.preprint.logs.count()
-            res = self.app.put_json(
+            res = self.app.put(
                 url,
-                payload,
+                json=payload,
                 headers={'Content-Type': 'application/json'},
-                expect_errors=False,
             )
             assert (res.status_code) == (200)
 
@@ -2525,7 +2533,7 @@ class TestPreprintOsfStorageLogs(OsfTestCase):
         url = self.preprint.api_url_for('create_waterbutler_log')
         payload = self.build_payload(metadata={'materialized': path, 'kind': 'file', 'path': path})
         nlogs = self.preprint.logs.count()
-        self.app.put_json(url, payload, headers={'Content-Type': 'application/json'})
+        self.app.put(url, json=payload, headers={'Content-Type': 'application/json'})
         self.preprint.reload()
         assert (self.preprint.logs.count()) == (nlogs + 1)
         assert('urls' in self.preprint.logs.filter(action='osf_storage_file_added')[0].params)
@@ -2535,7 +2543,7 @@ class TestPreprintOsfStorageLogs(OsfTestCase):
         url = self.preprint.api_url_for('create_waterbutler_log')
         payload = self.build_payload(metadata={'materialized': path, 'kind': 'folder', 'path': path})
         nlogs = self.preprint.logs.count()
-        self.app.put_json(url, payload, headers={'Content-Type': 'application/json'})
+        self.app.put(url, json=payload, headers={'Content-Type': 'application/json'})
         self.preprint.reload()
         assert (self.preprint.logs.count()) == (nlogs + 1)
         assert('urls' not in self.preprint.logs.filter(action='osf_storage_file_added')[0].params)
