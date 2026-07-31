@@ -2,6 +2,7 @@
 from unittest import mock
 import pytest
 from future.moves.urllib.parse import urlparse
+from django.utils import timezone
 
 
 from addons.wiki.tests.factories import WikiFactory, WikiVersionFactory
@@ -474,8 +475,12 @@ class TestNodeDetail:
         assert res.json['data']['relationships']['linked_by_nodes']['links']['related']['meta']['count'] == 1
         assert res.json['data']['relationships']['linked_by_registrations']['links']['related']['meta']['count'] == 1
 
+        log_date = timezone.now()
+        project_private.deleted_date = log_date
+        project_private.deleted = log_date
         project_private.is_deleted = True
         project_private.save()
+        registration.reload()
         project_public.reload()
 
         res = app.get(url)
