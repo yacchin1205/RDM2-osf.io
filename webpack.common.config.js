@@ -196,7 +196,7 @@ var resolve = {
         'jquery-qrcode': staticPath('vendor/jquery-qrcode/jquery.qrcode.min.js'),
         'jquery-tagsinput': staticPath('vendor/jquery.tagsinput/jquery.tagsinput.js'),
         'clipboard': nodePath('clipboard/dist/clipboard.js'),
-        'history': nodePath('historyjs/scripts/bundled/html4+html5/jquery.history.js'),
+        'history': staticPath('vendor/historyjs/jquery.history.js'),
         'reconnectingWebsocket': nodePath('ReconnectingWebSocket/reconnecting-websocket.js'),
         // Needed for knockout-sortable
         'jquery.ui.sortable': nodePath('components-jqueryui/ui/widgets/sortable.js'),
