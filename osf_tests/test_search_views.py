@@ -39,7 +39,11 @@ class TestSearchViews(OsfTestCase):
     def test_search_views(self):
         #Test search contributor
         url = api_url_for('search_contributor')
-        res = self.app.get(url, {'query': self.contrib.fullname}, auth=factories.AuthUserFactory().auth)
+        res = self.app.get(
+            url,
+            query_string={'query': self.contrib.fullname},
+            auth=factories.AuthUserFactory().auth,
+        )
         assert (res.status_code) == (200)
         result = res.json['users']
         assert (len(result)) == (1)
@@ -50,7 +54,11 @@ class TestSearchViews(OsfTestCase):
         assert (brian['active']) == (self.contrib.is_active)
 
         #Test search pagination
-        res = self.app.get(url, {'query': 'Serena'}, auth=factories.AuthUserFactory().auth)
+        res = self.app.get(
+            url,
+            query_string={'query': 'Serena'},
+            auth=factories.AuthUserFactory().auth,
+        )
         assert (res.status_code) == (200)
         result = res.json['users']
         pages = res.json['pages']
@@ -60,7 +68,11 @@ class TestSearchViews(OsfTestCase):
         assert (page) == (0)
 
         #Test default page 1
-        res = self.app.get(url, {'query': 'Serena', 'page': 1}, auth=factories.AuthUserFactory().auth)
+        res = self.app.get(
+            url,
+            query_string={'query': 'Serena', 'page': 1},
+            auth=factories.AuthUserFactory().auth,
+        )
         assert (res.status_code) == (200)
         result = res.json['users']
         page = res.json['page']
@@ -68,7 +80,11 @@ class TestSearchViews(OsfTestCase):
         assert (page) == (1)
 
         #Test default page 2
-        res = self.app.get(url, {'query': 'Serena', 'page': 2}, auth=factories.AuthUserFactory().auth)
+        res = self.app.get(
+            url,
+            query_string={'query': 'Serena', 'page': 2},
+            auth=factories.AuthUserFactory().auth,
+        )
         assert (res.status_code) == (200)
         result = res.json['users']
         page = res.json['page']
@@ -76,7 +92,11 @@ class TestSearchViews(OsfTestCase):
         assert (page) == (2)
 
         #Test smaller pages
-        res = self.app.get(url, {'query': 'Serena', 'size': 5}, auth=factories.AuthUserFactory().auth)
+        res = self.app.get(
+            url,
+            query_string={'query': 'Serena', 'size': 5},
+            auth=factories.AuthUserFactory().auth,
+        )
         assert (res.status_code) == (200)
         result = res.json['users']
         pages = res.json['pages']
@@ -86,7 +106,11 @@ class TestSearchViews(OsfTestCase):
         assert (pages) == (3)
 
         #Test smaller pages page 2
-        res = self.app.get(url, {'query': 'Serena', 'page': 2, 'size': 5, }, auth=factories.AuthUserFactory().auth)
+        res = self.app.get(
+            url,
+            query_string={'query': 'Serena', 'page': 2, 'size': 5},
+            auth=factories.AuthUserFactory().auth,
+        )
         assert (res.status_code) == (200)
         result = res.json['users']
         pages = res.json['pages']
@@ -97,22 +121,22 @@ class TestSearchViews(OsfTestCase):
 
         #Test search projects
         url = '/search/'
-        res = self.app.get(url, {'q': self.project.title})
+        res = self.app.get(url, query_string={'q': self.project.title})
         assert (res.status_code) == (200)
 
         #Test search node
-        res = self.app.post_json(
+        res = self.app.post(
             api_url_for('search_node'),
-            {'query': self.project.title},
-            auth=factories.AuthUserFactory().auth
+            json={'query': self.project.title},
+            auth=factories.AuthUserFactory().auth,
         )
         assert (res.status_code) == (200)
 
         #Test search node includePublic true
-        res = self.app.post_json(
+        res = self.app.post(
             api_url_for('search_node'),
-            {'query': 'a', 'includePublic': True},
-            auth=self.user_one.auth
+            json={'query': 'a', 'includePublic': True},
+            auth=self.user_one.auth,
         )
         node_ids = [node['id'] for node in res.json['nodes']]
         assert (self.project_private_user_one._id) in (node_ids)
@@ -121,10 +145,10 @@ class TestSearchViews(OsfTestCase):
         assert (self.project_private_user_two._id) not in (node_ids)
 
         #Test search node includePublic false
-        res = self.app.post_json(
+        res = self.app.post(
             api_url_for('search_node'),
-            {'query': 'a', 'includePublic': False},
-            auth=self.user_one.auth
+            json={'query': 'a', 'includePublic': False},
+            auth=self.user_one.auth,
         )
         node_ids = [node['id'] for node in res.json['nodes']]
         assert (self.project_private_user_one._id) in (node_ids)
@@ -134,14 +158,14 @@ class TestSearchViews(OsfTestCase):
 
         #Test search user
         url = '/api/v1/search/user/'
-        res = self.app.get(url, {'q': 'Umwali'})
+        res = self.app.get(url, query_string={'q': 'Umwali'})
         assert (res.status_code) == (200)
         assert not (res.json['results'])
 
         user_one = factories.AuthUserFactory(fullname='Joe Umwali')
         user_two = factories.AuthUserFactory(fullname='Joan Uwase')
 
-        res = self.app.get(url, {'q': 'Umwali'})
+        res = self.app.get(url, query_string={'q': 'Umwali'})
 
         assert (res.status_code) == (200)
         assert (len(res.json['results'])) == (1)
@@ -154,11 +178,11 @@ class TestSearchViews(OsfTestCase):
         }
         user_one.save()
 
-        res = self.app.get(url, {'q': 'Umwali'})
+        res = self.app.get(url, query_string={'q': 'Umwali'})
 
         assert (res.status_code) == (200)
         assert (len(res.json['results'])) == (1)
-        assert ('Joan') not in (res.body.decode())
+        assert ('Joan') not in (res.text)
         assert (res.json['results'][0]['social'])
         assert (res.json['results'][0]['names']['fullname']) == (user_one.fullname)
         assert (res.json['results'][0]['social']['github']) == ('http://github.com/{}'.format(user_one.given_name))
@@ -182,7 +206,7 @@ class TestSearchViews(OsfTestCase):
         }
         user_three.save()
 
-        res = self.app.get(url, {'q': 'Umwali'})
+        res = self.app.get(url, query_string={'q': 'Umwali'})
 
         assert (res.status_code) == (200)
         assert (len(res.json['results'])) == (2)
@@ -191,7 +215,7 @@ class TestSearchViews(OsfTestCase):
         assert (res.json['results'][0]['social']['ssrn']) != (res.json['results'][1]['social']['ssrn'])
         assert (res.json['results'][0]['social']['github']) != (res.json['results'][1]['social']['github'])
 
-        res = self.app.get(url, {'q': 'Uwase'})
+        res = self.app.get(url, query_string={'q': 'Uwase'})
 
         assert (res.status_code) == (200)
         assert (len(res.json['results'])) == (1)
@@ -233,11 +257,15 @@ class TestODMTitleSearch(OsfTestCase):
         self.url = api_url_for('search_projects_by_title')
 
     def test_search_projects_by_title(self):
-        res = self.app.get(self.url, {'term': self.project.title}, auth=self.user.auth)
+        res = self.app.get(
+            self.url,
+            query_string={'term': self.project.title},
+            auth=self.user.auth,
+        )
         assert (res.status_code) == (200)
         assert (len(res.json)) == (1)
         res = self.app.get(self.url,
-                           {
+                           query_string={
                                'term': self.public_project.title,
                                'includePublic': 'yes',
                                'includeContributed': 'no'
@@ -245,7 +273,7 @@ class TestODMTitleSearch(OsfTestCase):
         assert (res.status_code) == (200)
         assert (len(res.json)) == (1)
         res = self.app.get(self.url,
-                           {
+                           query_string={
                                'term': self.project.title,
                                'includePublic': 'no',
                                'includeContributed': 'yes'
@@ -253,7 +281,7 @@ class TestODMTitleSearch(OsfTestCase):
         assert (res.status_code) == (200)
         assert (len(res.json)) == (1)
         res = self.app.get(self.url,
-                           {
+                           query_string={
                                'term': self.project.title,
                                'includePublic': 'no',
                                'includeContributed': 'yes',
@@ -262,7 +290,7 @@ class TestODMTitleSearch(OsfTestCase):
         assert (res.status_code) == (200)
         assert (len(res.json)) == (1)
         res = self.app.get(self.url,
-                           {
+                           query_string={
                                'term': self.project.title,
                                'includePublic': 'yes',
                                'includeContributed': 'yes',
@@ -271,7 +299,7 @@ class TestODMTitleSearch(OsfTestCase):
         assert (res.status_code) == (200)
         assert (len(res.json)) == (1)
         res = self.app.get(self.url,
-                           {
+                           query_string={
                                'term': self.public_project.title,
                                'includePublic': 'yes',
                                'includeContributed': 'yes',
@@ -280,7 +308,7 @@ class TestODMTitleSearch(OsfTestCase):
         assert (res.status_code) == (200)
         assert (len(res.json)) == (1)
         res = self.app.get(self.url,
-                           {
+                           query_string={
                                'term': self.registration_project.title,
                                'includePublic': 'yes',
                                'includeContributed': 'yes',
@@ -289,7 +317,7 @@ class TestODMTitleSearch(OsfTestCase):
         assert (res.status_code) == (200)
         assert (len(res.json)) == (2)
         res = self.app.get(self.url,
-                           {
+                           query_string={
                                'term': self.registration_project.title,
                                'includePublic': 'yes',
                                'includeContributed': 'yes',
@@ -298,16 +326,16 @@ class TestODMTitleSearch(OsfTestCase):
         assert (res.status_code) == (200)
         assert (len(res.json)) == (1)
         res = self.app.get(self.url,
-                           {
+                           query_string={
                                'term': self.folder.title,
                                'includePublic': 'yes',
                                'includeContributed': 'yes',
                                'isFolder': 'yes'
-                           }, auth=self.user.auth, expect_errors=True)
+                           }, auth=self.user.auth)
         assert (res.status_code) == (200)
         assert len(res.json) == 0
         res = self.app.get(self.url,
-                           {
+                           query_string={
                                'term': self.folder.title,
                                'includePublic': 'yes',
                                'includeContributed': 'yes',
@@ -316,7 +344,7 @@ class TestODMTitleSearch(OsfTestCase):
         assert (res.status_code) == (200)
         assert (len(res.json)) == (0)
         res = self.app.get(self.url,
-                           {
+                           query_string={
                                'term': self.dashboard.title,
                                'includePublic': 'yes',
                                'includeContributed': 'yes',
@@ -325,11 +353,11 @@ class TestODMTitleSearch(OsfTestCase):
         assert (res.status_code) == (200)
         assert (len(res.json)) == (0)
         res = self.app.get(self.url,
-                           {
+                           query_string={
                                'term': self.dashboard.title,
                                'includePublic': 'yes',
                                'includeContributed': 'yes',
                                'isFolder': 'yes'
-                           }, auth=self.user.auth, expect_errors=True)
+                           }, auth=self.user.auth)
         assert (res.status_code) == (200)
         assert (len(res.json)) == (0)

@@ -239,6 +239,7 @@ class TestNodeShare:
         graph = data['data']['attributes']['data']['@graph']
         assert graph[0]['uri'] == f'{settings.DOMAIN}{node._id}/'
 
+    @pytest.mark.skip('Synchronous retries not supported if celery >=5.0')
     def test_call_async_update_on_500_failure(self, mock_share, node, user):
         """This is meant to simulate a total outage, so the retry mechanism should try X number of times and quit."""
         mock_share.assert_all_requests_are_fired = False  # allows it to retry indefinitely

@@ -12,7 +12,6 @@ from django.utils import timezone
 from unittest import mock
 import itsdangerous
 import pytest
-import pytz
 
 from framework.auth.exceptions import ExpiredTokenError, InvalidTokenError, ChangePasswordError, MergeDisableError
 from framework.auth.signals import user_merged
@@ -500,7 +499,7 @@ class TestOSFUser:
         u.set_unusable_password()
         u.save()
         assert bool(u.date_registered) is True
-        assert u.date_registered.tzinfo == pytz.utc
+        assert u.date_registered.tzinfo == dt.UTC
 
     def test_cant_create_user_without_full_name(self):
         u = OSFUser(username=fake_email())
@@ -2217,15 +2216,9 @@ class TestUserMerging(OsfTestCase):
         self.user.external_accounts.add(ExternalAccountFactory())
         other_user.external_accounts.add(ExternalAccountFactory())
 
-        self.user.mailchimp_mailing_lists = {
-            'user': True,
-            'shared_gt': True,
-            'shared_lt': False,
-        }
+        self.user.mailchimp_mailing_lists = {}
         other_user.mailchimp_mailing_lists = {
-            'other': True,
-            'shared_gt': False,
-            'shared_lt': True,
+            settings.MAILCHIMP_GENERAL_LIST: True,
         }
 
         self.user.security_messages = {
@@ -2300,10 +2293,7 @@ class TestUserMerging(OsfTestCase):
             ]),
             'recently_added': set(),
             'mailchimp_mailing_lists': {
-                'user': True,
-                'other': True,
-                'shared_gt': True,
-                'shared_lt': True,
+                settings.MAILCHIMP_GENERAL_LIST: True,
             },
             'osf_mailing_lists': {
                 settings.OSF_HELP_LIST: True
@@ -2330,10 +2320,6 @@ class TestUserMerging(OsfTestCase):
         assert set(expected.keys()).issubset(all_field_names)
 
         # mock mailchimp
-        mock_client = mock.MagicMock()
-        mock_get_mailchimp_api.return_value = mock_client
-        mock_client.lists.list.return_value = {'data': [{'id': x, 'list_name': list_name} for x, list_name in enumerate(self.user.mailchimp_mailing_lists)]}
-
         with run_celery_tasks():
             # perform the merge
             self.user.merge_user(other_user, is_forced=True)

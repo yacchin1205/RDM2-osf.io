@@ -6,11 +6,9 @@ from io import StringIO
 from urllib.parse import urlparse
 import cProfile
 import pstats
-import threading
 
 from django.conf import settings
 from django.utils.deprecation import MiddlewareMixin
-import corsheaders.middleware
 from sentry_sdk import init
 from sentry_sdk.integrations.celery import CeleryIntegration
 from sentry_sdk.integrations.django import DjangoIntegration
@@ -106,44 +104,6 @@ class DjangoGlobalMiddleware(MiddlewareMixin):
         if api_settings.DEBUG and len(gc.get_referents(request)) > 2:
             raise Exception('You wrote a memory leak. Stop it')
         return response
-
-
-class CorsMiddleware(corsheaders.middleware.CorsMiddleware):
-    """
-    Augment CORS origin white list with the Institution model's domains.
-    """
-
-    _context = threading.local()
-
-    def origin_found_in_white_lists(self, origin, url):
-        settings.CORS_ORIGIN_WHITELIST += api_settings.ORIGINS_WHITELIST
-        # Check if origin is in the dynamic custom domain whitelist
-        found = super(CorsMiddleware, self).origin_found_in_white_lists(origin, url)
-        # Check if a cross-origin request using the Authorization header
-        if not found:
-            if not self._context.request.COOKIES:
-                if self._context.request.META.get('HTTP_AUTHORIZATION'):
-                    return True
-                elif (
-                    self._context.request.method == 'OPTIONS' and
-                    'HTTP_ACCESS_CONTROL_REQUEST_METHOD' in self._context.request.META and
-                    'authorization' in list(
-                        map(
-                            lambda h: h.strip(),
-                            self._context.request.META.get('HTTP_ACCESS_CONTROL_REQUEST_HEADERS', '').split(','),
-                        ),
-                    )
-                ):
-                    return True
-
-        return found
-
-    def process_response(self, request, response):
-        self._context.request = request
-        try:
-            return super(CorsMiddleware, self).process_response(request, response)
-        finally:
-            self._context.request = None
 
 
 class PostcommitTaskMiddleware(MiddlewareMixin):

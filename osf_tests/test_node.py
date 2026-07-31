@@ -2,7 +2,6 @@ import datetime
 
 from unittest import mock
 import pytest
-import pytz
 import responses
 
 from django.utils import timezone
@@ -702,7 +701,7 @@ class TestProject:
                     for addon in node.addons
                     if addon.config.short_name == addon_config.short_name
                 ])
-        mock_now = datetime.datetime(2017, 3, 16, 11, 00, tzinfo=pytz.utc)
+        mock_now = datetime.datetime(2017, 3, 16, 11, 00, tzinfo=datetime.UTC)
         with mock.patch.object(timezone, 'now', return_value=mock_now):
             deleted_node = NodeFactory(is_deleted=True)
         assert deleted_node.is_deleted
@@ -801,7 +800,7 @@ class TestLogging:
         last_log = node.logs.latest()
         assert last_log.action == NodeLog.EMBARGO_INITIATED
         # date is tzaware
-        assert last_log.date.tzinfo == pytz.utc
+        assert last_log.date.tzinfo == datetime.UTC
 
         # updates node.modified
         assert_datetime_equal(node.modified, last_log.date)
@@ -4324,7 +4323,7 @@ class TestNodeLog:
         assert bool(log.action)
 
     def test_tz_date(self, log):
-        assert log.date.tzinfo == pytz.UTC
+        assert log.date.tzinfo == datetime.UTC
 
     def test_original_node_and_current_node_for_registration_logs(self):
         user = UserFactory()

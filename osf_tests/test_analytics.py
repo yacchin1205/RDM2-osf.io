@@ -12,6 +12,7 @@ from datetime import datetime
 from addons.osfstorage.models import OsfStorageFile
 from framework import analytics
 from osf.models import PageCounter, OSFGroup
+from osf.models import analytics as analytics_models
 
 from tests.base import OsfTestCase
 from osf_tests.factories import UserFactory, ProjectFactory
@@ -91,8 +92,9 @@ def page_counter_for_individual_version(project, file_node3):
 @pytest.mark.django_db
 class TestPageCounter:
 
-    @mock.patch('osf.models.analytics.session')
-    def test_download_update_counter(self, mock_session, project, file_node):
+    def test_download_update_counter(self, monkeypatch, project, file_node):
+        mock_session = mock.Mock()
+        monkeypatch.setattr(analytics_models, 'session', mock_session)
         mock_session.data = {}
         resource = project.guids.first()
         PageCounter.update_counter(resource, file_node, version=None, action='download', node_info={})
@@ -107,8 +109,9 @@ class TestPageCounter:
         assert page_counter.total == 2
         assert page_counter.unique == 1
 
-    @mock.patch('osf.models.analytics.session')
-    def test_download_update_counter_contributor(self, mock_session, user, project, file_node):
+    def test_download_update_counter_contributor(self, monkeypatch, user, project, file_node):
+        mock_session = mock.Mock()
+        monkeypatch.setattr(analytics_models, 'session', mock_session)
         mock_session.data = {'auth_user_id': user._id}
         resource = project.guids.first()
 

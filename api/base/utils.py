@@ -7,6 +7,7 @@ from hashids import Hashids
 
 from django.core.exceptions import ObjectDoesNotExist
 from django.db.models import QuerySet, F
+from rest_framework import fields
 from rest_framework.exceptions import NotFound
 from rest_framework.reverse import reverse
 
@@ -23,11 +24,8 @@ from osf.utils.requests import check_select_for_update
 from website import settings as website_settings
 from website import util as website_util  # noqa
 
-# These values are copied from rest_framework.fields.BooleanField
-# BooleanField cannot be imported here without raising an
-# ImproperlyConfigured error
-TRUTHY = set(('t', 'T', 'true', 'True', 'TRUE', '1', 1, True, 'on', 'ON', 'On', 'y', 'Y', 'YES', 'yes'))
-FALSY = set(('f', 'F', 'false', 'False', 'FALSE', '0', 0, 0.0, False, 'off', 'OFF', 'Off', 'n', 'N', 'NO', 'no'))
+TRUTHY = fields.BooleanField.TRUE_VALUES
+FALSY = fields.BooleanField.FALSE_VALUES
 
 UPDATE_METHODS = ['PUT', 'PATCH']
 NO_LIMIT = -1
@@ -58,10 +56,14 @@ def is_bulk_request(request):
     return 'ext=bulk' in content_type
 
 def is_truthy(value):
-    return value in TRUTHY
+    if isinstance(value, bool) or value is None:
+        return value
+    return str(value).lower() in TRUTHY
 
 def is_falsy(value):
-    return value in FALSY
+    if isinstance(value, bool) or value is None:
+        return not value
+    return str(value).lower() in FALSY
 
 def get_user_auth(request):
     """Given a Django request object, return an ``Auth`` object with the

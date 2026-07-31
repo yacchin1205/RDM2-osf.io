@@ -247,7 +247,7 @@ class OsfWebRenderer(WebRenderer):
                     age = None
                 else:
                     age = max_age
-                resp.headers.add('Set-Cookie', dump_cookie(name.encode(), str(active), max_age=age, expires='True'))
+                resp.headers.add('Set-Cookie', dump_cookie(name, str(active), max_age=age, expires='True'))
         return resp
 
 #: Use if a view only redirects or raises error

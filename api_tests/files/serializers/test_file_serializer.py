@@ -1,4 +1,5 @@
 from datetime import datetime
+from urllib.parse import quote_plus
 
 import pytest
 from pytz import utc
@@ -20,9 +21,9 @@ def user():
 
 def build_expected_render_link(mfr_url, download_url, with_version=True):
     if with_version:
-        return '{}/render?url={}%26direct%26mode=render'.format(mfr_url, download_url)
+        return '{}/render?url={}%26direct%26mode%3Drender'.format(mfr_url, quote_plus(download_url))
     else:
-        return '{}/render?url={}?direct%26mode=render'.format(mfr_url, download_url)
+        return '{}/render?url={}%3Fdirect%26mode%3Drender'.format(mfr_url, quote_plus(download_url))
 
 
 @pytest.mark.django_db
@@ -83,7 +84,7 @@ class TestFileSerializer:
         assert download_base.format(path) in data['links']['download']
 
         # check render file link with path
-        assert download_base.format(path) in data['links']['render']
+        assert quote_plus(download_base.format(path)) in data['links']['render']
         assert mfr_url in data['links']['render']
 
         # check download file link with guid
@@ -93,7 +94,7 @@ class TestFileSerializer:
         assert download_base.format(guid) in data['links']['download']
 
         # check render file link with guid
-        assert download_base.format(guid) in data['links']['render']
+        assert quote_plus(download_base.format(guid)) in data['links']['render']
         assert mfr_url in data['links']['render']
 
         # check html link in file serializer

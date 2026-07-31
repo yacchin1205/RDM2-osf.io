@@ -12,6 +12,7 @@ from rest_framework.exceptions import ValidationError
 from api.base import utils as api_utils
 
 from framework.status import push_status_message
+from framework import status as status_module
 
 
 class TestTruthyFalsy:
@@ -75,10 +76,11 @@ class TestFlaskDjangoIntegration:
         except BaseException:
             assert (False), ('Exception from push_status_message when called from the v2 API with type "error"')
 
-    @mock.patch('framework.status.session')
-    def test_push_status_message_unexpected_error(self, mock_sesh):
+    def test_push_status_message_unexpected_error(self, monkeypatch):
         status_message = 'This is a message'
         exception_message = 'this is some very unexpected problem'
+        mock_sesh = mock.Mock()
+        monkeypatch.setattr(status_module, 'session', mock_sesh)
         mock_get = mock.Mock(side_effect=RuntimeError(exception_message))
         mock_data = mock.Mock()
         mock_data.attach_mock(mock_get, 'get')
