@@ -120,7 +120,7 @@ class TestUpdateNodeWiki(OsfTestCase):
 
         # user views comments -- sets user.comments_viewed_timestamp
         url = project.api_url_for('update_comments_timestamp')
-        res = self.app.put_json(url, {
+        res = self.app.put(url, json={
             'page': 'wiki',
             'rootId': wiki_page._id
         }, auth=self.user.auth)
@@ -147,7 +147,7 @@ class TestUpdateNodeWiki(OsfTestCase):
 
         # user views comments -- sets user.comments_viewed_timestamp
         url = project.api_url_for('update_comments_timestamp')
-        res = self.app.put_json(url, {
+        res = self.app.put(url, json={
             'page': 'wiki',
             'rootId': wiki_page._id
         }, auth=self.user.auth)
@@ -156,7 +156,7 @@ class TestUpdateNodeWiki(OsfTestCase):
         assert wiki_page._id in self.user.comments_viewed_timestamp
 
         # contributor views comments -- sets contributor.comments_viewed_timestamp
-        res = self.app.put_json(url, {
+        res = self.app.put(url, json={
             'page': 'wiki',
             'rootId': wiki_page._id
         }, auth=contributor.auth)

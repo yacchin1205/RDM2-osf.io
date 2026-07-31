@@ -122,9 +122,9 @@ class WorkflowEngineViewTests(OsfTestCase):
 
     def _register_template(self, node, owner, engine, definition_id):
         self._ensure_engine_admin(owner, engine)
-        self.app.post_json(
+        self.app.post(
             self._template_url(node),
-            {
+            json={
                 'engine_id': engine.engine_id,
                 'definition_id': definition_id,
             },
@@ -335,7 +335,7 @@ class WorkflowEngineViewTests(OsfTestCase):
         response = self.app.get(
             api_url_for('retrieve_engine', engine_id=engine.engine_id),
             auth=user.auth,
-            expect_errors=True,
+
         )
         assert response.status_code == http_status.HTTP_404_NOT_FOUND
 
@@ -356,7 +356,7 @@ class WorkflowEngineViewTests(OsfTestCase):
         response = self.app.get(
             self._engine_keys_url(engine.engine_id),
             auth=regular_user.auth,
-            expect_errors=True,
+
         )
         assert response.status_code == http_status.HTTP_403_FORBIDDEN
 
@@ -372,7 +372,7 @@ class WorkflowEngineViewTests(OsfTestCase):
         response = self.app.get(
             self._engine_keys_url(engine.engine_id),
             auth=staff_user.auth,
-            expect_errors=True,
+
         )
 
         assert response.status_code == http_status.HTTP_404_NOT_FOUND
@@ -402,7 +402,7 @@ class WorkflowEngineViewTests(OsfTestCase):
             data={'message': 'Workflow gateway keys are not configured.'},
         )
 
-        response = self.app.get(self.gateway_keyset_url, expect_errors=True)
+        response = self.app.get(self.gateway_keyset_url)
         assert response.status_code == http_status.HTTP_503_SERVICE_UNAVAILABLE
 
     def test_register_workflow_success(self):
@@ -420,9 +420,9 @@ class WorkflowEngineViewTests(OsfTestCase):
 
         token_settings = {'creator_mode': 'read', 'manager_mode': 'readwrite'}
         self._ensure_engine_admin(owner, engine)
-        response = self.app.post_json(
+        response = self.app.post(
             self._template_url(node),
-            {
+            json={
                 'engine_id': engine.engine_id,
                 'definition_id': definition_id,
                 'label': 'My Workflow',
@@ -457,14 +457,14 @@ class WorkflowEngineViewTests(OsfTestCase):
         owner = AuthUserFactory()
         node = self._create_project_with_workflow(owner)
 
-        response = self.app.post_json(
+        response = self.app.post(
             self._template_url(node),
-            {
+            json={
                 'engine_id': 'not-a-uuid',
                 'definition_id': 'definition-1',
             },
             auth=owner.auth,
-            expect_errors=True,
+
         )
 
         assert response.status_code == http_status.HTTP_400_BAD_REQUEST
@@ -483,14 +483,14 @@ class WorkflowEngineViewTests(OsfTestCase):
         )
 
         outsider = AuthUserFactory()
-        response = self.app.post_json(
+        response = self.app.post(
             self._template_url(node),
-            {
+            json={
                 'engine_id': engine.engine_id,
                 'definition_id': definition_id,
             },
             auth=outsider.auth,
-            expect_errors=True,
+
         )
 
         assert response.status_code == http_status.HTTP_403_FORBIDDEN
@@ -510,9 +510,9 @@ class WorkflowEngineViewTests(OsfTestCase):
 
         # First call creates the template
         self._ensure_engine_admin(owner, engine)
-        self.app.post_json(
+        self.app.post(
             self._template_url(node),
-            {
+            json={
                 'engine_id': engine.engine_id,
                 'definition_id': definition_id,
             },
@@ -521,9 +521,9 @@ class WorkflowEngineViewTests(OsfTestCase):
 
         # Second call should reuse existing record
         self._ensure_engine_admin(owner, engine)
-        response = self.app.post_json(
+        response = self.app.post(
             self._template_url(node),
-            {
+            json={
                 'engine_id': engine.engine_id,
                 'definition_id': definition_id,
                 'label': 'Updated Label',
@@ -545,15 +545,15 @@ class WorkflowEngineViewTests(OsfTestCase):
         kid = 'test-signing-kid'
         mock_settings.RDM_TO_WORKFLOW_GATEWAY_KEYS = [{'kid': kid}]
 
-        response = self.app.post_json(
+        response = self.app.post(
             self.upsert_engine_url,
-            {
+            json={
                 'engine_id': 'not-a-uuid',
                 'gateway_base_url': 'https://workflow.example/api/',
                 'signing_kid': kid,
             },
             auth=admin.auth,
-            expect_errors=True,
+
         )
 
         assert response.status_code == http_status.HTTP_400_BAD_REQUEST
@@ -576,9 +576,9 @@ class WorkflowEngineViewTests(OsfTestCase):
             signing_kid=kid,
             institution=placeholder_institution,
         )
-        response = self.app.post_json(
+        response = self.app.post(
             self.upsert_engine_url,
-            {
+            json={
                 'engine_id': raw_engine_id,
                 'gateway_base_url': 'https://workflow.example/api/',
                 'signing_kid': kid,
@@ -608,9 +608,9 @@ class WorkflowEngineViewTests(OsfTestCase):
         )
 
         self._ensure_engine_admin(owner, engine)
-        self.app.post_json(
+        self.app.post(
             self._template_url(node),
-            {
+            json={
                 'engine_id': engine.engine_id,
                 'definition_id': definition_id_local,
                 'label': 'Local Flow',
@@ -631,9 +631,9 @@ class WorkflowEngineViewTests(OsfTestCase):
             version=1,
         )
         self._ensure_engine_admin(shared_owner, engine_shared)
-        self.app.post_json(
+        self.app.post(
             self._template_url(shared_node),
-            {
+            json={
                 'engine_id': engine_shared.engine_id,
                 'definition_id': definition_id_shared,
                 'label': 'Shared Flow',
@@ -652,9 +652,9 @@ class WorkflowEngineViewTests(OsfTestCase):
             version=1,
         )
         self._ensure_engine_admin(hidden_owner, engine_hidden)
-        self.app.post_json(
+        self.app.post(
             self._template_url(hidden_node),
-            {
+            json={
                 'engine_id': engine_hidden.engine_id,
                 'definition_id': 'process-definition-hidden',
             },
@@ -703,9 +703,9 @@ class WorkflowEngineViewTests(OsfTestCase):
         )
 
         self._ensure_engine_admin(owner, engine)
-        self.app.post_json(
+        self.app.post(
             self._template_url(shared_node),
-            {
+            json={
                 'engine_id': engine.engine_id,
                 'definition_id': definition_id,
                 'label': 'Institution Template',
@@ -743,9 +743,9 @@ class WorkflowEngineViewTests(OsfTestCase):
         )
 
         self._ensure_engine_admin(owner, engine)
-        self.app.post_json(
+        self.app.post(
             self._template_url(shared_node),
-            {
+            json={
                 'engine_id': engine.engine_id,
                 'definition_id': definition_id,
                 'label': 'Public Template',
@@ -768,7 +768,7 @@ class WorkflowEngineViewTests(OsfTestCase):
         response = self.app.get(
             api_url_for('retrieve_engine', engine_id='invalid-id'),
             auth=user.auth,
-            expect_errors=True,
+
         )
         assert response.status_code == http_status.HTTP_404_NOT_FOUND
 
@@ -779,7 +779,7 @@ class WorkflowEngineViewTests(OsfTestCase):
         response = self.app.get(
             self._engine_keys_url('invalid-id'),
             auth=admin.auth,
-            expect_errors=True,
+
         )
         assert response.status_code == http_status.HTTP_404_NOT_FOUND
 
@@ -802,9 +802,9 @@ class WorkflowEngineViewTests(OsfTestCase):
         )
 
         self._ensure_engine_admin(shared_owner, engine_shared)
-        self.app.post_json(
+        self.app.post(
             self._template_url(shared_node),
-            {
+            json={
                 'engine_id': engine_shared.engine_id,
                 'definition_id': definition_id_shared,
                 'label': 'Shared Flow',
@@ -817,9 +817,9 @@ class WorkflowEngineViewTests(OsfTestCase):
             definition__definition_id=definition_id_shared,
         )
 
-        response = self.app.put_json(
+        response = self.app.put(
             self._activation_url('upsert_activation', node, template),
-            {'is_enabled': True},
+            json={'is_enabled': True},
             auth=owner.auth,
         )
         assert response.status_code == http_status.HTTP_201_CREATED
@@ -837,18 +837,18 @@ class WorkflowEngineViewTests(OsfTestCase):
         assert response.status_code == http_status.HTTP_200_OK
         assert response.json['data']['is_enabled'] is True
 
-        response = self.app.put_json(
+        response = self.app.put(
             self._activation_url('upsert_activation', node, template),
-            {'is_enabled': False},
+            json={'is_enabled': False},
             auth=owner.auth,
         )
         assert response.status_code == http_status.HTTP_200_OK
         activation.refresh_from_db()
         assert activation.is_enabled is False
 
-        response = self.app.put_json(
+        response = self.app.put(
             self._activation_url('upsert_activation', node, template),
-            {'is_enabled': True},
+            json={'is_enabled': True},
             auth=owner.auth,
         )
         assert response.status_code == http_status.HTTP_200_OK
@@ -872,9 +872,9 @@ class WorkflowEngineViewTests(OsfTestCase):
 
         template, activation = self._register_template(node, owner, engine, definition_id)
 
-        response = self.app.post_json(
+        response = self.app.post(
             self._run_url(node, template),
-            {'label': 'Custom Run Label'},
+            json={'label': 'Custom Run Label'},
             auth=owner.auth,
         )
 
@@ -968,7 +968,7 @@ class WorkflowEngineViewTests(OsfTestCase):
         forbidden = self.app.delete(
             self._run_detail_url(node, run_id),
             auth=contributor.auth,
-            expect_errors=True,
+
         )
 
         assert forbidden.status_code == http_status.HTTP_403_FORBIDDEN
@@ -1045,7 +1045,7 @@ class WorkflowEngineViewTests(OsfTestCase):
         response = self.app.get(
             self._task_detail_url(node, engine, 'task-other-node'),
             auth=owner.auth,
-            expect_errors=True,
+
         )
 
         assert response.status_code == http_status.HTTP_404_NOT_FOUND
@@ -1085,9 +1085,9 @@ class WorkflowEngineViewTests(OsfTestCase):
         }
         mock_get_client.return_value = mock_client
 
-        response = self.app.post_json(
+        response = self.app.post(
             api_url_for('workflow_notification', pid=template_node._id, engine_id=engine.engine_id, process_instance_id='process-shared'),
-            {
+            json={
                 'title': 'Workflow Update',
                 'body': [{'type': 'text/plain', 'content': 'hello'}],
             },
@@ -1135,14 +1135,14 @@ class WorkflowEngineViewTests(OsfTestCase):
         }
         mock_get_client.return_value = mock_client
 
-        response = self.app.post_json(
+        response = self.app.post(
             api_url_for('workflow_notification', pid=template_node._id, engine_id=engine.engine_id, process_instance_id='process-hidden'),
-            {
+            json={
                 'title': 'Workflow Update',
                 'body': [{'type': 'text/plain', 'content': 'hello'}],
             },
             auth=read_user.auth,
-            expect_errors=True,
+
         )
 
         assert response.status_code == http_status.HTTP_404_NOT_FOUND
@@ -1155,9 +1155,9 @@ class WorkflowEngineViewTests(OsfTestCase):
         engine = self._create_engine(owner=owner)
 
         self._ensure_engine_admin(owner, engine)
-        response = self.app.post_json(
+        response = self.app.post(
             self._task_action_url(node, engine, 'task-3'),
-            {
+            json={
                 'action': 'complete',
                 'variables': {'decision': 'approve'},
                 'assignee': 'user-123',
@@ -1195,11 +1195,11 @@ class WorkflowEngineViewTests(OsfTestCase):
         activation.is_enabled = False
         activation.save()
 
-        response = self.app.post_json(
+        response = self.app.post(
             self._run_url(node, template),
-            {},
+            json={},
             auth=owner.auth,
-            expect_errors=True,
+
         )
 
         assert response.status_code == http_status.HTTP_409_CONFLICT
@@ -1220,11 +1220,11 @@ class WorkflowEngineViewTests(OsfTestCase):
 
         template, _ = self._register_template(node, owner, engine, definition_id)
 
-        response = self.app.post_json(
+        response = self.app.post(
             self._run_url(node, template),
-            {'variables': 'not-a-list'},
+            json={'variables': 'not-a-list'},
             auth=owner.auth,
-            expect_errors=True,
+
         )
 
         assert response.status_code == http_status.HTTP_400_BAD_REQUEST
@@ -1245,9 +1245,9 @@ class WorkflowEngineViewTests(OsfTestCase):
 
         template, activation = self._register_template(node, owner, engine, definition_id)
 
-        response = self.app.put_json(
+        response = self.app.put(
             self._activation_url('upsert_activation', node, template),
-            {'is_dismissed': True},
+            json={'is_dismissed': True},
             auth=owner.auth,
         )
         assert response.status_code == http_status.HTTP_200_OK
@@ -1301,9 +1301,9 @@ class WorkflowEngineViewTests(OsfTestCase):
         activation.is_enabled = False
         activation.save(update_fields=['is_dismissed', 'is_enabled'])
 
-        response = self.app.put_json(
+        response = self.app.put(
             self._activation_url('upsert_activation', node, template),
-            {'is_enabled': True},
+            json={'is_enabled': True},
             auth=owner.auth,
         )
         assert response.status_code == http_status.HTTP_200_OK

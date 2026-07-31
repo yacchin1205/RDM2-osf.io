@@ -411,16 +411,16 @@ class TestWikiUtils(OsfTestCase, unittest.TestCase):
         with pytest.raises(HTTPError) as context:
             check_file_object_in_node('invalid_directory_id', self.project1)
 
-        assert (context.exception.data['message_short']) == ('directory id does not exist')
-        assert (context.exception.data['message_long']) == ('directory id does not exist')
+        assert (context.value.data['message_short']) == ('directory id does not exist')
+        assert (context.value.data['message_long']) == ('directory id does not exist')
 
     def test_invalid_target_object_id(self):
         dir_id = self.root_import_folder1._id
         with pytest.raises(HTTPError) as context:
             check_file_object_in_node(dir_id, self.project2)
 
-        assert (context.exception.data['message_short']) == ('directory id is invalid')
-        assert (context.exception.data['message_long']) == ('directory id is invalid')
+        assert (context.value.data['message_short']) == ('directory id is invalid')
+        assert (context.value.data['message_long']) == ('directory id is invalid')
 
     def test_copy_files_with_timestamp(self):
         src = MagicMock()
@@ -959,7 +959,7 @@ class TestWikiViews(OsfTestCase, unittest.TestCase):
         mock_get_for_node.return_value = None
 
         url = self.project.api_url_for('project_wiki_delete', wname='child')
-        res = self.app.delete(url, auth=self.user.auth, expect_errors=True)
+        res = self.app.delete(url, auth=self.user.auth)
 
         # 404が返る
         assert (http_status.HTTP_404_NOT_FOUND) == (res.status_code)
@@ -1002,7 +1002,7 @@ class TestWikiViews(OsfTestCase, unittest.TestCase):
 
     def test_project_wiki_edit_post(self):
         url = self.project.web_url_for('project_wiki_edit_post', wname='home')
-        res = self.app.post_json(url, {'markdown': 'new content'}, auth=self.user.auth).follow()
+        res = self.app.post(url, json={'markdown': 'new content'}, auth=self.user.auth, follow_redirects=True)
         wiki_page = WikiPage.objects.get_for_node(self.project, 'home')
         wiki_version = wiki_page.get_version()
         assert (http_status.HTTP_200_OK) == (res.status_code)
@@ -1010,12 +1010,12 @@ class TestWikiViews(OsfTestCase, unittest.TestCase):
 
     def test_wiki_validate_name_exist_page(self):
         url = self.project.api_url_for('project_wiki_validate_name', wname=self.wiki_page1.page_name)
-        response = self.app.get(url, auth=self.user.auth, expect_errors=True)
+        response = self.app.get(url, auth=self.user.auth)
         assert (http_status.HTTP_409_CONFLICT) == (response.status_code)
 
     def test_wiki_validate_name_new_page(self):
         url = self.project.api_url_for('project_wiki_validate_name', wname='pageNotExist')
-        response = self.app.get(url, auth=self.user.auth, expect_errors=True)
+        response = self.app.get(url, auth=self.user.auth)
         expected = {'message': 'pageNotExist'}
         new_page = WikiPage.objects.get_for_node(self.project, 'pageNotExist')
         assert (http_status.HTTP_200_OK) == (response.status_code)
@@ -1313,7 +1313,7 @@ class TestWikiViews(OsfTestCase, unittest.TestCase):
         mock_check_file_object_in_node.return_value = True
         dir_id = self.root_import_folder1._id
         url = self.project.api_url_for('project_wiki_import', dir_id=dir_id)
-        res = self.app.post_json(url, { 'data': [{'test': 'test1'}] }, auth=self.user.auth)
+        res = self.app.post(url, json={ 'data': [{'test': 'test1'}] }, auth=self.user.auth)
         response_json = res.json
         task_id = response_json['taskId']
         uuid_obj = uuid.UUID(task_id)
@@ -2452,7 +2452,7 @@ class TestWikiViews(OsfTestCase, unittest.TestCase):
         node = MagicMock()
         with pytest.raises(HTTPError) as context:
             views.project_get_task_result('task_id',node)
-        assert (context.exception.data['message_long']) == ('error500')
+        assert (context.value.data['message_long']) == ('error500')
 
     def test_replace_wiki_image_two_image_matches(self):
         wiki_content_two_image = 'Wiki content with ![](image1.png) and ![](image2.png)'
@@ -2654,8 +2654,7 @@ class TestWikiViews(OsfTestCase, unittest.TestCase):
         )
         url = self.project.api_url_for('project_get_abort_wiki_import_result')
         response = self.app.get(url, auth=self.user.auth)
-        json_string = response._app_iter[0].decode('utf-8')
-        result = json.loads(json_string)
+        result = response.json
         assert (result) == ({'aborted': True})
 
     def test_check_running_task_two(self):
@@ -2674,8 +2673,8 @@ class TestWikiViews(OsfTestCase, unittest.TestCase):
         with pytest.raises(HTTPError) as cm:
             views.check_running_task('task-id-aaaa', self.project)
         # HTTPErrorの中身がWIKI_IMPORT_TASK_ALREADY_EXISTSのメッセージを持つか確認
-        assert (cm.exception.data['message_short']) == ('Running Task exists')
-        assert (cm.exception.data['message_long']) == ('\tOnly 1 wiki import task can be executed on 1 node\t')
+        assert (cm.value.data['message_short']) == ('Running Task exists')
+        assert (cm.value.data['message_long']) == ('\tOnly 1 wiki import task can be executed on 1 node\t')
         task_running = WikiImportTask.objects.get(task_id='task-id-aaaa')
         assert (task_running.status) == ('Error')
 
@@ -2700,8 +2699,8 @@ class TestWikiViews(OsfTestCase, unittest.TestCase):
 
     def test_project_update_wiki_page_sort(self):
         url = self.project.api_url_for('project_update_wiki_page_sort')
-        respose = self.app.post_json(url,
-            {
+        respose = self.app.post(url,
+            json={
                 'sortedData': [
                     {
                         'name': 'importpagea1',
@@ -2791,19 +2790,17 @@ class TestWikiViews(OsfTestCase, unittest.TestCase):
     def test_wiki_page_not_found_error(self):
         url = self.project.web_url_for('project_wiki_view', wname='NotHome', _guid=True)
 
-        response = self.app.get(url, {'edit': True}, auth=self.consolidate_auth, expect_errors=True)
+        response = self.app.get(url, query_string={'edit': True}, auth=self.consolidate_auth)
         assert (http_status.HTTP_404_NOT_FOUND) == (response.status_code)
 
     # 'edit' が args に含まれ、未ログイン、公開編集が有効 → 401
     def test_edit_arg_public_editable_unauthorized(self):
-        auth = self.auth
-        self.auth.user = None
         wiki_settings = self.project.get_addon('wiki')
         wiki_settings.is_publicly_editable = True
         wiki_settings.save()
         url = self.project.web_url_for('project_wiki_view', wname='home', _guid=True)
 
-        response = self.app.get(url, {'edit': True}, auth=self.auth, expect_errors=True)
+        response = self.app.get(url, query_string={'edit': True})
         assert (http_status.HTTP_401_UNAUTHORIZED) == (response.status_code)
 
     # 'edit' が args に含まれ、編集権なし、閲覧可能 → 閲覧画面にリダイレクト
@@ -2812,7 +2809,7 @@ class TestWikiViews(OsfTestCase, unittest.TestCase):
         auth = user.auth
         url = self.project.web_url_for('project_wiki_view', wname='home', _guid=True)
 
-        response = self.app.get(url, {'edit': True}, auth=auth, expect_errors=True)
+        response = self.app.get(url, query_string={'edit': True}, auth=auth)
         assert (http_status.HTTP_302_FOUND) == (response.status_code)
 
     # 'edit' が args に含まれ、編集権なし、閲覧不可 → 403
@@ -2823,7 +2820,7 @@ class TestWikiViews(OsfTestCase, unittest.TestCase):
         self.project.save()
         url = self.project.web_url_for('project_wiki_view', wname='home', _guid=True)
 
-        response = self.app.get(url, {'edit': True}, auth=auth, expect_errors=True)
+        response = self.app.get(url, query_string={'edit': True}, auth=auth)
         assert (http_status.HTTP_403_FORBIDDEN) == (response.status_code)
 
 
@@ -2833,5 +2830,5 @@ class TestWikiViews(OsfTestCase, unittest.TestCase):
         mock_format_wiki_version.side_effect = InvalidVersionError
         url = self.project.web_url_for('project_wiki_view', wname='home', _guid=True)
 
-        response = self.app.get(url, {'edit': True}, auth=self.auth, expect_errors=True)
+        response = self.app.get(url, query_string={'edit': True}, auth=self.auth)
         assert (http_status.HTTP_400_BAD_REQUEST) == (response.status_code)

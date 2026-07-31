@@ -68,7 +68,7 @@ class TestBitbucketConfigViews(BitbucketAddonTestCase, OAuthAddonConfigViewsTest
         mock_account.return_value = mock.Mock()
         mock_repo.return_value = 'repo_name'
         url = self.project.api_url_for('{0}_set_config'.format(self.ADDON_SHORT_NAME))
-        res = self.app.post_json(url, {
+        res = self.app.post(url, json={
             'bitbucket_user': 'octocat',
             'bitbucket_repo': 'repo_name',
         }, auth=self.user.auth)
@@ -169,13 +169,13 @@ class TestBitbucketViews(OsfTestCase):
 
     def test_before_fork(self):
         url = self.project.api_url + 'fork/before/'
-        res = self.app.get(url, auth=self.user.auth).maybe_follow()
+        res = self.app.get(url, auth=self.user.auth, follow_redirects=True)
         # GRDM-54077: metadata addon is now enabled by default, so we expect 2 prompts
         assert (len(res.json['prompts'])) == (2)
 
     def test_before_register(self):
         url = self.project.api_url + 'beforeregister/'
-        res = self.app.get(url, auth=self.user.auth).maybe_follow()
+        res = self.app.get(url, auth=self.user.auth, follow_redirects=True)
         assert ('Bitbucket' in res.json['prompts'][1])
 
     @mock.patch('addons.bitbucket.models.NodeSettings.external_account')
@@ -222,14 +222,14 @@ class TestBitbucketSettings(OsfTestCase):
         mock_repo.return_value = bitbucket_mock.repo.return_value
 
         url = self.project.api_url + 'bitbucket/settings/'
-        self.app.post_json(
+        self.app.post(
             url,
-            {
+            json={
                 'bitbucket_user': 'queen',
                 'bitbucket_repo': 'night at the opera',
             },
-            auth=self.auth
-        ).maybe_follow()
+            auth=self.auth, follow_redirects=True
+        )
 
         self.project.reload()
         self.node_settings.reload()
@@ -248,14 +248,14 @@ class TestBitbucketSettings(OsfTestCase):
         log_count = self.project.logs.count()
 
         url = self.project.api_url + 'bitbucket/settings/'
-        self.app.post_json(
+        self.app.post(
             url,
-            {
+            json={
                 'bitbucket_user': 'Queen',
                 'bitbucket_repo': 'Sheer-Heart-Attack',
             },
-            auth=self.auth
-        ).maybe_follow()
+            auth=self.auth, follow_redirects=True
+        )
 
         self.project.reload()
         self.node_settings.reload()
@@ -269,15 +269,14 @@ class TestBitbucketSettings(OsfTestCase):
         mock_repo.return_value = None
 
         url = self.project.api_url + 'bitbucket/settings/'
-        res = self.app.post_json(
+        res = self.app.post(
             url,
-            {
+            json={
                 'bitbucket_user': 'queen',
                 'bitbucket_repo': 'night at the opera',
             },
-            auth=self.auth,
-            expect_errors=True
-        ).maybe_follow()
+            auth=self.auth, follow_redirects=True
+        )
 
         assert (res.status_code) == (400)
 
@@ -293,15 +292,14 @@ class TestBitbucketSettings(OsfTestCase):
         )
 
         url = registration.api_url + 'bitbucket/settings/'
-        res = self.app.post_json(
+        res = self.app.post(
             url,
-            {
+            json={
                 'bitbucket_user': 'queen',
                 'bitbucket_repo': 'night at the opera',
             },
-            auth=self.auth,
-            expect_errors=True
-        ).maybe_follow()
+            auth=self.auth, follow_redirects=True
+        )
 
         assert (res.status_code) == (400)
 
@@ -309,7 +307,7 @@ class TestBitbucketSettings(OsfTestCase):
 
         url = self.project.api_url + 'bitbucket/user_auth/'
 
-        self.app.delete(url, auth=self.auth).maybe_follow()
+        self.app.delete(url, auth=self.auth, follow_redirects=True)
 
         self.project.reload()
         self.node_settings.reload()

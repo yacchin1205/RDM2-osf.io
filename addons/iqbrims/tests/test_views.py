@@ -226,7 +226,7 @@ class TestStatusViews(IQBRIMSAddonTestCase, OsfTestCase):
                 'attributes': status
             }
         }
-        res = self.app.patch_json(url, params=payload, auth=self.user.auth)
+        res = self.app.patch(url, json=payload, auth=self.user.auth)
 
         assert (res.status_code) == (200)
         assert (res.json) == ({
@@ -276,7 +276,7 @@ class TestStatusViews(IQBRIMSAddonTestCase, OsfTestCase):
                 'attributes': status
             }
         }
-        res = self.app.patch_json(url, params=payload, auth=self.user.auth)
+        res = self.app.patch(url, json=payload, auth=self.user.auth)
 
         assert (res.status_code) == (200)
         assert (res.json) == ({
@@ -370,7 +370,7 @@ class TestStatusViews(IQBRIMSAddonTestCase, OsfTestCase):
                 'attributes': status
             }
         }
-        res = self.app.patch_json(url, params=payload, auth=self.user.auth)
+        res = self.app.patch(url, json=payload, auth=self.user.auth)
 
         assert (res.status_code) == (200)
         assert (res.json) == ({
@@ -437,7 +437,7 @@ class TestStatusViews(IQBRIMSAddonTestCase, OsfTestCase):
                 'attributes': status
             }
         }
-        res = self.app.patch_json(url, params=payload, auth=self.user.auth)
+        res = self.app.patch(url, json=payload, auth=self.user.auth)
 
         assert (res.status_code) == (200)
         assert (res.json) == ({
@@ -535,7 +535,7 @@ class TestStatusViews(IQBRIMSAddonTestCase, OsfTestCase):
                 'attributes': status
             }
         }
-        res = self.app.patch_json(url, params=payload, auth=self.user.auth)
+        res = self.app.patch(url, json=payload, auth=self.user.auth)
 
         assert (res.status_code) == (200)
         assert (res.json) == ({
@@ -630,15 +630,13 @@ class TestStorageViews(IQBRIMSAddonTestCase, OsfTestCase):
 
         url = self.project.api_url_for('iqbrims_get_storage',
                                        folder='paper')
-        res = self.app.delete(url,
-                              expect_errors=True).maybe_follow()
+        res = self.app.delete(url, follow_redirects=True)
 
         assert (res.status_code) == (403)
 
         url = self.project.api_url_for('iqbrims_get_storage',
                                        folder='paper')
-        res = self.app.delete(url, headers={'X-RDM-Token': 'invalid123'},
-                              expect_errors=True).maybe_follow()
+        res = self.app.delete(url, headers={'X-RDM-Token': 'invalid123'}, follow_redirects=True)
 
         assert (res.status_code) == (403)
 
@@ -1026,15 +1024,13 @@ class TestStorageViews(IQBRIMSAddonTestCase, OsfTestCase):
 
         url = self.project.api_url_for('iqbrims_reject_storage',
                                        folder='paper')
-        res = self.app.delete(url,
-                              expect_errors=True).maybe_follow()
+        res = self.app.delete(url, follow_redirects=True)
 
         assert (res.status_code) == (403)
 
         url = self.project.api_url_for('iqbrims_reject_storage',
                                        folder='paper')
-        res = self.app.delete(url, headers={'X-RDM-Token': 'invalid123'},
-                              expect_errors=True).maybe_follow()
+        res = self.app.delete(url, headers={'X-RDM-Token': 'invalid123'}, follow_redirects=True)
 
         assert (res.status_code) == (403)
 
@@ -1759,14 +1755,12 @@ class TestNotificationViews(IQBRIMSAddonTestCase, OsfTestCase):
         node_settings.save()
 
         url = self.project.api_url_for('iqbrims_post_notify')
-        res = self.app.post(url,
-                            expect_errors=True).maybe_follow()
+        res = self.app.post(url, follow_redirects=True)
 
         assert (res.status_code) == (403)
 
         url = self.project.api_url_for('iqbrims_post_notify')
-        res = self.app.post(url, headers={'X-RDM-Token': 'invalid123'},
-                            expect_errors=True).maybe_follow()
+        res = self.app.post(url, headers={'X-RDM-Token': 'invalid123'}, follow_redirects=True)
 
         assert (res.status_code) == (403)
 
@@ -1785,7 +1779,7 @@ class TestNotificationViews(IQBRIMSAddonTestCase, OsfTestCase):
         assert (self.project.logs.count()) == (2)
         assert (management_project.logs.count()) == (1)
         url = self.project.api_url_for('iqbrims_post_notify')
-        res = self.app.post_json(url, {
+        res = self.app.post(url, json={
           'notify_type': 'test_notify',
           'to': ['admin', 'user'],
           'notify_title': u'日本語',
@@ -1818,7 +1812,7 @@ class TestNotificationViews(IQBRIMSAddonTestCase, OsfTestCase):
         assert (self.project.logs.count()) == (2)
         assert (management_project.logs.count()) == (1)
         url = self.project.api_url_for('iqbrims_post_notify')
-        res = self.app.post_json(url, {
+        res = self.app.post(url, json={
           'notify_type': 'test_notify',
           'to': ['admin', 'user']
         }, headers={'X-RDM-Token': token})
@@ -1850,7 +1844,7 @@ class TestNotificationViews(IQBRIMSAddonTestCase, OsfTestCase):
         assert (self.project.logs.count()) == (2)
         assert (management_project.logs.count()) == (1)
         url = self.project.api_url_for('iqbrims_post_notify')
-        res = self.app.post_json(url, {
+        res = self.app.post(url, json={
           'notify_type': 'test_notify',
           'to': ['user']
         }, headers={'X-RDM-Token': token})
@@ -1882,7 +1876,7 @@ class TestNotificationViews(IQBRIMSAddonTestCase, OsfTestCase):
         assert (self.project.logs.count()) == (2)
         assert (management_project.logs.count()) == (1)
         url = self.project.api_url_for('iqbrims_post_notify')
-        res = self.app.post_json(url, {
+        res = self.app.post(url, json={
           'notify_type': 'test_notify',
           'to': ['admin']
         }, headers={'X-RDM-Token': token})
@@ -1914,7 +1908,7 @@ class TestNotificationViews(IQBRIMSAddonTestCase, OsfTestCase):
         assert (self.project.logs.count()) == (2)
         assert (management_project.logs.count()) == (1)
         url = self.project.api_url_for('iqbrims_post_notify')
-        res = self.app.post_json(url, {
+        res = self.app.post(url, json={
           'notify_type': 'imagescan_workflow_start',
           'to': ['admin']
         }, headers={'X-RDM-Token': token})
@@ -1946,7 +1940,7 @@ class TestNotificationViews(IQBRIMSAddonTestCase, OsfTestCase):
         assert (self.project.logs.count()) == (2)
         assert (management_project.logs.count()) == (1)
         url = self.project.api_url_for('iqbrims_post_notify')
-        res = self.app.post_json(url, {
+        res = self.app.post(url, json={
           'notify_type': 'imagescan_workflow_start',
           'to': ['user']
         }, headers={'X-RDM-Token': token})
@@ -1978,7 +1972,7 @@ class TestNotificationViews(IQBRIMSAddonTestCase, OsfTestCase):
         assert (self.project.logs.count()) == (2)
         assert (management_project.logs.count()) == (1)
         url = self.project.api_url_for('iqbrims_post_notify')
-        res = self.app.post_json(url, {
+        res = self.app.post(url, json={
           'notify_type': 'test_notify',
           'to': ['admin', 'user'],
           'use_mail': True,
@@ -1993,7 +1987,9 @@ class TestNotificationViews(IQBRIMSAddonTestCase, OsfTestCase):
         admin_comments = Comment.objects.filter(node=management_project)
         assert (admin_comments.count()) == (1)
         assert (len(mock_send_mail.call_args_list)) == (2)
-        assert (mock_send_mail.call_args_list[0][0][0]) == (self.project.contributors[0].emails.all()[0].address)
+        assert (mock_send_mail.call_args_list[0][0][0]) == (','.join([
+            email.address for email in self.project.contributors[0].emails.all()
+        ]))
         assert (mock_send_mail.call_args_list[0][1]['cc_addr']) == (management_project.contributors[0].emails.all()[0].address)
         assert (mock_send_mail.call_args_list[0][1]['replyto']) == (management_project.contributors[0].emails.all()[0].address)
         assert (mock_send_mail.call_args_list[1][0][0]) == (management_project.contributors[0].emails.all()[0].address)
@@ -2019,7 +2015,7 @@ class TestNotificationViews(IQBRIMSAddonTestCase, OsfTestCase):
         assert (self.project.logs.count()) == (2)
         assert (management_project.logs.count()) == (1)
         url = self.project.api_url_for('iqbrims_post_notify')
-        res = self.app.post_json(url, {
+        res = self.app.post(url, json={
           'notify_type': 'test_notify',
           'to': ['admin', 'user'],
           'use_mail': True,
@@ -2060,7 +2056,7 @@ class TestNotificationViews(IQBRIMSAddonTestCase, OsfTestCase):
         assert (self.project.logs.count()) == (2)
         assert (management_project.logs.count()) == (1)
         url = self.project.api_url_for('iqbrims_post_notify')
-        res = self.app.post_json(url, {
+        res = self.app.post(url, json={
           'notify_type': 'test_notify',
           'to': ['admin', 'user'],
           'use_mail': True,
@@ -2075,7 +2071,9 @@ class TestNotificationViews(IQBRIMSAddonTestCase, OsfTestCase):
         admin_comments = Comment.objects.filter(node=management_project)
         assert (admin_comments.count()) == (1)
         assert (len(mock_send_mail.call_args_list)) == (2)
-        assert (mock_send_mail.call_args_list[0][0][0]) == (self.project.contributors[0].emails.all()[0].address)
+        assert (mock_send_mail.call_args_list[0][0][0]) == (','.join([
+            email.address for email in self.project.contributors[0].emails.all()
+        ]))
         assert (set(mock_send_mail.call_args_list[0][1]['cc_addr'].split(','))) == (set([m.address for m in management_project.contributors[0].emails.all()]))
         assert (mock_send_mail.call_args_list[0][1]['replyto']) == (management_project.contributors[0].emails.all()[0].address)
         assert (mock_send_mail.call_args_list[1][0][0]) == (','.join([m.address for m in management_project.contributors[0].emails.all()]))
@@ -2110,7 +2108,7 @@ URL: <a href="http://test.test">http://test.test</a><br>
 URL: http://test.test<br>
 文末。
 '''
-        res = self.app.post_json(url, {
+        res = self.app.post(url, json={
           'notify_type': 'test_notify',
           'to': ['admin', 'user'],
           'notify_body': body_html,
@@ -2128,7 +2126,9 @@ URL: http://test.test<br>
         assert (admin_comments.count()) == (1)
         assert admin_comments.get().content == comment_html
         assert (len(mock_send_mail.call_args_list)) == (2)
-        assert (mock_send_mail.call_args_list[0][0][0]) == (self.project.contributors[0].emails.all()[0].address)
+        assert (mock_send_mail.call_args_list[0][0][0]) == (','.join([
+            email.address for email in self.project.contributors[0].emails.all()
+        ]))
         assert (mock_send_mail.call_args_list[0][1]['cc_addr']) == (management_project.contributors[0].emails.all()[0].address)
         assert (mock_send_mail.call_args_list[0][1]['replyto']) == (management_project.contributors[0].emails.all()[0].address)
         assert (mock_send_mail.call_args_list[1][0][0]) == (management_project.contributors[0].emails.all()[0].address)
@@ -2153,7 +2153,7 @@ URL: http://test.test<br>
         url = self.project.api_url_for('iqbrims_post_notify')
         body_html = ''.join([u'0123456789' for _ in range(0, 101)])
         comment_html = u'**iqbrims_test_notify** ' + body_html[:797] + '...'
-        res = self.app.post_json(url, {
+        res = self.app.post(url, json={
           'notify_type': 'test_notify',
           'to': ['admin', 'user'],
           'notify_body': body_html,
@@ -2171,7 +2171,9 @@ URL: http://test.test<br>
         assert (admin_comments.count()) == (1)
         assert admin_comments.get().content == comment_html
         assert (len(mock_send_mail.call_args_list)) == (2)
-        assert (mock_send_mail.call_args_list[0][0][0]) == (self.project.contributors[0].emails.all()[0].address)
+        assert (mock_send_mail.call_args_list[0][0][0]) == (','.join([
+            email.address for email in self.project.contributors[0].emails.all()
+        ]))
         assert (mock_send_mail.call_args_list[0][1]['cc_addr']) == (management_project.contributors[0].emails.all()[0].address)
         assert (mock_send_mail.call_args_list[0][1]['replyto']) == (management_project.contributors[0].emails.all()[0].address)
         assert (mock_send_mail.call_args_list[1][0][0]) == (management_project.contributors[0].emails.all()[0].address)
@@ -2195,7 +2197,7 @@ URL: http://test.test<br>
         assert (self.project.logs.count()) == (2)
         assert (management_project.logs.count()) == (1)
         url = self.project.api_url_for('iqbrims_post_notify')
-        res = self.app.post_json(url, {
+        res = self.app.post(url, json={
           'notify_type': 'test_notify',
           'comment_to': ['admin'],
           'email_to': ['user'],
@@ -2211,7 +2213,9 @@ URL: http://test.test<br>
         admin_comments = Comment.objects.filter(node=management_project)
         assert (admin_comments.count()) == (1)
         assert (len(mock_send_mail.call_args_list)) == (1)
-        assert (mock_send_mail.call_args_list[0][0][0]) == (self.project.contributors[0].emails.all()[0].address)
+        assert (mock_send_mail.call_args_list[0][0][0]) == (','.join([
+            email.address for email in self.project.contributors[0].emails.all()
+        ]))
         assert (mock_send_mail.call_args_list[0][1]['cc_addr']) == (management_project.contributors[0].emails.all()[0].address)
         assert (mock_send_mail.call_args_list[0][1]['replyto']) == (management_project.contributors[0].emails.all()[0].address)
 
@@ -2232,7 +2236,7 @@ URL: http://test.test<br>
                                 self.project._id).encode('utf8')).hexdigest()
 
         url = self.project.api_url_for('iqbrims_get_message')
-        res = self.app.post_json(url, {
+        res = self.app.post(url, json={
           'notify_type': 'test_notify',
           'variables': {},
         }, headers={'X-RDM-Token': token})
@@ -2262,7 +2266,7 @@ URL: http://test.test<br>
                                 self.project._id).encode('utf8')).hexdigest()
 
         url = self.project.api_url_for('iqbrims_get_message')
-        res = self.app.post_json(url, {
+        res = self.app.post(url, json={
           'notify_type': 'test_notify',
           'variables': {'var1': 'Variable #1', 'var2': None},
         }, headers={'X-RDM-Token': token})
@@ -2290,15 +2294,13 @@ class TestWorkflowStateViews(IQBRIMSAddonTestCase, OsfTestCase):
 
         url = self.project.api_url_for('iqbrims_post_workflow_state',
                                        part='raw')
-        res = self.app.post(url,
-                            expect_errors=True).maybe_follow()
+        res = self.app.post(url, follow_redirects=True)
 
         assert (res.status_code) == (403)
 
         url = self.project.api_url_for('iqbrims_post_workflow_state',
                                        part='raw')
-        res = self.app.post(url, headers={'X-RDM-Token': 'invalid123'},
-                            expect_errors=True).maybe_follow()
+        res = self.app.post(url, headers={'X-RDM-Token': 'invalid123'}, follow_redirects=True)
 
         assert (res.status_code) == (403)
 
@@ -2318,7 +2320,7 @@ class TestWorkflowStateViews(IQBRIMSAddonTestCase, OsfTestCase):
         assert (management_project.logs.count()) == (1)
         url = self.project.api_url_for('iqbrims_post_workflow_state',
                                        part='raw')
-        res = self.app.post_json(url, {
+        res = self.app.post(url, json={
           'state': 'test',
           'permissions': ['READ', 'WRITE']
         }, headers={'X-RDM-Token': token})
@@ -2376,7 +2378,7 @@ class TestWorkflowStateViews(IQBRIMSAddonTestCase, OsfTestCase):
         assert (fake_management_project.logs.count()) == (2)
         url = self.project.api_url_for('iqbrims_post_workflow_state',
                                        part='raw')
-        res = self.app.post_json(url, {
+        res = self.app.post(url, json={
           'state': 'test',
           'permissions': ['READ', 'WRITE', 'UPLOADABLE']
         }, headers={'X-RDM-Token': token})
@@ -2441,7 +2443,7 @@ class TestWorkflowStateViews(IQBRIMSAddonTestCase, OsfTestCase):
         assert (fake_management_project.logs.count()) == (2)
         url = self.project.api_url_for('iqbrims_post_workflow_state',
                                        part='raw')
-        res = self.app.post_json(url, {
+        res = self.app.post(url, json={
           'state': 'test',
           'permissions': ['READ', 'WRITE']
         }, headers={'X-RDM-Token': token})
@@ -2477,7 +2479,7 @@ class TestWorkflowStateViews(IQBRIMSAddonTestCase, OsfTestCase):
         assert (management_project.logs.count()) == (1)
         url = self.project.api_url_for('iqbrims_post_workflow_state',
                                        part='raw')
-        res = self.app.post_json(url, {
+        res = self.app.post(url, json={
           'state': 'test',
           'permissions': ['READ', 'WRITE'],
           'status': {'is_directly_submit_data': True}

@@ -34,7 +34,7 @@ class TestConfigViews(FigshareAddonTestCase, OAuthAddonConfigViewsTestCaseMixin,
         mock_about.return_value = {'path': 'fileset', 'name': 'Memes', 'id': '009001'}
         self.node_settings.set_auth(self.external_account, self.user)
         url = self.project.api_url_for('{0}_set_config'.format(self.ADDON_SHORT_NAME))
-        res = self.app.put_json(url, {
+        res = self.app.put(url, json={
             'selected': self.folder
         }, auth=self.user.auth)
         assert (res.status_code) == (http_status.HTTP_200_OK)

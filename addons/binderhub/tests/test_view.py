@@ -24,7 +24,7 @@ class TestViews(BaseAddonTestCase, OsfTestCase):
             binderhub_oauth_client_secret='MY_CUSTOM_SECRET_A',
         )
         url = self.project.api_url_for('{}_set_user_config'.format(SHORT_NAME))
-        res = self.app.put_json(url, {
+        res = self.app.put(url, json={
             'binderhubs': [new_binderhub_a],
         }, auth=self.user.auth)
         url = self.project.api_url_for('{}_get_user_config'.format(SHORT_NAME))
@@ -39,7 +39,7 @@ class TestViews(BaseAddonTestCase, OsfTestCase):
             binderhub_oauth_client_secret='MY_CUSTOM_SECRET_B',
         )
         url = self.project.api_url_for('{}_add_user_config'.format(SHORT_NAME))
-        res = self.app.post_json(url, {
+        res = self.app.post(url, json={
             'binderhub': new_binderhub_b,
         }, auth=self.user.auth)
         url = self.project.api_url_for('{}_get_user_config'.format(SHORT_NAME))
@@ -55,7 +55,7 @@ class TestViews(BaseAddonTestCase, OsfTestCase):
             tljh_url='https://testc.my.site',
         )
         url = self.project.api_url_for('{}_add_user_config'.format(SHORT_NAME))
-        res = self.app.post_json(url, {
+        res = self.app.post(url, json={
             'binderhub': new_binderhub_c,
         }, auth=self.user.auth)
         url = self.project.api_url_for('{}_get_user_config'.format(SHORT_NAME))
@@ -70,9 +70,9 @@ class TestViews(BaseAddonTestCase, OsfTestCase):
         assert ('binderhub_oauth_client_secret') in (binderhubs[2])
 
         url = self.project.api_url_for('purge_binderhub_from_user')
-        res = self.app.delete_json(
+        res = self.app.delete(
             url,
-            { 'url': new_binderhub_b['binderhub_url'] },
+            json={ 'url': new_binderhub_b['binderhub_url'] },
             auth=self.user.auth
         )
         url = self.project.api_url_for('{}_get_user_config'.format(SHORT_NAME))
@@ -113,7 +113,7 @@ class TestViews(BaseAddonTestCase, OsfTestCase):
 
     def test_ember_empty_binder_url(self):
         url = self.project.api_url_for('{}_set_config'.format(SHORT_NAME))
-        res = self.app.put_json(url, {
+        res = self.app.put(url, json={
             'binder_url': '',
             'available_binderhubs': [],
         }, auth=self.user.auth)
@@ -134,7 +134,7 @@ class TestViews(BaseAddonTestCase, OsfTestCase):
             jupyterhub_url='https://testa.jh.my.site',
         )
         url = self.project.api_url_for('{}_set_config'.format(SHORT_NAME))
-        res = self.app.put_json(url, {
+        res = self.app.put(url, json={
             'binder_url': 'https://testa.my.site',
             'available_binderhubs': [new_binderhub],
         }, auth=self.user.auth)
@@ -158,7 +158,7 @@ class TestViews(BaseAddonTestCase, OsfTestCase):
         )
         token.save()
         url = self.project.api_url_for('{}_set_config'.format(SHORT_NAME))
-        res = self.app.put_json(url, {
+        res = self.app.put(url, json={
             'binder_url': 'https://testa.my.site',
             'available_binderhubs': [new_binderhub],
         }, auth=self.user.auth)
@@ -186,7 +186,7 @@ class TestViews(BaseAddonTestCase, OsfTestCase):
             jupyterhub_max_servers=10,
         )
         url = self.project.api_url_for('{}_set_config'.format(SHORT_NAME))
-        res = self.app.put_json(url, {
+        res = self.app.put(url, json={
             'binder_url': 'https://testa.my.site',
             'available_binderhubs': [new_binderhub],
         }, auth=self.user.auth)
@@ -207,7 +207,7 @@ class TestViews(BaseAddonTestCase, OsfTestCase):
         )
         del new_binderhub['jupyterhub_max_servers']
         url = self.project.api_url_for('{}_set_config'.format(SHORT_NAME))
-        res = self.app.put_json(url, {
+        res = self.app.put(url, json={
             'binder_url': 'https://testa.my.site',
             'available_binderhubs': [new_binderhub],
         }, auth=self.user.auth)
@@ -235,9 +235,9 @@ class TestViews(BaseAddonTestCase, OsfTestCase):
             jupyterhub_url='https://second.jh.my.site',
             jupyterhub_max_servers=10,
         )
-        self.app.put_json(
+        self.app.put(
             self.project.api_url_for('binderhub_set_config'),
-            {
+            json={
                 'binder_url': first['binderhub_url'],
                 'available_binderhubs': [first, second]
             },
@@ -259,9 +259,9 @@ class TestViews(BaseAddonTestCase, OsfTestCase):
         assert (default_binderhub['url']) == ('https://first.my.site')
 
         # Delete the second one and check if there remains oly one.
-        self.app.delete_json(
+        self.app.delete(
             self.project.api_url_for('delete_binderhub'),
-            { 'url': first['binderhub_url'] },
+            json={ 'url': first['binderhub_url'] },
             auth=self.user.auth
         )
         res = self.app.get(
@@ -275,7 +275,7 @@ class TestViews(BaseAddonTestCase, OsfTestCase):
             tljh_url='https://testa.my.site',
         )
         url = self.project.api_url_for('{}_set_config'.format(SHORT_NAME))
-        res = self.app.put_json(url, {
+        res = self.app.put(url, json={
             'binder_url': 'https://testa.my.site',
             'available_binderhubs': [new_binderhub],
         }, auth=self.user.auth)
@@ -297,7 +297,7 @@ class TestViews(BaseAddonTestCase, OsfTestCase):
             jupyterhub_url='https://testa.jh.my.site',
         )
         url = self.project.api_url_for('{}_set_config'.format(SHORT_NAME))
-        res = self.app.put_json(url, {
+        res = self.app.put(url, json={
             'binder_url': 'https://testa.my.site',
             'available_binderhubs': [new_binderhub],
         }, auth=self.user.auth)
@@ -326,7 +326,7 @@ class TestViews(BaseAddonTestCase, OsfTestCase):
             jupyterhub_logout_url='https://testa.jh.my.site/custom/logout',
         )
         url = self.project.api_url_for('{}_set_config'.format(SHORT_NAME))
-        res = self.app.put_json(url, {
+        res = self.app.put(url, json={
             'binder_url': 'https://testa.my.site',
             'available_binderhubs': [new_binderhub],
         }, auth=self.user.auth)
@@ -343,7 +343,7 @@ class TestViews(BaseAddonTestCase, OsfTestCase):
             jupyterhub_url='https://testa.jh.my.site',
         )
         url = self.project.api_url_for('{}_set_config'.format(SHORT_NAME))
-        res = self.app.put_json(url, {
+        res = self.app.put(url, json={
             'binder_url': 'https://testa.my.site',
             'available_binderhubs': [binderhub],
         }, auth=self.user.auth)

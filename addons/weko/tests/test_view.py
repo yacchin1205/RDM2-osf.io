@@ -109,10 +109,9 @@ class TestWEKOViews(WEKOAddonTestCase, OAuthAddonConfigViewsTestCaseMixin, OsfTe
             url = self.project.api_url_for('weko_oauth_connect', repoid='test')
             rv = self.app.get(
                 url,
-                auth=self.user.auth,
-                expect_errors=True
+                auth=self.user.auth
             )
-            assert (rv.status_int) == (http_status.HTTP_403_FORBIDDEN)
+            assert (rv.status_code) == (http_status.HTTP_403_FORBIDDEN)
         finally:
             rdm_addon_option.is_allowed = True
             rdm_addon_option.save()
@@ -121,9 +120,8 @@ class TestWEKOViews(WEKOAddonTestCase, OAuthAddonConfigViewsTestCaseMixin, OsfTe
         user = AuthUserFactory()
         self.project.add_contributor(user, save=True)
         url = self.project.api_url_for('weko_set_config')
-        res = self.app.put_json(
-            url, {'index': 'hammertofall'}, auth=user.auth,
-            expect_errors=True
+        res = self.app.put(
+            url, json={'index': 'hammertofall'}, auth=user.auth
         )
         assert (res.status_code) == (http_status.HTTP_400_BAD_REQUEST)
 
@@ -132,9 +130,8 @@ class TestWEKOViews(WEKOAddonTestCase, OAuthAddonConfigViewsTestCaseMixin, OsfTe
         user.add_addon('weko')
         self.project.add_contributor(user, save=True)
         url = self.project.api_url_for('weko_set_config')
-        res = self.app.put_json(
-            url, {'index': 'hammertofall'}, auth=user.auth,
-            expect_errors=True
+        res = self.app.put(
+            url, json={'index': 'hammertofall'}, auth=user.auth
         )
         assert (res.status_code) == (http_status.HTTP_403_FORBIDDEN)
 
@@ -146,7 +143,7 @@ class TestWEKOViews(WEKOAddonTestCase, OAuthAddonConfigViewsTestCaseMixin, OsfTe
 
     def test_weko_remove_node_settings_unauthorized(self):
         url = self.node_settings.owner.api_url_for('weko_deauthorize_node')
-        ret = self.app.delete(url, auth=None, expect_errors=True)
+        ret = self.app.delete(url, auth=None)
 
         assert (ret.status_code) == (401)
 
@@ -165,7 +162,7 @@ class TestWEKOViews(WEKOAddonTestCase, OAuthAddonConfigViewsTestCaseMixin, OsfTe
     def test_weko_get_node_settings_unauthorized(self):
         url = self.node_settings.owner.api_url_for('weko_get_config')
         unauthorized = AuthUserFactory()
-        ret = self.app.get(url, auth=unauthorized.auth, expect_errors=True)
+        ret = self.app.get(url, auth=unauthorized.auth)
 
         assert (ret.status_code) == (403)
 

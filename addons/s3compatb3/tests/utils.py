@@ -23,28 +23,20 @@ class S3CompatAddonTestCase(OAuthAddonTestCaseMixin, AddonTestCase):
         connection = utils.connect_s3compat(host='securehost',
                                             access_key='a',
                                             secret_key='s')
-        assert (connection.is_secure)
-        assert (connection.host) == ('securehost')
-        assert (connection.port) == (443)
+        assert (connection.meta.endpoint_url) == ('https://securehost:443')
 
         connection = utils.connect_s3compat(host='securehost:443',
                                             access_key='a',
                                             secret_key='s')
-        assert (connection.is_secure)
-        assert (connection.host) == ('securehost')
-        assert (connection.port) == (443)
+        assert (connection.meta.endpoint_url) == ('https://securehost:443')
 
     def test_http(self):
         connection = utils.connect_s3compat(host='normalhost:80',
                                             access_key='a',
                                             secret_key='s')
-        assert not (connection.is_secure)
-        assert (connection.host) == ('normalhost')
-        assert (connection.port) == (80)
+        assert (connection.meta.endpoint_url) == ('http://normalhost:80')
 
         connection = utils.connect_s3compat(host='normalhost:8080',
                                             access_key='a',
                                             secret_key='s')
-        assert not (connection.is_secure)
-        assert (connection.host) == ('normalhost')
-        assert (connection.port) == (8080)
+        assert (connection.meta.endpoint_url) == ('http://normalhost:8080')

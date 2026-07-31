@@ -38,30 +38,30 @@ class TestAzureBlobStorageViews(AzureBlobStorageAddonTestCase, OAuthAddonConfigV
 
     def test_azureblobstorage_settings_input_empty_keys(self):
         url = self.project.api_url_for('azureblobstorage_add_user_account')
-        rv = self.app.post_json(url,{
+        rv = self.app.post(url,json={
             'access_key': '',
             'secret_key': ''
-        }, auth=self.user.auth, expect_errors=True)
-        assert (rv.status_int) == (http_status.HTTP_400_BAD_REQUEST)
-        assert ('All the fields above are required.') in (rv.body.decode())
+        }, auth=self.user.auth)
+        assert (rv.status_code) == (http_status.HTTP_400_BAD_REQUEST)
+        assert ('All the fields above are required.') in (rv.data.decode())
 
     def test_azureblobstorage_settings_input_empty_access_key(self):
         url = self.project.api_url_for('azureblobstorage_add_user_account')
-        rv = self.app.post_json(url,{
+        rv = self.app.post(url,json={
             'access_key': '',
             'secret_key': 'Non-empty-secret-key'
-        }, auth=self.user.auth, expect_errors=True)
-        assert (rv.status_int) == (http_status.HTTP_400_BAD_REQUEST)
-        assert ('All the fields above are required.') in (rv.body.decode())
+        }, auth=self.user.auth)
+        assert (rv.status_code) == (http_status.HTTP_400_BAD_REQUEST)
+        assert ('All the fields above are required.') in (rv.data.decode())
 
     def test_azureblobstorage_settings_input_empty_secret_key(self):
         url = self.project.api_url_for('azureblobstorage_add_user_account')
-        rv = self.app.post_json(url,{
+        rv = self.app.post(url,json={
             'access_key': 'Non-empty-access-key',
             'secret_key': ''
-        }, auth=self.user.auth, expect_errors=True)
-        assert (rv.status_int) == (http_status.HTTP_400_BAD_REQUEST)
-        assert ('All the fields above are required.') in (rv.body.decode())
+        }, auth=self.user.auth)
+        assert (rv.status_code) == (http_status.HTTP_400_BAD_REQUEST)
+        assert ('All the fields above are required.') in (rv.data.decode())
 
     def test_azureblobstorage_settings_rdm_addons_denied(self):
         institution = InstitutionFactory()
@@ -71,20 +71,19 @@ class TestAzureBlobStorageViews(AzureBlobStorageAddonTestCase, OAuthAddonConfigV
         rdm_addon_option.is_allowed = False
         rdm_addon_option.save()
         url = self.project.api_url_for('azureblobstorage_add_user_account')
-        rv = self.app.post_json(url,{
+        rv = self.app.post(url,json={
             'access_key': 'aldkjf',
             'secret_key': 'las'
-        }, auth=self.user.auth, expect_errors=True)
-        assert (rv.status_int) == (http_status.HTTP_403_FORBIDDEN)
-        assert ('You are prohibited from using this add-on.') in (rv.body.decode())
+        }, auth=self.user.auth)
+        assert (rv.status_code) == (http_status.HTTP_403_FORBIDDEN)
+        assert ('You are prohibited from using this add-on.') in (rv.data.decode())
 
     def test_azureblobstorage_set_container_no_settings(self):
         user = AuthUserFactory()
         self.project.add_contributor(user, save=True)
         url = self.project.api_url_for('azureblobstorage_set_config')
-        res = self.app.put_json(
-            url, {'azureblobstorage_container': 'hammertofall'}, auth=user.auth,
-            expect_errors=True
+        res = self.app.put(
+            url, json={'azureblobstorage_container': 'hammertofall'}, auth=user.auth
         )
         assert (res.status_code) == (http_status.HTTP_400_BAD_REQUEST)
 
@@ -94,9 +93,8 @@ class TestAzureBlobStorageViews(AzureBlobStorageAddonTestCase, OAuthAddonConfigV
         user.add_addon('azureblobstorage')
         self.project.add_contributor(user, save=True)
         url = self.project.api_url_for('azureblobstorage_set_config')
-        res = self.app.put_json(
-            url, {'azureblobstorage_container': 'hammertofall'}, auth=user.auth,
-            expect_errors=True
+        res = self.app.put(
+            url, json={'azureblobstorage_container': 'hammertofall'}, auth=user.auth
         )
         assert (res.status_code) == (http_status.HTTP_403_FORBIDDEN)
 
@@ -107,9 +105,9 @@ class TestAzureBlobStorageViews(AzureBlobStorageAddonTestCase, OAuthAddonConfigV
         )
 
         url = registration.api_url_for('azureblobstorage_set_config')
-        res = self.app.put_json(
-            url, {'azureblobstorage_container': 'hammertofall'}, auth=self.user.auth,
-            expect_errors=True,
+        res = self.app.put(
+            url, json={'azureblobstorage_container': 'hammertofall'}, auth=self.user.auth,
+
         )
 
         assert (res.status_code) == (http_status.HTTP_400_BAD_REQUEST)
@@ -117,13 +115,13 @@ class TestAzureBlobStorageViews(AzureBlobStorageAddonTestCase, OAuthAddonConfigV
     @mock.patch('addons.azureblobstorage.views.utils.can_list', return_value=False)
     def test_user_settings_cant_list(self, mock_can_list):
         url = api_url_for('azureblobstorage_add_user_account')
-        rv = self.app.post_json(url, {
+        rv = self.app.post(url, json={
             'access_key': 'aldkjf',
             'secret_key': 'las'
-        }, auth=self.user.auth, expect_errors=True)
+        }, auth=self.user.auth)
 
-        assert ('Unable to list containers.') in (rv.body.decode())
-        assert (rv.status_int) == (http_status.HTTP_400_BAD_REQUEST)
+        assert ('Unable to list containers.') in (rv.data.decode())
+        assert (rv.status_code) == (http_status.HTTP_400_BAD_REQUEST)
 
     def test_azureblobstorage_remove_node_settings_owner(self):
         url = self.node_settings.owner.api_url_for('azureblobstorage_deauthorize_node')
@@ -133,7 +131,7 @@ class TestAzureBlobStorageViews(AzureBlobStorageAddonTestCase, OAuthAddonConfigV
 
     def test_azureblobstorage_remove_node_settings_unauthorized(self):
         url = self.node_settings.owner.api_url_for('azureblobstorage_deauthorize_node')
-        ret = self.app.delete(url, auth=None, expect_errors=True)
+        ret = self.app.delete(url, auth=None)
 
         assert (ret.status_code) == (401)
 
@@ -152,7 +150,7 @@ class TestAzureBlobStorageViews(AzureBlobStorageAddonTestCase, OAuthAddonConfigV
     def test_azureblobstorage_get_node_settings_unauthorized(self):
         url = self.node_settings.owner.api_url_for('azureblobstorage_get_config')
         unauthorized = AuthUserFactory()
-        ret = self.app.get(url, auth=unauthorized.auth, expect_errors=True)
+        ret = self.app.get(url, auth=unauthorized.auth)
 
         assert (ret.status_code) == (403)
 
@@ -168,7 +166,7 @@ class TestAzureBlobStorageViews(AzureBlobStorageAddonTestCase, OAuthAddonConfigV
         mock_exists.return_value = True
         self.node_settings.set_auth(self.external_account, self.user)
         url = self.project.api_url_for('{0}_set_config'.format(self.ADDON_SHORT_NAME))
-        res = self.app.put_json(url, {
+        res = self.app.put(url, json={
             'selected': self.folder
         }, auth=self.user.auth)
         assert (res.status_code) == (http_status.HTTP_200_OK)
@@ -244,15 +242,15 @@ class TestCreateContainer(AzureBlobStorageAddonTestCase, OsfTestCase):
             'doesntevenmatter'
         ]
         url = self.project.api_url_for('azureblobstorage_create_container')
-        ret = self.app.post_json(
+        ret = self.app.post(
             url,
-            {
+            json={
                 'container_name': 'doesntevenmatter'
             },
             auth=self.user.auth
         )
 
-        assert (ret.status_int) == (http_status.HTTP_200_OK)
+        assert (ret.status_code) == (http_status.HTTP_200_OK)
         assert (ret.json) == ({})
 
     @mock.patch('addons.azureblobstorage.views.utils.create_container')
@@ -262,6 +260,6 @@ class TestCreateContainer(AzureBlobStorageAddonTestCase, OsfTestCase):
         mock_make.side_effect = error
 
         url = '/api/v1/project/{0}/azureblobstorage/newcontainer/'.format(self.project._id)
-        ret = self.app.post_json(url, {'container_name': 'doesntevenmatter'}, auth=self.user.auth, expect_errors=True)
+        ret = self.app.post(url, json={'container_name': 'doesntevenmatter'}, auth=self.user.auth)
 
-        assert (ret.body.decode()) == ('{"message": "This should work", "title": "Problem connecting to Azure Blob Storage"}')
+        assert (ret.data.decode()) == ('{"message": "This should work", "title": "Problem connecting to Azure Blob Storage"}')

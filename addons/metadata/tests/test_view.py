@@ -100,7 +100,7 @@ class TestSuggestionsViews(BaseAddonTestCase, OsfTestCase):
     def test_no_key(self):
         url = self.project.api_url_for('{}_file_metadata_suggestions'.format(SHORT_NAME),
                                        filepath='fake')
-        res = self.app.get(url, auth=self.user.auth, expect_errors=True)
+        res = self.app.get(url, auth=self.user.auth)
         assert (res.status_code) == (http_status.HTTP_400_BAD_REQUEST)
 
     @mock.patch('addons.metadata.settings.KAKEN_ELASTIC_URI', 'http://localhost:9200')
@@ -169,7 +169,7 @@ class TestSuggestionsViews(BaseAddonTestCase, OsfTestCase):
 
         # Call combined suggestions endpoint (no keyword filter)
         url = self.project.api_url_for('{}_file_metadata_suggestions'.format(SHORT_NAME), filepath='dir/osfstorage/dir1/')
-        res = self.app.get(url, auth=self.user.auth, params={'key[]': ['erad:kenkyusha_no', 'kaken:kenkyusha_shimei'], 'keyword': ''})
+        res = self.app.get(url, auth=self.user.auth, query_string={'key[]': ['erad:kenkyusha_no', 'kaken:kenkyusha_shimei'], 'keyword': ''})
         assert (res.status_code) == (http_status.HTTP_200_OK)
 
         suggestions = res.json['data']['attributes']['suggestions']
@@ -191,7 +191,7 @@ class TestSuggestionsViews(BaseAddonTestCase, OsfTestCase):
         mock_get_metadata_assets.return_value = self.fake_metadata_asset_pool
         url = self.project.api_url_for('{}_file_metadata_suggestions'.format(SHORT_NAME),
                                        filepath='dir/osfstorage/dir1/')
-        res = self.app.get(url, auth=self.user.auth, params={'key[]': ['file-data-number', 'asset:title']})
+        res = self.app.get(url, auth=self.user.auth, query_string={'key[]': ['file-data-number', 'asset:title']})
         assert (res.status_code) == (http_status.HTTP_200_OK)
         assert (res.json) == ({
             'data': {
@@ -239,7 +239,7 @@ class TestSuggestionsViews(BaseAddonTestCase, OsfTestCase):
         with mock.patch.object(BaseFileNode, 'resolve_class', return_value=mock_resolved_class):
             url = self.project.api_url_for('{}_file_metadata_suggestions'.format(SHORT_NAME),
                                            filepath=filepath)
-            res = self.app.get(url, auth=self.user.auth, params={'key[]': ['file-data-number', 'asset:title']})
+            res = self.app.get(url, auth=self.user.auth, query_string={'key[]': ['file-data-number', 'asset:title']})
             assert (res.status_code) == (http_status.HTTP_200_OK)
             assert (res.json) == ({
                 'data': {
@@ -281,7 +281,7 @@ class TestSuggestionsViews(BaseAddonTestCase, OsfTestCase):
         filepath = 'dir/osfstorage/dir1/'
         url = self.project.api_url_for('{}_file_metadata_suggestions'.format(SHORT_NAME),
                                        filepath=filepath)
-        res = self.app.get(url, params={'key': 'asset:title', 'keyword': 'app'}, auth=self.user.auth)
+        res = self.app.get(url, query_string={'key': 'asset:title', 'keyword': 'app'}, auth=self.user.auth)
         assert (res.status_code) == (http_status.HTTP_200_OK)
         assert (res.json) == ({
             'data': {
@@ -310,7 +310,7 @@ class TestSuggestionsViews(BaseAddonTestCase, OsfTestCase):
     def test_invalid_key(self):
         url = self.project.api_url_for('{}_file_metadata_suggestions'.format(SHORT_NAME),
                                        filepath='dir/osfstorage/dir1/')
-        res = self.app.get(url, params={'key': 'invalid'}, auth=self.user.auth, expect_errors=True)
+        res = self.app.get(url, query_string={'key': 'invalid'}, auth=self.user.auth)
         assert (res.status_code) == (http_status.HTTP_400_BAD_REQUEST)
 
 

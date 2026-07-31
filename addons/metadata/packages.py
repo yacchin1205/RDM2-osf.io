@@ -1,3 +1,4 @@
+from copy import deepcopy
 from datetime import datetime
 import html
 import io
@@ -308,23 +309,19 @@ class BaseROCrateFactory(object):
         self.include_users = False
 
     def _build_ro_crate_as_json(self):
-        crate = ROCrate()
+        crate = ROCrate(version='1.1')
         extra_contexts = [
             'https://w3id.org/ro/terms/workflow-run',
             'https://purl.org/gakunin-rdm/project/0.1',
         ]
         crate, files = self._build_ro_crate(crate)
         metadata_file = os.path.join(self.work_dir, 'ro-crate-metadata.json')
-        zip_path = os.path.join(self.work_dir, 'work.zip')
-        crate.write_zip(zip_path)
-        with ZipFile(zip_path, 'r') as zf:
-            with zf.open('ro-crate-metadata.json') as f:
-                metadata = json.load(f)
-                metadata['@context'] = [
-                    metadata['@context'],
-                ] + extra_contexts
-                with open(metadata_file, 'w') as df:
-                    df.write(json.dumps(metadata))
+        metadata = crate.metadata.generate()
+        metadata['@context'] = [
+            metadata['@context'],
+        ] + extra_contexts
+        with open(metadata_file, 'w') as df:
+            df.write(json.dumps(metadata))
         return metadata_file, files
 
     def _ro_crate_path_list(self):
@@ -417,9 +414,14 @@ class BaseROCrateFactory(object):
                         custom_props[hash] = latest.metadata[hash]
                 if self.include_users and creator._id not in user_ids:
                     crate.add(*self._create_contributor_entities(crate, creator, user_ids))
+                root_target = web_file.get_guid()
                 comments = sum([
                     self._create_comment_entities(crate, path, None, c, user_ids, comment_ids)
-                    for c in Comment.objects.filter(root_target=web_file.get_guid(), deleted__isnull=True)
+                    for c in Comment.objects.filter(
+                        root_target=root_target,
+                        target=root_target,
+                        deleted__isnull=True,
+                    ).order_by('created', 'id')
                 ], [])
                 tags += [t.name for t in web_file.tags.all()]
             r.append((path, wb_file, comments))
@@ -524,7 +526,7 @@ class BaseROCrateFactory(object):
             props['about'] = {
                 '@id': file_entity_id,
             }
-            crate.add(ContextEntity(crate, f'{file_entity_id}#{i}', properties=props))
+            crate.add(ContextEntity(crate, f'#{file_entity_id}#{i}', properties=props))
         for schema_id, schema_props in new_schema_ids.items():
             if schema_id in schema_ids:
                 continue
@@ -557,7 +559,10 @@ class BaseROCrateFactory(object):
                 '@id': about_id,
             }
         r = [ContextEntity(crate, comment_id, properties=props)]
-        for reply in Comment.objects.filter(target___id=comment._id, deleted__isnull=True):
+        for reply in Comment.objects.filter(
+            target___id=comment._id,
+            deleted__isnull=True,
+        ).order_by('created', 'id'):
             r += self._create_comment_entities(crate, None, comment_id, reply, user_ids, comment_ids)
         return r
 
@@ -593,7 +598,13 @@ class BaseROCrateFactory(object):
             affiliation = current_schools[0]
         if affiliation is None:
             return [
-                Person(crate, entity_id, properties=person_props),
+                _create_entity_with_language_values(
+                    Person,
+                    crate,
+                    entity_id,
+                    person_props,
+                    ['givenName', 'familyName'],
+                ),
             ]
         institution_id = f'#{affiliation["institution"] or affiliation["institution_ja"]}'
         if affiliation['department'] or affiliation['department_ja']:
@@ -602,7 +613,13 @@ class BaseROCrateFactory(object):
             organization_id = institution_id
         if organization_id in user_ids:
             return [
-                Person(crate, entity_id, properties=person_props),
+                _create_entity_with_language_values(
+                    Person,
+                    crate,
+                    entity_id,
+                    person_props,
+                    ['givenName', 'familyName'],
+                ),
             ]
         user_ids[institution_id] = affiliation
         user_ids[organization_id] = affiliation
@@ -626,8 +643,20 @@ class BaseROCrateFactory(object):
         }
         if not (affiliation['department'] or affiliation['department_ja']):
             return [
-                Person(crate, entity_id, properties=person_props),
-                ContextEntity(crate, institution_id, properties=institution_props),
+                _create_entity_with_language_values(
+                    Person,
+                    crate,
+                    entity_id,
+                    person_props,
+                    ['givenName', 'familyName'],
+                ),
+                _create_entity_with_language_values(
+                    ContextEntity,
+                    crate,
+                    institution_id,
+                    institution_props,
+                    ['name'],
+                ),
             ]
         department_name = []
         if affiliation['department']:
@@ -640,17 +669,35 @@ class BaseROCrateFactory(object):
                 '@language': 'ja',
                 '@value': affiliation['department_ja'],
             })
-        department = ContextEntity(crate, organization_id, properties={
-            '@type': 'Organization',
-            'name': department_name,
-        })
+        department = _create_entity_with_language_values(
+            ContextEntity,
+            crate,
+            organization_id,
+            {
+                '@type': 'Organization',
+                'name': department_name,
+            },
+            ['name'],
+        )
         institution_props['department'] = {
             '@id': organization_id,
         }
         return [
-            Person(crate, entity_id, properties=person_props),
+            _create_entity_with_language_values(
+                Person,
+                crate,
+                entity_id,
+                person_props,
+                ['givenName', 'familyName'],
+            ),
             department,
-            ContextEntity(crate, institution_id, properties=institution_props),
+            _create_entity_with_language_values(
+                ContextEntity,
+                crate,
+                institution_id,
+                institution_props,
+                ['name'],
+            ),
         ]
 
     def _create_log_entity(self, crate, log, user_ids, action_ids):
@@ -699,9 +746,14 @@ class BaseROCrateFactory(object):
             creator = latest.user
         if self.include_users and creator._id not in user_ids:
             crate.add(*self._create_contributor_entities(crate, creator, user_ids))
+        root_target = Guid.load(wiki._id)
         comments = sum([
             self._create_comment_entities(crate, path, None, c, user_ids, comment_ids)
-            for c in Comment.objects.filter(root_target=Guid.load(wiki._id), deleted__isnull=True)
+            for c in Comment.objects.filter(
+                root_target=root_target,
+                target=root_target,
+                deleted__isnull=True,
+            ).order_by('created', 'id')
         ], [])
         first = wiki.versions.order_by('created').first()
         created = first.created if first is not None else None
@@ -816,9 +868,14 @@ class ROCrateFactory(BaseROCrateFactory):
             user_ids,
             extra_props=node_extra_props,
         )
+        root_target = Guid.load(node._id)
         entities += sum([
             self._create_comment_entities(crate, entity_id, None, comment, user_ids, comment_ids)
-            for comment in Comment.objects.filter(root_target=Guid.load(node._id), deleted__isnull=True)
+            for comment in Comment.objects.filter(
+                root_target=root_target,
+                target=root_target,
+                deleted__isnull=True,
+            ).order_by('created', 'id')
         ], [])
         files = []
         # addons
@@ -1323,6 +1380,17 @@ def _to_localized(o, prop, default_lang='en'):
         '@language': 'ja',
     })
     return items
+
+def _create_entity_with_language_values(entity_class, crate, entity_id, properties, property_names):
+    language_values = {
+        property_name: deepcopy(properties[property_name])
+        for property_name in property_names
+    }
+    entity = entity_class(crate, entity_id, properties=properties)
+    json_ld = entity.as_jsonld()
+    for property_name, value in language_values.items():
+        json_ld[property_name] = value
+    return entity
 
 def _to_i18n_property_key(name, language):
     if language == 'en':

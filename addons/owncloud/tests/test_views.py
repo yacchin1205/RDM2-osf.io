@@ -75,9 +75,9 @@ class TestConfigViews(OwnCloudAddonTestCase, OAuthAddonConfigViewsTestCaseMixin,
         rdm_addon_option.is_allowed = False
         rdm_addon_option.save()
         url = self.project.api_url_for('owncloud_add_user_account')
-        rv = self.app.post_json(url,{
+        rv = self.app.post(url,json={
             'access_key': 'aldkjf',
             'secret_key': 'las'
-        }, auth=self.user.auth, expect_errors=True)
-        assert (rv.status_int) == (http_status.HTTP_403_FORBIDDEN)
-        assert (b'You are prohibited from using this add-on.') in (rv.body)
+        }, auth=self.user.auth)
+        assert (rv.status_code) == (http_status.HTTP_403_FORBIDDEN)
+        assert (b'You are prohibited from using this add-on.') in (rv.data)

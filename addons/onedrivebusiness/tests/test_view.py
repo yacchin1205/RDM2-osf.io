@@ -78,7 +78,7 @@ class TestOneDriveBusinessViews(OneDriveBusinessAddonTestCase, OAuthAddonConfigV
     def test_onedrivebusiness_get_node_settings_unauthorized(self):
         url = self.node_settings.owner.api_url_for('onedrivebusiness_get_config')
         unauthorized = AuthUserFactory()
-        ret = self.app.get(url, auth=unauthorized.auth, expect_errors=True)
+        ret = self.app.get(url, auth=unauthorized.auth)
 
         assert (ret.status_code) == (403)
 

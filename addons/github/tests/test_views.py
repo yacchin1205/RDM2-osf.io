@@ -4,6 +4,7 @@ import unittest
 
 from django.utils import timezone
 from github3.repos.branch import Branch
+from github3.session import GitHubSession
 from json import dumps
 from unittest import mock
 import pytest
@@ -64,7 +65,7 @@ class TestGitHubConfigViews(GitHubAddonTestCase, OAuthAddonConfigViewsTestCaseMi
         # GH selects repos, not folders, so this needs to be overriden
         mock_repo.return_value = 'repo_name'
         url = self.project.api_url_for('{0}_set_config'.format(self.ADDON_SHORT_NAME))
-        res = self.app.post_json(url, {
+        res = self.app.post(url, json={
             'github_user': 'octocat',
             'github_repo': 'repo_name',
         }, auth=self.user.auth)
@@ -159,7 +160,7 @@ class TestGithubViews(OsfTestCase):
 
     def test_before_fork(self):
         url = self.project.api_url + 'fork/before/'
-        res = self.app.get(url, auth=self.user.auth).maybe_follow()
+        res = self.app.get(url, auth=self.user.auth, follow_redirects=True)
         # GRDM-54077: metadata addon is now enabled by default, so we expect 2 prompts
         assert (len(res.json['prompts'])) == (2)
 
@@ -242,9 +243,9 @@ class TestGithubViews(OsfTestCase):
     def test_hook_callback_add_file_not_thro_osf(self, mock_verify):
         url = '/api/v1/project/{0}/github/hook/'.format(self.project._id)
         timestamp = str(timezone.now())
-        self.app.post_json(
+        self.app.post(
             url,
-            {
+            json={
                 'test': True,
                 'commits': [{
                     'id': 'b08dbb5b6fcd74a592e5281c9d28e2020a1db4ce',
@@ -259,8 +260,8 @@ class TestGithubViews(OsfTestCase):
                     'modified': [],
                 }]
             },
-            content_type='application/json',
-        ).maybe_follow()
+            content_type='application/json', follow_redirects=True,
+        )
         self.project.reload()
         assert (self.project.logs.latest().action) == ('github_file_added')
         urls = self.project.logs.latest().params['urls']
@@ -275,9 +276,9 @@ class TestGithubViews(OsfTestCase):
     def test_hook_callback_modify_file_not_thro_osf(self, mock_verify):
         url = '/api/v1/project/{0}/github/hook/'.format(self.project._id)
         timestamp = str(timezone.now())
-        self.app.post_json(
+        self.app.post(
             url,
-            {'test': True,
+            json={'test': True,
                  'commits': [{'id': 'b08dbb5b6fcd74a592e5281c9d28e2020a1db4ce',
                               'distinct': True,
                               'message': ' foo',
@@ -287,7 +288,7 @@ class TestGithubViews(OsfTestCase):
                               'committer': {'name': 'Testor', 'email': 'test@osf.io',
                                             'username': 'tester'},
                               'added': [], 'removed':[], 'modified':['PRJWN3TV']}]},
-            content_type='application/json').maybe_follow()
+            content_type='application/json', follow_redirects=True)
         self.project.reload()
         assert (self.project.logs.latest().action) == ('github_file_updated')
         urls = self.project.logs.latest().params['urls']
@@ -302,9 +303,9 @@ class TestGithubViews(OsfTestCase):
     def test_hook_callback_remove_file_not_thro_osf(self, mock_verify):
         url = '/api/v1/project/{0}/github/hook/'.format(self.project._id)
         timestamp = str(timezone.now())
-        self.app.post_json(
+        self.app.post(
             url,
-            {'test': True,
+            json={'test': True,
              'commits': [{'id': 'b08dbb5b6fcd74a592e5281c9d28e2020a1db4ce',
                           'distinct': True,
                           'message': 'foo',
@@ -313,7 +314,7 @@ class TestGithubViews(OsfTestCase):
                           'author': {'name': 'Illidan', 'email': 'njqpw@osf.io'},
                           'committer': {'name': 'Testor', 'email': 'test@osf.io', 'username': 'tester'},
                           'added': [], 'removed': ['PRJWN3TV'], 'modified':[]}]},
-            content_type='application/json').maybe_follow()
+            content_type='application/json', follow_redirects=True)
         self.project.reload()
         assert (self.project.logs.latest().action) == ('github_file_removed')
         urls = self.project.logs.latest().params['urls']
@@ -322,9 +323,9 @@ class TestGithubViews(OsfTestCase):
     @mock.patch('addons.github.views.verify_hook_signature')
     def test_hook_callback_add_file_thro_osf(self, mock_verify):
         url = '/api/v1/project/{0}/github/hook/'.format(self.project._id)
-        self.app.post_json(
+        self.app.post(
             url,
-            {'test': True,
+            json={'test': True,
              'commits': [{'id': 'b08dbb5b6fcd74a592e5281c9d28e2020a1db4ce',
                           'distinct': True,
                           'message': 'Added via the GakuNin RDM',
@@ -333,16 +334,16 @@ class TestGithubViews(OsfTestCase):
                           'author': {'name': 'Illidan', 'email': 'njqpw@osf.io'},
                           'committer': {'name': 'Testor', 'email': 'test@osf.io', 'username': 'tester'},
                           'added': ['PRJWN3TV'], 'removed':[], 'modified':[]}]},
-            content_type='application/json').maybe_follow()
+            content_type='application/json', follow_redirects=True)
         self.project.reload()
         assert (self.project.logs.latest().action) != ('github_file_added')
 
     @mock.patch('addons.github.views.verify_hook_signature')
     def test_hook_callback_modify_file_thro_osf(self, mock_verify):
         url = '/api/v1/project/{0}/github/hook/'.format(self.project._id)
-        self.app.post_json(
+        self.app.post(
             url,
-            {'test': True,
+            json={'test': True,
              'commits': [{'id': 'b08dbb5b6fcd74a592e5281c9d28e2020a1db4ce',
                           'distinct': True,
                           'message': 'Updated via the GakuNin RDM',
@@ -351,16 +352,16 @@ class TestGithubViews(OsfTestCase):
                           'author': {'name': 'Illidan', 'email': 'njqpw@osf.io'},
                           'committer': {'name': 'Testor', 'email': 'test@osf.io', 'username': 'tester'},
                           'added': [], 'removed':[], 'modified':['PRJWN3TV']}]},
-            content_type='application/json').maybe_follow()
+            content_type='application/json', follow_redirects=True)
         self.project.reload()
         assert (self.project.logs.latest().action) != ('github_file_updated')
 
     @mock.patch('addons.github.views.verify_hook_signature')
     def test_hook_callback_remove_file_thro_osf(self, mock_verify):
         url = '/api/v1/project/{0}/github/hook/'.format(self.project._id)
-        self.app.post_json(
+        self.app.post(
             url,
-            {'test': True,
+            json={'test': True,
              'commits': [{'id': 'b08dbb5b6fcd74a592e5281c9d28e2020a1db4ce',
                           'distinct': True,
                           'message': 'Deleted via the GakuNin RDM',
@@ -369,7 +370,7 @@ class TestGithubViews(OsfTestCase):
                           'author': {'name': 'Illidan', 'email': 'njqpw@osf.io'},
                           'committer': {'name': 'Testor', 'email': 'test@osf.io', 'username': 'tester'},
                           'added': [], 'removed':['PRJWN3TV'], 'modified':[]}]},
-            content_type='application/json').maybe_follow()
+            content_type='application/json', follow_redirects=True)
         self.project.reload()
         assert (self.project.logs.latest().action) != ('github_file_removed')
 
@@ -390,6 +391,52 @@ class TestRegistrationsWithGithub(OsfTestCase):
         self.node_settings.user = 'Queen'
         self.node_settings.repo = 'Sheer-Heart-Attack'
         self.node_settings.save()
+
+
+USER = 'octo-cat'
+REPO_AUTHOR = {
+    'name': USER,
+    'email': 'njqpw@osf.io',
+    'avatar_url': 'https://gravatar.com/avatar/c74f9cfd7776305a82ede0b765d65402?d=https%3A%2F'
+                  '%2Fidenticons.github.com%2F3959fe3bcd263a12c28ae86a66ec75ef.png&r=x',
+    'events_url': 'https://api.github.com/users/{user}/events{{/privacy}}',
+    'followers_url': 'https://api.github.com/users/{user}/followers',
+    'following_url': 'https://api.github.com/users/{user}/following{{/other_user}}',
+    'gists_url': 'https://api.github.com/users/{user}/gists{{/gist_id}}',
+    'gravatar_id': 'c74f9cfd7776305a82ede0b765d65402',
+    'html_url': 'https://github.com/{user}',
+    'id': 2379650,
+    'login': '{user}',
+    'organizations_url': 'https://api.github.com/users/{user}/orgs',
+    'received_events_url': 'https://api.github.com/users/{user}/received_events',
+    'repos_url': 'https://api.github.com/users/{user}/repos',
+    'site_admin': False,
+    'starred_url': 'https://api.github.com/users/{user}/starred{{/owner}}{{/repo}}',
+    'subscriptions_url': 'https://api.github.com/users/{user}/subscriptions',
+    'type': 'User',
+    'url': 'https://api.github.com/users/{user}',
+}
+REPO_COMMIT = {
+    'ETag': '',
+    'Last-Modified': '',
+    'url': '',
+    'author': REPO_AUTHOR,
+    'committer': {
+        'name': '{user}',
+        'email': '{user}@osf.io',
+        'username': 'tester',
+    },
+    'message': 'Fixed error',
+    'tree': {
+        'url': 'https://docs.github.com/en/rest/git/trees',
+        'sha': 'e22d92d5d90bb8f9695e9a5e2e2311a5c1997230',
+    },
+}
+REPO_PARENTS = [
+    '12345',
+    'https://api.example.com/entities/67890',
+    'another-entity-id',
+]
 
 
 class TestGithubSettings(OsfTestCase):
@@ -418,14 +465,14 @@ class TestGithubSettings(OsfTestCase):
         mock_repo.return_value = github_mock.repo.return_value
 
         url = self.project.api_url + 'github/settings/'
-        self.app.post_json(
+        self.app.post(
             url,
-            {
+            json={
                 'github_user': 'queen',
                 'github_repo': 'night at the opera',
             },
-            auth=self.auth
-        ).maybe_follow()
+            auth=self.auth, follow_redirects=True
+        )
 
         self.project.reload()
         self.node_settings.reload()
@@ -444,14 +491,14 @@ class TestGithubSettings(OsfTestCase):
         log_count = self.project.logs.count()
 
         url = self.project.api_url + 'github/settings/'
-        self.app.post_json(
+        self.app.post(
             url,
-            {
+            json={
                 'github_user': 'Queen',
                 'github_repo': 'Sheer-Heart-Attack',
             },
-            auth=self.auth
-        ).maybe_follow()
+            auth=self.auth, follow_redirects=True
+        )
 
         self.project.reload()
         self.node_settings.reload()
@@ -465,36 +512,63 @@ class TestGithubSettings(OsfTestCase):
         mock_repo.return_value = None
 
         url = self.project.api_url + 'github/settings/'
-        res = self.app.post_json(
+        res = self.app.post(
             url,
-            {
+            json={
                 'github_user': 'queen',
                 'github_repo': 'night at the opera',
             },
-            auth=self.auth,
-            expect_errors=True
-        ).maybe_follow()
+            auth=self.auth, follow_redirects=True
+        )
 
         assert (res.status_code) == (400)
 
     @mock.patch('addons.github.api.GitHubClient.branches')
     def test_link_repo_registration(self, mock_branches):
-
+        session = GitHubSession()
         mock_branches.return_value = [
             Branch.from_json(dumps({
                 'name': 'master',
                 'commit': {
-                    'sha': '6dcb09b5b57875f334f61aebed695e2e4193db5e',
-                    'url': 'https://api.github.com/repos/octocat/Hello-World/commits/c5b97d5ae6c19d5c5df71a34c7fbeeda2479ccbc',
-                }
-            })),
+                    'sha': '444a74d0d90a4aea744dacb31a14f87b5c30759c',
+                    'url': f'https://api.github.com/repos/{USER}/mock-repo/commits'
+                           f'/444a74d0d90a4aea744dacb31a14f87b5c30759c',
+                    'author': REPO_AUTHOR,
+                    'comments_url': 'https://api.github.com/repos/{user}/mock-repo/comments{{/number}}',
+                    'commit': REPO_COMMIT,
+                    'committer': REPO_AUTHOR,
+                    'html_url': 'https://github.com/{user}',
+                    'parents': REPO_PARENTS,
+                },
+                '_links': [{
+                    'rel': 'self',
+                    'href': 'https://api.example.com/entities/12345',
+                }],
+                'protected': True,
+                'protection': 'public',
+                'protection_url': 'https://api.example.com/docs/protection',
+            }), session=session),
             Branch.from_json(dumps({
                 'name': 'develop',
                 'commit': {
-                    'sha': '6dcb09b5b57875asdasedawedawedwedaewdwdass',
-                    'url': 'https://api.github.com/repos/octocat/Hello-World/commits/cdcb09b5b57875asdasedawedawedwedaewdwdass',
-                }
-            }))
+                    'sha': '444a74d0d90a4aea744dacb31a14f87b5c30759c',
+                    'url': f'https://api.github.com/repos/{USER}/mock-repo/commits'
+                           f'/444a74d0d90a4aea744dacb31a14f87b5c30759c',
+                    'author': REPO_AUTHOR,
+                    'comments_url': 'https://api.github.com/repos/{user}/mock-repo/comments{{/number}}',
+                    'commit': REPO_COMMIT,
+                    'committer': REPO_AUTHOR,
+                    'html_url': 'https://github.com/{user}',
+                    'parents': REPO_PARENTS,
+                },
+                '_links': [{
+                    'rel': 'self',
+                    'href': 'https://api.example.com/entities/12345',
+                }],
+                'protected': True,
+                'protection': 'public',
+                'protection_url': 'https://api.example.com/docs/protection',
+            }), session=session),
         ]
 
         registration = self.project.register_node(
@@ -504,15 +578,14 @@ class TestGithubSettings(OsfTestCase):
         )
 
         url = registration.api_url + 'github/settings/'
-        res = self.app.post_json(
+        res = self.app.post(
             url,
-            {
+            json={
                 'github_user': 'queen',
                 'github_repo': 'night at the opera',
             },
-            auth=self.auth,
-            expect_errors=True
-        ).maybe_follow()
+            auth=self.auth, follow_redirects=True
+        )
 
         assert (res.status_code) == (400)
 
@@ -521,7 +594,7 @@ class TestGithubSettings(OsfTestCase):
 
         url = self.project.api_url + 'github/user_auth/'
 
-        self.app.delete(url, auth=self.auth).maybe_follow()
+        self.app.delete(url, auth=self.auth, follow_redirects=True)
 
         self.project.reload()
         self.node_settings.reload()

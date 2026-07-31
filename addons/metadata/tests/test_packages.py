@@ -689,7 +689,7 @@ class TestExportAndImport(OsfTestCase):
             'author': {
                 '@id': '#creator0'
             },
-            'text': 'Reply comment'
+            'text': 'Comment for the node'
         })
         assert ('dateCreated' in _find_entity_by_id(json_entities, '#comment#0'))
         assert ('dateModified' in _find_entity_by_id(json_entities, '#comment#0'))
@@ -699,13 +699,13 @@ class TestExportAndImport(OsfTestCase):
         )) == ({
             '@id': '#comment#1',
             '@type': 'Comment',
-            'about': {
-                '@id': '#root'
-            },
             'author': {
                 '@id': '#creator0'
             },
-            'text': 'Comment for the node'
+            'parentItem': {
+                '@id': '#comment#0'
+            },
+            'text': 'Reply comment'
         })
         assert ('dateCreated' in _find_entity_by_id(json_entities, '#comment#1'))
         assert ('dateModified' in _find_entity_by_id(json_entities, '#comment#1'))

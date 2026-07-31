@@ -2214,7 +2214,7 @@ class TestWEKOSchema(OsfTestCase):
                 node_id
             )
 
-        assert ('No file metadata available') in (str(context.exception)), ('Error message should indicate missing file metadata')
+        assert ('No file metadata available') in (str(context.value)), ('Error message should indicate missing file metadata')
 
     def test_write_ro_crate_json_additional_funding(self):
         buf = io.StringIO()
