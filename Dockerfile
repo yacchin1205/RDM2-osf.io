@@ -1,4 +1,4 @@
-FROM python:3.12-alpine3.17 AS base
+FROM python:3.12-alpine3.23 AS base
 
 # Creation of www-data group was removed as it is created by default in alpine 3.14 and higher
 # Alpine does not create a www-data user, so we still need to create that. 82 is the standard

@@ -6829,12 +6829,12 @@ socks = ["PySocks (>=1.5.6,!=1.5.7,<2.0)"]
 
 [[package]]
 name = "uwsgi"
-version = "2.0.24"
+version = "2.0.31"
 description = "The uWSGI server"
 optional = false
 python-versions = "*"
 files = [
-    {file = "uwsgi-2.0.24.tar.gz", hash = "sha256:77b6dd5cd633f4ae87ee393f7701f617736815499407376e78f3d16467523afe"},
+    {file = "uwsgi-2.0.31.tar.gz", hash = "sha256:e8f8b350ccc106ff93a65247b9136f529c14bf96b936ac5b264c6ff9d0c76257"},
 ]
 
 [[package]]
@@ -7305,4 +7305,4 @@ testing = ["coverage[toml]", "zope.event", "zope.testing"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.12"
-content-hash = "eeaeca17120b797dd9c41280afb4cf8a3a82161f042fcd11fe3462f0e0634a03"
+content-hash = "8cef318ec4c2c86eab23f6db34e6c4be0ce06ba41a55b7e6dd184171f535dd34"

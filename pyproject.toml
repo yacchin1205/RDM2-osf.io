@@ -206,7 +206,7 @@ tweepy = "4.17.0"
 # newrelic APM agent
 newrelic = "9.7.1"
 # uwsgi
-uwsgi = "2.0.24"
+uwsgi = "2.0.31"
 
 
 [build-system]
