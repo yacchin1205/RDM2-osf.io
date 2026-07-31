@@ -5,7 +5,7 @@ Tests for KAKEN suggestion module
 import pytest
 from unittest import mock
 import requests
-from elasticsearch.exceptions import ConnectionError as ESConnectionError, ConnectionTimeout
+from requests.exceptions import ConnectionError as ESConnectionError, Timeout as ConnectionTimeout
 
 from tests.base import OsfTestCase
 from osf_tests.factories import UserFactory, ProjectFactory

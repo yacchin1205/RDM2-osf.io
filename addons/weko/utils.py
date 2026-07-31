@@ -111,7 +111,7 @@ def validate_mapping(mapping):
         if key == '_' and '@type' in element:
             raise ValueError('Mapping "_" cannot have @type property')
         if key == '_' and '@createIf' in element:
-            raise ValueError(f'Mapping "_" cannot have @createIf property')
+            raise ValueError('Mapping "_" cannot have @createIf property')
         _validate_mapping_element(element, full_key=key)
 
 

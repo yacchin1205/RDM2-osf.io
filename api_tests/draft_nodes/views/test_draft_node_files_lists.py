@@ -217,7 +217,7 @@ class TestNodeFilesList(ApiTestCase):
             'osfstorage').get_root().append_folder('NewFolder')
         fobj.save()
         res = self.app.get(
-            '{}osfstorage/'.format(self.private_url, fobj._id), auth=self.user.auth)
+            '{}osfstorage/'.format(self.private_url), auth=self.user.auth)
         assert (res.status_code) == (200)
         assert (len(res.json['data'])) == (1)
         assert (res.content_type) == ('application/vnd.api+json')

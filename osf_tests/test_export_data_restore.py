@@ -266,7 +266,7 @@ class TestExportDataRestore(TestCase):
     def test_process_start_display(self):
         assert (self.data_restore.process_start_display) == (self.data_restore.process_start.strftime('%Y%m%dT%H%M%S'))
 
-    @patch(f'requests.put')
+    @patch('requests.put')
     def test_transfer_export_data_file_to_destination(self, mock_request):
         test_response = requests.Response()
         test_response.status_code = status.HTTP_200_OK

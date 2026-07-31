@@ -39,7 +39,7 @@ from addons.workflow.models import (
     WorkflowTemplate,
 )
 from addons.workflow.token import validate_token_settings
-from osf.models import AbstractNode
+from osf.models import AbstractNode, OSFUser
 from osf.utils.permissions import WRITE
 from addons.workflow.services import (
     _extract_metadata,

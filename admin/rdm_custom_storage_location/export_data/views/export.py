@@ -37,26 +37,26 @@ TASK_NO_WORKING_STATES = [
     states.IGNORED,
     states.REJECTED,
 ]
-MSG_EXPORT_DENY_PERM_INST = f'Permission denied for this institution'
-MSG_EXPORT_DENY_PERM_STORAGE = f'Permission denied for this storage'
-MSG_EXPORT_DENY_PERM_LOCATION = f'Permission denied for this export storage location'
-MSG_EXPORT_DUP_IN_SECOND = f'The equivalent process is running'
-MSG_EXPORT_ABORTED = f'The export data process is aborted'
-MSG_EXPORT_REMOVED = f'The export data process is removed'
-MSG_EXPORT_UNSTOPPABLE = f'Cannot stop this export process'
-MSG_EXPORT_UNABORTABLE = f'Cannot abort this export process'
-MSG_EXPORT_DENY_PERM = f'Permission denied for this export process'
-MSG_EXPORT_COMPLETED = f'The data export process is successfully completed'
-MSG_EXPORT_STOPPED = f'The data export process is successfully stopped'
-MSG_EXPORT_FORCE_STOPPED = (f'The export data process is stopped'
-                            f' without completely deleting the export data file')
-MSG_EXPORT_FAILED_UPLOAD_TO_LOCATION = f'Cannot create folder or upload file to the export storage location'
+MSG_EXPORT_DENY_PERM_INST = 'Permission denied for this institution'
+MSG_EXPORT_DENY_PERM_STORAGE = 'Permission denied for this storage'
+MSG_EXPORT_DENY_PERM_LOCATION = 'Permission denied for this export storage location'
+MSG_EXPORT_DUP_IN_SECOND = 'The equivalent process is running'
+MSG_EXPORT_ABORTED = 'The export data process is aborted'
+MSG_EXPORT_REMOVED = 'The export data process is removed'
+MSG_EXPORT_UNSTOPPABLE = 'Cannot stop this export process'
+MSG_EXPORT_UNABORTABLE = 'Cannot abort this export process'
+MSG_EXPORT_DENY_PERM = 'Permission denied for this export process'
+MSG_EXPORT_COMPLETED = 'The data export process is successfully completed'
+MSG_EXPORT_STOPPED = 'The data export process is successfully stopped'
+MSG_EXPORT_FORCE_STOPPED = ('The export data process is stopped'
+                            ' without completely deleting the export data file')
+MSG_EXPORT_FAILED_UPLOAD_TO_LOCATION = 'Cannot create folder or upload file to the export storage location'
 # the delta seconds between call check data function
 # it is used to avoid too many check calls in a short period of time
 CHECK_DATA_INTERVAL_MIN_SECS = 10
-MSG_EXPORT_INVALID_INPUT = f'The input data must be a integer'
-MSG_EXPORT_MISSING_REQUIRED_INPUT = f'The required input data is missing'
-MSG_EXPORT_NOT_EXIST_INPUT = f'The data for input value is not exist'
+MSG_EXPORT_INVALID_INPUT = 'The input data must be a integer'
+MSG_EXPORT_MISSING_REQUIRED_INPUT = 'The required input data is missing'
+MSG_EXPORT_NOT_EXIST_INPUT = 'The data for input value is not exist'
 
 
 class ExportDataTaskException(CeleryError):
@@ -272,7 +272,7 @@ def export_data_process(task, cookies, export_data_id, location_id, source_id, *
             _prev_time, task_id, export_data_id, location_id, source_id)
 
         # create export data process folder
-        logger.debug(f'creating export data process folder')
+        logger.debug('creating export data process folder')
         _step_start_time = time.time()
         response = export_data.create_export_data_folder(cookies, **kwargs)
         if not task.is_aborted() and response.status_code != 201:
@@ -282,17 +282,17 @@ def export_data_process(task, cookies, export_data_id, location_id, source_id, *
 
         # temporary file
         temp_file_path = export_data.export_data_temp_file_path
-        logger.debug(f'created temporary file')
+        logger.debug('created temporary file')
 
         if task.is_aborted():  # check before each steps
             raise ExportDataTaskException(MSG_EXPORT_ABORTED)
         # create files' information file
-        logger.debug(f'creating files information file')
+        logger.debug('creating files information file')
         write_json_file(file_info_json, temp_file_path)
         response = export_data.upload_file_info_full_data_file(cookies, temp_file_path, **kwargs)
         if not task.is_aborted() and response.status_code not in [201, 204]:
             raise ExportDataTaskException(MSG_EXPORT_FAILED_UPLOAD_TO_LOCATION)
-        logger.debug(f'created files information file')
+        logger.debug('created files information file')
 
         # export target file and accompanying data
 
@@ -301,7 +301,7 @@ def export_data_process(task, cookies, export_data_id, location_id, source_id, *
             _prev_time, task_id, export_data_id, location_id, source_id)
 
         # create 'files' folder
-        logger.debug(f'creating files folder')
+        logger.debug('creating files folder')
         _step_start_time = time.time()
         response = export_data.create_export_data_files_folder(cookies, **kwargs)
         if not task.is_aborted() and response.status_code != 201:
@@ -313,7 +313,7 @@ def export_data_process(task, cookies, export_data_id, location_id, source_id, *
         _prev_time = check_export_data_process_status(
             _prev_time, task_id, export_data_id, location_id, source_id)
 
-        logger.debug(f'prepare list of file versions data to upload')
+        logger.debug('prepare list of file versions data to upload')
         _step_start_time = time.time()
         file_versions = export_data.get_source_file_versions_min(file_info_json)
         _length = len(file_versions)
@@ -321,7 +321,7 @@ def export_data_process(task, cookies, export_data_id, location_id, source_id, *
                     f' ({time.time() - _step_start_time}s)')
 
         # upload file versions
-        logger.debug(f'upload file versions')
+        logger.debug('upload file versions')
         _step_start_time = time.time()
         # cached the filename in hash value
         created_filename_list = []
@@ -334,7 +334,7 @@ def export_data_process(task, cookies, export_data_id, location_id, source_id, *
 
             # prevent uploading duplicate file_name in hash value
             if file_name in created_filename_list:
-                logger.debug(f'Ignore uploaded file')
+                logger.debug('Ignore uploaded file')
                 continue
 
             # [Important] check process status before each step
@@ -382,7 +382,7 @@ def export_data_process(task, cookies, export_data_id, location_id, source_id, *
         files_not_found, sub_size, sub_files_numb = separate_failed_files(files, files_versions_not_found)
         export_data_json['size'] -= sub_size
         export_data_json['files_numb'] -= sub_files_numb
-        logger.info(f'Separated the failed file list from the file_info_json.')
+        logger.info('Separated the failed file list from the file_info_json.')
         logger.info(f'Uploaded {_length - sub_files_numb}/{_length} file versions.'
                     f' Failed {sub_files_numb} file versions.'
                     f' ({time.time() - _step_start_time}s)')
@@ -395,7 +395,7 @@ def export_data_process(task, cookies, export_data_id, location_id, source_id, *
         # temp_file_path = export_data.export_data_temp_file_path
 
         # create files' information JSON file
-        logger.debug(f'creating files information JSON file')
+        logger.debug('creating files information JSON file')
         _step_start_time = time.time()
         write_json_file(file_info_json, temp_file_path)
         response = export_data.upload_file_info_file(cookies, temp_file_path, **kwargs)
@@ -409,7 +409,7 @@ def export_data_process(task, cookies, export_data_id, location_id, source_id, *
             _prev_time, task_id, export_data_id, location_id, source_id)
 
         # create export data JSON file
-        logger.debug(f'creating export data JSON file')
+        logger.debug('creating export data JSON file')
         _step_start_time = time.time()
         process_end = timezone.make_naive(timezone.now(), timezone.utc)
         export_data_json['process_end'] = process_end.strftime('%Y-%m-%d %H:%M:%S')
@@ -423,7 +423,7 @@ def export_data_process(task, cookies, export_data_id, location_id, source_id, *
         # remove temporary file
         if os.path.exists(temp_file_path):
             os.remove(temp_file_path)
-        logger.debug(f'removed temporary file')
+        logger.debug('removed temporary file')
 
         # [Important] check process status before each step
         _prev_time = check_export_data_process_status(
@@ -601,10 +601,10 @@ def export_data_rollback_process(task, cookies, export_data_id, location_id, sou
         file_path = export_data.export_data_temp_file_path
         if os.path.exists(file_path):
             os.remove(file_path)
-        logger.debug(f'Removed temporary file.')
+        logger.debug('Removed temporary file.')
 
         # delete export data file
-        logger.debug(f'deleting export data file')
+        logger.debug('deleting export data file')
         _step_start_time = time.time()
         response = export_data.delete_export_data_folder(cookies, **kwargs)
         if response.status_code != 204:

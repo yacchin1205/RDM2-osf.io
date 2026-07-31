@@ -65,6 +65,7 @@ container_script=$(cat <<'BASH'
 set -euo pipefail
 set -x
 export PATH="/usr/local/bin:/usr/bin:$PATH"
+git config --global --add safe.directory "$PWD"
 python3 -m invoke travis-addon-settings
 # Minimal Ember app shells so send_from_directory returns 200 during tests
 mkdir -p "$HOME/preprints" "$HOME/website/ember_osf_web"

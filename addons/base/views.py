@@ -362,11 +362,11 @@ def get_auth(auth, **kwargs):
         # check permission
         # only location_id value
         if not location_id:
-            logger.debug(f'Missing location_id')
+            logger.debug('Missing location_id')
             raise HTTPError(http_status.HTTP_400_BAD_REQUEST)
 
         if auth.user is None:
-            logger.debug(f'This user is not authenticated')
+            logger.debug('This user is not authenticated')
             raise HTTPError(http_status.HTTP_401_UNAUTHORIZED)
 
         if location_id and not auth.user.is_allowed_storage_location_id(location_id):

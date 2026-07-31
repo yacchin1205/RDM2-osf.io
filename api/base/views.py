@@ -258,7 +258,7 @@ class LinkedNodesRelationship(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPI
     required_write_scopes = [CoreScopes.NODE_LINKS_WRITE]
 
     serializer_class = LinkedNodesRelationshipSerializer
-    parser_classes = (JSONAPIRelationshipParser, JSONAPIRelationshipParserForRegularJSON, )
+    parser_classes = (JSONAPIRelationshipParser, JSONAPIRelationshipParserForRegularJSON)
 
     def get_object(self):
         object = self.get_node(check_object_permissions=False)
@@ -364,7 +364,7 @@ class LinkedRegistrationsRelationship(JSONAPIBaseView, generics.RetrieveUpdateDe
     required_write_scopes = [CoreScopes.NODE_LINKS_WRITE]
 
     serializer_class = LinkedRegistrationsRelationshipSerializer
-    parser_classes = (JSONAPIRelationshipParser, JSONAPIRelationshipParserForRegularJSON, )
+    parser_classes = (JSONAPIRelationshipParser, JSONAPIRelationshipParserForRegularJSON)
 
     def get_object(self):
         object = self.get_node(check_object_permissions=False)
@@ -388,7 +388,7 @@ class LinkedRegistrationsRelationship(JSONAPIBaseView, generics.RetrieveUpdateDe
             if val['id'] in current_pointers:
                 collection.rm_pointer(current_pointers[val['id']], auth)
             else:
-                raise NotFound(detail='Pointer with id "{}" not found in pointers list'.format(val['id'], collection))
+                raise NotFound(detail='Pointer with id "{}" not found in pointers list'.format(val['id']))
 
     def create(self, *args, **kwargs):
         try:
@@ -399,7 +399,7 @@ class LinkedRegistrationsRelationship(JSONAPIBaseView, generics.RetrieveUpdateDe
 
 
 @api_view(('GET',))
-@throttle_classes([RootAnonThrottle, UserRateThrottle, BurstRateThrottle, ])
+@throttle_classes([RootAnonThrottle, UserRateThrottle, BurstRateThrottle])
 def root(request, format=None, **kwargs):
     """
     The documentation for the GakuNin RDM API can be found at [developer.osf.io](https://developer.osf.io).
@@ -442,7 +442,7 @@ def root(request, format=None, **kwargs):
 
 
 @api_view(('GET',))
-@throttle_classes([RootAnonThrottle, UserRateThrottle, BurstRateThrottle, ])
+@throttle_classes([RootAnonThrottle, UserRateThrottle, BurstRateThrottle])
 def status_check(request, format=None, **kwargs):
     maintenance = MaintenanceState.objects.all().first()
     return Response({

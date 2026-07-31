@@ -302,7 +302,7 @@ class TestUserRoutesNodeRoutes:
         assert res.json['data']['id'] == user_two._id
 
     #   test_get_200_path_users_me_nodes_user_logged_in
-        url = '/{}users/me/nodes/'.format(API_BASE, user_one._id)
+        url = '/{}users/me/nodes/'.format(API_BASE)
         res = app.get(url, auth=user_one.auth)
         assert res.status_code == 200
 

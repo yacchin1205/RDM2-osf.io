@@ -1,6 +1,6 @@
 from unittest import mock
 import pytest
-from elasticsearch_metrics import metrics
+import elasticsearch_metrics.imps.elastic6 as metrics
 
 from osf.metrics import MetricMixin
 from osf.models import OSFUser

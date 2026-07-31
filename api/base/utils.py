@@ -278,22 +278,24 @@ def check_user_can_create_project(user):
     ).order_by('priority').all()
     setting_id_list = [s.id for s in setting_list]
     # Get setting list attribute by setting
-    all_setting_attribute_list = (ProjectLimitNumberSettingAttribute.objects.select_related(
-        'attribute',
-    ).filter(
-        setting_id__in=setting_id_list,
-        is_deleted=False,
-    ).annotate(
-        setting_type=F('attribute__setting_type'),
-        attribute_name=F('attribute__attribute_name'),
-        setting_id=F('setting_id'),
-    ).order_by('id').values(
-        'id',
-        'attribute_name',
-        'setting_type',
-        'attribute_value',
-        'setting_id',
-    ))
+    all_setting_attribute_list = (
+        ProjectLimitNumberSettingAttribute.objects.select_related(
+            'attribute',
+        ).filter(
+            setting_id__in=setting_id_list,
+            is_deleted=False,
+        ).annotate(
+            setting_type=F('attribute__setting_type'),
+            attribute_name=F('attribute__attribute_name'),
+            setting_id=F('setting_id'),
+        ).order_by('id').values(
+            'id',
+            'attribute_name',
+            'setting_type',
+            'attribute_value',
+            'setting_id',
+        )
+    )
     project_limit_number = None
     user_dict = user.__dict__
 

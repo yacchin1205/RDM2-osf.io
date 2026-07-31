@@ -134,14 +134,14 @@ def get_proof_key(server):
         logger.warning('onlyoffice: Discovery.xml is not a valid XML.')
         return None
 
-    result = parsed.xpath(f'/wopi-discovery/proof-key')
+    result = parsed.xpath('/wopi-discovery/proof-key')
     for res in result:
-        val = res.get(f'value')
-        oval = res.get(f'oldvalue')
-        modulus = res.get(f'modulus')
-        omodulus = res.get(f'oldmodulus')
-        exponent = res.get(f'exponent')
-        oexponent = res.get(f'oldexponent')
+        val = res.get('value')
+        oval = res.get('oldvalue')
+        modulus = res.get('modulus')
+        omodulus = res.get('oldmodulus')
+        exponent = res.get('exponent')
+        oexponent = res.get('oldexponent')
 
     keydata = pfkey.ProofKeyDiscoveryData(
         value=val,

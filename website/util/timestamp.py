@@ -1179,8 +1179,8 @@ class TimeStampTokenVerifyCheck:
                     file_info, verify_result_local,
                     project_id, userid)
 
-        assert(ret is not None)
-        assert(verify_result_title is not None)
+        assert (ret is not None)
+        assert (verify_result_title is not None)
 
         file_id = file_info['file_id']
         provider = file_info['provider']

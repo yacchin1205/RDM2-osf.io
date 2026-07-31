@@ -1581,7 +1581,7 @@ class TestUtilsForExportData(AdminTestCase):
         mock_validate.return_value = None
 
         with patch(f'{EXPORT_DATA_UTIL_PATH}.from_json', mock_from_json):
-            with patch(f'jsonschema.validate', mock_validate):
+            with patch('jsonschema.validate', mock_validate):
                 result = utils.validate_exported_data({}, 'file-info-schema.json')
                 mock_from_json.assert_called()
                 mock_validate.assert_called()
@@ -1591,10 +1591,10 @@ class TestUtilsForExportData(AdminTestCase):
         mock_from_json = MagicMock()
         mock_from_json.return_value = {}
         mock_validate = MagicMock()
-        mock_validate.side_effect = ValidationError(f'Mock test jsonschema.ValidationError')
+        mock_validate.side_effect = ValidationError('Mock test jsonschema.ValidationError')
 
         with patch(f'{EXPORT_DATA_UTIL_PATH}.from_json', mock_from_json):
-            with patch(f'jsonschema.validate', mock_validate):
+            with patch('jsonschema.validate', mock_validate):
                 result = utils.validate_exported_data({}, 'file-info-schema.json')
                 mock_from_json.assert_called()
                 mock_validate.assert_called()
@@ -1604,10 +1604,10 @@ class TestUtilsForExportData(AdminTestCase):
         mock_from_json = MagicMock()
         mock_from_json.return_value = {}
         mock_validate = MagicMock()
-        mock_validate.side_effect = FileNotFoundError(f'Mock test jsonschema.SchemaError')
+        mock_validate.side_effect = FileNotFoundError('Mock test jsonschema.SchemaError')
 
         with patch(f'{EXPORT_DATA_UTIL_PATH}.from_json', mock_from_json):
-            with patch(f'jsonschema.validate', mock_validate):
+            with patch('jsonschema.validate', mock_validate):
                 with pytest.raises(FileNotFoundError):
                     result = utils.validate_exported_data({}, 'fake-schema.json')
                     mock_from_json.assert_called()
@@ -2094,7 +2094,7 @@ class TestUtilsForRestoreData(AdminTestCase):
         mock_validate.return_value = None
 
         with patch(f'{EXPORT_DATA_UTIL_PATH}.from_json', mock_from_json):
-            with patch(f'jsonschema.validate', mock_validate):
+            with patch('jsonschema.validate', mock_validate):
                 result = utils.validate_file_json({}, 'file-info-schema.json')
                 mock_from_json.assert_called()
                 mock_validate.assert_called()
@@ -2104,10 +2104,10 @@ class TestUtilsForRestoreData(AdminTestCase):
         mock_from_json = MagicMock()
         mock_from_json.return_value = {}
         mock_validate = MagicMock()
-        mock_validate.side_effect = ValidationError(f'Mock test jsonschema.ValidationError')
+        mock_validate.side_effect = ValidationError('Mock test jsonschema.ValidationError')
 
         with patch(f'{EXPORT_DATA_UTIL_PATH}.from_json', mock_from_json):
-            with patch(f'jsonschema.validate', mock_validate):
+            with patch('jsonschema.validate', mock_validate):
                 result = utils.validate_file_json({}, 'file-info-schema.json')
                 mock_from_json.assert_called()
                 mock_validate.assert_called()
@@ -2117,10 +2117,10 @@ class TestUtilsForRestoreData(AdminTestCase):
         mock_from_json = MagicMock()
         mock_from_json.return_value = {}
         mock_validate = MagicMock()
-        mock_validate.side_effect = SchemaError(f'Mock test jsonschema.SchemaError')
+        mock_validate.side_effect = SchemaError('Mock test jsonschema.SchemaError')
 
         with patch(f'{EXPORT_DATA_UTIL_PATH}.from_json', mock_from_json):
-            with patch(f'jsonschema.validate', mock_validate):
+            with patch('jsonschema.validate', mock_validate):
                 result = utils.validate_file_json({}, 'file-info-schema.json')
                 mock_from_json.assert_called()
                 mock_validate.assert_called()
@@ -2130,10 +2130,10 @@ class TestUtilsForRestoreData(AdminTestCase):
         mock_from_json = MagicMock()
         mock_from_json.return_value = {}
         mock_validate = MagicMock()
-        mock_validate.side_effect = FileNotFoundError(f'Mock test jsonschema.SchemaError')
+        mock_validate.side_effect = FileNotFoundError('Mock test jsonschema.SchemaError')
 
         with patch(f'{EXPORT_DATA_UTIL_PATH}.from_json', mock_from_json):
-            with patch(f'jsonschema.validate', mock_validate):
+            with patch('jsonschema.validate', mock_validate):
                 with pytest.raises(FileNotFoundError):
                     result = utils.validate_file_json({}, 'fake-schema.json')
                     mock_from_json.assert_called()

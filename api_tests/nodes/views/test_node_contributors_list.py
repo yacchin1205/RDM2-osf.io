@@ -2927,20 +2927,20 @@ class TestNodeContributorFiltering:
         project.add_contributor(user_two, permissions.WRITE)
         project.add_contributor(user_three, permissions.READ, visible=False)
     #   test_filtering_permission_field_admin
-        filter_url = '{}?filter[permission]=admin'.format(url, project._id)
+        filter_url = '{}?filter[permission]=admin'.format(url)
         res = app.get(filter_url, auth=user.auth, expect_errors=True)
         assert res.status_code == 200
         assert len(res.json['data']) == 1
         assert res.json['data'][0]['attributes'].get('permission') == permissions.ADMIN
 
     #   test_filtering_permission_field_write
-        filter_url = '{}?filter[permission]=write'.format(url, project._id)
+        filter_url = '{}?filter[permission]=write'.format(url)
         res = app.get(filter_url, auth=user.auth, expect_errors=True)
         assert res.status_code == 200
         assert len(res.json['data']) == 2
 
     #   test_filtering_permission_field_read
-        filter_url = '{}?filter[permission]=read'.format(url, project._id)
+        filter_url = '{}?filter[permission]=read'.format(url)
         res = app.get(filter_url, auth=user.auth, expect_errors=True)
         assert res.status_code == 200
         assert len(res.json['data']) == 3
@@ -2964,7 +2964,7 @@ class TestNodeContributorFiltering:
         assert len(res.json['data']) == 1
 
     #   test_filtering_on_invalid_field
-        filter_url = '{}?filter[invalid]=foo'.format(url, project._id)
+        filter_url = '{}?filter[invalid]=foo'.format(url)
         res = app.get(filter_url, auth=user.auth, expect_errors=True)
         assert res.status_code == 400
         errors = res.json['errors']

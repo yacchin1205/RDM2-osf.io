@@ -334,7 +334,7 @@ class TestFetchCredentialsView(AdminTestCase):
         assert (response_body.get('ociinstitutions_bucket')) == (settings.DEFAULT_BASE_BUCKET)
 
     def test_get_default(self):
-        response = self.view_get(f'provider_short_name=ociinstitutions')
+        response = self.view_get('provider_short_name=ociinstitutions')
         assert (response.status_code) == (http_status.HTTP_200_OK)
         response_body = json.loads(response.content.decode())
         assert (response_body.get('ociinstitutions_endpoint_url')) == ('')

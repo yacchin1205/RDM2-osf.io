@@ -82,7 +82,7 @@ class TestChronosSubmissionDetail:
         # Reverse lookups is weird with non-uniform versioning schemes, ensure correctness
         assert '/v2/users/{}/'.format(submission.submitter._id) in res.json['data']['relationships']['submitter']['links']['related']['href']
         assert '/v2/preprints/{}/'.format(submission.preprint._id) in res.json['data']['relationships']['preprint']['links']['related']['href']
-        assert '/_/chronos/journals/{}/'.format(submission.journal.journal_id, submission.publication_id) in res.json['data']['relationships']['journal']['links']['related']['href']
+        assert '/_/chronos/journals/{}/'.format(submission.journal.journal_id) in res.json['data']['relationships']['journal']['links']['related']['href']
 
         res = app.get(url, auth=preprint_contributor.auth)
         assert res.status_code == 200

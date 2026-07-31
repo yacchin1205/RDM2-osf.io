@@ -46,8 +46,8 @@ class TestUserEmailsFormView(AdminTestCase):
         response = self.view.form_valid(form)
         assert (response.status_code) == (302)
         assert (self.view.success_url) == ('/user-emails/search/guid/{}/'.format(
-                self.user_1.guids.first()._id
-            ))
+            self.user_1.guids.first()._id
+        ))
 
     def test_form_valid_search_user_by_name(self):
         form_data = {
@@ -80,8 +80,8 @@ class TestUserEmailsFormView(AdminTestCase):
         response = self.view.form_valid(form)
         assert (response.status_code) == (302)
         assert (self.view.success_url) == ('/user-emails/search/guid/{}/'.format(
-                self.user_1.guids.first()._id
-            ))
+            self.user_1.guids.first()._id
+        ))
 
     @mock.patch('admin.user_emails.views.UserEmailsFormView.is_admin')
     def test_form_valid_is_admin(self, mock_is_admin):
@@ -117,8 +117,8 @@ class TestUserEmailsFormView(AdminTestCase):
         response = self.view.form_valid(form)
         assert (response.status_code) == (302)
         assert (self.view.success_url) == ('/user-emails/search/guid/{}/'.format(
-                self.user_2.guids.first()._id
-            ))
+            self.user_2.guids.first()._id
+        ))
 
     def test_form_valid_search_user_list_case_insensitive(self):
         view = views.UserEmailsSearchList()

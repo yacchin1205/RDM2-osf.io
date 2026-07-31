@@ -334,7 +334,7 @@ class TestFetchCredentialsView(AdminTestCase):
         assert (response_body.get('s3compatinstitutions_bucket')) == (settings.DEFAULT_BASE_BUCKET)
 
     def test_get_default(self):
-        response = self.view_get(f'provider_short_name=s3compatinstitutions')
+        response = self.view_get('provider_short_name=s3compatinstitutions')
         assert (response.status_code) == (http_status.HTTP_200_OK)
         response_body = json.loads(response.content.decode())
         assert (response_body.get('s3compatinstitutions_endpoint_url')) == ('')

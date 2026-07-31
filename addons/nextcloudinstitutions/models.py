@@ -178,7 +178,7 @@ class NodeSettings(InstitutionsNodeSettings, InstitutionsStorageAddon):
             try:
                 c.delete_share(share_id)
             except Exception as e:
-                logger.warning(u'delete_share failed: user_id={}: {}'.format(user_id), str(e))
+                logger.warning(u'delete_share failed: user_id={}: {}'.format(user_id, str(e)))
 
     def sync_contributors(self):
         node = self.owner

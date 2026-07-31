@@ -38,7 +38,7 @@ class ROCrateFactory(BaseROCrateFactory):
         comment_ids = {}
         files = []
         for file in self.folder.get_files():
-            _, children = self._create_file_entities(crate, self.node, f'./', file, user_ids, schema_ids, comment_ids)
+            _, children = self._create_file_entities(crate, self.node, './', file, user_ids, schema_ids, comment_ids)
             files += children
         for _, _, comments in files:
             crate.add(*comments)
@@ -339,7 +339,10 @@ def _deposit_metadata(
                 'progress': 100,
                 'paths': metadata_paths,
             })
-        links = [l for l in respbody['links'] if 'contentType' in l and '@id' in l and l['contentType'] == 'text/html']
+        links = [
+            link for link in respbody['links']
+            if 'contentType' in link and '@id' in link and link['contentType'] == 'text/html'
+        ]
         for file in download_files:
             if delete_after:
                 file.delete()

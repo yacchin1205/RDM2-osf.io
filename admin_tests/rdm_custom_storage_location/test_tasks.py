@@ -44,7 +44,7 @@ def test_run_restore_export_data_process(mock_restore_export_data_process):
 @pytest.mark.django_db
 @patch('admin.rdm_custom_storage_location.tasks.restore.restore_export_data_process')
 def test_run_restore_export_data_process_exception(mock_restore_export_data_process):
-    mock_restore_export_data_process.side_effect = ProcessError(f'Mock test abort task.')
+    mock_restore_export_data_process.side_effect = ProcessError('Mock test abort task.')
     with pytest.raises(ProcessError):
         process = run_restore_export_data_process.delay(None, 1, 1, [])
         assert (process.task_id) is not None

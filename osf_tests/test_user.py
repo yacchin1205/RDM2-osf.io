@@ -575,7 +575,7 @@ class TestOSFUser:
         random_string.return_value = 'abcde'
         u = UserFactory()
         u.add_unconfirmed_email('foo@bar.com')
-        assert(
+        assert (
             u.get_confirmation_url('foo@bar.com') ==
             '{0}confirm/{1}/{2}/'.format(settings.DOMAIN, u._id, 'abcde')
         )
@@ -721,7 +721,7 @@ class TestOSFUser:
     def test_format_surname(self):
         user = UserFactory(fullname='Duane Johnson')
         summary = user.get_summary(formatter='surname')
-        assert(
+        assert (
             summary['user_display_name'] ==
             'Johnson'
         )
@@ -729,7 +729,7 @@ class TestOSFUser:
     def test_format_surname_one_name(self):
         user = UserFactory(fullname='Rock')
         summary = user.get_summary(formatter='surname')
-        assert(
+        assert (
             summary['user_display_name'] ==
             'Rock'
         )
@@ -738,7 +738,7 @@ class TestOSFUser:
         assert user.url == '/{0}/'.format(user._id)
 
     def test_absolute_url(self, user):
-        assert(
+        assert (
             user.absolute_url ==
             urljoin(settings.DOMAIN, '/{0}/'.format(user._id))
         )
@@ -777,7 +777,7 @@ class TestOSFUser:
         assert size is None
 
     def test_activity_points(self, user):
-        assert(
+        assert (
             user.get_activity_points() == get_total_activity_count(user._primary_key)
         )
 
@@ -1216,7 +1216,7 @@ class TestCookieMethods:
         user = UserFactory()
         super_secret_key = 'children need maps'
         signer = itsdangerous.Signer(super_secret_key)
-        assert(
+        assert (
             Session.objects.filter(data__auth_user_id=user._id).count() == 0
         )
 
