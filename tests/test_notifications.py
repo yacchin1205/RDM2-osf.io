@@ -442,7 +442,7 @@ class TestSubscriptionView(OsfTestCase):
             'notification_type': 'email_transactional'
         }
         url = api_url_for('configure_subscription')
-        res = self.app.post(url, json=payload, auth=self.registration.creator.auth)
+        res = self.app.post(url, json=payload, auth=self.user.auth)
         assert res.status_code == 400
 
     def test_adopt_parent_subscription_default(self):

@@ -141,7 +141,12 @@ class TestDataCiteViews(OsfTestCase):
         super(TestDataCiteViews, self).setUp()
         self.user = AuthUserFactory()
         self.node = RegistrationFactory(creator=self.user, is_public=True)
-        self.client = DataCiteClient(base_url = 'https://mds.fake.datacite.org', prefix=settings.DATACITE_PREFIX)
+        with mock.patch.object(settings, 'DATACITE_USERNAME', 'test'), \
+                mock.patch.object(settings, 'DATACITE_PASSWORD', 'test'):
+            self.client = DataCiteClient(
+                base_url='https://mds.fake.datacite.org',
+                prefix=settings.DATACITE_PREFIX,
+            )
 
     @responses.activate
     def test_datacite_create_identifiers_not_exists(self):

@@ -759,6 +759,21 @@ def update_file_metadata_async(self, project_id, path, index=None, bulk=False):
     except Exception as exc:
         self.retry(exc=exc)
 
+
+def serialize_contributor_ids(resource):
+    if isinstance(resource, Preprint):
+        contributors = resource.preprintcontributor_set.all()
+    elif isinstance(resource, AbstractNode):
+        contributors = resource.contributor_set.all()
+    else:
+        raise TypeError('Unsupported search contributor resource: {}'.format(type(resource).__name__))
+
+    return [
+        {'id': contributor['user__guids___id']}
+        for contributor in contributors.order_by('_order').values('user__guids___id')
+    ]
+
+
 def serialize_node(node, category):
     elastic_document = {}
     parent_id = node.parent_id
@@ -775,20 +790,20 @@ def serialize_node(node, category):
         # Contributors for Access control
         'node_contributors': [
             {
-                'id': x['guids___id']
+                'id': x['user__guids___id']
             }
-            for x in node._contributors.all().order_by('contributor___order')
-            .values('guids___id')
+            for x in node.contributor_set.all().order_by('_order')
+            .values('user__guids___id')
         ],
         # Bibliographic Contributors (visible=True only) (show in results)
         'contributors': [
             {
-                'fullname': x['fullname'],
-                'url': '/{}/'.format(x['guids___id']) if x['is_active'] else None,
-                'id': x['guids___id']
+                'fullname': x['user__fullname'],
+                'url': '/{}/'.format(x['user__guids___id']) if x['user__is_active'] else None,
+                'id': x['user__guids___id']
             }
-            for x in node._contributors.filter(contributor__visible=True).order_by('contributor___order')
-            .values('fullname', 'guids___id', 'is_active')
+            for x in node.contributor_set.filter(visible=True).order_by('_order')
+            .values('user__fullname', 'user__guids___id', 'user__is_active')
         ],
         'groups': [
             {
@@ -864,20 +879,20 @@ def serialize_preprint(preprint, category):
         # Contributors for Access control
         'node_contributors': [
             {
-                'id': x['guids___id']
+                'id': x['user__guids___id']
             }
-            for x in preprint._contributors.all().order_by('preprintcontributor___order')
-            .values('guids___id')
+            for x in preprint.preprintcontributor_set.all().order_by('_order')
+            .values('user__guids___id')
         ],
         # Bibliographic Contributors (visible=True only)
         'contributors': [
             {
-                'fullname': x['fullname'],
-                'url': '/{}/'.format(x['guids___id']) if x['is_active'] else None,
-                'id': x['guids___id']
+                'fullname': x['user__fullname'],
+                'url': '/{}/'.format(x['user__guids___id']) if x['user__is_active'] else None,
+                'id': x['user__guids___id']
             }
-            for x in preprint._contributors.filter(preprintcontributor__visible=True).order_by('preprintcontributor___order')
-            .values('fullname', 'guids___id', 'is_active')
+            for x in preprint.preprintcontributor_set.filter(visible=True).order_by('_order')
+            .values('user__fullname', 'user__guids___id', 'user__is_active')
         ],
         'title': preprint.title,
         'normalized_title': normalized_title,
@@ -948,10 +963,10 @@ def serialize_wiki(wiki_page, category):
         # Contributors for Access control
         'node_contributors': [
             {
-                'id': x['guids___id']
+                'id': x['user__guids___id']
             }
-            for x in node._contributors.all().order_by('contributor___order')
-            .values('guids___id')
+            for x in node.contributor_set.all().order_by('_order')
+            .values('user__guids___id')
         ],
         'url': w.deep_url,
         'text': unicode_normalize(w.get_version().raw_text(node)),
@@ -1033,10 +1048,10 @@ def serialize_comment(comment, category):
         # Contributors for Access control
         'node_contributors': [
             {
-                'id': x['guids___id']
+                'id': x['user__guids___id']
             }
-            for x in c.node._contributors.all().order_by('contributor___order')
-            .values('guids___id')
+            for x in c.node.contributor_set.all().order_by('_order')
+            .values('user__guids___id')
         ],
         'text': text,
         'replyto_user_id': replyto_user_id,
@@ -1244,8 +1259,8 @@ def bulk_update_file_metadata(file_metadata, index=None):
 
 def serialize_cgm_contributor(contrib):
     return {
-        'fullname': contrib['fullname'],
-        'url': '/{}/'.format(contrib['guids___id']) if contrib['is_active'] else None
+        'fullname': contrib['user__fullname'],
+        'url': '/{}/'.format(contrib['user__guids___id']) if contrib['user__is_active'] else None
     }
 
 def serialize_cgm(cgm):
@@ -1254,8 +1269,18 @@ def serialize_cgm(cgm):
     normalized_tags = [unicode_normalize(tag) for tag in tags]
 
     contributors = []
-    if hasattr(obj, '_contributors'):
-        contributors = obj._contributors.filter(contributor__visible=True).order_by('contributor___order').values('fullname', 'guids___id', 'is_active')
+    if isinstance(obj, AbstractNode):
+        contributors = obj.contributor_set.filter(visible=True).order_by('_order').values(
+            'user__fullname',
+            'user__guids___id',
+            'user__is_active',
+        )
+    elif isinstance(obj, Preprint):
+        contributors = obj.preprintcontributor_set.filter(visible=True).order_by('_order').values(
+            'user__fullname',
+            'user__guids___id',
+            'user__is_active',
+        )
 
     return {
         'id': cgm._id,
@@ -1498,13 +1523,7 @@ def update_file(file_, index=None, delete=False):
         'is_retracted': getattr(target, 'is_retracted', False),
         'extra_search_terms': clean_splitters(file_.name),
         # Contributors for Access control
-        'node_contributors': [
-            {
-                'id': x['guids___id']
-            }
-            for x in target._contributors.all().order_by('contributor___order')
-            .values('guids___id')
-        ],
+        'node_contributors': serialize_contributor_ids(target),
         'node_public': target.is_public,
         'comments': comments_to_doc(file_guid._id) if file_guid else {}
     }

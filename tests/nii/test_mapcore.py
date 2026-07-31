@@ -7,7 +7,7 @@ import string
 import random
 import base64
 from urllib.parse import urlencode
-from urllib.parse import urlparse
+from urllib.parse import parse_qs, urlparse
 
 from django.utils import timezone
 
@@ -1438,8 +1438,13 @@ class TestAuthViewsLoginByEppn(OsfTestCase):
         url = '/confirm/{}/{}/?logout=1'.format(self.user._id, token, self.user.username)
         res = self.app.get(url)
         assert (res.status_code) == (302)
-        cas_redirect_url = '{}/logout?service={}/login?service={}myprojects/'.format(settings.CAS_SERVER_URL, settings.CAS_SERVER_URL, settings.DOMAIN)
-        assert (cas_redirect_url) in (res.headers.get('Location'))
+        logout_url = urlparse(res.headers.get('Location'))
+        assert logout_url.path.endswith('/logout')
+        login_url = urlparse(parse_qs(logout_url.query)['service'][0])
+        assert login_url.path.endswith('/login')
+        assert parse_qs(login_url.query)['service'] == [
+            web_url_for('my_projects', _absolute=True)
+        ]
 
         self.user.reload()
         assert (self.user.email_verifications[token]['confirmed']) == (True)

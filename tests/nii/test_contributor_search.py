@@ -109,7 +109,7 @@ class TestEscape(OsfTestCase):
         from website.search.util import es_escape
 
         # see https://www.elastic.co/guide/en/elasticsearch/reference/current/query-dsl-query-string-query.html#_reserved_characters
-        assert (es_escape('+-=&|!(){}[]^"~*?:/')) == (r'\+\-\=\&\|\!\(\)\{\}\[\]\^\\\"\~\*\?\:\/')
+        assert (es_escape('+-=&|!(){}[]^"~*?:/')) == (r'\+\-\=\&\|\!\(\)\{\}\[\]\^\"\~\*\?\:\/')
         assert (es_escape('"')) == ('\\\"')   # " -> \"
         assert (es_escape('\\')) == ('\\\\')  # \ -> \\
         assert (es_escape('><')) == ('  ')  # whitespace

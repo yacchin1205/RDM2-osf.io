@@ -1,4 +1,5 @@
 from datetime import timedelta
+from future.moves.urllib.parse import parse_qs, urlparse
 from rest_framework import status as http_status
 
 from django.utils import timezone
@@ -260,7 +261,11 @@ class TestCampaignsCASInstitutionLogin(OsfTestCase):
     def test_institution_logged_in(self):
         resp = self.app.get(self.url_login)
         assert (resp.status_code) == (http_status.HTTP_302_FOUND)
-        assert (self.service_url) in (resp.headers['Location'])
+        location = urlparse(resp.headers['Location'])
+        query = parse_qs(location.query)
+        assert (location.path.endswith('/login'))
+        assert (query['service']) == ([self.service_url])
+        assert (query['campaign']) == (['institution'])
         # register behave the same as login
         resp2 = self.app.get(self.url_register)
         assert (resp.headers['Location']) == (resp2.headers['Location'])

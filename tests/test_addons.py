@@ -1382,9 +1382,8 @@ class TestAddonFileViews(OsfTestCase):
         def wrapper(func):
             @functools.wraps(func)
             def wrapped(*args, **kwargs):
-                enabled, sentry.enabled = sentry.enabled, status
-                func(*args, **kwargs)
-                sentry.enabled = enabled
+                with mock.patch.object(sentry, 'enabled', status):
+                    return func(*args, **kwargs)
 
             return wrapped
 
@@ -1484,7 +1483,7 @@ class TestAddonFileViews(OsfTestCase):
         )
 
         assert (resp.status_code) == (302)
-        assert (resp.location) == ('http://localhost/{}/'.format(guid._id))
+        assert (resp.location) == ('/{}/'.format(guid._id))
 
     def test_action_download_redirects_to_download_with_param(self):
         file_node = self.get_test_file()
@@ -1821,8 +1820,13 @@ class TestAddonFileViews(OsfTestCase):
         assert (file_node.history[1]) == (file_data)
 
     @with_sentry
-    @mock.patch('framework.sentry.sentry.captureMessage')
-    def test_update_logs_to_sentry_when_called_with_disordered_metadata(self, mock_capture):
+    @mock.patch('framework.sentry.isolation_scope')
+    @mock.patch('framework.sentry.capture_message')
+    def test_update_logs_to_sentry_when_called_with_disordered_metadata(
+        self,
+        mock_capture,
+        mock_isolation_scope,
+    ):
         file_node = self.get_test_file()
         file_node.history.append({'modified': parse_date(
                 '2017-08-22T13:54:32.100900',
@@ -1835,7 +1839,14 @@ class TestAddonFileViews(OsfTestCase):
             'modified': '2016-08-22T13:54:32.100900'
         }
         file_node.update(revision=None, user=None, data=data)
-        mock_capture.assert_called_with(str('update() receives metatdata older than the newest entry in file history.'), extra={'session': {}})
+        mock_isolation_scope.return_value.__enter__.return_value.set_extra.assert_called_once_with(
+            'session',
+            {},
+        )
+        mock_capture.assert_called_once_with(
+            'update() receives metadata older than the newest entry in file history.',
+            level='error',
+        )
 
 class TestLegacyViews(OsfTestCase):
 

@@ -709,7 +709,7 @@ def unserialize_account_info(auth, **kwargs):
     verify_user_match(auth, **kwargs)
 
     user = get_target_user(auth)
-    json_data = escape_html(request.get_json())
+    json_data = escape_html(request.get_json(silent=True))
     if not json_data:
         raise HTTPError(http_status.HTTP_400_BAD_REQUEST,
                         data=dict(message_short='Missing request body',

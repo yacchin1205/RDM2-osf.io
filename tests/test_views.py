@@ -6,13 +6,14 @@ from __future__ import absolute_import
 
 import datetime as dt
 from rest_framework import status as http_status
+from hashlib import md5
 import json
 import os
 import shutil
 import tempfile
 import time
 import unittest
-from future.moves.urllib.parse import quote, quote_plus, unquote
+from future.moves.urllib.parse import parse_qs, quote, quote_plus, unquote, urlparse
 import uuid
 
 from flask import request
@@ -1467,42 +1468,47 @@ class TestUserProfile(OsfTestCase):
     @mock.patch('website.mailchimp_utils.get_mailchimp_api')
     def test_update_user_mailing_lists(self, mock_get_mailchimp_api, send_mail):
         email = fake_email()
+        old_email = self.user.username
         self.user.emails.create(address=email)
         list_name = 'foo'
+        list_id = '12345'
         self.user.mailchimp_mailing_lists[list_name] = True
         self.user.save()
 
         mock_client = mock.MagicMock()
         mock_get_mailchimp_api.return_value = mock_client
-        mock_client.lists.list.return_value = {'data': [{'id': 1, 'list_name': list_name}]}
-        list_id = mailchimp_utils.get_list_id_from_name(list_name)
 
         url = api_url_for('update_user', uid=self.user._id)
         emails = [
             {'address': self.user.username, 'primary': False, 'confirmed': True},
             {'address': email, 'primary': True, 'confirmed': True}]
         payload = {'locale': '', 'id': self.user._id, 'emails': emails}
-        self.app.put(url, json=payload, auth=self.user.auth)
-        # the test app doesn't have celery handlers attached, so we need to call this manually.
-        handlers.celery_teardown_request()
+        with mock.patch.dict(
+            mailchimp_utils.settings.MAILCHIMP_LIST_MAP,
+            {list_name: list_id},
+            clear=True,
+        ):
+            self.app.put(url, json=payload, auth=self.user.auth)
+            # the test app doesn't have celery handlers attached, so we need to call this manually.
+            handlers.celery_teardown_request()
 
-        assert mock_client.lists.unsubscribe.called
-        mock_client.lists.unsubscribe.assert_called_with(
-            id=list_id,
-            email={'email': self.user.username},
-            send_goodbye=True
+        mock_client.lists.members.delete.assert_called_with(
+            list_id=list_id,
+            subscriber_hash=md5(old_email.lower().encode()).hexdigest(),
         )
-        mock_client.lists.subscribe.assert_called_with(
-            id=list_id,
-            email={'email': email},
-            merge_vars={
-                'fname': self.user.given_name,
-                'lname': self.user.family_name,
+        mock_client.lists.members.create_or_update.assert_called_with(
+            list_id=list_id,
+            subscriber_hash=md5(email.lower().encode()).hexdigest(),
+            data={
+                'status': 'subscribed',
+                'status_if_new': 'subscribed',
+                'email_address': email,
+                'merge_fields': {
+                    'FNAME': self.user.given_name,
+                    'LNAME': self.user.family_name,
+                },
             },
-            double_optin=False,
-            update_existing=True
         )
-        handlers.celery_teardown_request()
 
     @mock.patch('framework.auth.views.mails.send_mail')
     @mock.patch('website.mailchimp_utils.get_mailchimp_api')
@@ -1524,8 +1530,8 @@ class TestUserProfile(OsfTestCase):
         payload = {'locale': '', 'id': self.user._id, 'emails': emails}
         self.app.put(url, json=payload, auth=self.user.auth)
 
-        assert (mock_client.lists.unsubscribe.call_count) == (0)
-        assert (mock_client.lists.subscribe.call_count) == (0)
+        mock_client.lists.members.delete.assert_not_called()
+        mock_client.lists.members.create_or_update.assert_not_called()
         handlers.celery_teardown_request()
 
     def test_user_with_quickfiles(self):
@@ -3957,7 +3963,7 @@ class TestAuthViews(OsfTestCase):
                     'g-recaptcha-response': captcha,
                 }
             )
-            validate_recaptcha.assert_called_with(captcha, remote_ip=None)
+            validate_recaptcha.assert_called_with(captcha, remote_ip='127.0.0.1')
             assert (resp.status_code) == (http_status.HTTP_200_OK)
             user = OSFUser.objects.get(username=email)
             assert (user.fullname) == (name)
@@ -3978,7 +3984,7 @@ class TestAuthViews(OsfTestCase):
                     # 'g-recaptcha-response': 'supposed to be None',
                 }
             )
-            validate_recaptcha.assert_called_with(None, remote_ip=None)
+            validate_recaptcha.assert_called_with(None, remote_ip='127.0.0.1')
             assert (resp.status_code) == (http_status.HTTP_400_BAD_REQUEST)
 
     @mock.patch('framework.auth.views.validate_recaptcha', return_value=False)
@@ -4102,8 +4108,13 @@ class TestAuthViews(OsfTestCase):
         self.user.reload()
         assert (self.user.email_verifications[token]['confirmed']) == (True)
         assert (res.status_code) == (302)
-        login_url = 'login?service'
-        assert (login_url) in (res.text)
+        logout_url = urlparse(res.location)
+        assert (logout_url.path.endswith('/logout'))
+        login_url = urlparse(parse_qs(logout_url.query)['service'][0])
+        assert (login_url.path.endswith('/login'))
+        assert (parse_qs(login_url.query)['service']) == ([
+            web_url_for('my_projects', _absolute=True)
+        ])
 
     def test_get_email_to_add_no_email(self):
         email_verifications = self.user.unconfirmed_email_info
@@ -4824,32 +4835,41 @@ class TestConfigureMailingListViews(OsfTestCase):
     @mock.patch('website.mailchimp_utils.get_mailchimp_api')
     def test_user_choose_mailing_lists_updates_user_dict(self, mock_get_mailchimp_api):
         user = AuthUserFactory()
-        list_name = 'OSF General'
+        list_name = settings.MAILCHIMP_GENERAL_LIST
+        list_id = '12345'
         mock_client = mock.MagicMock()
         mock_get_mailchimp_api.return_value = mock_client
-        mock_client.lists.list.return_value = {'data': [{'id': 1, 'list_name': list_name}]}
-        list_id = mailchimp_utils.get_list_id_from_name(list_name)
 
-        payload = {settings.MAILCHIMP_GENERAL_LIST: True}
+        payload = {list_name: True}
         url = api_url_for('user_choose_mailing_lists')
-        res = self.app.post(url, json=payload, auth=user.auth)
-        # the test app doesn't have celery handlers attached, so we need to call this manually.
-        handlers.celery_teardown_request()
+        with mock.patch.dict(
+            mailchimp_utils.settings.MAILCHIMP_LIST_MAP,
+            {list_name: list_id},
+            clear=True,
+        ):
+            self.app.post(url, json=payload, auth=user.auth)
+            # the test app doesn't have celery handlers attached, so we need to call this manually.
+            handlers.celery_teardown_request()
         user.reload()
 
         # check user.mailing_lists is updated
-        assert (user.mailchimp_mailing_lists[settings.MAILCHIMP_GENERAL_LIST])
-        assert (user.mailchimp_mailing_lists[settings.MAILCHIMP_GENERAL_LIST]) == (payload[settings.MAILCHIMP_GENERAL_LIST])
+        assert user.mailchimp_mailing_lists[list_name]
+        assert user.mailchimp_mailing_lists[list_name] == payload[list_name]
 
         # check that user is subscribed
-        mock_client.lists.subscribe.assert_called_with(id=list_id,
-                                                       email={'email': user.username},
-                                                       merge_vars={
-                                                           'fname': user.given_name,
-                                                           'lname': user.family_name,
-                                                       },
-                                                       double_optin=False,
-                                                       update_existing=True)
+        mock_client.lists.members.create_or_update.assert_called_with(
+            list_id=list_id,
+            subscriber_hash=md5(user.username.lower().encode()).hexdigest(),
+            data={
+                'status': 'subscribed',
+                'status_if_new': 'subscribed',
+                'email_address': user.username,
+                'merge_fields': {
+                    'FNAME': user.given_name,
+                    'LNAME': user.family_name,
+                },
+            },
+        )
 
     def test_get_mailchimp_get_endpoint_returns_200(self):
         url = api_url_for('mailchimp_get_endpoint')
@@ -4865,7 +4885,7 @@ class TestConfigureMailingListViews(OsfTestCase):
         list_name = 'OSF General'
         mock_client = mock.MagicMock()
         mock_get_mailchimp_api.return_value = mock_client
-        mock_client.lists.list.return_value = {'data': [{'id': list_id, 'name': list_name}]}
+        mock_client.lists.get.return_value = {'id': list_id, 'name': list_name}
 
         # user is not subscribed to a list
         user = AuthUserFactory()
@@ -4897,7 +4917,7 @@ class TestConfigureMailingListViews(OsfTestCase):
         list_name = 'OSF General'
         mock_client = mock.MagicMock()
         mock_get_mailchimp_api.return_value = mock_client
-        mock_client.lists.list.return_value = {'data': [{'id': list_id, 'name': list_name}]}
+        mock_client.lists.get.return_value = {'id': list_id, 'name': list_name}
 
         # user is subscribed to a list
         user = AuthUserFactory()
@@ -4927,7 +4947,7 @@ class TestConfigureMailingListViews(OsfTestCase):
         list_name = 'OSF General'
         mock_client = mock.MagicMock()
         mock_get_mailchimp_api.return_value = mock_client
-        mock_client.lists.list.return_value = {'data': [{'id': list_id, 'name': list_name}]}
+        mock_client.lists.get.return_value = {'id': list_id, 'name': list_name}
 
         # user is subscribed to a list
         user = AuthUserFactory()
@@ -5583,9 +5603,14 @@ class TestResetPassword(OsfTestCase):
         # check redirection to CAS login with username and the new verification_key(CAS)
         assert (res.status_code) == (302)
         location = res.headers.get('Location')
-        assert ('login?service=' in location)
-        assert ('username={}'.format(quote(self.user.username, safe='@')) in location)
-        assert ('verification_key={}'.format(self.user.verification_key) in location)
+        login_url = urlparse(location)
+        login_query = parse_qs(login_url.query)
+        assert (login_url.path.endswith('/login'))
+        assert (login_query['service']) == ([
+            web_url_for('user_account', _absolute=True)
+        ])
+        assert (login_query['username']) == ([self.user.username])
+        assert (login_query['verification_key']) == ([self.user.verification_key])
 
         # check if password was updated
         self.user.reload()

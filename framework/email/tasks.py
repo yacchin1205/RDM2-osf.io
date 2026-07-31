@@ -1,11 +1,28 @@
 import smtplib
 import logging
+from base64 import b64encode
 from email.mime.text import MIMEText
+from io import BytesIO
+
+from sendgrid import SendGridAPIClient
+from sendgrid.helpers.mail import (
+    Attachment,
+    Category,
+    Cc,
+    Content,
+    Disposition,
+    Email,
+    FileContent,
+    FileName,
+    Mail,
+    Personalization,
+    ReplyTo,
+    To,
+)
 
 from framework.celery_tasks import app
 from framework import sentry
 from website import settings
-import sendgrid
 
 logger = logging.getLogger(__name__)
 
@@ -105,38 +122,60 @@ def _send_with_smtp(from_addr, to_addr, subject, message, mimetype='html', ttls=
 
 def _send_with_sendgrid(from_addr, to_addr, subject, message, mimetype='html', categories=None, attachment_name=None, attachment_content=None, client=None,
                     cc_addr=None, replyto=None):
-    if (settings.SENDGRID_WHITELIST_MODE and to_addr in settings.SENDGRID_EMAIL_WHITELIST) or settings.SENDGRID_WHITELIST_MODE is False:
-        client = client or sendgrid.SendGridClient(settings.SENDGRID_API_KEY)
-        mail = sendgrid.Mail()
-        mail.set_from(from_addr)
-        mail.add_to(to_addr)
-        if cc_addr is not None:
-            mail.add_cc(cc_addr)
-        if replyto is not None:
-            mail.set_replyto(replyto)
-        mail.set_subject(subject)
-        if mimetype == 'html':
-            mail.set_html(message)
-
-        if categories:
-            mail.set_categories(categories)
-        if attachment_name and attachment_content:
-            mail.add_attachment_stream(attachment_name, attachment_content)
-
-        status, msg = client.send(mail)
-        if status >= 400:
-            sentry.log_message(
-                '{} error response from sendgrid.'.format(status) +
-                'from_addr:  {}\n'.format(from_addr) +
-                'to_addr:  {}\n'.format(to_addr) +
-                'subject:  {}\n'.format(subject) +
-                'mimetype:  {}\n'.format(mimetype) +
-                'message:  {}\n'.format(message[:30]) +
-                'categories:  {}\n'.format(categories) +
-                'attachment_name:  {}\n'.format(attachment_name)
-            )
-        return status < 400
-    else:
+    if settings.SENDGRID_WHITELIST_MODE and to_addr not in settings.SENDGRID_EMAIL_WHITELIST:
         sentry.log_message(
             'SENDGRID_WHITELIST_MODE is True. Failed to send emails to non-whitelisted recipient {}.'.format(to_addr)
         )
+        return False
+
+    client = client or SendGridAPIClient(settings.SENDGRID_API_KEY)
+    mail = Mail(
+        from_email=Email(from_addr),
+        subject=subject,
+    )
+    mail.add_content(Content('text/{}'.format(mimetype), message))
+
+    personalization = Personalization()
+    personalization.add_to(To(to_addr))
+    if cc_addr:
+        for address in cc_addr.split(','):
+            personalization.add_cc(Cc(address))
+    mail.add_personalization(personalization)
+
+    if replyto:
+        mail.reply_to = ReplyTo(replyto)
+
+    if categories:
+        for category in categories:
+            mail.add_category(Category(category))
+
+    if attachment_name and attachment_content:
+        mail.add_attachment(Attachment(
+            file_content=FileContent(b64encode(_content_to_bytes(attachment_content)).decode()),
+            file_name=FileName(attachment_name),
+            disposition=Disposition('attachment'),
+        ))
+
+    response = client.send(mail)
+    if response.status_code >= 400:
+        sentry.log_message(
+            '{} error response from sendgrid.'.format(response.status_code) +
+            'from_addr:  {}\n'.format(from_addr) +
+            'to_addr:  {}\n'.format(to_addr) +
+            'subject:  {}\n'.format(subject) +
+            'mimetype:  {}\n'.format(mimetype) +
+            'message:  {}\n'.format(message[:30]) +
+            'categories:  {}\n'.format(categories) +
+            'attachment_name:  {}\n'.format(attachment_name)
+        )
+    return response.status_code < 400
+
+
+def _content_to_bytes(attachment_content):
+    if isinstance(attachment_content, bytes):
+        return attachment_content
+    if isinstance(attachment_content, BytesIO):
+        return attachment_content.getvalue()
+    if isinstance(attachment_content, str):
+        return attachment_content.encode()
+    raise TypeError('Unsupported SendGrid attachment type: {}'.format(type(attachment_content).__name__))

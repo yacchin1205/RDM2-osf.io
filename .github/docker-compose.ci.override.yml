@@ -2,9 +2,18 @@ version: '3.4'
 
 services:
   elasticsearch:
+    image: rdm2-osf-elasticsearch2-ci
     build:
       context: .github/docker/elasticsearch
       dockerfile: Dockerfile.ci
+    healthcheck:
+      test: >-
+        curl -fS 'http://localhost:9200/_cluster/health?wait_for_status=yellow'
+        && /usr/share/elasticsearch/bin/plugin list | grep -Eq '^[[:space:]]+- analysis-icu$'
+        && /usr/share/elasticsearch/bin/plugin list | grep -Eq '^[[:space:]]+- analysis-kuromoji$'
+      interval: 10s
+      retries: 30
+      start_period: 15s
 
   web:
     image: ${OSF_TEST_IMAGE}
@@ -19,6 +28,10 @@ services:
       ELASTIC_URI: elasticsearch:9200
       ELASTIC6_URI: elasticsearch6:9200
       BOTO_CONFIG: /dev/null
+    volumes:
+      - ./website/settings/local-travis.py:/code/website/settings/local.py:ro
+      - ./api/base/settings/local-travis.py:/code/api/base/settings/local.py:ro
+      - ./tasks/local-dist.py:/code/tasks/local.py:ro
   requirements:
     image: ${OSF_TEST_IMAGE}
     environment:

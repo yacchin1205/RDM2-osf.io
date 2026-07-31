@@ -8,7 +8,6 @@ import time
 from future.moves.urllib.parse import urlparse, urljoin
 import datetime
 from django.utils import timezone
-import pytz
 import itsdangerous
 
 from django.contrib.auth.models import Group
@@ -202,7 +201,8 @@ class TestLogging:
         last_log = preprint.logs.latest()
         assert last_log.action == PreprintLog.FILE_UPDATED
         # date is tzaware
-        assert last_log.created.tzinfo == pytz.utc
+        assert timezone.is_aware(last_log.created)
+        assert last_log.created.utcoffset() == datetime.timedelta(0)
 
         # updates preprint.modified
         assert_datetime_equal(preprint.modified, last_log.created)

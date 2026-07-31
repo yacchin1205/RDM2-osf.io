@@ -31,7 +31,7 @@ printf "\nDB_HOST = 'postgres'\nDB_PORT = 5432\nELASTIC_URI = 'elasticsearch:920
 sudo ip addr add 192.168.168.167/32 dev lo
 
 compose pull postgres elasticsearch6
-compose build elasticsearch
+compose build --pull elasticsearch
 compose up -d postgres elasticsearch elasticsearch6
 
 for _ in $(seq 1 60); do
