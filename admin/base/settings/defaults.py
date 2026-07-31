@@ -175,6 +175,9 @@ MIGRATION_MODULES = {
     'addons_s3compatinstitutions': None,
     'addons_ociinstitutions': None,
     'addons_onedrivebusiness': None,
+    'addons_metadata': None,
+    'addons_workflow': None,
+    'addons_groups': None,
 }
 
 UNSUPPORTED_FORCE_TO_USE_ADDONS = [
@@ -223,7 +226,6 @@ MIDDLEWARE = (
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
-    'django.contrib.auth.middleware.SessionAuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'django.middleware.security.SecurityMiddleware',
