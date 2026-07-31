@@ -23,7 +23,6 @@ RUN apk add --no-cache --virtual .run-deps \
     libev \
     libevent \
     openssl \
-    && yarn global add bower \
     && mkdir -p /var/www \
     && chown www-data:www-data /var/www
 
@@ -75,29 +74,17 @@ RUN mv ./website/settings/local-dist.py ./website/settings/local.py \
     && mv ./api/base/settings/local-dist.py ./api/base/settings/local.py \
     && sed 's/DEBUG_MODE = True/DEBUG_MODE = False/' -i ./website/settings/local.py
 
-# Bower Assets
-COPY ./.bowerrc ./bower.json ./
-COPY ./admin/.bowerrc ./admin/bower.json ./admin/
-RUN \
-    # OSF
-    bower install --production --allow-root \
-    && bower cache clean --allow-root \
-    # Admin
-    && cd ./admin \
-    && bower install --production --allow-root \
-    && bower cache clean --allow-root
-
 # Webpack Assets
 #
 ## OSF
-COPY ./package.json ./.yarnrc ./yarn.lock ./
+COPY ./package.json ./.yarnrc ./yarn.lock ./copy-vendor-assets.js ./
 COPY ./webpack* ./
 COPY ./website/static/ ./website/static/
 COPY ./scripts/translations/ ./scripts/translations/
 COPY ./website/translations/ ./website/translations/
 COPY ./website/static/js/translations/ ./website/static/js/translations/
 ## Admin
-COPY ./admin/package.json ./admin/yarn.lock ./admin/
+COPY ./admin/package.json ./admin/yarn.lock ./admin/copy-vendor-assets.js ./admin/
 COPY ./admin/webpack* ./admin/
 COPY ./admin/static/ ./admin/static/
 ## Addons
@@ -142,6 +129,7 @@ RUN \
     # OSF
     yarn install --frozen-lockfile \
     && mkdir -p ./website/static/built/ \
+    && python3 -m invoke citation-data \
     && python3 -m invoke build-js-config-files \
     && yarn run webpack-prod \
     # Admin

@@ -7,7 +7,7 @@ var Treebeard = require('treebeard');
 var citations = require('js/citations');
 var clipboard = require('js/clipboard');
 
-var apaStyle = require('raw-loader!styles/apa.csl');
+var apaStyle = require('raw-loader!../vendor/citation-styles/apa.csl');
 
 var errorPage = require('raw-loader!citations_load_error.html');
 
@@ -326,7 +326,7 @@ CitationGrid.prototype.initStyleSelect = function() {
             cache: true
         }
     }).on('select2-selecting', function(event) {
-        var styleUrl = '/static/vendor/bower_components/styles/' + event.val + '.csl';
+        var styleUrl = '/static/vendor/citation-styles/' + event.val + '.csl';
         $.get(styleUrl).done(function(xml) {
             self.updateStyle(event.val, xml);
         }).fail(function(jqxhr, status, error) {

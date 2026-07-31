@@ -17,9 +17,7 @@ var webpackTestConfig = {
             'window.$': 'jquery'
         }),
     ],
-    resolve: Object.assign({}, webpackCommon.resolve, {
-        descriptionFiles: ['package.json', 'bower.json'],
-    }),
+    resolve: webpackCommon.resolve,
     externals: {'jquery': 'jQuery', 'jquery-ui': 'jQuery.ui'},
     module: {
         rules: webpackCommon.module.rules.concat([
@@ -35,10 +33,10 @@ module.exports = {
     frameworks: ['mocha', 'sinon'],
     files: [
         // Mimics loading jquery and jquery-ui with script tags
-        'website/static/vendor/bower_components/jquery/dist/jquery.js',
-        'website/static/vendor/bower_components/jquery-ui/jquery-ui.js',
-        'website/static/vendor/bower_components/bootstrap/dist/js/bootstrap.js',
-        'website/static/vendor/bower_components/raven-js/dist/raven.js',
+        'node_modules/jquery/dist/jquery.js',
+        'node_modules/components-jqueryui/jquery-ui.js',
+        'node_modules/bootstrap/dist/js/bootstrap.js',
+        'node_modules/raven-js/dist/raven.js',
         // Context vars normally injected by the mako templates
         'website/static/js/tests/karma-context.js',
         // Only need to target one file, which will load all files in tests/ that

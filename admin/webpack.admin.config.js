@@ -62,4 +62,9 @@ var config = Object.assign({}, common, {
     devtool: 'source-map',
 });
 config.resolve.modules.push(websiteRoot, adminRoot);
+// The admin bundle ships its own bootstrap/admin-lte versions, not the website ones
+config.resolve.alias = Object.assign({}, config.resolve.alias, {
+    'bootstrap': path.resolve(__dirname, 'node_modules', 'bootstrap', 'dist', 'js', 'bootstrap.js'),
+    'admin-lte': path.resolve(__dirname, 'node_modules', 'admin-lte'),
+});
 module.exports = config;

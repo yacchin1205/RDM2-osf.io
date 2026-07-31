@@ -229,7 +229,7 @@
 % if settings.USE_CDN_FOR_CLIENT_LIBS:
     src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.2/MathJax.js?config=TeX-AMS-MML_HTMLorMML"
 % else:
-    src="/static/vendor/bower_components/MathJax/unpacked/MathJax.js?config=TeX-AMS-MML_HTMLorMML"
+    src="/static/vendor/npm/mathjax/unpacked/MathJax.js?config=TeX-AMS-MML_HTMLorMML"
 % endif
 ></script>
 

@@ -15,7 +15,7 @@
     <meta name="fragment" content="!">
 
     % if sentry_dsn_js:
-    <script src="/static/vendor/bower_components/raven-js/dist/raven.min.js"></script>
+    <script src="/static/vendor/npm/raven-js/dist/raven.min.js"></script>
     <script>
         Raven.config(${ sentry_dsn_js | sjson, n }, {}).install();
     </script>
@@ -422,8 +422,8 @@
         <script src="https://cdnjs.cloudflare.com/ajax/libs/jqueryui/1.12.1/jquery-ui.min.js"></script>
         <script>window.jQuery.ui || document.write('<script src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.12.1/jquery-ui.min.js">\x3C/script>')</script>
     % else:
-        <script src="/static/vendor/bower_components/jquery/dist/jquery.min.js"></script>
-        <script src="/static/vendor/bower_components/jquery-ui/jquery-ui.min.js"></script>
+        <script src="/static/vendor/npm/jquery/dist/jquery.min.js"></script>
+        <script src="/static/vendor/npm/components-jqueryui/jquery-ui.min.js"></script>
     % endif
     ## NOTE: We load vendor bundle  at the top of the page because contains
     ## the webpack runtime and a number of necessary stylesheets which should be loaded before the user sees

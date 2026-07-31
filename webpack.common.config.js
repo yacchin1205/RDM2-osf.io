@@ -176,11 +176,10 @@ rdmPoToJson();
 var resolve = {
     modules: [
         root,
-        './website/static/vendor/bower_components',
         'node_modules',
     ],
     extensions: ['*', '.es6.js', '.js', '.min.js'],
-    // Need to alias libraries that aren't managed by bower or npm
+    // Need to alias libraries that aren't managed by npm
     alias: {
         'knockout-sortable': staticPath('vendor/knockout-sortable/knockout-sortable.js'),
         'bootstrap-editable': staticPath('vendor/bootstrap-editable-custom/js/bootstrap-editable.js'),
@@ -190,19 +189,22 @@ var resolve = {
         'select2-ja': nodePath('select2/select2_locale_ja.js'),
         'jquery-blockui': staticPath('vendor/jquery-blockui/jquery.blockui.js'),
         'bootstrap': nodePath('bootstrap/dist/js/bootstrap.js'),
-        'Caret.js': staticPath('vendor/bower_components/Caret.js/dist/jquery.caret.min.js'),
-        'osf-panel': staticPath('vendor/bower_components/osf-panel/dist/jquery-osfPanel.min.js'),
-        'jquery-qrcode': staticPath('vendor/bower_components/jquery-qrcode/jquery.qrcode.min.js'),
-        'jquery-tagsinput': staticPath('vendor/bower_components/jquery.tagsinput/jquery.tagsinput.js'),
-        'clipboard': staticPath('vendor/bower_components/clipboard/dist/clipboard.js'),
+        'bootstrap.growl': staticPath('vendor/bootstrap.growl/bootstrap-growl.min.js'),
+        'At.js': nodePath('at.js/dist/js/jquery.atwho.js'),
+        'Caret.js': staticPath('vendor/Caret.js/dist/jquery.caret.min.js'),
+        'osf-panel': staticPath('vendor/osf-panel/dist/jquery-osfPanel.min.js'),
+        'jquery-qrcode': staticPath('vendor/jquery-qrcode/jquery.qrcode.min.js'),
+        'jquery-tagsinput': staticPath('vendor/jquery.tagsinput/jquery.tagsinput.js'),
+        'clipboard': nodePath('clipboard/dist/clipboard.js'),
         'history': nodePath('historyjs/scripts/bundled/html4+html5/jquery.history.js'),
+        'reconnectingWebsocket': nodePath('ReconnectingWebSocket/reconnecting-websocket.js'),
         // Needed for knockout-sortable
-        'jquery.ui.sortable': staticPath('vendor/bower_components/jquery-ui/ui/widgets/sortable.js'),
-        'truncate': staticPath('vendor/bower_components/truncate/jquery.truncate.js'),
+        'jquery.ui.sortable': nodePath('components-jqueryui/ui/widgets/sortable.js'),
+        'truncate': staticPath('vendor/truncate/jquery.truncate.js'),
         // Needed for ace code editor in wiki
-        'ace-noconflict': staticPath('vendor/bower_components/ace-builds/src-noconflict/ace.js'),
-        'ace-ext-language_tools': staticPath('vendor/bower_components/ace-builds/src-noconflict/ext-language_tools.js'),
-        'ace-mode-markdown': staticPath('vendor/bower_components/ace-builds/src-noconflict/mode-markdown.js'),
+        'ace-noconflict': nodePath('ace-builds/src-noconflict/ace.js'),
+        'ace-ext-language_tools': nodePath('ace-builds/src-noconflict/ext-language_tools.js'),
+        'ace-mode-markdown': nodePath('ace-builds/src-noconflict/mode-markdown.js'),
         'pagedown-ace-converter': addonsPath('wiki/static/pagedown-ace/Markdown.Converter.js'),
         'pagedown-ace-sanitizer': addonsPath('wiki/static/pagedown-ace/Markdown.Sanitizer.js'),
         'pagedown-ace-editor': addonsPath('wiki/static/pagedown-ace/Markdown.Editor.js'),

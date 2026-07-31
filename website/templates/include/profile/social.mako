@@ -1,7 +1,7 @@
 <script id="profileSocial" type="text/html">
 
     <link rel="stylesheet" href='/static/css/pages/profile-page.css'>
-    <link rel="stylesheet" href="/static/vendor/bower_components/academicons/css/academicons.css"/>
+    <link rel="stylesheet" href="/static/vendor/academicons/css/academicons.css"/>
 
     <div data-bind="if: mode() === 'edit'">
 

@@ -1,4 +1,4 @@
-var xhook = require('../vendor/bower_components/xhook/dist/xhook.js').xhook;
+var xhook = require('../vendor/xhook/dist/xhook.js').xhook;
 var URI = require('URIjs');
 var jquery = require('jquery');
 
