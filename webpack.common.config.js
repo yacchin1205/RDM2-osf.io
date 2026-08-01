@@ -89,6 +89,7 @@ var entry = {
         'js/osfToggleHeight',
         'mithril',
         // Main CSS files that get loaded above the fold
+        staticPath('vendor/treebeard/treebeard.css'),
         nodePath('select2/select2.css'),
         nodePath('bootstrap/dist/css/bootstrap.css'),
         '@centerforopenscience/osf-style',
