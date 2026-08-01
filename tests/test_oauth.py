@@ -442,6 +442,12 @@ class TestExternalProviderOAuth2(OsfTestCase):
             )
 
         mock_oauth2session.assert_called_with(self.provider.client_id, redirect_uri=redirect_uri)
+        mock_fetch_token.assert_called_once_with(
+            self.provider.callback_url,
+            include_client_id=True,
+            client_secret=self.provider.client_secret,
+            code='mock_code',
+        )
 
     @mock.patch('osf.models.external.OAuth2Session')
     @mock.patch('osf.models.external.OAuth2Session.fetch_token')
@@ -465,6 +471,12 @@ class TestExternalProviderOAuth2(OsfTestCase):
             self.provider.auth_callback(user=user)
 
         mock_oauth2session.assert_called_with(self.provider.client_id, redirect_uri=None)
+        mock_fetch_token.assert_called_once_with(
+            self.provider.callback_url,
+            include_client_id=True,
+            client_secret=self.provider.client_secret,
+            code='mock_code',
+        )
 
         # Reset the `ADDONS_OAUTH_NO_REDIRECT` list.
         ADDONS_OAUTH_NO_REDIRECT.remove(self.provider.short_name)
