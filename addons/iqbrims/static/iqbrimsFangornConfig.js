@@ -6,7 +6,7 @@
 var m = require('mithril');
 var Fangorn = require('js/fangorn').Fangorn;
 var Raven = require('raven-js');
-var storageAddons = require('json-loader!storageAddons.json');
+var storageAddons = require('storageAddons.json');
 
 var logPrefix = '[iqbrims] ';
 var stateRequested = false;

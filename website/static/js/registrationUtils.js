@@ -12,7 +12,7 @@ var moment = require('moment');
 var lodashHas = require('lodash.has');
 var lodashSet = require('lodash.set');
 var lodashIncludes = require('lodash.includes');
-var History = require('exports-loader?History!history');
+var History = require('exports-loader?type=commonjs&exports=single|History!history');
 
 require('js/koHelpers');
 

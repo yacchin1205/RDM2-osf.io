@@ -8,7 +8,7 @@ require('../../vendor/bootstrap-editable-custom/css/bootstrap-editable.css');
 require('components-jqueryui/themes/base/resizable.css');
 require('../../css/bootstrap-xl.css');
 require('../../css/animate.css');
-require('font-awesome-webpack');
+require('font-awesome/css/font-awesome.css');
 
 var $ = require('jquery');
 var Cookie = require('js-cookie');

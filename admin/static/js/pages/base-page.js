@@ -1,6 +1,6 @@
 'use strict';
 
-require('font-awesome-webpack');
+require('font-awesome/css/font-awesome.css');
 require('bootstrap');
 require('admin-lte/dist/js/app.min.js');
 

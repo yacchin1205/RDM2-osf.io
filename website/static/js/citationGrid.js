@@ -7,9 +7,9 @@ var Treebeard = require('treebeard');
 var citations = require('js/citations');
 var clipboard = require('js/clipboard');
 
-var apaStyle = require('raw-loader!../vendor/citation-styles/apa.csl');
+var apaStyle = require('../vendor/citation-styles/apa.csl');
 
-var errorPage = require('raw-loader!citations_load_error.html');
+var errorPage = require('citations_load_error.html');
 
 var _ = require('js/rdmGettext')._;
 var sprintf = require('agh.sprintf').sprintf;

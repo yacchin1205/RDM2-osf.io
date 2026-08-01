@@ -147,6 +147,14 @@ function logEntriesToJS(logs) {
     return lines;
 }
 
+// Wire every page bundle to the shared vendor chunk; the templates load
+// vendor.js plus one page bundle per page (replaces CommonsChunkPlugin).
+Object.keys(entry).forEach(function(name) {
+    if (name !== 'vendor') {
+        entry[name] = {import: entry[name], dependOn: 'vendor'};
+    }
+});
+
 fs.writeFileSync(staticPath('js/_allLogTexts.json'), JSON.stringify(mainLogs));
 fs.writeFileSync(staticPath('js/_anonymousLogTexts.json'), JSON.stringify(anonymousLogs));
 // for i18n
@@ -178,7 +186,17 @@ var resolve = {
         root,
         'node_modules',
     ],
-    extensions: ['*', '.es6.js', '.js', '.min.js'],
+    extensions: ['.es6.js', '.js', '.min.js', '.json'],
+    // webpack 5 no longer ships Node core polyfills; these are the ones the
+    // bundled code actually reaches (crypto via addons/metadata/wbcache.js)
+    fallback: {
+        fs: false,
+        crypto: require.resolve('crypto-browserify'),
+        buffer: require.resolve('buffer/'),
+        stream: require.resolve('stream-browserify'),
+        vm: require.resolve('vm-browserify'),
+        path: require.resolve('path-browserify'),
+    },
     // Need to alias libraries that aren't managed by npm
     alias: {
         'knockout-sortable': staticPath('vendor/knockout-sortable/knockout-sortable.js'),
@@ -231,8 +249,6 @@ var externals = {
 };
 
 var plugins = [
-    // Bundle common code between modules
-    new webpack.optimize.CommonsChunkPlugin({ name: 'vendor', filename: 'vendor.js' }),
     // Make jQuery available in all modules without having to do require('jquery')
     new webpack.ProvidePlugin({
         $: 'jquery',
@@ -247,7 +263,8 @@ var plugins = [
 
 var output = {
     path: path.resolve(__dirname, 'website', 'static', 'public', 'js'),
-    // publicPath: '/static/', // used to generate urls to e.g. images
+    // Empty (not wp5's 'auto') so webpack-assets.json keeps plain filenames
+    publicPath: '',
     filename: '[name].js',
     sourcePrefix: ''
 };
@@ -261,20 +278,35 @@ module.exports = {
     output: output,
     module: {
         rules: [
-            {test: /\.es6\.js$/, exclude: [/node_modules/, /bower_components/, /vendor/], loader: 'babel-loader'},
-            {test: /\.css$/, use: [{loader: 'style-loader'}, {loader: 'css-loader'}]},
-            // url-loader uses DataUrls; files-loader emits files
-            {test: /\.png$/, loader: 'url-loader?limit=100000&mimetype=image/png'},
-            {test: /\.gif$/, loader: 'url-loader?limit=10000&mimetype=image/gif'},
-            {test: /\.jpg$/, loader: 'url-loader?limit=10000&mimetype=image/jpg'},
-            {test: /\.woff(2)?(\?v=[0-9]\.[0-9]\.[0-9])?$/, loader: 'url-loader?mimetype=application/font-woff'},
+            {
+                test: /\.es6\.js$/,
+                exclude: [/node_modules/, /vendor/],
+                loader: 'babel-loader',
+                options: {presets: [require.resolve('@babel/preset-env')]}
+            },
+            {
+                test: /\.css$/,
+                use: [
+                    {loader: 'style-loader'},
+                    {
+                        loader: 'css-loader',
+                        // Root-relative urls like /static/img/... are served by the
+                        // app at runtime and must not be resolved at build time
+                        options: {url: {filter: function(url) { return url[0] !== '/'; }}}
+                    }
+                ]
+            },
+            // url-loader uses DataUrls; file-loader emits files
+            {test: /\.png$/, loader: 'url-loader', options: {limit: 100000, mimetype: 'image/png'}},
+            {test: /\.gif$/, loader: 'url-loader', options: {limit: 10000, mimetype: 'image/gif'}},
+            {test: /\.jpg$/, loader: 'url-loader', options: {limit: 10000, mimetype: 'image/jpg'}},
+            {test: /\.woff(2)?(\?v=[0-9]\.[0-9]\.[0-9])?$/, loader: 'url-loader', options: {mimetype: 'application/font-woff'}},
+            // Raw text imported into JS (mako-like templates, CSL styles, locales)
+            {test: /\.(html|csl|xml)$/, type: 'asset/source'},
             {test: /\.svg/, loader: 'file-loader'},
             {test: /\.eot/, loader: 'file-loader'},
             {test: /\.ttf/, loader: 'file-loader'},
-            { parser: { amd: false }}
+            {test: /\.js$/, parser: {amd: false}}
         ]
-    },
-    node: {
-       fs: 'empty'
     }
 };

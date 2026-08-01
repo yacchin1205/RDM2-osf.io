@@ -3,6 +3,7 @@ var webpackCommon = require('./webpack.common.config.js');
 
 // A subset of the app webpack config
 var webpackTestConfig = {
+    mode: 'development',
     devtool: 'inline-source-map',
     plugins: [
         // Make sure that CommonJS is always used
@@ -22,11 +23,12 @@ var webpackTestConfig = {
     module: {
         rules: webpackCommon.module.rules.concat([
             // Assume test files are ES6
-            {test: /\.test\.js$/, loader: 'babel-loader'},
+            {
+                test: /\.test\.js$/,
+                loader: 'babel-loader',
+                options: {presets: [require.resolve('@babel/preset-env')]}
+            },
         ])
-    },
-    node: {
-       fs: 'empty'
     }
 };
 module.exports = {

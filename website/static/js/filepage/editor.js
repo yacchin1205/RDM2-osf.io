@@ -8,7 +8,9 @@ require('ace-ext-language_tools');
 require('addons/wiki/static/ace-markdown-snippets.js');
 var Markdown = require('pagedown-ace-converter');
 Markdown.getSanitizingConverter = require('pagedown-ace-sanitizer').getSanitizingConverter;
-require('imports-loader?Markdown=pagedown-ace-converter!pagedown-ace-editor');
+// pagedown-ace-editor is a legacy script that augments the global Markdown object
+window.Markdown = Markdown;
+require('pagedown-ace-editor');
 
 var _ = require('js/rdmGettext')._;
 

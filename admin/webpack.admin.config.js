@@ -18,21 +18,18 @@ var staticPath = function(dir) {
 // Adding bundle tracker to plugins
 var plugins = common.plugins.concat([
     // for using webpack with Django
-    new BundleTracker({filename: './webpack-stats.json'}),
-    new webpack.LoaderOptionsPlugin({
-        debug: true,
-        minimize: true
-    })
+    new BundleTracker({path: __dirname, filename: 'webpack-stats.json'})
 ]);
 
 common.output = {
     path: path.resolve(__dirname, 'static', 'public', 'js'),
-    // publicPath: '/static/', // used to generate urls to e.g. images
+    publicPath: '',
     filename: '[name].js',
     sourcePrefix: ''
 };
 
 var config = Object.assign({}, common, {
+    mode: 'development',
     entry: {
         'admin-base-page': staticAdminPath('js/pages/base-page.js'),
         'admin-registration-edit-page': staticAdminPath('js/pages/admin-registration-edit-page.js'),
