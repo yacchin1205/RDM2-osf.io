@@ -150,7 +150,7 @@ ENV GIT_COMMIT=${GIT_COMMIT}
 RUN pybabel compile -d ./website/translations
 RUN pybabel compile -D django -d ./admin/translations
 
-# TODO: Admin/API should fully specify their bower static deps, and not
+# TODO: Admin/API should fully specify their static deps, and not
 #       include ./website/static in their defaults.py.
 #       (this adds an additional 300+mb to the build image)
 

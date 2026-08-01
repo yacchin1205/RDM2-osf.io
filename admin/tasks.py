@@ -34,7 +34,6 @@ def assets(ctx, dev=False, watch=False):
     if not dev:
         command += ' --production'
     ctx.run(command, echo=True)
-    bower_install(ctx)
     # Always set clean=False to prevent possible mistakes
     # on prod
     webpack(ctx, clean=False, watch=watch, dev=dev)
@@ -50,9 +49,7 @@ def webpack(ctx, clean=False, watch=False, dev=False):
     webpack_bin = os.path.join(HERE, 'node_modules', 'webpack', 'bin',
                                'webpack.js')
     args = [webpack_bin]
-    if settings.DEBUG_MODE and dev:
-        args += ['--colors']
-    else:
+    if not (settings.DEBUG_MODE and dev):
         args += ['--progress']
     if watch:
         args += ['--watch']
@@ -68,12 +65,3 @@ def clean_assets(ctx):
     public_path = os.path.join(HERE, 'static', 'public')
     js_path = os.path.join(public_path, 'js')
     ctx.run('rm -rf {0}'.format(js_path), echo=True)
-
-
-@task(aliases=['bower'])
-def bower_install(ctx):
-    if os.getcwd() != HERE:
-        os.chdir(HERE)
-    bower_bin = os.path.join(HERE, 'node_modules', 'bower', 'bin', 'bower')
-    ctx.run('{} prune --allow-root'.format(bower_bin), echo=True)
-    ctx.run('{} install --allow-root'.format(bower_bin), echo=True)
