@@ -1,5 +1,5 @@
-require('bootstrap-tagsinput');
-require('bootstrap-tagsinput/dist/bootstrap-tagsinput.css');
+require('../vendor/bootstrap-tagsinput/bootstrap-tagsinput.js');
+require('../vendor/bootstrap-tagsinput/bootstrap-tagsinput.css');
 
 $('#tags-input-collected-types').on('itemAdded', function(event) {
     $('#id_collected_type_choices').val(JSON.stringify($('#tags-input-collected-types').tagsinput('items')));

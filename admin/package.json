@@ -11,7 +11,6 @@
     "babel-loader": "^9.2.1",
     "bootstrap": "3.4.1",
     "bootstrap-colorpicker": "^2.5.2",
-    "bootstrap-tagsinput": "^0.7.1",
     "components-jqueryui": "https://github.com/components/jqueryui.git#1.12.1",
     "font-awesome": "^4.5.0",
     "jquery": "3.7.1",

@@ -217,19 +217,19 @@
         isCustomStorageLocation: isCusStorageLoc
     });
 </script>
-<script type="text/x-mathjax-config">
-    MathJax.Hub.Config({
-        tex2jax: {inlineMath: [['$','$'], ['\\(','\\)']], processEscapes: true},
-        // Don't automatically typeset the whole page. Must explicitly use MathJax.Hub.Typeset
-        skipStartupTypeset: true
-    });
+<script type="text/javascript">
+    window.MathJax = {
+        tex: {inlineMath: [['$','$'], ['\\(','\\)']], processEscapes: true},
+        // Don't automatically typeset the whole page. Must explicitly typeset (js/mathrender)
+        startup: {typeset: false}
+    };
 </script>
 
 <script type="text/javascript"
 % if settings.USE_CDN_FOR_CLIENT_LIBS:
-    src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.2/MathJax.js?config=TeX-AMS-MML_HTMLorMML"
+    src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.2/es5/tex-mml-chtml.js"
 % else:
-    src="/static/vendor/npm/mathjax/unpacked/MathJax.js?config=TeX-AMS-MML_HTMLorMML"
+    src="/static/vendor/npm/mathjax/es5/tex-mml-chtml.js"
 % endif
 ></script>
 

@@ -206,6 +206,10 @@ var resolve = {
         'bootstrap-datepicker-css': nodePath('bootstrap-datepicker/dist/css/bootstrap-datepicker3.css'),
         'select2-ja': nodePath('select2/select2_locale_ja.js'),
         'jquery-blockui': staticPath('vendor/jquery-blockui/jquery.blockui.js'),
+        // Vendored with a backported prototype-pollution guard (GHSA-c3px-v9c7-m734);
+        // upgrading to a fixed mithril requires rewriting fangorn/treebeard
+        'mithril': staticPath('vendor/mithril/mithril.js'),
+        'treebeard': staticPath('vendor/treebeard/treebeard.js'),
         'bootstrap': nodePath('bootstrap/dist/js/bootstrap.js'),
         'bootstrap.growl': staticPath('vendor/bootstrap.growl/bootstrap-growl.min.js'),
         'At.js': nodePath('at.js/dist/js/jquery.atwho.js'),
