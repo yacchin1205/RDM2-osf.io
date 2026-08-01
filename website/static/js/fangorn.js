@@ -7,7 +7,7 @@
 
 var $ = require('jquery');
 var m = require('mithril');
-var URI = require('URIjs');
+var URI = require('urijs');
 var Raven = require('raven-js');
 var Treebeard = require('treebeard');
 var moment = require('moment');

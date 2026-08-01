@@ -10,7 +10,7 @@ var Raven = require('raven-js');
 var bootbox = require('bootbox');
 var moment = require('moment');
 var lodashHas = require('lodash.has');
-var lodashSet = require('lodash.set');
+var lodashSet = require('lodash/set');
 var lodashIncludes = require('lodash.includes');
 var History = require('exports-loader?type=commonjs&exports=single|History!history');
 

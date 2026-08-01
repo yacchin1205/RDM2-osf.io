@@ -81,7 +81,7 @@ var entry = {
         'treebeard',
         'lodash.get',
         'js-cookie',
-        'URIjs',
+        'urijs',
         // Common internal modules
         'js/fangorn',
         'js/citations',
@@ -233,9 +233,6 @@ var resolve = {
         // Also alias some internal libraries for easy access
         'addons': path.resolve(__dirname, 'addons'),
         'tests': staticPath('js/tests'),
-        // GASP Items not defined as main in its package.json
-        'TweenLite' : nodePath('gsap/src/minified/TweenLite.min.js'),
-        'EasePack' : nodePath('gsap/src/minified/easing/EasePack.min.js'),
     }
 };
 
