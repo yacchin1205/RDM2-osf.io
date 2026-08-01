@@ -61,3 +61,7 @@ METASCHEMA_ORDERING = (
     '公的資金による研究データのメタデータ登録',
     'ムーンショット目標2データベース（未病DB）のメタデータ登録',
 )
+
+
+def sort_meta_schemas(meta_schemas):
+    return sorted(meta_schemas, key=lambda schema: METASCHEMA_ORDERING.index(schema.name))
