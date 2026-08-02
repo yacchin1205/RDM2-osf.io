@@ -3,7 +3,7 @@ var ko = require('knockout');
 var $osf = require('js/osfHelpers');
 
 var DevModeModel = function(source_file, branch_file) {
-    self = this;
+    var self = this;
     self.source_file = source_file;
     self.branch = ko.observable('');
     $.get(branch_file).done(function (data){

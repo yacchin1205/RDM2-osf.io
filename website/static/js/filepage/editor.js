@@ -22,11 +22,11 @@ var model = {};
 // Mithril reloads the controller twice
 var FileFetcher = {
     clear: function(){
-        self = this;
+        var self = this;
         delete self.promise;
     },
     fetch: function(url, reload){
-        self = this;
+        var self = this;
         if(typeof self.promise === 'undefined' || reload){
             self.promise = $.ajax({
                 type: 'GET',
