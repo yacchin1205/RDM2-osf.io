@@ -13,6 +13,7 @@ from api.schemas.serializers import (
     RegistrationSchemaBlockSerializer,
     FileMetadataSchemaSerializer,
 )
+from website.project.metadata.schemas import sort_meta_schemas
 
 
 class RegistrationSchemaList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin):
@@ -39,6 +40,9 @@ class RegistrationSchemaList(JSONAPIBaseView, generics.ListAPIView, ListFilterMi
     # overrides ListAPIView
     def get_queryset(self):
         return self.get_queryset_from_request()
+
+    def filter_queryset(self, queryset):
+        return sort_meta_schemas(super().filter_queryset(queryset))
 
 
 class RegistrationSchemaDetail(JSONAPIBaseView, generics.RetrieveAPIView):

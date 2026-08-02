@@ -1,11 +1,10 @@
 from operator import itemgetter
 
-import mock
+from unittest import mock
 import pytest
 from django.http import Http404
 from django.test import RequestFactory
 from django.urls import reverse
-from nose import tools as nt
 
 from addons.github.tests.factories import GitHubNodeSettingsFactory, GitHubAccountFactory
 from addons.s3.tests.factories import (S3UserSettingsFactory, S3NodeSettingsFactory, S3AccountFactory, )
@@ -45,55 +44,55 @@ class TestUserIdentificationInstitutionListView(AdminTestCase):
         """Test superuser login"""
         self.request.user.is_superuser = True
         self.request.user.is_staff = True
-        nt.assert_true(self.view.test_func())
+        assert (self.view.test_func())
 
     def test_admin_login(self):
         """Test institution administrator login"""
         self.request.user.is_superuser = False
         self.request.user.is_staff = True
-        nt.assert_false(self.view.test_func())
-        nt.assert_true(self.view.raise_exception)
+        assert not (self.view.test_func())
+        assert (self.view.raise_exception)
 
     def test_user_login(self):
         """Test user login"""
         self.request.user.is_superuser = False
         self.request.user.is_staff = False
-        nt.assert_false(self.view.test_func())
-        nt.assert_true(self.view.raise_exception)
+        assert not (self.view.test_func())
+        assert (self.view.raise_exception)
 
     def test_non_active_user_login(self):
         """Test invalid user login"""
         self.request.user.is_active = False
-        nt.assert_false(self.view.test_func())
-        nt.assert_true(self.view.raise_exception)
+        assert not (self.view.test_func())
+        assert (self.view.raise_exception)
 
     def test_anonymous_login(self):
         """Test anonymous user login"""
         self.request.user = AnonymousUser()
-        nt.assert_false(self.view.test_func())
-        nt.assert_false(self.view.raise_exception)
+        assert not (self.view.test_func())
+        assert not (self.view.raise_exception)
 
     def test_get(self, *args, **kwargs):
         """Test GET method"""
         self.request.user.is_superuser = True
         self.request.user.is_staff = True
         res = self.view.get(self.request, *args, **kwargs)
-        nt.assert_equal(res.status_code, 200)
+        assert (res.status_code) == (200)
 
     def test_get_queryset(self):
         """Test get_queryset method"""
         results = self.view.get_queryset()
-        nt.assert_equal(len(results), len(self.institutions))
+        assert (len(results)) == (len(self.institutions))
 
     def test_get_context_data(self):
         """Test get_context_data method"""
         self.view.object_list = self.view.get_queryset()
         results = self.view.get_context_data()
-        nt.assert_is_instance(results, dict)
-        nt.assert_in('institutions', results)
-        nt.assert_in('page', results)
-        nt.assert_in('logohost', results)
-        nt.assert_equal(len(results['institutions']), len(self.institutions))
+        assert isinstance((results), (dict))
+        assert ('institutions') in (results)
+        assert ('page') in (results)
+        assert ('logohost') in (results)
+        assert (len(results['institutions'])) == (len(self.institutions))
 
 
 class TestUserIdentificationInformationListView(AdminTestCase):
@@ -141,14 +140,14 @@ class TestUserIdentificationInformationListView(AdminTestCase):
         view.kwargs = {'guid': self.user._id}
         result = view.get_user_quota_info(self.user, UserQuota.NII_STORAGE)
 
-        nt.assert_equal(self.user.fullname, result['fullname'])
-        nt.assert_equal(self.user.eppn, result['eppn'])
+        assert (self.user.fullname) == (result['fullname'])
+        assert (self.user.eppn) == (result['eppn'])
 
     def test_get_queryset(self):
         view = views.UserIdentificationListView()
         view = setup_view(view, self.request, institution_id=self.institution.id)
         results = view.get_user_list()
-        nt.assert_is_instance(results, list)
+        assert isinstance((results), (list))
 
     @mock.patch('admin.user_identification_information.views.UserIdentificationInformationListView.get_queryset')
     def test_get_queryset_mock_get_queryset(self, mock_method):
@@ -187,10 +186,10 @@ class TestUserIdentificationInformationListView(AdminTestCase):
         view.object_list = []
         view = setup_view(view, self.request, institution_id=self.institution.id)
         results = view.get_context_data()
-        nt.assert_is_instance(results, dict)
-        nt.assert_in('users', results)
-        nt.assert_in('page', results)
-        nt.assert_equal(len(results['users']), 2)
+        assert isinstance((results), (dict))
+        assert ('users') in (results)
+        assert ('page') in (results)
+        assert (len(results['users'])) == (2)
 
     @mock.patch('admin.user_identification_information.views.UserIdentificationInformationListView.get_queryset')
     def test_get_context_data__institution_not_exist(self, mock_get_queryset):
@@ -201,7 +200,7 @@ class TestUserIdentificationInformationListView(AdminTestCase):
         view = views.UserIdentificationInformationListView()
         view.paginate_by = 25
         view = setup_view(view, self.request, institution_id=0)
-        with nt.assert_raises(Http404):
+        with pytest.raises(Http404):
             view.get_context_data()
 
 
@@ -242,21 +241,21 @@ class TestUserIdentificationInformationListSorted(AdminTestCase):
         result = []
         for i in range(len(list_map)):
             result.append(list_map[i])
-        nt.assert_equal(result, expected)
+        assert (result) == (expected)
 
     def test_get_order_without_order_by(self):
         expected = sorted(map(lambda u: u.fullname, self.users), reverse=True)
         response = self.view_get('order_by=&status=desc')
         list_map = list(map(itemgetter('fullname'), response.context_data['users']))
-        nt.assert_is_instance(expected, list)
-        nt.assert_is_instance(list_map, list)
+        assert isinstance((expected), (list))
+        assert isinstance((list_map), (list))
 
     def test_get_order_without_status(self):
         expected = sorted(map(lambda u: u.fullname, self.users), reverse=True)
         response = self.view_get('order_by=fullname&status=')
         list_map = list(map(itemgetter('fullname'), response.context_data['users']))
-        nt.assert_is_instance(expected, list)
-        nt.assert_is_instance(list_map, list)
+        assert isinstance((expected), (list))
+        assert isinstance((list_map), (list))
 
 
 class TestUserIdentificationListView(AdminTestCase):
@@ -309,9 +308,9 @@ class TestUserIdentificationListView(AdminTestCase):
         for i in range(len(results)):
             list_name.append(results[i]['fullname'])
 
-        nt.assert_equal(len(results), 2)
-        nt.assert_in(self.admin_user.fullname, list_name)
-        nt.assert_in(self.user.fullname, list_name)
+        assert (len(results)) == (2)
+        assert (self.admin_user.fullname) in (list_name)
+        assert (self.user.fullname) in (list_name)
 
     def test_get_userlist_user_is_superuser(self):
         self.request.user = self.superuser
@@ -319,13 +318,13 @@ class TestUserIdentificationListView(AdminTestCase):
         view = setup_view(view, self.request, institution_id=self.institution.id)
         results = view.get_user_list()
 
-        nt.assert_is_instance(results, list)
+        assert isinstance((results), (list))
 
     def test_get_userlist_permission_denied(self):
         self.request.user = self.admin_user
         view = views.UserIdentificationListView()
         view = setup_view(view, self.request)
-        with nt.assert_raises(Http404):
+        with pytest.raises(Http404):
             view.get_user_list()
 
     def test_get_userlist_search_guid(self):
@@ -335,8 +334,8 @@ class TestUserIdentificationListView(AdminTestCase):
         view = views.UserIdentificationListView()
         view = setup_view(view, request, institution_id=self.institution.id)
         res = view.get_user_list()
-        nt.assert_equal(len(res), 1)
-        nt.assert_equal(res[0]['id'], self.admin_user._id)
+        assert (len(res)) == (1)
+        assert (res[0]['id']) == (self.admin_user._id)
 
     def test_get_userlist_search_user_name(self):
         request = RequestFactory().get(reverse('user_identification_information:user_identification_list', kwargs={'institution_id': self.institution.id}),
@@ -345,8 +344,8 @@ class TestUserIdentificationListView(AdminTestCase):
         view = views.UserIdentificationListView()
         view = setup_view(view, request, institution_id=self.institution.id)
         res = view.get_user_list()
-        nt.assert_equal(len(res), 1)
-        nt.assert_equal(res[0]['email'], self.admin_user.username)
+        assert (len(res)) == (1)
+        assert (res[0]['email']) == (self.admin_user.username)
 
     def test_get_userlist_search_name(self):
         request = RequestFactory().get(reverse('user_identification_information:user_identification_list', kwargs={'institution_id': self.institution.id}),
@@ -355,8 +354,8 @@ class TestUserIdentificationListView(AdminTestCase):
         view = views.UserIdentificationListView()
         view = setup_view(view, request, institution_id=self.institution.id)
         res = view.get_user_list()
-        nt.assert_equal(len(res), 1)
-        nt.assert_equal(res[0]['fullname'], self.admin_user.fullname)
+        assert (len(res)) == (1)
+        assert (res[0]['fullname']) == (self.admin_user.fullname)
 
     def test_get_userlist_search_empty(self):
         request = RequestFactory().get(reverse('user_identification_information:user_identification_list', kwargs={'institution_id': self.institution.id}),
@@ -365,7 +364,7 @@ class TestUserIdentificationListView(AdminTestCase):
         view = views.UserIdentificationListView()
         view = setup_view(view, request, institution_id=self.institution.id)
         res = view.get_user_list()
-        nt.assert_equal(len(res), 2)
+        assert (len(res)) == (2)
 
     def test_get_userlist_search_none_in_list(self):
         request = RequestFactory().get(reverse('user_identification_information:user_identification_list', kwargs={'institution_id': self.institution.id}),
@@ -374,27 +373,27 @@ class TestUserIdentificationListView(AdminTestCase):
         view = views.UserIdentificationListView()
         view = setup_view(view, request, institution_id=self.institution.id)
         res = view.get_user_list()
-        nt.assert_equal(len(res), 0)
+        assert (len(res)) == (0)
 
     def test__permission_anonymous(self):
         self.request.user = self.anon
         response = views.UserIdentificationListView.as_view()(self.request)
-        nt.assert_equal(response.status_code, 302)
-        nt.assert_in('login', str(response))
+        assert (response.status_code) == (302)
+        assert ('login') in (str(response))
 
     def test__permission_normal_user(self):
         self.request.user = self.user
-        with nt.assert_raises(PermissionDenied):
+        with pytest.raises(PermissionDenied):
             views.UserIdentificationListView.as_view()(self.request)
 
     def test__permission_super_user(self):
         self.request.user = self.superuser
         res = views.UserIdentificationListView.as_view()(self.request, institution_id=self.institution.id)
-        nt.assert_equal(res.status_code, 200)
+        assert (res.status_code) == (200)
 
     def test__permission_admin(self):
         self.request.user = self.admin_user
-        with nt.assert_raises(PermissionDenied):
+        with pytest.raises(PermissionDenied):
             views.UserIdentificationListView.as_view()(self.request)
 
     def test_get_userlist__institution_not_exist(self):
@@ -403,7 +402,7 @@ class TestUserIdentificationListView(AdminTestCase):
         request.user = self.superuser
         view = views.UserIdentificationListView()
         view = setup_view(view, request)
-        with nt.assert_raises(Http404):
+        with pytest.raises(Http404):
             view.get_user_list()
 
 
@@ -442,7 +441,7 @@ class TestUserIdentificationDetailView(AdminTestCase):
     def test_get_object_permission_denied(self):
         view = views.UserIdentificationDetailView()
         view = setup_view(view, self.request)
-        with nt.assert_raises(Http404):
+        with pytest.raises(Http404):
             view.get_object()
 
     def test_get_object(self):
@@ -451,27 +450,27 @@ class TestUserIdentificationDetailView(AdminTestCase):
         request.user = self.superuser
         view = setup_log_view(view, request, guid=self.superuser._id)
         results = view.get_object()
-        nt.assert_is_instance(results, dict)
+        assert isinstance((results), (dict))
 
     def test__permission_anonymous(self):
         self.request.user = self.anon
-        with nt.assert_raises(PermissionDenied):
+        with pytest.raises(PermissionDenied):
             views.UserIdentificationDetailView.as_view()(self.request, guid=self.superuser._id)
 
     def test__permission_normal_user(self):
         self.request.user = self.user
-        with nt.assert_raises(PermissionDenied):
+        with pytest.raises(PermissionDenied):
             views.UserIdentificationDetailView.as_view()(self.request, guid=self.user._id)
 
     def test__permission_super_user(self):
         self.request.user = self.superuser
         res = views.UserIdentificationDetailView.as_view()(self.request, guid=self.superuser._id)
-        nt.assert_equal(res.status_code, 200)
+        assert (res.status_code) == (200)
 
     def test__permission_admin(self):
         self.admin_user.affiliated_institutions.add(InstitutionFactory())
         self.request.user = self.admin_user
-        with nt.assert_raises(PermissionDenied):
+        with pytest.raises(PermissionDenied):
             views.UserIdentificationDetailView.as_view()(self.request, guid=self.admin_user._id)
 
 
@@ -514,37 +513,37 @@ class TestExportFileCSVView(AdminTestCase):
         request.user = self.user
         view = setup_view(self.view, request)
         res = view.get(request)
-        nt.assert_equal(res.status_code, 200)
-        nt.assert_equal(res['content-type'], 'text/csv')
+        assert (res.status_code) == (200)
+        assert (res['content-type']) == ('text/csv')
 
     def test_get_is_super_admin(self):
         request = RequestFactory().get('/fake_path')
         request.user = self.superuser
         view = setup_view(self.view, request, institution_id=self.institution.id)
         res = view.get(request)
-        nt.assert_equal(res.status_code, 200)
-        nt.assert_equal(res['content-type'], 'text/csv')
+        assert (res.status_code) == (200)
+        assert (res['content-type']) == ('text/csv')
 
     def test__permission_anonymous(self):
         self.request.user = self.anon
         response = views.ExportFileCSVView.as_view()(self.request)
-        nt.assert_equal(response.status_code, 302)
-        nt.assert_in('login', str(response))
+        assert (response.status_code) == (302)
+        assert ('login') in (str(response))
 
     def test__permission_normal_user(self):
         self.request.user = self.user
-        with nt.assert_raises(PermissionDenied):
+        with pytest.raises(PermissionDenied):
             views.ExportFileCSVView.as_view()(self.request)
 
     def test__permission_super_user(self):
         self.request.user = self.superuser
         res = views.ExportFileCSVView.as_view()(self.request, institution_id=self.institution.id)
-        nt.assert_equal(res.status_code, 200)
+        assert (res.status_code) == (200)
 
     def test__permission_admin(self):
         self.admin_user.affiliated_institutions.add(InstitutionFactory())
         self.request.user = self.admin_user
-        with nt.assert_raises(PermissionDenied):
+        with pytest.raises(PermissionDenied):
             views.ExportFileCSVView.as_view()(self.request)
 
     def test_get__institution_not_exist(self):
@@ -552,7 +551,7 @@ class TestExportFileCSVView(AdminTestCase):
         request = RequestFactory().get('/fake_path')
         request.user = self.superuser
         view = setup_view(self.view, request, institution_id=0)
-        with nt.assert_raises(Http404):
+        with pytest.raises(Http404):
             view.get(request)
 
     @mock.patch('admin.user_identification_information.views.get_list_extend_storage')
@@ -571,8 +570,8 @@ class TestExportFileCSVView(AdminTestCase):
         response = view.get(request)
 
         # Verify response
-        nt.assert_equal(response.status_code, 200)
-        nt.assert_equal(response['content-type'], 'text/csv')
+        assert (response.status_code) == (200)
+        assert (response['content-type']) == ('text/csv')
         content = response.content.decode('utf-8')
-        nt.assert_in('100MB storage1', content)
-        nt.assert_in('200MB storage2\n300MB storage3', content)
+        assert ('100MB storage1') in (content)
+        assert ('200MB storage2\n300MB storage3') in (content)

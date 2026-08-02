@@ -1,9 +1,10 @@
 import re
+from dataclasses import dataclass
+
 from rest_framework import status as http_status
 
-from boto import exception
-from boto.s3.connection import S3Connection
-from boto.s3.connection import OrdinaryCallingFormat
+import boto3
+from botocore import exceptions
 
 from framework.exceptions import HTTPError
 from addons.base.exceptions import InvalidAuthError, InvalidFolderError
@@ -18,19 +19,26 @@ def connect_s3(access_key=None, secret_key=None, node_settings=None):
     if node_settings is not None:
         if node_settings.external_account is not None:
             access_key, secret_key = node_settings.external_account.oauth_key, node_settings.external_account.oauth_secret
-    connection = S3Connection(access_key, secret_key, calling_format=OrdinaryCallingFormat())
-    return connection
+    return boto3.client(
+        's3',
+        aws_access_key_id=access_key,
+        aws_secret_access_key=secret_key,
+    )
+
+
+def get_status_for_error(error):
+    return error.response['ResponseMetadata']['HTTPStatusCode']
 
 
 def get_bucket_names(node_settings):
     try:
-        buckets = connect_s3(node_settings=node_settings).get_all_buckets()
-    except exception.NoAuthHandlerFound:
+        response = connect_s3(node_settings=node_settings).list_buckets()
+    except exceptions.NoCredentialsError:
         raise HTTPError(http_status.HTTP_403_FORBIDDEN)
-    except exception.BotoServerError as e:
-        raise HTTPError(e.status)
+    except exceptions.ClientError as error:
+        raise HTTPError(get_status_for_error(error))
 
-    return [bucket.name for bucket in buckets]
+    return [bucket['Name'] for bucket in response['Buckets']]
 
 
 def validate_bucket_location(location):
@@ -51,7 +59,13 @@ def validate_bucket_name(name):
 
 
 def create_bucket(node_settings, bucket_name, location=''):
-    return connect_s3(node_settings=node_settings).create_bucket(bucket_name, location=location)
+    client = connect_s3(node_settings=node_settings)
+    if not location or location == 'us-east-1':
+        return client.create_bucket(Bucket=bucket_name)
+    return client.create_bucket(
+        Bucket=bucket_name,
+        CreateBucketConfiguration={'LocationConstraint': location},
+    )
 
 
 def bucket_exists(access_key, secret_key, bucket_name):
@@ -61,18 +75,13 @@ def bucket_exists(access_key, secret_key, bucket_name):
     if not bucket_name:
         return False
 
-    connection = connect_s3(access_key, secret_key)
-
-    if bucket_name != bucket_name.lower():
-        # Must use ordinary calling format for mIxEdCaSe bucket names
-        # otherwise use the default as it handles bucket outside of the US
-        connection.calling_format = OrdinaryCallingFormat()
+    bucket_name = bucket_name.lower()
 
     try:
         # Will raise an exception if bucket_name doesn't exist
-        connect_s3(access_key, secret_key).head_bucket(bucket_name)
-    except exception.S3ResponseError as e:
-        if e.status not in (301, 302):
+        connect_s3(access_key, secret_key).head_bucket(Bucket=bucket_name)
+    except exceptions.ClientError as error:
+        if get_status_for_error(error) not in (301, 302):
             return False
     return True
 
@@ -87,10 +96,22 @@ def can_list(access_key, secret_key):
         return False
 
     try:
-        connect_s3(access_key, secret_key).get_all_buckets()
-    except exception.S3ResponseError:
+        connect_s3(access_key, secret_key).list_buckets()
+    except (exceptions.BotoCoreError, exceptions.ClientError):
         return False
     return True
+
+
+@dataclass(slots=True, frozen=True)
+class Owner:
+    display_name: str
+    id: str
+
+    @classmethod
+    def from_dict(cls, data):
+        owner_id = data['ID']
+        return cls(data.get('DisplayName') or owner_id, owner_id)
+
 
 def get_user_info(access_key, secret_key):
     """Returns an S3 User with .display_name and .id, or None
@@ -99,26 +120,21 @@ def get_user_info(access_key, secret_key):
         return None
 
     try:
-        return connect_s3(access_key, secret_key).get_all_buckets().owner
-    except exception.S3ResponseError:
+        response = connect_s3(access_key, secret_key).list_buckets()
+        return Owner.from_dict(response['Owner'])
+    except (exceptions.BotoCoreError, exceptions.ClientError, KeyError):
         return None
-    return None
 
 def get_bucket_location_or_error(access_key, secret_key, bucket_name):
     """Returns the location of a bucket or raises AddonError
     """
-    try:
-        connection = connect_s3(access_key, secret_key)
-    except Exception:
-        raise InvalidAuthError()
-
-    if bucket_name != bucket_name.lower() or '.' in bucket_name:
-        # Must use ordinary calling format for mIxEdCaSe bucket names
-        # otherwise use the default as it handles bucket outside of the US
-        connection.calling_format = OrdinaryCallingFormat()
+    bucket_name = bucket_name.lower()
 
     try:
         # Will raise an exception if bucket_name doesn't exist
-        return connect_s3(access_key, secret_key).get_bucket(bucket_name, validate=False).get_location()
-    except exception.S3ResponseError:
+        response = connect_s3(access_key, secret_key).get_bucket_location(Bucket=bucket_name)
+        return response['LocationConstraint']
+    except exceptions.NoCredentialsError:
+        raise InvalidAuthError()
+    except (exceptions.BotoCoreError, exceptions.ClientError):
         raise InvalidFolderError()

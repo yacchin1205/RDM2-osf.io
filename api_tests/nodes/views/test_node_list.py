@@ -1,6 +1,5 @@
-import mock
+from unittest import mock
 import pytest
-from nose.tools import *  # noqa:
 
 from django.utils import timezone
 from api.base.settings.defaults import API_BASE, MAX_PAGE_SIZE
@@ -716,19 +715,28 @@ class TestNodeFiltering:
         assert len(res.json.get('data')) == 0
 
     def test_filtering_tags_returns_distinct(
-            self, app, user_one, public_project_one):
+            self, app, user_one, public_project_one,
+            public_project_two):
         # regression test for returning multiple of the same file
         public_project_one.add_tag('cat', Auth(user_one))
         public_project_one.add_tag('cAt', Auth(user_one))
         public_project_one.add_tag('caT', Auth(user_one))
         public_project_one.add_tag('CAT', Auth(user_one))
+        public_project_two.add_tag('cat', Auth(user_one))
+        public_project_two.add_tag('cAt', Auth(user_one))
+        public_project_two.add_tag('caT', Auth(user_one))
+        public_project_two.add_tag('CAT', Auth(user_one))
+
         res = app.get(
             '/{}nodes/?filter[tags]=cat'.format(
                 API_BASE
             ),
             auth=user_one.auth
         )
-        assert len(res.json.get('data')) == 1
+        data = res.json.get('data')
+        assert len(data) == 2
+        project_ids = [datum['id'] for datum in data]
+        assert set(project_ids) == {public_project_one._id, public_project_two._id}
 
     def test_filtering_contributors(
             self, app, user_one, user_one_private_project,
@@ -3362,13 +3370,11 @@ class TestNodeBulkUpdateSkipUneditable:
         skipped = res.json['errors']
         assert_equals(
             [edited[0]['id'], edited[1]['id']],
-            [user_one_public_project_one._id,
-             user_one_public_project_two._id]
+            [user_one_public_project_one._id, user_one_public_project_two._id],
         )
         assert_equals(
             [skipped[0]['_id'], skipped[1]['_id']],
-            [user_two_public_project_one._id,
-             user_two_public_project_two._id]
+            [user_two_public_project_one._id, user_two_public_project_two._id],
         )
         user_one_public_project_one.reload()
         user_one_public_project_two.reload()
@@ -3396,13 +3402,11 @@ class TestNodeBulkUpdateSkipUneditable:
         skipped = res.json['errors']
         assert_equals(
             [edited[0]['id'], edited[1]['id']],
-            [user_one_public_project_one._id,
-             user_one_public_project_two._id]
+            [user_one_public_project_one._id, user_one_public_project_two._id],
         )
         assert_equals(
             [skipped[0]['_id'], skipped[1]['_id']],
-            [user_two_public_project_one._id,
-             user_two_public_project_two._id]
+            [user_two_public_project_one._id, user_two_public_project_two._id],
         )
         user_one_public_project_one.reload()
         user_one_public_project_two.reload()
@@ -3975,13 +3979,13 @@ class TestNodeBulkDeleteSkipUneditable:
         skipped = res.json['errors']
         assert_equals(
             [skipped[0]['id'], skipped[1]['id']],
-            [public_project_three._id, public_project_four._id]
+            [public_project_three._id, public_project_four._id],
         )
 
         res = app.get('/{}nodes/'.format(API_BASE), auth=user_one.auth)
         assert_equals(
             [res.json['data'][0]['id'], res.json['data'][1]['id']],
-            [public_project_three._id, public_project_four._id]
+            [public_project_three._id, public_project_four._id],
         )
 
     def test_skip_uneditable_bulk_delete_query_param_required(

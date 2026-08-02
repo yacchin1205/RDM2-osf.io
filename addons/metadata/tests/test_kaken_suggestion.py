@@ -2,10 +2,10 @@
 """
 Tests for KAKEN suggestion module
 """
-import mock
+import pytest
+from unittest import mock
 import requests
-from nose.tools import *  # noqa
-from elasticsearch.exceptions import ConnectionError as ESConnectionError, ConnectionTimeout
+from requests.exceptions import ConnectionError as ESConnectionError, Timeout as ConnectionTimeout
 
 from tests.base import OsfTestCase
 from osf_tests.factories import UserFactory, ProjectFactory
@@ -46,13 +46,13 @@ class TestKakenSuggestion(OsfTestCase):
         from addons.metadata.suggestions.kaken.suggest import suggest_kaken
 
         result = suggest_kaken('kaken:kenkyusha_shimei', 'test', self.project)
-        assert_equal(result, [])
+        assert (result) == ([])
 
     @mock.patch('addons.metadata.settings.KAKEN_ELASTIC_URI', None)
     def test_kaken_candidates_disabled_when_uri_is_none(self):
         """Test that kaken_candidates returns empty list when KAKEN_ELASTIC_URI is None"""
         result = kaken_candidates('12345678')
-        assert_equal(result, [])
+        assert (result) == ([])
 
     @mock.patch('addons.metadata.settings.KAKEN_ELASTIC_URI', 'http://localhost:9200')
     @mock.patch('addons.metadata.suggestions.kaken.suggest.KakenElasticsearchService')
@@ -64,7 +64,7 @@ class TestKakenSuggestion(OsfTestCase):
         mock_es_service.return_value = mock_es
 
         result = kaken_candidates('12345678')
-        assert_equal(result, [])
+        assert (result) == ([])
 
     @mock.patch('addons.metadata.settings.KAKEN_ELASTIC_URI', 'http://localhost:9200')
     @mock.patch('addons.metadata.suggestions.kaken.suggest.KakenElasticsearchService')
@@ -76,7 +76,7 @@ class TestKakenSuggestion(OsfTestCase):
         mock_es_service.return_value = mock_es
 
         # Service unavailability should be visible to caller
-        assert_raises(ESConnectionError, kaken_candidates, '12345678')
+        pytest.raises(ESConnectionError, kaken_candidates, '12345678')
 
     @mock.patch('addons.metadata.settings.KAKEN_ELASTIC_URI', 'http://localhost:9200')
     @mock.patch('addons.metadata.suggestions.kaken.suggest.KakenElasticsearchService')
@@ -87,7 +87,7 @@ class TestKakenSuggestion(OsfTestCase):
         mock_es.close.return_value = None
         mock_es_service.return_value = mock_es
 
-        assert_raises(ConnectionTimeout, kaken_candidates, '12345678')
+        pytest.raises(ConnectionTimeout, kaken_candidates, '12345678')
 
     @mock.patch('addons.metadata.settings.KAKEN_ELASTIC_URI', 'http://localhost:9200')
     @mock.patch('addons.metadata.suggestions.kaken.suggest.KakenElasticsearchService')
@@ -105,8 +105,8 @@ class TestKakenSuggestion(OsfTestCase):
 
         result = kaken_candidates('12345678')
 
-        assert_equal(len(result), 1)
-        assert_equal(result[0]['kadai_id'], '12345678')
+        assert (len(result)) == (1)
+        assert (result[0]['kadai_id']) == ('12345678')
 
     @mock.patch('addons.metadata.settings.KAKEN_ELASTIC_URI', 'http://localhost:9200')
     @mock.patch('addons.metadata.suggestions.kaken.suggest.KakenElasticsearchService')
@@ -167,27 +167,27 @@ class TestKakenSuggestion(OsfTestCase):
 
         candidates = kaken_candidates('99999999')
 
-        assert_equal(len(candidates), 3)
+        assert (len(candidates)) == (3)
         primary = candidates[0]
         collab_with_id = candidates[1]
         collab_without_id = candidates[2]
 
-        assert_equal(primary['erad'], '99999999')
-        assert_equal(collab_with_id['erad'], '11110000')
-        assert_true(collab_with_id.get('kaken_collaborator'))
-        assert_equal(collab_with_id.get('kaken_role'), 'co_investigator_buntan')
-        assert_equal(collab_with_id.get('source_erad'), '99999999')
-        assert_equal(collab_with_id.get('kenkyukikan_mei_ja'), '協力大学')
-        assert_equal(collab_with_id.get('kenkyusha_shimei_ja_msfullname'), '協力花子')
-        assert_equal(collab_with_id.get('kenkyusha_shimei_en_msfullname'), 'Hanako KYOURYOKU')
-        assert_true('display-fullname' not in collab_with_id)
-        assert_equal(collab_with_id.get('display_fullname'), '協力 花子 (Hanako KYOURYOKU)')
+        assert (primary['erad']) == ('99999999')
+        assert (collab_with_id['erad']) == ('11110000')
+        assert (collab_with_id.get('kaken_collaborator'))
+        assert (collab_with_id.get('kaken_role')) == ('co_investigator_buntan')
+        assert (collab_with_id.get('source_erad')) == ('99999999')
+        assert (collab_with_id.get('kenkyukikan_mei_ja')) == ('協力大学')
+        assert (collab_with_id.get('kenkyusha_shimei_ja_msfullname')) == ('協力花子')
+        assert (collab_with_id.get('kenkyusha_shimei_en_msfullname')) == ('Hanako KYOURYOKU')
+        assert ('display-fullname' not in collab_with_id)
+        assert (collab_with_id.get('display_fullname')) == ('協力 花子 (Hanako KYOURYOKU)')
 
-        assert_equal(collab_without_id['erad'], '')
-        assert_true(collab_without_id.get('kaken_collaborator'))
-        assert_equal(collab_without_id.get('kenkyusha_shimei_ja_msfullname'), '名前不明')
-        assert_true('display-fullname' not in collab_without_id)
-        assert_equal(collab_without_id.get('display_fullname'), '名前不明')
+        assert (collab_without_id['erad']) == ('')
+        assert (collab_without_id.get('kaken_collaborator'))
+        assert (collab_without_id.get('kenkyusha_shimei_ja_msfullname')) == ('名前不明')
+        assert ('display-fullname' not in collab_without_id)
+        assert (collab_without_id.get('display_fullname')) == ('名前不明')
 
     @mock.patch('addons.metadata.settings.KAKEN_ELASTIC_URI', 'http://localhost:9200')
     @mock.patch('addons.metadata.suggestions.kaken.suggest.KakenElasticsearchService')
@@ -237,10 +237,10 @@ class TestKakenSuggestion(OsfTestCase):
         candidates = kaken_candidates(primary_erad)
         collaborator = next(c for c in candidates if c.get('erad') == collaborator_erad)
 
-        assert_equal(collaborator.get('kenkyusha_shimei_en'), 'DOE|John')
-        assert_equal(collaborator.get('kenkyusha_shimei_en_msfullname'), 'John DOE')
-        assert_equal(collaborator.get('display_fullname'), '協力 花子 (John DOE)')
-        assert_equal(mock_es.get_researcher_by_erad.call_count, 2)
+        assert (collaborator.get('kenkyusha_shimei_en')) == ('DOE|John')
+        assert (collaborator.get('kenkyusha_shimei_en_msfullname')) == ('John DOE')
+        assert (collaborator.get('display_fullname')) == ('協力 花子 (John DOE)')
+        assert (mock_es.get_researcher_by_erad.call_count) == (2)
 
     @mock.patch('addons.metadata.settings.KAKEN_ELASTIC_URI', 'http://localhost:9200')
     @mock.patch('addons.metadata.suggestions.kaken.suggest.KakenElasticsearchService')
@@ -284,8 +284,8 @@ class TestKakenSuggestion(OsfTestCase):
         candidates = kaken_candidates(primary_erad)
         collaborator = next(c for c in candidates if c.get('erad') == '')
 
-        assert_equal(collaborator.get('kenkyusha_shimei_en_msfullname'), 'Hanako KYOURYOKU')
-        assert_equal(mock_es.get_researcher_by_erad.call_count, 1)
+        assert (collaborator.get('kenkyusha_shimei_en_msfullname')) == ('Hanako KYOURYOKU')
+        assert (mock_es.get_researcher_by_erad.call_count) == (1)
 
     @mock.patch('addons.metadata.suggestions.kaken.suggest.KakenElasticsearchService')
     def test_no_matching_researchers(self, mock_es_service):
@@ -297,7 +297,7 @@ class TestKakenSuggestion(OsfTestCase):
 
         result = kaken_candidates('99999999')
 
-        assert_equal(result, [])
+        assert (result) == ([])
 
     @mock.patch('addons.metadata.suggestions.kaken.suggest.kaken_candidates')
     def test_node_level_service_failure(self, mock_kaken_candidates):
@@ -305,7 +305,7 @@ class TestKakenSuggestion(OsfTestCase):
         mock_kaken_candidates.side_effect = ESConnectionError('Service unavailable')
 
         # Service failure should affect the whole operation
-        assert_raises(ESConnectionError, _kaken_candidates_for_node, self.project)
+        pytest.raises(ESConnectionError, _kaken_candidates_for_node, self.project)
 
     def test_order_candidates_by_contributors_helper(self):
         """Order preserves contributor order and dedupes by kadai_id keeping first occurrence."""
@@ -322,8 +322,8 @@ class TestKakenSuggestion(OsfTestCase):
 
         ordered = order_candidates_by_contributors(candidates, contributor_erads_order=contributors_order)
         # Expect contributor grouping order: me first, then other; and dedupe keeps first A (from me)
-        assert_equal([c['erad'] for c in ordered], [me, other])
-        assert_equal([c['kadai_id'] for c in ordered], ['A', 'B'])
+        assert ([c['erad'] for c in ordered]) == ([me, other])
+        assert ([c['kadai_id'] for c in ordered]) == (['A', 'B'])
 
     def test_deduplicate_suggestions_person_merges_ids(self):
         from addons.metadata.suggestions.utils import deduplicate_suggestions
@@ -336,9 +336,9 @@ class TestKakenSuggestion(OsfTestCase):
         ]
         deduped = deduplicate_suggestions(suggestions, mode='person', key_order=key_order)
         # Expect 2 persons: '1111' (keep erad due to key priority with same-ish person), and '2222'
-        assert_equal(len(deduped), 2)
+        assert (len(deduped)) == (2)
         kept_keys = sorted([s['key'] for s in deduped])
-        assert_equal(kept_keys, ['erad:kenkyusha_no', 'erad:kenkyusha_no'])
+        assert (kept_keys) == (['erad:kenkyusha_no', 'erad:kenkyusha_no'])
 
     def test_deduplicate_suggestions_person_respects_name_variants(self):
         from addons.metadata.suggestions.utils import deduplicate_suggestions
@@ -354,7 +354,7 @@ class TestKakenSuggestion(OsfTestCase):
         ]
         deduped = deduplicate_suggestions(suggestions, mode='person', key_order=key_order)
         # Same ID but different normalized names -> treated as distinct, both kept
-        assert_equal(len(deduped), 2)
+        assert (len(deduped)) == (2)
 
     def test_deduplicate_suggestions_person_respects_institution_ja_variants(self):
         from addons.metadata.suggestions.utils import deduplicate_suggestions
@@ -372,16 +372,16 @@ class TestKakenSuggestion(OsfTestCase):
         ]
         deduped = deduplicate_suggestions(suggestions, mode='person', key_order=key_order)
         # Same ID+name but different institution ja -> distinct. Unified ordering applies (owner → year desc → key).
-        assert_equal(len(deduped), 2)
-        assert_equal([s['key'] for s in deduped], ['kaken:kenkyusha_shimei', 'erad:kenkyusha_no'])
+        assert (len(deduped)) == (2)
+        assert ([s['key'] for s in deduped]) == (['kaken:kenkyusha_shimei', 'erad:kenkyusha_no'])
         # Validate each element to catch subtle regressions
         first, second = deduped
-        assert_equal(first['value'].get('erad'), '2222')
-        assert_equal(first['value'].get('kenkyukikan_mei_ja'), '京都大学')
-        assert_equal(first['value'].get('kenkyusha_shimei_ja_msfullname'), '山田太郎')
-        assert_equal(second['value'].get('kenkyusha_no'), '2222')
-        assert_equal(second['value'].get('kenkyukikan_mei_ja'), '東京大学')
-        assert_equal(second['value'].get('kenkyusha_shimei_ja_msfullname'), '山田太郎')
+        assert (first['value'].get('erad')) == ('2222')
+        assert (first['value'].get('kenkyukikan_mei_ja')) == ('京都大学')
+        assert (first['value'].get('kenkyusha_shimei_ja_msfullname')) == ('山田太郎')
+        assert (second['value'].get('kenkyusha_no')) == ('2222')
+        assert (second['value'].get('kenkyukikan_mei_ja')) == ('東京大学')
+        assert (second['value'].get('kenkyusha_shimei_ja_msfullname')) == ('山田太郎')
 
     def test_deduplicate_suggestions_project_key_priority_then_year(self):
         from addons.metadata.suggestions.utils import deduplicate_suggestions
@@ -395,8 +395,8 @@ class TestKakenSuggestion(OsfTestCase):
         deduped = deduplicate_suggestions(suggestions, mode='project', key_order=key_order)
         # Unified ordering then first-wins dedup: newer year appears first, then key priority.
         by_id = {s['value']['kadai_id']: s for s in deduped}
-        assert_equal(by_id['P1']['key'], 'erad:kadai_id')
-        assert_equal(set(by_id.keys()), {'P1', 'P2'})
+        assert (by_id['P1']['key']) == ('erad:kadai_id')
+        assert (set(by_id.keys())) == ({'P1', 'P2'})
 
     def test_deduplicate_suggestions_person_newest_year_tiebreak_same_key(self):
         from addons.metadata.suggestions.utils import deduplicate_suggestions
@@ -414,13 +414,13 @@ class TestKakenSuggestion(OsfTestCase):
         ]
         deduped = deduplicate_suggestions(suggestions, mode='person', key_order=key_order)
         # Only the newest year remains; validate full content of the survivor
-        assert_equal(len(deduped), 1)
+        assert (len(deduped)) == (1)
         only = deduped[0]
-        assert_equal(only['key'], 'erad:kenkyusha_no')
-        assert_equal(only['value'].get('kenkyusha_no'), '3333')
-        assert_equal(only['value'].get('kenkyukikan_mei_ja'), '大阪大学')
-        assert_equal(only['value'].get('kenkyusha_shimei_ja_msfullname'), '佐藤次郎')
-        assert_equal(only['value'].get('nendo'), '2021')
+        assert (only['key']) == ('erad:kenkyusha_no')
+        assert (only['value'].get('kenkyusha_no')) == ('3333')
+        assert (only['value'].get('kenkyukikan_mei_ja')) == ('大阪大学')
+        assert (only['value'].get('kenkyusha_shimei_ja_msfullname')) == ('佐藤次郎')
+        assert (only['value'].get('nendo')) == ('2021')
 
     def test_deduplicate_suggestions_project_newest_year_tiebreak_same_key(self):
         from addons.metadata.suggestions.utils import deduplicate_suggestions
@@ -431,9 +431,9 @@ class TestKakenSuggestion(OsfTestCase):
             {'key': 'kaken:kadai_id', 'value': {'kadai_id': 'PX', 'nendo': '2022'}},
         ]
         deduped = deduplicate_suggestions(suggestions, mode='project', key_order=key_order)
-        assert_equal(len(deduped), 1)
-        assert_equal(deduped[0]['value']['nendo'], '2022')
-        assert_equal(deduped[0]['key'], 'kaken:kadai_id')
+        assert (len(deduped)) == (1)
+        assert (deduped[0]['value']['nendo']) == ('2022')
+        assert (deduped[0]['key']) == ('kaken:kadai_id')
 
     def test_order_suggestions_by_contributors_key_priority_tiebreak(self):
         from addons.metadata.suggestions.utils import order_suggestions_by_contributors
@@ -449,7 +449,7 @@ class TestKakenSuggestion(OsfTestCase):
         ]
         ordered = order_suggestions_by_contributors(sugs, [me, other], key_list)
         ordered_keys = [s['key'] for s in ordered[:2]]
-        assert_equal(ordered_keys, ['kaken:kenkyusha_shimei', 'erad:kenkyusha_no'])
+        assert (ordered_keys) == (['kaken:kenkyusha_shimei', 'erad:kenkyusha_no'])
 
     def test_order_suggestions_respects_key_list_for_contributor_keys(self):
         from addons.metadata.suggestions.utils import order_suggestions_by_contributors
@@ -466,15 +466,15 @@ class TestKakenSuggestion(OsfTestCase):
         # Unified ordering: within each owner, higher year wins before key priority when years differ
         first_owner = [s for s in ordered if (s['value'].get('erad') or s['value'].get('kenkyusha_no')) == me]
         second_owner = [s for s in ordered if (s['value'].get('erad') or s['value'].get('kenkyusha_no')) == other]
-        assert_equal(first_owner[0]['key'], 'kaken:kenkyusha_shimei')
-        assert_equal(second_owner[0]['key'], 'erad:kenkyusha_no')
+        assert (first_owner[0]['key']) == ('kaken:kenkyusha_shimei')
+        assert (second_owner[0]['key']) == ('erad:kenkyusha_no')
 
     def test_classify_mode_for_contributor_keys(self):
         from addons.metadata.suggestions.utils import classify_mode_for_keys
-        assert_equal(classify_mode_for_keys(['contributor:name']), 'person')
-        assert_equal(classify_mode_for_keys(['contributor:erad', 'kaken:kenkyusha_shimei']), 'person')
+        assert (classify_mode_for_keys(['contributor:name'])) == ('person')
+        assert (classify_mode_for_keys(['contributor:erad', 'kaken:kenkyusha_shimei'])) == ('person')
         # ERAD project key should be classified as project
-        assert_equal(classify_mode_for_keys(['erad:kadai_id']), 'project')
+        assert (classify_mode_for_keys(['erad:kadai_id'])) == ('project')
 
     def test_process_change_list_parses_all_actions(self):
         # Sample NRID-like changelist XML (truncated)
@@ -506,9 +506,9 @@ class TestKakenSuggestion(OsfTestCase):
         changes = list(client.process_change_list('https://nrid.nii.ac.jp/sitemaps/changelist00169.xml'))
 
         # All entries are returned in order; downstream watermark decides applicability
-        assert_equal(len(changes), 6)
+        assert (len(changes)) == (6)
         actions = [a for (a, _, _) in changes]
-        assert_equal(actions, ['created', 'updated', 'deleted', 'updated', 'updated', 'updated'])
+        assert (actions) == (['created', 'updated', 'deleted', 'updated', 'updated', 'updated'])
 
     def test_should_apply_change_enforces_strictly_newer_lastmod(self):
         existing = {'_last_updated': '2025-08-30T03:30:05+09:00'}
@@ -516,23 +516,23 @@ class TestKakenSuggestion(OsfTestCase):
         same = parse_datetime('2025-08-29T18:30:05+00:00')   # equal instant
         older = parse_datetime('2025-08-29T18:30:04+00:00')
 
-        assert_true(_should_apply_change(newer, existing, 'https://example.org/doc.json'))
-        assert_false(_should_apply_change(same, existing, 'https://example.org/doc.json'))
-        assert_false(_should_apply_change(older, existing, 'https://example.org/doc.json'))
+        assert (_should_apply_change(newer, existing, 'https://example.org/doc.json'))
+        assert not (_should_apply_change(same, existing, 'https://example.org/doc.json'))
+        assert not (_should_apply_change(older, existing, 'https://example.org/doc.json'))
 
     def test_should_apply_change_handles_missing_or_invalid_state(self):
         # Missing existing -> apply
         ts = parse_datetime('2025-08-29T18:30:06+00:00')
-        assert_true(_should_apply_change(ts, None, 'https://example.org/doc.json'))
+        assert (_should_apply_change(ts, None, 'https://example.org/doc.json'))
 
         # Missing stored lastmod -> apply
-        assert_true(_should_apply_change(ts, {}, 'https://example.org/doc.json'))
+        assert (_should_apply_change(ts, {}, 'https://example.org/doc.json'))
 
         # Invalid stored lastmod -> apply but should not raise
-        assert_true(_should_apply_change(ts, {'_last_updated': 'not-a-date'}, 'https://example.org/doc.json'))
+        assert (_should_apply_change(ts, {'_last_updated': 'not-a-date'}, 'https://example.org/doc.json'))
 
         # Missing new lastmod -> raises
-        assert_raises(ValueError, _should_apply_change, None, {}, 'https://example.org/doc.json')
+        pytest.raises(ValueError, _should_apply_change, None, {}, 'https://example.org/doc.json')
 
     def test_process_change_list_requires_change_metadata(self):
         xml = (
@@ -547,7 +547,7 @@ class TestKakenSuggestion(OsfTestCase):
         client = ResourceSyncClient('https://nrid.nii.ac.jp/.well-known/resourcesync')
         client._fetch_xml = lambda url: ET.fromstring(xml.encode('utf-8'))
 
-        assert_raises(ValueError, list, client.process_change_list('https://nrid.nii.ac.jp/sitemaps/changelist00170.xml'))
+        pytest.raises(ValueError, list, client.process_change_list('https://nrid.nii.ac.jp/sitemaps/changelist00170.xml'))
 
     def test_process_change_list_requires_lastmod(self):
         xml = (
@@ -562,7 +562,7 @@ class TestKakenSuggestion(OsfTestCase):
         client = ResourceSyncClient('https://nrid.nii.ac.jp/.well-known/resourcesync')
         client._fetch_xml = lambda url: ET.fromstring(xml.encode('utf-8'))
 
-        assert_raises(ValueError, list, client.process_change_list('https://nrid.nii.ac.jp/sitemaps/changelist00171.xml'))
+        pytest.raises(ValueError, list, client.process_change_list('https://nrid.nii.ac.jp/sitemaps/changelist00171.xml'))
 
     def test_fetch_researcher_data_raises_http_error_on_server_failure(self):
         client = ResourceSyncClient('https://nrid.nii.ac.jp/.well-known/resourcesync')
@@ -571,8 +571,8 @@ class TestKakenSuggestion(OsfTestCase):
         client.session = mock.MagicMock()
         client.session.get.return_value = response
 
-        assert_raises(requests.HTTPError, client.fetch_researcher_data, 'https://nrid.nii.ac.jp/nrid/123.json')
-        assert_false(response.json.called)
+        pytest.raises(requests.HTTPError, client.fetch_researcher_data, 'https://nrid.nii.ac.jp/nrid/123.json')
+        assert not (response.json.called)
 
     def test_fetch_researcher_data_handles_empty_body(self):
         client = ResourceSyncClient('https://nrid.nii.ac.jp/.well-known/resourcesync')
@@ -584,8 +584,8 @@ class TestKakenSuggestion(OsfTestCase):
         client.session.get.return_value = response
 
         result = client.fetch_researcher_data('https://nrid.nii.ac.jp/nrid/789.json')
-        assert_false(response.json.called)
-        assert_equal(result, {'_source_url': 'https://nrid.nii.ac.jp/nrid/789.json'})
+        assert not (response.json.called)
+        assert (result) == ({'_source_url': 'https://nrid.nii.ac.jp/nrid/789.json'})
 
     def test_fetch_researcher_data_propagates_value_error_for_ok_response(self):
         client = ResourceSyncClient('https://nrid.nii.ac.jp/.well-known/resourcesync')
@@ -596,7 +596,7 @@ class TestKakenSuggestion(OsfTestCase):
         client.session = mock.MagicMock()
         client.session.get.return_value = response
 
-        assert_raises(ValueError, client.fetch_researcher_data, 'https://nrid.nii.ac.jp/nrid/456.json')
+        pytest.raises(ValueError, client.fetch_researcher_data, 'https://nrid.nii.ac.jp/nrid/456.json')
         response.json.assert_called_once()
 
 
@@ -727,16 +727,16 @@ class TestKakenWithSampleData(OsfTestCase):
         es_doc = self.transformer.transform_researcher(SAMPLE_KAKEN_RESEARCHER)
 
         # Verify basic structure is preserved
-        assert_equal(es_doc['accn'], 'id:person:kakenhi**12345')
-        assert_equal(es_doc['id:person:erad'], ['12345678'])
-        assert_in('_source_url', es_doc)
+        assert (es_doc['accn']) == ('id:person:kakenhi**12345')
+        assert (es_doc['id:person:erad']) == (['12345678'])
+        assert ('_source_url') in (es_doc)
 
         # Verify search_text is generated
-        assert_in('search_text', es_doc)
-        assert_in('山田 太郎', es_doc['search_text'])
-        assert_in('YAMADA Taro', es_doc['search_text'])
-        assert_in('テスト大学', es_doc['search_text'])
-        assert_in('テスト研究プロジェクト１', es_doc['search_text'])
+        assert ('search_text') in (es_doc)
+        assert ('山田 太郎') in (es_doc['search_text'])
+        assert ('YAMADA Taro') in (es_doc['search_text'])
+        assert ('テスト大学') in (es_doc['search_text'])
+        assert ('テスト研究プロジェクト１') in (es_doc['search_text'])
 
     @mock.patch('addons.metadata.suggestions.kaken.elasticsearch.KakenElasticsearchService._req')
     def test_index_and_retrieve_researcher(self, mock_req):
@@ -776,20 +776,20 @@ class TestKakenWithSampleData(OsfTestCase):
         # Index the document
         transformed = self.transformer.transform_researcher(SAMPLE_KAKEN_RESEARCHER)
         ok = es_service.index_researcher(transformed)
-        assert_true(ok)
+        assert (ok)
 
         # Verify index endpoint
         called_methods = [c[0][0] for c in mock_req.call_args_list]
         called_paths = [c[0][1] for c in mock_req.call_args_list]
-        assert_in('PUT', called_methods)
-        assert_true(any(p.startswith('/test_kaken/_doc/') for p in called_paths))
+        assert ('PUT') in (called_methods)
+        assert (any(p.startswith('/test_kaken/_doc/') for p in called_paths))
 
         # Retrieve by ERAD ID
         result = es_service.get_researcher_by_erad('12345678')
 
         # Verify result
-        assert_is_not_none(result)
-        assert_equal(result['id:person:erad'], ['12345678'])
+        assert (result) is not None
+        assert (result['id:person:erad']) == (['12345678'])
 
     @mock.patch('addons.metadata.settings.KAKEN_ELASTIC_URI', 'http://localhost:9200')
     @mock.patch('addons.metadata.suggestions.kaken.suggest.KakenElasticsearchService')
@@ -805,29 +805,29 @@ class TestKakenWithSampleData(OsfTestCase):
         candidates = kaken_candidates('12345678')
 
         # Should have one candidate per project
-        assert_equal(len(candidates), 2)
+        assert (len(candidates)) == (2)
 
         # Verify first candidate
         candidate1 = candidates[0]
-        assert_equal(candidate1['erad'], '12345678')
-        assert_equal(candidate1['kadai_id'], '11111111')
-        assert_equal(candidate1['kenkyusha_shimei_ja'], '山田|太郎')
-        assert_equal(candidate1['kenkyusha_shimei_en'], 'YAMADA|Taro')
-        assert_in('テスト大学', candidate1['kenkyukikan_mei'])
-        assert_equal(candidate1['nendo'], '1989')
-        assert_equal(candidate1['japan_grant_number'], 'JP11111111')
+        assert (candidate1['erad']) == ('12345678')
+        assert (candidate1['kadai_id']) == ('11111111')
+        assert (candidate1['kenkyusha_shimei_ja']) == ('山田|太郎')
+        assert (candidate1['kenkyusha_shimei_en']) == ('YAMADA|Taro')
+        assert ('テスト大学') in (candidate1['kenkyukikan_mei'])
+        assert (candidate1['nendo']) == ('1989')
+        assert (candidate1['japan_grant_number']) == ('JP11111111')
         # bunya_cd uses Large Section code mapped from small -> 'A189' -> '189'
-        assert_equal(candidate1['bunya_cd'], '189')
+        assert (candidate1['bunya_cd']) == ('189')
         # bunya_mei is large section name (not the small field name from review_section)
-        assert_true(candidate1['bunya_mei'])
-        assert_not_equal(candidate1['bunya_mei'], 'テスト分野')
+        assert (candidate1['bunya_mei'])
+        assert (candidate1['bunya_mei']) != ('テスト分野')
         # English name resolved via e‑Rad schema mapping for code '189'
-        assert_equal(candidate1.get('bunya_mei_en'), 'Life Science')
+        assert (candidate1.get('bunya_mei_en')) == ('Life Science')
 
         # Verify second candidate
         candidate2 = candidates[1]
-        assert_equal(candidate2['kadai_id'], '22222222')
-        assert_equal(candidate2['nendo'], '1990')
+        assert (candidate2['kadai_id']) == ('22222222')
+        assert (candidate2['nendo']) == ('1990')
 
     @mock.patch('addons.metadata.settings.KAKEN_ELASTIC_URI', 'http://localhost:9200')
     @mock.patch('addons.metadata.suggestions.kaken.suggest.KakenElasticsearchService')
@@ -841,16 +841,16 @@ class TestKakenWithSampleData(OsfTestCase):
 
         # Test filtering by institution name
         candidates = kaken_candidates('12345678', kenkyukikan_mei='テスト')
-        assert_equal(len(candidates), 2)  # Both projects should match
+        assert (len(candidates)) == (2)  # Both projects should match
 
         # Test filtering by project title
         candidates = kaken_candidates('12345678', kadai_mei='プロジェクト２')
-        assert_equal(len(candidates), 1)
-        assert_equal(candidates[0]['kadai_id'], '22222222')
+        assert (len(candidates)) == (1)
+        assert (candidates[0]['kadai_id']) == ('22222222')
 
         # Test filtering by non-existent text
         candidates = kaken_candidates('12345678', kenkyusha_shimei='鈴木')
-        assert_equal(len(candidates), 0)
+        assert (len(candidates)) == (0)
 
     def test_transform_researcher_without_projects(self):
         """Test transforming researcher with no projects"""
@@ -861,9 +861,9 @@ class TestKakenWithSampleData(OsfTestCase):
         es_doc = self.transformer.transform_researcher(researcher_no_projects)
 
         # Should still have basic data
-        assert_equal(es_doc['accn'], 'id:person:kakenhi**12345')
-        assert_in('search_text', es_doc)
-        assert_in('山田 太郎', es_doc['search_text'])
+        assert (es_doc['accn']) == ('id:person:kakenhi**12345')
+        assert ('search_text') in (es_doc)
+        assert ('山田 太郎') in (es_doc['search_text'])
 
     def test_transform_researcher_with_malformed_data(self):
         """Test transformer handles malformed data gracefully"""
@@ -878,8 +878,8 @@ class TestKakenWithSampleData(OsfTestCase):
 
         # Should not raise exception
         es_doc = self.transformer.transform_researcher(malformed_researcher)
-        assert_equal(es_doc['accn'], 'test123')
-        assert_in('search_text', es_doc)
+        assert (es_doc['accn']) == ('test123')
+        assert ('search_text') in (es_doc)
 
 
 class _DummyResp:
@@ -905,10 +905,10 @@ class TestKakenEsClientIntegrated(object):
     @mock.patch('addons.metadata.suggestions.kaken.elasticsearch.KakenElasticsearchService._req')
     def test_index_exists_true_false(self, mock_req):
         mock_req.return_value = _DummyResp(status_code=200)
-        assert_true(self.es.index_exists())
+        assert (self.es.index_exists())
 
         mock_req.return_value = _DummyResp(status_code=404)
-        assert_false(self.es.index_exists())
+        assert not (self.es.index_exists())
 
     @mock.patch('addons.metadata.suggestions.kaken.elasticsearch.KakenElasticsearchService._req')
     def test_create_index_typeless_mapping(self, mock_req):
@@ -922,10 +922,10 @@ class TestKakenEsClientIntegrated(object):
         # Second call is the PUT /{index} with mapping in json_body
         _, kwargs = mock_req.call_args
         body = kwargs.get('json_body')
-        assert_is_not_none(body)
-        assert_in('mappings', body)
-        assert_in('properties', body['mappings'])
-        assert_not_in('doc', body['mappings'])
+        assert (body) is not None
+        assert ('mappings') in (body)
+        assert ('properties') in (body['mappings'])
+        assert ('doc') not in (body['mappings'])
 
     @mock.patch('addons.metadata.suggestions.kaken.elasticsearch.KakenElasticsearchService._req')
     def test_index_puts_to_doc_endpoint(self, mock_req):
@@ -933,11 +933,11 @@ class TestKakenEsClientIntegrated(object):
         mock_req.return_value = _DummyResp(status_code=201)
         url = 'https://nrid.nii.ac.jp/nrid/1000012345678.json'
         ok = self.es.index_researcher({'_source_url': url, 'accn': 'abc', 'search_text': 'x'})
-        assert_true(ok)
+        assert (ok)
         args, kwargs = mock_req.call_args
-        assert_equal(args[0], 'PUT')
+        assert (args[0]) == ('PUT')
         expected_id = hashlib.sha256(url.encode('utf-8')).hexdigest()
-        assert_equal(args[1], f'/test_kaken/_doc/{expected_id}')
+        assert (args[1]) == (f'/test_kaken/_doc/{expected_id}')
 
     @mock.patch('addons.metadata.suggestions.kaken.elasticsearch.KakenElasticsearchService._req')
     def test_bulk_ndjson_typeless_and_raises_on_item_errors(self, mock_req):
@@ -951,7 +951,7 @@ class TestKakenEsClientIntegrated(object):
             ]
         })
 
-        with assert_raises(KakenBulkError):
+        with pytest.raises(KakenBulkError):
             self.es.bulk_index([
                 {'_source_url': 'https://nrid.nii.ac.jp/nrid/ok.json', 'accn': 'ok', 'search_text': ''},
                 {'_source_url': 'https://nrid.nii.ac.jp/nrid/ng.json', 'accn': 'ng', 'search_text': ''},
@@ -960,39 +960,39 @@ class TestKakenEsClientIntegrated(object):
         # Verify NDJSON payload structure (no _type)
         _, kwargs = mock_req.call_args
         payload = kwargs.get('data')
-        assert_is_not_none(payload)
-        assert_in('"_index": "test_kaken"', payload)
+        assert (payload) is not None
+        assert ('"_index": "test_kaken"') in (payload)
         import hashlib
         ok_id = hashlib.sha256('https://nrid.nii.ac.jp/nrid/ok.json'.encode('utf-8')).hexdigest()
-        assert_in(f'"_id": "{ok_id}"', payload)
-        assert_not_in('"_type"', payload)
+        assert (f'"_id": "{ok_id}"') in (payload)
+        assert ('"_type"') not in (payload)
 
     @mock.patch('addons.metadata.suggestions.kaken.elasticsearch.KakenElasticsearchService._req')
     def test_search_wraps_size_and_from(self, mock_req):
         mock_req.return_value = _DummyResp(status_code=200, body={'hits': {'total': 0, 'hits': []}})
         q = {'query': {'match_all': {}}}
         res = self.es.search_researchers(q, size=5, from_=10)
-        assert_equal(res['hits']['total'], 0)
+        assert (res['hits']['total']) == (0)
         args, kwargs = mock_req.call_args
         sent = kwargs.get('json_body')
-        assert_equal(sent.get('size'), 5)
-        assert_equal(sent.get('from'), 10)
+        assert (sent.get('size')) == (5)
+        assert (sent.get('from')) == (10)
 
     @mock.patch('addons.metadata.suggestions.kaken.elasticsearch.KakenElasticsearchService._req')
     def test_get_404_returns_none(self, mock_req):
         mock_req.return_value = _DummyResp(status_code=404)
-        assert_is_none(self.es.get_researcher_by_id('none'))
+        assert (self.es.get_researcher_by_id('none')) is None
 
     @mock.patch('addons.metadata.suggestions.kaken.elasticsearch.KakenElasticsearchService._req')
     def test_delete_404_treated_success(self, mock_req):
         mock_req.return_value = _DummyResp(status_code=404)
-        assert_true(self.es.delete_researcher('none'))
+        assert (self.es.delete_researcher('none'))
 
     @mock.patch('requests.Session.request')
     def test_transport_error_on_connection_issue(self, mock_request):
         from requests import ConnectionError
         mock_request.side_effect = ConnectionError('boom')
-        with assert_raises(KakenTransportError):
+        with pytest.raises(KakenTransportError):
             # call a simple HEAD
             self.es._req('HEAD', '/x')
 
@@ -1015,12 +1015,12 @@ def test_review_map_lookup_small_with_hierarchical_json():
     code5 = sc[-5:] if isinstance(sc, str) and len(sc) >= 5 else sc
 
     rec = review_map.lookup_small(code5)
-    assert_is_not_none(rec)
-    assert_equal(rec.get('small_name_ja'), child.get('small_name_ja'))
-    assert_equal(rec.get('large_code'), lg.get('large_code'))
-    assert_equal(rec.get('large_name_ja'), lg.get('large_name_ja'))
+    assert (rec) is not None
+    assert (rec.get('small_name_ja')) == (child.get('small_name_ja'))
+    assert (rec.get('large_code')) == (lg.get('large_code'))
+    assert (rec.get('large_name_ja')) == (lg.get('large_name_ja'))
     # small_name_en is optional and currently absent; loader should return empty string
-    assert_equal(rec.get('small_name_en', ''), '')
+    assert (rec.get('small_name_en', '')) == ('')
 
     # Negative case
-    assert_is_none(review_map.lookup_small('00000'))
+    assert (review_map.lookup_small('00000')) is None

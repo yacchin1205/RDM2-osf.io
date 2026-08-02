@@ -179,6 +179,9 @@ class Auth(object):
         return ('<Auth(user="{self.user}", '
                 'private_key={self.private_key})>').format(self=self)
 
+    def to_header(self):
+        return f'Basic {self.user.username}'
+
     @property
     def logged_in(self):
         return self.user is not None

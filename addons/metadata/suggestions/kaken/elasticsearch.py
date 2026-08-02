@@ -115,7 +115,7 @@ class KakenElasticsearchService:
                 if not self.retry_on_timeout or attempt >= self.max_retries:
                     raise KakenTransportError(f'HTTP transport error: {exc}')
                 sleep_s = min(2 ** attempt, 5)
-                logger.warning(f'HTTP retry {attempt+1}/{self.max_retries} {method} {url}: {exc}; sleeping {sleep_s}s')
+                logger.warning(f'HTTP retry {attempt + 1}/{self.max_retries} {method} {url}: {exc}; sleeping {sleep_s}s')
                 time.sleep(sleep_s)
                 attempt += 1
 
@@ -316,7 +316,7 @@ class KakenElasticsearchService:
                 # ES returns per-item statuses
                 item_errors = [it for it in body.get('items', []) if any(v.get('error') for v in it.values())]
                 if item_errors:
-                    error_msg = f'Bulk indexing failed for batch {i//batch_size + 1}: {len(item_errors)} errors'
+                    error_msg = f'Bulk indexing failed for batch {i // batch_size + 1}: {len(item_errors)} errors'
                     results['errors'] += len(batch)
                     results['error_details'].extend(item_errors)
                     logger.error(f'{error_msg}')
@@ -324,7 +324,7 @@ class KakenElasticsearchService:
 
                 success_count = len(actions)
                 results['success'] += success_count
-                logger.info(f'Bulk indexed batch {i//batch_size + 1}: {success_count} success')
+                logger.info(f'Bulk indexed batch {i // batch_size + 1}: {success_count} success')
 
         logger.info(f"Bulk indexing completed: {results['success']} success, {results['errors']} errors")
         return results

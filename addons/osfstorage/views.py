@@ -109,7 +109,7 @@ def osfstorage_get_revisions(file_node, payload, target, **kwargs):
 
     version_count = file_node.versions.count()
     counts = dict(PageCounter.objects.filter(resource=file_node.target.guids.first().id, file=file_node, action='download').values_list('_id', 'total'))
-    qs = FileVersion.includable_objects.filter(basefilenode__id=file_node.id).include('creator__guids').annotate(
+    qs = FileVersion.objects.filter(basefilenode__id=file_node.id).prefetch_related('creator__guids').annotate(
         version_identifier=Cast('identifier', IntegerField())
     ).order_by('-version_identifier')
 
@@ -404,7 +404,7 @@ def osfstorage_delete(file_node, payload, target, **kwargs):
     if not auth:
         raise HTTPError(http_status.HTTP_400_BAD_REQUEST)
     if file_node == OsfStorageFolder.objects.get_root(target=target):
-            raise HTTPError(http_status.HTTP_400_BAD_REQUEST)
+        raise HTTPError(http_status.HTTP_400_BAD_REQUEST)
 
     try:
         file_node.delete(user=user)

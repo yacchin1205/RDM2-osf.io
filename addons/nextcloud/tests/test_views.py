@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
-from nose.tools import assert_in, assert_equal
-import mock
+from unittest import mock
 import pytest
 
 from rest_framework import status as http_status
@@ -60,13 +59,13 @@ class TestConfigViews(NextcloudAddonTestCase, OAuthAddonConfigViewsTestCaseMixin
         url = self.project.api_url_for(
             '{0}_get_config'.format(self.ADDON_SHORT_NAME))
         res = self.app.get(url, auth=self.user.auth)
-        assert_equal(res.status_code, http_status.HTTP_200_OK)
-        assert_in('result', res.json)
+        assert (res.status_code) == (http_status.HTTP_200_OK)
+        assert ('result') in (res.json)
         serialized = self.Serializer().serialize_settings(
             self.node_settings,
             self.user,
         )
-        assert_equal(serialized, res.json['result'])
+        assert (serialized) == (res.json['result'])
 
     def test_add_user_account_rdm_addons_denied(self):
         institution = InstitutionFactory()
@@ -76,9 +75,9 @@ class TestConfigViews(NextcloudAddonTestCase, OAuthAddonConfigViewsTestCaseMixin
         rdm_addon_option.is_allowed = False
         rdm_addon_option.save()
         url = self.project.api_url_for('nextcloud_add_user_account')
-        rv = self.app.post_json(url,{
+        rv = self.app.post(url,json={
             'access_key': 'aldkjf',
             'secret_key': 'las'
-        }, auth=self.user.auth, expect_errors=True)
-        assert_equal(rv.status_int, http_status.HTTP_403_FORBIDDEN)
-        assert_in(b'You are prohibited from using this add-on.', rv.body)
+        }, auth=self.user.auth)
+        assert (rv.status_code) == (http_status.HTTP_403_FORBIDDEN)
+        assert (b'You are prohibited from using this add-on.') in (rv.data)

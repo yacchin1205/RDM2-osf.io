@@ -1,8 +1,7 @@
 import json
 from operator import itemgetter
 from django.urls import reverse
-from nose import tools as nt
-import mock
+from unittest import mock
 import pytest
 from django.test import RequestFactory
 from django.contrib.auth.models import Permission
@@ -53,12 +52,12 @@ class TestUpdateQuotaUserListByInstitutionID(AdminTestCase):
             institution_id=self.institution.id
         )
 
-        nt.assert_equal(response.status_code, 302)
+        assert (response.status_code) == (302)
         user_quota = UserQuota.objects.filter(
             user=self.user1, storage_type=UserQuota.NII_STORAGE
         ).first()
-        nt.assert_is_not_none(user_quota)
-        nt.assert_equal(user_quota.max_quota, max_quota)
+        assert (user_quota) is not None
+        assert (user_quota.max_quota) == (max_quota)
 
     def test_post_update_quota(self):
         UserQuota.objects.create(user=self.user1, max_quota=100)
@@ -76,12 +75,12 @@ class TestUpdateQuotaUserListByInstitutionID(AdminTestCase):
             institution_id=self.institution.id
         )
 
-        nt.assert_equal(response.status_code, 302)
+        assert (response.status_code) == (302)
         user_quota = UserQuota.objects.filter(
             user=self.user1, storage_type=UserQuota.NII_STORAGE
         ).first()
-        nt.assert_is_not_none(user_quota)
-        nt.assert_equal(user_quota.max_quota, max_quota)
+        assert (user_quota) is not None
+        assert (user_quota.max_quota) == (max_quota)
 
     def test_UpdateQuotaUserListByInstitutionID_correct_view_permission(self):
         user = AuthUserFactory()
@@ -102,7 +101,7 @@ class TestUpdateQuotaUserListByInstitutionID(AdminTestCase):
         response = views.UpdateQuotaUserListByInstitutionID.as_view()(
             request, institution_id=self.institution.id
         )
-        nt.assert_equal(response.status_code, 302)
+        assert (response.status_code) == (302)
 
     def test_UpdateQuotaUserListByInstitutionID_permission_raises_error(self):
         user = AuthUserFactory()
@@ -114,7 +113,7 @@ class TestUpdateQuotaUserListByInstitutionID(AdminTestCase):
             {'maxQuota': 20})
         request.user = user
 
-        with nt.assert_raises(PermissionDenied):
+        with pytest.raises(PermissionDenied):
             views.UpdateQuotaUserListByInstitutionID.as_view()(
                 request, institution_id=self.institution.id
             )
@@ -151,8 +150,8 @@ class TestRecalculateQuota(AdminTestCase):
 
         response = self.view.dispatch(request=self.request)
 
-        nt.assert_equal(response.status_code, 302)
-        nt.assert_equal(response.url, self.url)
+        assert (response.status_code) == (302)
+        assert (response.url) == (self.url)
         mock_institution.all.assert_called()
         mock_osfuser.filter.assert_called()
         mock_update_user_used_quota_method.assert_called()
@@ -170,8 +169,8 @@ class TestRecalculateQuota(AdminTestCase):
 
         response = self.view.dispatch(request=self.request)
 
-        nt.assert_equal(response.status_code, 302)
-        nt.assert_equal(response.url, self.url)
+        assert (response.status_code) == (302)
+        assert (response.url) == (self.url)
         mock_institution.all.assert_not_called()
         mock_osfuser.filter.assert_not_called()
         mock_update_user_used_quota_method.assert_not_called()
@@ -205,8 +204,8 @@ class TestRecalculateQuotaOfUsersInInstitution(AdminTestCase):
         mock_region.filter.return_value.exists.return_value = True
         response = self.view.dispatch(request=self.request)
 
-        nt.assert_equal(response.status_code, 302)
-        nt.assert_equal(response.url, self.url)
+        assert (response.status_code) == (302)
+        assert (response.url) == (self.url)
         mock_update_user_used_quota_method.assert_called()
 
     @mock.patch('admin.institutions.views.Region.objects')
@@ -215,8 +214,8 @@ class TestRecalculateQuotaOfUsersInInstitution(AdminTestCase):
                                                                    mock_region):
         mock_region.filter.return_value.exists.return_value = False
         response = self.view.dispatch(request=self.request)
-        nt.assert_equal(response.status_code, 302)
-        nt.assert_equal(response.url, self.url)
+        assert (response.status_code) == (302)
+        assert (response.url) == (self.url)
         mock_update_user_used_quota_method.assert_not_called()
 
     @mock.patch('admin.institutions.views.Region.objects')
@@ -228,8 +227,8 @@ class TestRecalculateQuotaOfUsersInInstitution(AdminTestCase):
         self.request.user = self.user
         mock_region.filter.return_value.exists.return_value = False
         response = self.view.dispatch(request=self.request)
-        nt.assert_equal(response.status_code, 302)
-        nt.assert_equal(response.url, self.url)
+        assert (response.status_code) == (302)
+        assert (response.url) == (self.url)
         mock_update_user_used_quota_method.assert_not_called()
 
 
@@ -256,7 +255,7 @@ class TestUserListByInstitutionID(AdminTestCase):
     def test_default_user_list_by_institution_id(self, *args, **kwargs):
 
         res = self.view.get_userlist()
-        nt.assert_is_instance(res, list)
+        assert isinstance((res), (list))
 
     def test_search_email_by_institution_id(self):
         request = RequestFactory().get(
@@ -272,8 +271,8 @@ class TestUserListByInstitutionID(AdminTestCase):
                           institution_id=self.institution.id)
         res = view.get_userlist()
 
-        nt.assert_equal(res[0]['username'], self.user2.username)
-        nt.assert_equal(len(res), 1)
+        assert (res[0]['username']) == (self.user2.username)
+        assert (len(res)) == (1)
 
     def test_search_guid_by_institution_id(self):
         request = RequestFactory().get(
@@ -289,8 +288,8 @@ class TestUserListByInstitutionID(AdminTestCase):
                           institution_id=self.institution.id)
         res = view.get_userlist()
 
-        nt.assert_equal(res[0]['id'], self.user2._id)
-        nt.assert_equal(len(res), 1)
+        assert (res[0]['id']) == (self.user2._id)
+        assert (len(res)) == (1)
 
     def test_search_name_by_institution_id(self):
         request = RequestFactory().get(
@@ -306,8 +305,8 @@ class TestUserListByInstitutionID(AdminTestCase):
         view = setup_view(view, request, institution_id=self.institution.id)
         res = view.get_userlist()
 
-        nt.assert_equal(len(res), 1)
-        nt.assert_in(res[0]['fullname'], self.user2.fullname)
+        assert (len(res)) == (1)
+        assert (res[0]['fullname']) in (self.user2.fullname)
 
     def test_search_name_guid_email_inputted(self):
         request = RequestFactory().get(
@@ -325,9 +324,9 @@ class TestUserListByInstitutionID(AdminTestCase):
                           institution_id=self.institution.id)
         res = view.get_userlist()
 
-        nt.assert_equal(res[0]['id'], self.user._id)
-        nt.assert_in(res[0]['fullname'], self.user.fullname)
-        nt.assert_equal(len(res), 1)
+        assert (res[0]['id']) == (self.user._id)
+        assert (res[0]['fullname']) in (self.user.fullname)
+        assert (len(res)) == (1)
 
     def test_search_not_found(self):
         request = RequestFactory().get(
@@ -345,7 +344,7 @@ class TestUserListByInstitutionID(AdminTestCase):
                           institution_id=self.institution.id)
         res = view.get_userlist()
 
-        nt.assert_equal(len(res), 0)
+        assert (len(res)) == (0)
 
 @pytest.mark.skip('Clone test case from tests/test_quota.py for making coverage')
 class TestExportFileTSV(AdminTestCase):
@@ -372,11 +371,11 @@ class TestExportFileTSV(AdminTestCase):
 
         result = res.content.decode('utf-8')
 
-        nt.assert_equal(res.status_code, 200)
-        nt.assert_equal(res['content-type'], 'text/tsv')
-        nt.assert_in('kenny', result)
-        nt.assert_in('alex queen', result)
-        nt.assert_in('kenny@gmail.com', result)
+        assert (res.status_code) == (200)
+        assert (res['content-type']) == ('text/tsv')
+        assert ('kenny') in (result)
+        assert ('alex queen') in (result)
+        assert ('kenny@gmail.com') in (result)
 
 
 @pytest.mark.skip('Clone test case from admin_tests/institutions/test_views.py for making coverage')
@@ -433,8 +432,8 @@ class TestQuotaUserList(AdminTestCase):
             storage_type=UserQuota.CUSTOM_STORAGE
         )
 
-        nt.assert_is_not_none(response['eppn'])
-        nt.assert_equal(response['eppn'], default_value_eppn)
+        assert (response['eppn']) is not None
+        assert (response['eppn']) == (default_value_eppn)
 
     def test_get_context_data_has_not_storage_name(self):
         self.view.get_institution = self.get_institution
@@ -444,8 +443,8 @@ class TestQuotaUserList(AdminTestCase):
 
         response = self.view.get_context_data()
 
-        nt.assert_is_instance(response, dict)
-        nt.assert_false('institution_storage_name' in response)
+        assert isinstance((response), (dict))
+        assert not ('institution_storage_name' in response)
 
     def test_get_context_data_has_storage_name(self):
         self.view.get_institution = self.get_institution_has_storage_name
@@ -455,5 +454,5 @@ class TestQuotaUserList(AdminTestCase):
 
         response = self.view.get_context_data()
 
-        nt.assert_is_instance(response, dict)
-        nt.assert_true('institution_storage_name' in response)
+        assert isinstance((response), (dict))
+        assert ('institution_storage_name' in response)

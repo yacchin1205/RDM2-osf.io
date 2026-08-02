@@ -4,16 +4,14 @@ import os
 import json
 import datetime as dt
 from future.moves.urllib.parse import urlparse, urljoin, parse_qs
-from nose.tools import assert_equal, assert_false
 
 from django.db import connection, transaction
 from django.contrib.auth.models import Group
 from django.test.utils import CaptureQueriesContext
 from django.utils import timezone
-import mock
+from unittest import mock
 import itsdangerous
 import pytest
-import pytz
 
 from framework.auth.exceptions import ExpiredTokenError, InvalidTokenError, ChangePasswordError, MergeDisableError
 from framework.auth.signals import user_merged
@@ -22,7 +20,6 @@ from framework.exceptions import PermissionsError
 from framework.celery_tasks import handlers
 from website import settings
 from website import filters
-from website import mailchimp_utils
 from website.project.signals import contributor_added
 from website.project.views.contributor import notify_added_contributor
 from website.views import find_bookmark_collection
@@ -502,7 +499,7 @@ class TestOSFUser:
         u.set_unusable_password()
         u.save()
         assert bool(u.date_registered) is True
-        assert u.date_registered.tzinfo == pytz.utc
+        assert u.date_registered.tzinfo == dt.UTC
 
     def test_cant_create_user_without_full_name(self):
         u = OSFUser(username=fake_email())
@@ -577,7 +574,7 @@ class TestOSFUser:
         random_string.return_value = 'abcde'
         u = UserFactory()
         u.add_unconfirmed_email('foo@bar.com')
-        assert(
+        assert (
             u.get_confirmation_url('foo@bar.com') ==
             '{0}confirm/{1}/{2}/'.format(settings.DOMAIN, u._id, 'abcde')
         )
@@ -723,7 +720,7 @@ class TestOSFUser:
     def test_format_surname(self):
         user = UserFactory(fullname='Duane Johnson')
         summary = user.get_summary(formatter='surname')
-        assert(
+        assert (
             summary['user_display_name'] ==
             'Johnson'
         )
@@ -731,7 +728,7 @@ class TestOSFUser:
     def test_format_surname_one_name(self):
         user = UserFactory(fullname='Rock')
         summary = user.get_summary(formatter='surname')
-        assert(
+        assert (
             summary['user_display_name'] ==
             'Rock'
         )
@@ -740,7 +737,7 @@ class TestOSFUser:
         assert user.url == '/{0}/'.format(user._id)
 
     def test_absolute_url(self, user):
-        assert(
+        assert (
             user.absolute_url ==
             urljoin(settings.DOMAIN, '/{0}/'.format(user._id))
         )
@@ -779,7 +776,7 @@ class TestOSFUser:
         assert size is None
 
     def test_activity_points(self, user):
-        assert(
+        assert (
             user.get_activity_points() == get_total_activity_count(user._primary_key)
         )
 
@@ -888,13 +885,13 @@ class TestOSFUser:
 
     def test_is_full_account_required_info_miss_institution(self):
         user_auth = AuthUserFactory()
-        assert_equal(user_auth.is_full_account_required_info, True)
+        assert (user_auth.is_full_account_required_info) == (True)
 
     def test_is_full_account_required_info_miss_jobs(self):
         user_auth = AuthUserFactory()
         institution = InstitutionFactory()
         user_auth.affiliated_institutions.add(institution)
-        assert_equal(user_auth.is_full_account_required_info, False)
+        assert (user_auth.is_full_account_required_info) == (False)
 
     def test_is_full_account_required_info_has_jobs(self):
         name = 'name'
@@ -916,7 +913,7 @@ class TestOSFUser:
         user = OSFUser.objects.filter(fullname=name).first()
         assert user
         assert user.jobs
-        assert_equal(user_auth.is_full_account_required_info, False)
+        assert (user_auth.is_full_account_required_info) == (False)
 
     @mock.patch('osf.models.user.OSFUser.ext', new_callable=mock.PropertyMock)
     def test_is_full_account_required_info_exception(self, mock_idp_attr):
@@ -943,7 +940,7 @@ class TestOSFUser:
         }]
         user_auth.save()
         mock_idp_attr.side_effect = AttributeError('exception')
-        assert_equal(user_auth.is_full_account_required_info, True)
+        assert (user_auth.is_full_account_required_info) == (True)
 
     @pytest.mark.feature_202210
     def test_user_is_valid_user(self):
@@ -955,30 +952,30 @@ class TestOSFUser:
         # not active
         user.is_active = False
         assert user.is_registered
-        assert_false(user.is_active)
-        assert_false(user.is_valid_user)
+        assert not (user.is_active)
+        assert not (user.is_valid_user)
 
         # not registered
         user.is_active = True
         user.is_registered = False
         assert user.is_active
-        assert_false(user.is_registered)
-        assert_false(user.is_valid_user)
+        assert not (user.is_registered)
+        assert not (user.is_valid_user)
 
         # unregistered
         user.is_active = False
-        assert_false(user.is_active)
-        assert_false(user.is_registered)
-        assert_false(user.is_valid_user)
+        assert not (user.is_active)
+        assert not (user.is_registered)
+        assert not (user.is_valid_user)
 
     @pytest.mark.feature_202210
     def test_user_is_admin(self):
         # is normal user
         user = UserFactory()
         assert user.is_valid_user
-        assert_false(user.is_staff)
-        assert_false(user.is_superuser)
-        assert_false(user.is_admin)
+        assert not (user.is_staff)
+        assert not (user.is_superuser)
+        assert not (user.is_admin)
 
         # is superuser
         user.is_staff = True
@@ -986,37 +983,37 @@ class TestOSFUser:
         assert user.is_valid_user
         assert user.is_staff
         assert user.is_superuser
-        assert_false(user.is_admin)
+        assert not (user.is_admin)
 
         # is admin
         user.is_superuser = False
         assert user.is_valid_user
         assert user.is_staff
-        assert_false(user.is_superuser)
+        assert not (user.is_superuser)
         assert user.is_admin
 
         # invalid admin
         user.is_active = False
-        assert_false(user.is_valid_user)
+        assert not (user.is_valid_user)
         assert user.is_staff
-        assert_false(user.is_superuser)
-        assert_false(user.is_admin)
+        assert not (user.is_superuser)
+        assert not (user.is_admin)
 
     @pytest.mark.feature_202210
     def test_user_is_super_admin(self):
         # is normal user
         user = UserFactory()
         assert user.is_valid_user
-        assert_false(user.is_staff)
-        assert_false(user.is_superuser)
-        assert_false(user.is_super_admin)
+        assert not (user.is_staff)
+        assert not (user.is_superuser)
+        assert not (user.is_super_admin)
 
         # is admin
         user.is_staff = True
         assert user.is_valid_user
         assert user.is_staff
-        assert_false(user.is_superuser)
-        assert_false(user.is_super_admin)
+        assert not (user.is_superuser)
+        assert not (user.is_super_admin)
 
         # is super admin
         user.is_superuser = True
@@ -1027,15 +1024,15 @@ class TestOSFUser:
 
         # invalid super admin
         user.is_active = False
-        assert_false(user.is_valid_user)
+        assert not (user.is_valid_user)
         assert user.is_staff
         assert user.is_superuser
-        assert_false(user.is_super_admin)
+        assert not (user.is_super_admin)
 
     @pytest.mark.feature_202210
     def test_user_is_affiliated_institution(self):
         user = UserFactory()
-        assert_false(user.is_affiliated_institution)
+        assert not (user.is_affiliated_institution)
 
         institution = InstitutionFactory()
         user.affiliated_institutions.add(institution)
@@ -1044,16 +1041,16 @@ class TestOSFUser:
     @pytest.mark.feature_202210
     def test_user_is_institutional_admin(self):
         user = UserFactory()
-        assert_false(user.is_admin)
-        assert_false(user.is_affiliated_institution)
-        assert_false(user.is_institutional_admin)
+        assert not (user.is_admin)
+        assert not (user.is_affiliated_institution)
+        assert not (user.is_institutional_admin)
 
         # to admin
         user.is_staff = True
         user.is_superuser = False
         assert user.is_admin
-        assert_false(user.is_affiliated_institution)
-        assert_false(user.is_institutional_admin)
+        assert not (user.is_affiliated_institution)
+        assert not (user.is_institutional_admin)
 
         # to affiliate institution
         institution = InstitutionFactory()
@@ -1064,7 +1061,7 @@ class TestOSFUser:
     @pytest.mark.feature_202210
     def test_user_representative_affiliated_institution(self):
         user = UserFactory()
-        assert_false(user.is_affiliated_institution)
+        assert not (user.is_affiliated_institution)
         assert user.representative_affiliated_institution is None
 
         institution = InstitutionFactory()
@@ -1075,18 +1072,18 @@ class TestOSFUser:
     @pytest.mark.feature_202210
     def test_user_is_affiliated_with_institution_id(self):
         user = UserFactory()
-        assert_false(user.is_affiliated_with_institution_id(1))
+        assert not (user.is_affiliated_with_institution_id(1))
 
         institution = InstitutionFactory()
         user.affiliated_institutions.add(institution)
-        assert_false(user.is_affiliated_with_institution_id(1))
+        assert not (user.is_affiliated_with_institution_id(1))
         assert user.is_affiliated_with_institution_id(institution.id)
 
     @pytest.mark.feature_202210
     def test_user_is_allowed_storage_location_id_default_location(self):
         # not location
         user = UserFactory()
-        assert_false(user.is_allowed_storage_location_id(0))
+        assert not (user.is_allowed_storage_location_id(0))
 
         # default location
         location = ExportDataLocationFactory(institution_guid=Institution.INSTITUTION_DEFAULT)
@@ -1098,12 +1095,12 @@ class TestOSFUser:
         institution = InstitutionFactory()
         # not institutional location
         location = ExportDataLocationFactory()
-        assert_false(user.is_allowed_storage_location_id(location.id))
+        assert not (user.is_allowed_storage_location_id(location.id))
 
         # user not affiliated with institution
         location = ExportDataLocationFactory(institution_guid=institution._id)
-        assert_false(user.is_affiliated_institution)
-        assert_false(user.is_allowed_storage_location_id(location.id))
+        assert not (user.is_affiliated_institution)
+        assert not (user.is_allowed_storage_location_id(location.id))
 
         # is super admin
         user.is_staff = True
@@ -1121,7 +1118,7 @@ class TestOSFUser:
     def test_user_is_allowed_storage_id_default_storage(self):
         # not storage
         user = UserFactory()
-        assert_false(user.is_allowed_storage_id(0))
+        assert not (user.is_allowed_storage_id(0))
 
         # default storage
         storage = RegionFactory(_id=Institution.INSTITUTION_DEFAULT)
@@ -1133,12 +1130,12 @@ class TestOSFUser:
         institution = InstitutionFactory()
         # not institutional storage
         storage = RegionFactory()
-        assert_false(user.is_allowed_storage_id(storage.id))
+        assert not (user.is_allowed_storage_id(storage.id))
 
         # user not affiliated with institution
         storage = RegionFactory(_id=institution._id)
-        assert_false(user.is_affiliated_institution)
-        assert_false(user.is_allowed_storage_id(storage.id))
+        assert not (user.is_affiliated_institution)
+        assert not (user.is_allowed_storage_id(storage.id))
 
         # is super admin
         user.is_staff = True
@@ -1218,7 +1215,7 @@ class TestCookieMethods:
         user = UserFactory()
         super_secret_key = 'children need maps'
         signer = itsdangerous.Signer(super_secret_key)
-        assert(
+        assert (
             Session.objects.filter(data__auth_user_id=user._id).count() == 0
         )
 
@@ -1967,11 +1964,6 @@ class TestDisablingUsers(OsfTestCase):
         assert not Session.load(session1._id)
         assert not Session.load(session2._id)
 
-    def test_disable_account_api(self):
-        settings.ENABLE_EMAIL_SUBSCRIPTIONS = True
-        with pytest.raises(mailchimp_utils.mailchimp.InvalidApiKeyError):
-            self.user.disable_account()
-
 # Copied from tests/modes/test_user.py
 @pytest.mark.enable_quickfiles_creation
 @pytest.mark.enable_bookmark_creation
@@ -2224,15 +2216,9 @@ class TestUserMerging(OsfTestCase):
         self.user.external_accounts.add(ExternalAccountFactory())
         other_user.external_accounts.add(ExternalAccountFactory())
 
-        self.user.mailchimp_mailing_lists = {
-            'user': True,
-            'shared_gt': True,
-            'shared_lt': False,
-        }
+        self.user.mailchimp_mailing_lists = {}
         other_user.mailchimp_mailing_lists = {
-            'other': True,
-            'shared_gt': False,
-            'shared_lt': True,
+            settings.MAILCHIMP_GENERAL_LIST: True,
         }
 
         self.user.security_messages = {
@@ -2307,10 +2293,7 @@ class TestUserMerging(OsfTestCase):
             ]),
             'recently_added': set(),
             'mailchimp_mailing_lists': {
-                'user': True,
-                'other': True,
-                'shared_gt': True,
-                'shared_lt': True,
+                settings.MAILCHIMP_GENERAL_LIST: True,
             },
             'osf_mailing_lists': {
                 settings.OSF_HELP_LIST: True
@@ -2337,10 +2320,6 @@ class TestUserMerging(OsfTestCase):
         assert set(expected.keys()).issubset(all_field_names)
 
         # mock mailchimp
-        mock_client = mock.MagicMock()
-        mock_get_mailchimp_api.return_value = mock_client
-        mock_client.lists.list.return_value = {'data': [{'id': x, 'list_name': list_name} for x, list_name in enumerate(self.user.mailchimp_mailing_lists)]}
-
         with run_celery_tasks():
             # perform the merge
             self.user.merge_user(other_user, is_forced=True)

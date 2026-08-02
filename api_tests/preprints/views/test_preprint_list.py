@@ -1,7 +1,6 @@
-import mock
+from unittest import mock
 import datetime as dt
 
-from nose.tools import *  # noqa:
 import pytest
 from django.utils import timezone
 from waffle.testutils import override_switch
@@ -206,9 +205,7 @@ class TestPreprintCreateWithoutNode:
         )
 
         assert res.status_code == 400
-        assert_equal(
-            res.json['errors'][0]['detail'],
-            'Node not correctly specified.')
+        assert (res.json['errors'][0]['detail']) == ('Node not correctly specified.')
 
 
 class TestPreprintList(ApiTestCase):
@@ -224,16 +221,16 @@ class TestPreprintList(ApiTestCase):
 
     def test_return_preprints_logged_out(self):
         res = self.app.get(self.url)
-        assert_equal(len(res.json['data']), 1)
-        assert_equal(res.status_code, 200)
-        assert_equal(res.status_code, 200)
-        assert_equal(res.content_type, 'application/vnd.api+json')
+        assert (len(res.json['data'])) == (1)
+        assert (res.status_code) == (200)
+        assert (res.status_code) == (200)
+        assert (res.content_type) == ('application/vnd.api+json')
 
     def test_exclude_nodes_from_preprints_endpoint(self):
         res = self.app.get(self.url, auth=self.user.auth)
         ids = [each['id'] for each in res.json['data']]
-        assert_in(self.preprint._id, ids)
-        assert_not_in(self.project._id, ids)
+        assert (self.preprint._id) in (ids)
+        assert (self.project._id) not in (ids)
 
     def test_withdrawn_preprints_list(self):
         pp = PreprintFactory(provider__reviews_workflow='pre-moderation', is_published=False, creator=self.user)
@@ -438,8 +435,8 @@ class TestPreprintCreate(ApiTestCase):
 
         data = res.json['data']
         preprint = Preprint.load(data['id'])
-        assert_equal(res.status_code, 201)
-        assert_equal(data['attributes']['is_published'], False)
+        assert (res.status_code) == (201)
+        assert (data['attributes']['is_published']) == (False)
         assert preprint.node == self.public_project
 
     def test_create_preprint_with_supplemental_private_project(self):
@@ -456,18 +453,18 @@ class TestPreprintCreate(ApiTestCase):
             private_project_payload,
             auth=self.user.auth)
 
-        assert_equal(res.status_code, 201)
+        assert (res.status_code) == (201)
         self.private_project.reload()
-        assert_false(self.private_project.is_public)
+        assert not (self.private_project.is_public)
 
         preprint = Preprint.load(res.json['data']['id'])
         res = self.publish_preprint(preprint, self.user)
         preprint.reload()
-        assert_equal(res.status_code, 200)
+        assert (res.status_code) == (200)
         self.private_project.reload()
-        assert_false(self.private_project.is_public)
-        assert_true(preprint.is_public)
-        assert_true(preprint.is_published)
+        assert not (self.private_project.is_public)
+        assert (preprint.is_public)
+        assert (preprint.is_published)
 
     def test_non_authorized_user_on_supplemental_node(self):
         public_project_payload = build_preprint_create_payload(
@@ -478,10 +475,10 @@ class TestPreprintCreate(ApiTestCase):
             auth=self.user_two.auth,
             expect_errors=True)
 
-        assert_equal(res.status_code, 403)
+        assert (res.status_code) == (403)
 
     def test_write_user_on_supplemental_node(self):
-        assert_in(self.other_user, self.public_project.contributors)
+        assert (self.other_user) in (self.public_project.contributors)
         public_project_payload = build_preprint_create_payload(
             self.public_project._id, self.provider._id)
         res = self.app.post_json_api(
@@ -490,11 +487,11 @@ class TestPreprintCreate(ApiTestCase):
             auth=self.other_user.auth,
             expect_errors=True)
         # Users can create a preprint with a supplemental node that they have write perms to
-        assert_equal(res.status_code, 201)
+        assert (res.status_code) == (201)
 
     def test_read_user_on_supplemental_node(self):
         self.public_project.set_permissions(self.other_user, permissions.READ, save=True)
-        assert_in(self.other_user, self.public_project.contributors)
+        assert (self.other_user) in (self.public_project.contributors)
         public_project_payload = build_preprint_create_payload(
             self.public_project._id, self.provider._id)
         res = self.app.post_json_api(
@@ -502,12 +499,12 @@ class TestPreprintCreate(ApiTestCase):
             public_project_payload,
             auth=self.other_user.auth,
             expect_errors=True)
-        assert_equal(res.status_code, 403)
+        assert (res.status_code) == (403)
 
     def test_file_is_not_in_node(self):
         file_one_project = test_utils.create_test_file(
             self.public_project, self.user, 'openupthatwindow.pdf')
-        assert_equal(file_one_project.target, self.public_project)
+        assert (file_one_project.target) == (self.public_project)
         wrong_project_payload = build_preprint_create_payload(
             self.public_project._id, self.provider._id, file_one_project._id)
         res = self.app.post_json_api(
@@ -516,11 +513,9 @@ class TestPreprintCreate(ApiTestCase):
             auth=self.user.auth,
             expect_errors=True)
 
-        assert_equal(res.status_code, 400)
+        assert (res.status_code) == (400)
         # File which is targeted towards the project instead of the preprint is invalid
-        assert_equal(
-            res.json['errors'][0]['detail'],
-            'This file is not a valid primary file for this preprint.')
+        assert (res.json['errors'][0]['detail']) == ('This file is not a valid primary file for this preprint.')
 
     def test_already_has_supplemental_node_on_another_preprint(self):
         preprint = PreprintFactory(creator=self.user, project=self.public_project)
@@ -532,11 +527,11 @@ class TestPreprintCreate(ApiTestCase):
             auth=self.user.auth,
             expect_errors=True)
         # One preprint per provider per node constraint has been lifted
-        assert_equal(res.status_code, 201)
+        assert (res.status_code) == (201)
 
     def test_read_write_user_already_a_preprint_with_same_provider(
             self):
-        assert_in(self.other_user, self.public_project.contributors)
+        assert (self.other_user) in (self.public_project.contributors)
 
         preprint = PreprintFactory(creator=self.user, project=self.public_project)
         already_preprint_payload = build_preprint_create_payload(
@@ -547,7 +542,7 @@ class TestPreprintCreate(ApiTestCase):
             auth=self.other_user.auth,
             expect_errors=True)
 
-        assert_equal(res.status_code, 201)
+        assert (res.status_code) == (201)
 
     def test_publish_preprint_fails_with_no_primary_file(self):
         no_file_payload = build_preprint_create_payload(
@@ -565,10 +560,8 @@ class TestPreprintCreate(ApiTestCase):
             auth=self.user.auth,
             expect_errors=True)
 
-        assert_equal(res.status_code, 400)
-        assert_equal(
-            res.json['errors'][0]['detail'],
-            'A valid primary_file must be set before publishing a preprint.')
+        assert (res.status_code) == (400)
+        assert (res.json['errors'][0]['detail']) == ('A valid primary_file must be set before publishing a preprint.')
 
     def test_publish_preprint_fails_with_invalid_primary_file(self):
         no_file_payload = build_preprint_create_payload(
@@ -584,7 +577,7 @@ class TestPreprintCreate(ApiTestCase):
             auth=self.user.auth,
             expect_errors=True)
 
-        assert_equal(res.status_code, 201)
+        assert (res.status_code) == (201)
         preprint = Preprint.load(res.json['data']['id'])
         update_payload = build_preprint_update_payload(preprint._id, 'fakefileid')
 
@@ -595,10 +588,8 @@ class TestPreprintCreate(ApiTestCase):
             expect_errors=True
         )
 
-        assert_equal(res.status_code, 400)
-        assert_equal(
-            res.json['errors'][0]['detail'],
-            'A valid primary_file must be set before publishing a preprint.')
+        assert (res.status_code) == (400)
+        assert (res.json['errors'][0]['detail']) == ('A valid primary_file must be set before publishing a preprint.')
 
     def test_no_provider_given(self):
         no_providers_payload = build_preprint_create_payload()
@@ -608,10 +599,8 @@ class TestPreprintCreate(ApiTestCase):
             auth=self.user.auth,
             expect_errors=True)
 
-        assert_equal(res.status_code, 400)
-        assert_equal(
-            res.json['errors'][0]['detail'],
-            'You must specify a valid provider to create a preprint.')
+        assert (res.status_code) == (400)
+        assert (res.json['errors'][0]['detail']) == ('You must specify a valid provider to create a preprint.')
 
     def test_invalid_provider_given(self):
         wrong_provider_payload = build_preprint_create_payload(
@@ -623,10 +612,8 @@ class TestPreprintCreate(ApiTestCase):
             auth=self.user.auth,
             expect_errors=True)
 
-        assert_equal(res.status_code, 400)
-        assert_equal(
-            res.json['errors'][0]['detail'],
-            'You must specify a valid provider to create a preprint.')
+        assert (res.status_code) == (400)
+        assert (res.json['errors'][0]['detail']) == ('You must specify a valid provider to create a preprint.')
 
     def test_file_not_osfstorage(self):
         public_project_payload = build_preprint_create_payload(
@@ -639,7 +626,7 @@ class TestPreprintCreate(ApiTestCase):
             expect_errors=True)
 
         preprint = Preprint.load(res.json['data']['id'])
-        assert_equal(res.status_code, 201)
+        assert (res.status_code) == (201)
 
         github_file = test_utils.create_test_preprint_file(
             preprint, self.user, 'coffee_manuscript.pdf')
@@ -655,10 +642,8 @@ class TestPreprintCreate(ApiTestCase):
             expect_errors=True
         )
 
-        assert_equal(res.status_code, 400)
-        assert_equal(
-            res.json['errors'][0]['detail'],
-            'This file is not a valid primary file for this preprint.')
+        assert (res.status_code) == (400)
+        assert (res.json['errors'][0]['detail']) == ('This file is not a valid primary file for this preprint.')
 
     def test_preprint_contributor_signal_sent_on_creation(self):
         # Signal sent but bails out early without sending email
@@ -668,11 +653,9 @@ class TestPreprintCreate(ApiTestCase):
             res = self.app.post_json_api(
                 self.url, payload, auth=self.user.auth)
 
-            assert_equal(res.status_code, 201)
-            assert_true(len(mock_signals.signals_sent()) == 1)
-            assert_in(
-                project_signals.contributor_added,
-                mock_signals.signals_sent())
+            assert (res.status_code) == (201)
+            assert (len(mock_signals.signals_sent()) == 1)
+            assert (project_signals.contributor_added) in (mock_signals.signals_sent())
 
     def test_create_preprint_with_deleted_node_should_fail(self):
         self.public_project.is_deleted = True
@@ -684,9 +667,8 @@ class TestPreprintCreate(ApiTestCase):
             public_project_payload,
             auth=self.user.auth,
             expect_errors=True)
-        assert_equal(res.status_code, 400)
-        assert_equal(res.json['errors'][0]['detail'],
-                     'Cannot attach a deleted project to a preprint.')
+        assert (res.status_code) == (400)
+        assert (res.json['errors'][0]['detail']) == ('Cannot attach a deleted project to a preprint.')
 
     def test_create_preprint_with_no_permissions_to_node(self):
         project = ProjectFactory()
@@ -697,7 +679,7 @@ class TestPreprintCreate(ApiTestCase):
             public_project_payload,
             auth=self.user.auth,
             expect_errors=True)
-        assert_equal(res.status_code, 403)
+        assert (res.status_code) == (403)
 
     def test_create_preprint_adds_log_if_published(self):
         public_project_payload = build_preprint_create_payload(
@@ -707,14 +689,14 @@ class TestPreprintCreate(ApiTestCase):
             self.url,
             public_project_payload,
             auth=self.user.auth)
-        assert_equal(res.status_code, 201)
+        assert (res.status_code) == (201)
 
         preprint = Preprint.load(res.json['data']['id'])
         res = self.publish_preprint(preprint, self.user)
 
         log = preprint.logs.latest()
-        assert_equal(log.action, 'published')
-        assert_equal(log.params.get('preprint'), preprint._id)
+        assert (log.action) == ('published')
+        assert (log.params.get('preprint')) == (preprint._id)
 
     @mock.patch('osf.models.preprint.update_or_enqueue_on_preprint_updated')
     def test_create_preprint_from_project_published_hits_update(
@@ -727,11 +709,11 @@ class TestPreprintCreate(ApiTestCase):
             private_project_payload,
             auth=self.user.auth)
 
-        assert_false(mock_on_preprint_updated.called)
+        assert not (mock_on_preprint_updated.called)
         preprint = Preprint.load(res.json['data']['id'])
         self.publish_preprint(preprint, self.user)
 
-        assert_true(mock_on_preprint_updated.called)
+        assert (mock_on_preprint_updated.called)
 
     @mock.patch('osf.models.preprint.update_or_enqueue_on_preprint_updated')
     def test_create_preprint_from_project_unpublished_does_not_hit_update(

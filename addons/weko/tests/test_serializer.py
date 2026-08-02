@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 """Serializer tests for the WEKO addon."""
-import mock
-from nose.tools import *  # noqa (PEP8 asserts)
+from unittest import mock
 
 from website.util import web_url_for
 from addons.base.tests.serializers import StorageAddonSerializerTestSuiteMixin
@@ -66,21 +65,21 @@ class TestWEKOSerializer(StorageAddonSerializerTestSuiteMixin, OsfTestCase):
             'nodes': [],
             'host': ea.oauth_key,
         }
-        assert_equal(self.ser.serialize_account(ea), expected)
+        assert (self.ser.serialize_account(ea)) == (expected)
 
     def test_serialize_settings_authorized(self):
         with mock.patch.object(type(self.node_settings), 'has_auth', return_value=True):
             serialized = self.ser.serialize_settings(self.node_settings, self.user, self.client)
         for key in self.required_settings:
-            assert_in(key, serialized)
-        assert_in('owner', serialized['urls'])
-        assert_equal(serialized['urls']['owner'], web_url_for(
+            assert (key) in (serialized)
+        assert ('owner') in (serialized['urls'])
+        assert (serialized['urls']['owner']) == (web_url_for(
             'profile_view_id',
             uid=self.user_settings.owner._id
         ))
-        assert_in('ownerName', serialized)
-        assert_equal(serialized['ownerName'], self.user_settings.owner.fullname)
-        assert_in('savedIndex', serialized)
+        assert ('ownerName') in (serialized)
+        assert (serialized['ownerName']) == (self.user_settings.owner.fullname)
+        assert ('savedIndex') in (serialized)
 
     def test_serialize_settings_authorized_folder_is_set(self):
         pass

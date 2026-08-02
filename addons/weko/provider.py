@@ -213,6 +213,7 @@ class WEKOProvider(ExternalProvider):
                 redirect_uri=callback_url,
             ).fetch_token(
                 repo_settings['access_token_url'],
+                include_client_id=True,
                 client_secret=repo_settings['client_secret'],
                 code=request.args.get('code'),
             )

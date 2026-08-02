@@ -1,7 +1,6 @@
 from __future__ import absolute_import
 from rest_framework import status as http_status
 import pytest
-from nose.tools import assert_equal
 from framework.auth import Auth
 from framework.auth.views import login_and_register_handler
 from website.util import web_url_for
@@ -27,6 +26,6 @@ class TestAuthLoginAndRegisterLogic(OsfTestCase):
         self.user_auth.save()
         self.auth = Auth(user=self.user_auth)
         data = login_and_register_handler(self.auth)
-        assert_equal(data.get('status_code'), http_status.HTTP_302_FOUND)
-        assert_equal(data.get('next_url'), web_url_for('user_profile',
+        assert (data.get('status_code')) == (http_status.HTTP_302_FOUND)
+        assert (data.get('next_url')) == (web_url_for('user_profile',
                                                        _absolute=True))

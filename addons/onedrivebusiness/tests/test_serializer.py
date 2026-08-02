@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """Serializer tests for the OneDriveBusiness addon."""
-import mock
+from unittest import mock
 import pytest
 
 from osf_tests.factories import InstitutionFactory, RegionFactory

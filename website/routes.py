@@ -19,7 +19,8 @@ from django.utils.encoding import smart_str
 from werkzeug.http import dump_cookie
 
 
-from geolite2 import geolite2
+from geoip2.database import Reader
+from geoip2.errors import AddressNotFoundError
 
 from framework import status
 from framework import sentry
@@ -96,7 +97,12 @@ def get_globals():
     user = _get_current_user()
     set_status_message(user)
     user_institutions = [{'id': inst._id, 'name': inst.name, 'logo_path': inst.logo_path_rounded_corners} for inst in user.affiliated_institutions.all()] if user else []
-    location = geolite2.reader().get(request.remote_addr) if request.remote_addr else None
+    location = None
+    if request.remote_addr:
+        try:
+            location = Reader('GeoLite2-City.mmdb').city(request.remote_addr)
+        except (FileNotFoundError, AddressNotFoundError):
+            pass
     if request.host_url != settings.DOMAIN:
         try:
             inst_id = Institution.objects.get(domains__icontains=request.host, is_deleted=False)._id
@@ -149,8 +155,8 @@ def get_globals():
         'user_institutions': user_institutions if user else None,
         'display_name': user.fullname if user else '',
         'anon': {
-            'continent': (location or {}).get('continent', {}).get('code', None),
-            'country': (location or {}).get('country', {}).get('iso_code', None),
+            'continent': location.continent.code if location else None,
+            'country': location.country.iso_code if location else None,
         },
         'use_cdn': settings.USE_CDN_FOR_CLIENT_LIBS,
         'sentry_dsn_js': settings.SENTRY_DSN_JS if sentry.enabled else None,
@@ -241,7 +247,7 @@ class OsfWebRenderer(WebRenderer):
                     age = None
                 else:
                     age = max_age
-                resp.headers.add('Set-Cookie', dump_cookie(name.encode(), str(active), max_age=age, expires='True'))
+                resp.headers.add('Set-Cookie', dump_cookie(name, str(active), max_age=age, expires='True'))
         return resp
 
 #: Use if a view only redirects or raises error

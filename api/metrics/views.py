@@ -1,10 +1,11 @@
 import json
 
-from django.http import JsonResponse
+from django.http import Http404, JsonResponse
 from rest_framework.exceptions import ValidationError
 from rest_framework import permissions as drf_permissions
 from rest_framework.generics import GenericAPIView
-from elasticsearch.exceptions import NotFoundError, RequestError
+from elasticsearch6.exceptions import NotFoundError, RequestError
+from elasticsearch_metrics.registry import djelme_registry
 
 from framework.auth.oauth_scopes import CoreScopes
 from api.base.permissions import TokenHasScope
@@ -14,7 +15,7 @@ from api.metrics.serializers import PreprintMetricSerializer, RawMetricsSerializ
 from api.metrics.utils import parse_datetimes
 from api.base.views import JSONAPIBaseView
 from api.base.waffle_decorators import require_switch
-from elasticsearch_dsl.connections import get_connection
+from elasticsearch6_dsl.connections import get_connection
 
 from osf.features import ENABLE_RAW_METRICS
 
@@ -182,21 +183,53 @@ class RawMetricsView(GenericAPIView):
         raise ValidationError('DELETE not supported. Use GET/POST/PUT')
 
     @require_switch(ENABLE_RAW_METRICS)
-    def get(self, request, *args, **kwargs):
-        connection = get_connection()
-        url_path = kwargs['url_path']
-        return JsonResponse(connection.transport.perform_request('GET', f'/{url_path}'))
+    def get(self, request, *args, djelme_backend_name, url_path, **kwargs):
+        return JsonResponse(
+            self._do_es_request(
+                djelme_backend_name,
+                method='GET',
+                path=url_path,
+                query_params=request.GET,
+            ),
+        )
 
     @require_switch(ENABLE_RAW_METRICS)
-    def post(self, request, *args, **kwargs):
-        connection = get_connection()
-        url_path = kwargs['url_path']
-        body = json.loads(request.body)
-        return JsonResponse(connection.transport.perform_request('POST', f'/{url_path}', body=body))
+    def post(self, request, *args, djelme_backend_name, url_path, **kwargs):
+        return JsonResponse(
+            self._do_es_request(
+                djelme_backend_name,
+                method='POST',
+                path=url_path,
+                query_params=request.GET,
+                body=json.loads(request.body),
+            ),
+        )
 
     @require_switch(ENABLE_RAW_METRICS)
-    def put(self, request, *args, **kwargs):
-        connection = get_connection()
-        url_path = kwargs['url_path']
-        body = json.loads(request.body)
-        return JsonResponse(connection.transport.perform_request('PUT', f'/{url_path}', body=body))
+    def put(self, request, *args, djelme_backend_name, url_path, **kwargs):
+        return JsonResponse(
+            self._do_es_request(
+                djelme_backend_name,
+                method='PUT',
+                path=url_path,
+                query_params=request.GET,
+                body=json.loads(request.body),
+            ),
+        )
+
+    def _do_es_request(self, djelme_backend_name, method, path, query_params, body=None):
+        client = self._get_es_client(djelme_backend_name)
+        response = client.transport.perform_request(
+            method,
+            f'/{path}',
+            params=query_params.dict(),
+            body=body,
+        )
+        return response if isinstance(response, dict) else response.body
+
+    def _get_es_client(self, djelme_backend_name):
+        try:
+            backend = djelme_registry.get_backend(djelme_backend_name)
+        except LookupError:
+            raise Http404
+        return backend.elastic_client

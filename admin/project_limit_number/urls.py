@@ -1,8 +1,8 @@
-from django.conf.urls import include, url
+from django.urls import include, re_path
 
 app_name = 'admin'
 
 urlpatterns = [
-    url(r'^settings/', include('admin.project_limit_number.setting.urls', namespace='settings')),
-    url(r'^templates/', include('admin.project_limit_number.template.urls', namespace='templates')),
+    re_path(r'^settings/', include('admin.project_limit_number.setting.urls', namespace='settings')),
+    re_path(r'^templates/', include('admin.project_limit_number.template.urls', namespace='templates')),
 ]

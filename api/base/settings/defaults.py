@@ -11,7 +11,6 @@ https://docs.djangoproject.com/en/1.8/ref/settings/
 """
 
 import os
-from future.moves.urllib.parse import urlparse
 from website import settings as osf_settings
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -21,7 +20,7 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__fil
 DATABASES = {
     'default': {
         'CONN_MAX_AGE': 0,
-        'ENGINE': 'osf.db.backends.postgresql',  # django.db.backends.postgresql
+        'ENGINE': 'django.db.backends.postgresql',
         'NAME': os.environ.get('OSF_DB_NAME', 'osf'),
         'USER': os.environ.get('OSF_DB_USER', 'postgres'),
         'PASSWORD': os.environ.get('OSF_DB_PASSWORD', ''),
@@ -34,7 +33,7 @@ DATABASES = {
     },
 }
 
-DATABASE_ROUTERS = ['osf.db.router.PostgreSQLFailoverRouter', ]
+DATABASE_ROUTERS = ['osf.db.router.PostgreSQLFailoverRouter']
 PASSWORD_HASHERS = [
     'django.contrib.auth.hashers.BCryptSHA256PasswordHasher',
     'django.contrib.auth.hashers.BCryptPasswordHasher',
@@ -86,61 +85,53 @@ INSTALLED_APPS = (
     'django_celery_results',
     'rest_framework',
     'corsheaders',
-    'raven.contrib.django.raven_compat',
     'django_extensions',
     'guardian',
     'storages',
     'waffle',
-    'elasticsearch_metrics',
+    'elasticsearch_metrics.apps.ElasticsearchMetricsConfig',
 
     # OSF
     'osf',
 
     # Addons
-    'addons.osfstorage',
-    'addons.bitbucket',
-    'addons.box',
-    'addons.dataverse',
-    'addons.dropbox',
-    'addons.figshare',
-    'addons.forward',
-    'addons.github',
-    'addons.gitlab',
-    'addons.googledrive',
-    'addons.mendeley',
-    'addons.onedrive',
-    'addons.owncloud',
-    'addons.s3',
-    'addons.twofactor',
-    'addons.wiki',
-    'addons.zotero',
-    'addons.swift',
-    'addons.azureblobstorage',
-    'addons.weko',
-    'addons.jupyterhub',
-    'addons.iqbrims',
-    'addons.dropboxbusiness',
-    'addons.nextcloudinstitutions',
-    'addons.s3compatinstitutions',
-    'addons.ociinstitutions',
-    'addons.binderhub',
-    'addons.onedrivebusiness',
-    'addons.metadata',
-    'addons.workflow',
-    'addons.onlyoffice',
-    'addons.groups',
+    'addons.osfstorage.apps.OSFStorageAddonAppConfig',
+    'addons.bitbucket.apps.BitbucketAddonConfig',
+    'addons.box.apps.BoxAddonAppConfig',
+    'addons.dataverse.apps.DataverseAddonAppConfig',
+    'addons.dropbox.apps.DropboxAddonAppConfig',
+    'addons.figshare.apps.FigshareAddonAppConfig',
+    'addons.forward.apps.ForwardAddonAppConfig',
+    'addons.github.apps.GitHubAddonConfig',
+    'addons.gitlab.apps.GitLabAddonConfig',
+    'addons.googledrive.apps.GoogleDriveAddonConfig',
+    'addons.mendeley.apps.MendeleyAddonConfig',
+    'addons.onedrive.apps.OneDriveAddonAppConfig',
+    'addons.owncloud.apps.OwnCloudAddonAppConfig',
+    'addons.s3.apps.S3AddonAppConfig',
+    'addons.twofactor.apps.TwoFactorAddonAppConfig',
+    'addons.wiki.apps.WikiAddonAppConfig',
+    'addons.zotero.apps.ZoteroAddonAppConfig',
+    'addons.swift.apps.SwiftAddonAppConfig',
+    'addons.azureblobstorage.apps.AzureBlobStorageAddonAppConfig',
+    'addons.weko.apps.WEKOAddonAppConfig',
+    'addons.jupyterhub.apps.JupyterhubAddonAppConfig',
+    'addons.iqbrims.apps.IQBRIMSAddonConfig',
+    'addons.dropboxbusiness.apps.DropboxBusinessAddonAppConfig',
+    'addons.nextcloudinstitutions.apps.NextcloudInstitutionsAddonAppConfig',
+    'addons.s3compatinstitutions.apps.S3CompatInstitutionsAddonAppConfig',
+    'addons.ociinstitutions.apps.OCIInstitutionsAddonAppConfig',
+    'addons.binderhub.apps.AddonAppConfig',
+    'addons.onedrivebusiness.apps.OneDriveBusinessAddonAppConfig',
+    'addons.metadata.apps.AddonAppConfig',
+    'addons.workflow.apps.WorkflowAddonAppConfig',
+    'addons.onlyoffice.apps.AddonAppConfig',
+    'addons.groups.apps.AddonAppConfig',
 )
 
 # local development using https
 if osf_settings.SECURE_MODE and DEBUG:
     INSTALLED_APPS += ('sslserver',)
-
-# TODO: Are there more granular ways to configure reporting specifically related to the API?
-RAVEN_CONFIG = {
-    'tags': {'App': 'api'},
-    'dsn': osf_settings.SENTRY_DSN,
-    'release': osf_settings.VERSION,
-}
 
 BULK_SETTINGS = {
     'DEFAULT_BULK_LIMIT': 100,
@@ -221,8 +212,7 @@ REST_FRAMEWORK = {
 # CORS plugin only matches based on "netloc" part of URL, so as workaround we add that to the list
 CORS_ORIGIN_ALLOW_ALL = False
 CORS_ORIGIN_WHITELIST = (
-    urlparse(osf_settings.DOMAIN).netloc,
-    osf_settings.DOMAIN,
+    osf_settings.DOMAIN.rstrip('/'),
 )
 # This needs to remain True to allow cross origin requests that are in CORS_ORIGIN_WHITELIST to
 # use cookies.
@@ -238,13 +228,12 @@ MIDDLEWARE = (
     # Uncomment and add "prof" to url params to recieve a profile for that url
     # 'api.base.middleware.ProfileMiddleware',
 
-    # 'django.contrib.sessions.middleware.SessionMiddleware',
-    'api.base.middleware.CorsMiddleware',
+    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
-    # 'django.contrib.auth.middleware.AuthenticationMiddleware',
-    # 'django.contrib.auth.middleware.SessionAuthenticationMiddleware',
-    # 'django.contrib.messages.middleware.MessageMiddleware',
+    'django.contrib.sessions.middleware.SessionMiddleware',
+    'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'django.middleware.security.SecurityMiddleware',
     # 'waffle.middleware.WaffleMiddleware',
@@ -256,6 +245,13 @@ TEMPLATES = [
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
         'DIRS': [os.path.join(BASE_DIR, 'templates')],
         'APP_DIRS': True,
+        'OPTIONS': {
+            'context_processors': [
+                'django.template.context_processors.request',
+                'django.contrib.auth.context_processors.auth',
+                'django.contrib.messages.context_processors.messages',
+            ],
+        },
     },
 ]
 
@@ -273,6 +269,7 @@ USE_I18N = True
 USE_L10N = True
 
 USE_TZ = True
+DEFAULT_AUTO_FIELD = 'django.db.models.AutoField'
 
 # https://django-storages.readthedocs.io/en/latest/backends/gcloud.html
 if os.environ.get('GOOGLE_APPLICATION_CREDENTIALS', False):
@@ -334,6 +331,14 @@ ELASTICSEARCH_DSL = {
         'retry_on_timeout': True,
     },
 }
+DJELME_BACKENDS = {
+    'osfmetrics_es6': {
+        'elasticsearch_metrics.imps.elastic6': {
+            'hosts': os.environ.get('ELASTIC6_URI', '127.0.0.1:9201'),
+            'retry_on_timeout': True,
+        },
+    },
+}
 # Store yearly indices for time-series metrics
 ELASTICSEARCH_METRICS_DATE_FORMAT = '%Y'
 
@@ -369,16 +374,16 @@ USER_TIMEZONE = osf_settings.USER_TIMEZONE
 USER_LOCALE = osf_settings.USER_LOCALE
 CLOUD_GATEWAY_ISMEMBEROF_PREFIX = osf_settings.CLOUD_GATEWAY_ISMEMBEROF_PREFIX
 # install-addons.py
-INSTALLED_APPS += ('addons.s3compat',)
+INSTALLED_APPS += ('addons.s3compat.apps.S3CompatAddonAppConfig',)
 ADDONS_FOLDER_CONFIGURABLE.append('s3compat')
 ADDONS_OAUTH.append('s3compat')
-INSTALLED_APPS += ('addons.s3compatsigv4',)
+INSTALLED_APPS += ('addons.s3compatsigv4.apps.S3CompatSigV4AddonAppConfig',)
 ADDONS_FOLDER_CONFIGURABLE.append('s3compatsigv4')
 ADDONS_OAUTH.append('s3compatsigv4')
-INSTALLED_APPS += ('addons.s3compatb3',)
+INSTALLED_APPS += ('addons.s3compatb3.apps.S3CompatB3AddonAppConfig',)
 ADDONS_FOLDER_CONFIGURABLE.append('s3compatb3')
 ADDONS_OAUTH.append('s3compatb3')
-INSTALLED_APPS += ('addons.nextcloud',)
+INSTALLED_APPS += ('addons.nextcloud.apps.NextcloudAddonAppConfig',)
 ADDONS_FOLDER_CONFIGURABLE.append('nextcloud')
 ADDONS_OAUTH.append('nextcloud')
 

@@ -1,4 +1,3 @@
-from nose import tools as nt
 
 from django.test import RequestFactory
 
@@ -31,16 +30,16 @@ class TestInstitutionList(AdminTestCase):
         self.request.user.is_superuser = True
         self.request.user.is_staff = True
         res = self.view.get(self.request, *args, **kwargs)
-        nt.assert_equal(res.status_code, 200)
-        nt.assert_is_instance(res.context_data['view'], views.InstitutionList)
+        assert (res.status_code) == (200)
+        assert isinstance((res.context_data['view']), (views.InstitutionList))
 
     def test_admin_get(self, *args, **kwargs):
         self.request.user.is_superuser = False
         self.request.user.is_staff = True
         self.user.affiliated_institutions.add(self.institutions[0])
         res = self.view.get(self.request, *args, **kwargs)
-        nt.assert_equal(res.status_code, 302)
-        nt.assert_in(self.redirect_url, str(res))
+        assert (res.status_code) == (302)
+        assert (self.redirect_url) in (str(res))
 
 
 class TestInstitutionNodeList(AdminTestCase):
@@ -84,12 +83,12 @@ class TestInstitutionNodeList(AdminTestCase):
         self.view.object_list = self.view.get_queryset()
         kwargs = {'object_list': self.view.object_list}
         res = self.view.get_context_data(**kwargs)
-        nt.assert_is_instance(res, dict)
-        nt.assert_equal(len(res['nodes']), 2)
+        assert isinstance((res), (dict))
+        assert (len(res['nodes'])) == (2)
         for node in res['nodes']:
             timestampPattern = RdmTimestampGrantPattern.objects.get(node_guid=node['node']._id)
-            nt.assert_equal(node['timestamppattern'].timestamp_pattern_division, timestampPattern.timestamp_pattern_division)
-        nt.assert_is_instance(res['view'], views.InstitutionNodeList)
+            assert (node['timestamppattern'].timestamp_pattern_division) == (timestampPattern.timestamp_pattern_division)
+        assert isinstance((res['view']), (views.InstitutionNodeList))
 
 
 class TestInstitutionTimeStampPatternForce(AdminTestCase):
@@ -111,11 +110,11 @@ class TestInstitutionTimeStampPatternForce(AdminTestCase):
             'forced': 1,
         }
         res = self.view.get(self.request, *args, **kwargs)
-        nt.assert_equal(res.status_code, 200)
+        assert (res.status_code) == (200)
         timestampPattern = RdmTimestampGrantPattern.objects.get(institution_id=self.institution.id, node_guid__isnull=True)
-        nt.assert_equal(int(kwargs['institution_id']), timestampPattern.institution_id)
-        nt.assert_equal(int(kwargs['timestamp_pattern_division']), timestampPattern.timestamp_pattern_division)
-        nt.assert_equal(bool(int(kwargs['forced'])), timestampPattern.is_forced)
+        assert (int(kwargs['institution_id'])) == (timestampPattern.institution_id)
+        assert (int(kwargs['timestamp_pattern_division'])) == (timestampPattern.timestamp_pattern_division)
+        assert (bool(int(kwargs['forced']))) == (timestampPattern.is_forced)
 
 
 class TestNodeTimeStampPatternChange(AdminTestCase):
@@ -154,13 +153,13 @@ class TestNodeTimeStampPatternChange(AdminTestCase):
 
     def test_get(self, *args, **kwargs):
         timestampPattern = RdmTimestampGrantPattern.objects.get(node_guid=self.private_project1._id)
-        nt.assert_equal(timestampPattern.timestamp_pattern_division, 1)
+        assert (timestampPattern.timestamp_pattern_division) == (1)
         kwargs = {
             'institution_id': self.project_institution.id,
             'guid': self.private_project1._id,
             'timestamp_pattern_division': 2,
         }
         res = self.view.get(self.request, *args, **kwargs)
-        nt.assert_equal(res.status_code, 200)
+        assert (res.status_code) == (200)
         timestampPattern = RdmTimestampGrantPattern.objects.get(node_guid=self.private_project1._id)
-        nt.assert_equal(timestampPattern.timestamp_pattern_division, 2)
+        assert (timestampPattern.timestamp_pattern_division) == (2)

@@ -9,6 +9,7 @@ from osf_tests.factories import (
 from osf import features
 from django.contrib.auth.models import Group
 from waffle.models import Flag
+from website.project.metadata.schemas import METASCHEMA_ORDERING
 
 @pytest.mark.django_db
 class TestSchemaList:
@@ -75,3 +76,16 @@ class TestSchemaList:
         res = app.get(url, auth=egap_admin.auth)
         assert res.status_code == 200
         assert [data for data in res.json['data'] if data['attributes']['name'] == 'EGAP Registration']
+
+    @pytest.mark.parametrize('filter_query', ('', '&filter[active]=True'))
+    def test_schemas_follow_metaschema_ordering(self, app, url, user, filter_query):
+        res = app.get('{}&page[size]=100{}'.format(url, filter_query), auth=user.auth)
+
+        names = [schema['attributes']['name'] for schema in res.json['data']]
+        assert names == sorted(names, key=METASCHEMA_ORDERING.index)
+
+    def test_schemas_are_ordered_before_pagination(self, app, url, user):
+        all_schemas = app.get('{}&page[size]=100'.format(url), auth=user.auth)
+        second_schema = app.get('{}&page[size]=1&page=2'.format(url), auth=user.auth)
+
+        assert second_schema.json['data'][0]['id'] == all_schemas.json['data'][1]['id']

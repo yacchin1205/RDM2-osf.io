@@ -1,4 +1,3 @@
-from nose import tools as nt
 from tests.base import OsfTestCase
 from website.search import util
 from tests.utils import run_celery_tasks
@@ -56,14 +55,13 @@ class TestContributorSearch(OsfTestCase):
         email2.address = 'test@example.com'
         email2.save()
         migrate(delete=False, remove=False,
-                index=None, app=self.app.app)
+                index=None, app=self.app.application)
         time.sleep(10)
         contribs = search.search_contributor(
             email2.address,
             current_user=self.user1
         )
-        nt.assert_equal(set([u['fullname'] for u in contribs['users']]),
-                     set([self.user2.fullname]))
+        assert (set([u['fullname'] for u in contribs['users']])) == (set([self.user2.fullname]))
 
 
 class TestSearchUtils(OsfTestCase):
@@ -97,8 +95,8 @@ class TestSearchUtils(OsfTestCase):
         }
         res = util.build_query(start=start, size=size,
                                match_value=match_value, match_key=match_key)
-        nt.assert_is_instance(res, dict)
-        nt.assert_equal(res, expectedResult)
+        assert isinstance((res), (dict))
+        assert (res) == (expectedResult)
 
     def test_build_query_with_match_key_is_email_and_match_value_valid(self):
         match_key = 'emails'
@@ -126,8 +124,8 @@ class TestSearchUtils(OsfTestCase):
         }
         res = util.build_query(start=start, size=size,
                                match_value=match_value, match_key=match_key)
-        nt.assert_is_instance(res, dict)
-        nt.assert_equal(res, expectedResult)
+        assert isinstance((res), (dict))
+        assert (res) == (expectedResult)
 
     def test_build_query_with_match_key_invalid_and_match_value(self):
         query_body = util.build_query_string('*')
@@ -143,8 +141,8 @@ class TestSearchUtils(OsfTestCase):
         }
         res = util.build_query(start=start, size=size,
                                match_value=match_value, match_key=match_key)
-        nt.assert_is_instance(res, dict)
-        nt.assert_equal(res, expectedResult)
+        assert isinstance((res), (dict))
+        assert (res) == (expectedResult)
 
     def test_build_query_with_match_key_and_match_value_invalid(self):
         query_body = util.build_query_string('*')
@@ -160,27 +158,27 @@ class TestSearchUtils(OsfTestCase):
         }
         res = util.build_query(start=start, size=size,
                                match_value=match_value, match_key=match_key)
-        nt.assert_is_instance(res, dict)
-        nt.assert_equal(res, expectedResult)
+        assert isinstance((res), (dict))
+        assert (res) == (expectedResult)
 
     def test_validate_email_is_not_none(self):
         self.email = 'roger@queen.com'
         result = util.validate_email(self.email)
-        nt.assert_equal(result, True)
+        assert (result) == (True)
 
         result2 = util.validate_email('')
-        nt.assert_equal(result2, False)
+        assert (result2) == (False)
 
         result3 = util.validate_email('"joe bloggs"@b.c')
-        nt.assert_equal(result3, False)
+        assert (result3) == (False)
 
         result4 = util.validate_email('a@b.c')
-        nt.assert_equal(result4, False)
+        assert (result4) == (False)
 
         result5 = util.validate_email('a@b.c@')
-        nt.assert_equal(result5, False)
+        assert (result5) == (False)
 
     def test_validate_email_is_none(self):
         self.email = None
         result = util.validate_email(self.email)
-        nt.assert_equal(result, False)
+        assert (result) == (False)

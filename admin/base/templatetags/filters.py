@@ -2,7 +2,7 @@
 from django import template
 from django.utils.safestring import mark_safe
 import json
-from django.utils.translation import ugettext_lazy as _
+from django.utils.translation import gettext_lazy as _
 from osf.utils.text_rendering import osf_urlize as custom_osf_urlize
 
 register = template.Library()

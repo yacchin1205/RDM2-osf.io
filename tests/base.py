@@ -4,13 +4,11 @@ import abc
 import datetime as dt
 import functools
 import logging
-import re
 import unittest
 import uuid
 
 import blinker
-import responses
-import mock
+from unittest import mock
 import pytest
 
 from django.test import TestCase as DjangoTestCase
@@ -29,11 +27,10 @@ from website.notifications.listeners import (subscribe_contributor,
 from website.project.signals import contributor_added, project_created
 from website.project.views.contributor import notify_added_contributor
 from website.signals import ALL_SIGNALS
-from webtest_plus import TestApp
 
 from .json_api_test_app import JSONAPITestApp
+from .response import FormsTestResponse
 
-from nose.tools import *  # noqa (PEP8 asserts); noqa (PEP8 asserts)
 
 logger = logging.getLogger(__name__)
 
@@ -50,7 +47,7 @@ except AssertionError:  # Routes have already been set up
 rm_handlers(test_app, django_handlers)
 rm_handlers(test_app, celery_handlers)
 
-test_app.testing = True
+test_app.config['TESTING'] = True
 
 
 # Silence some 3rd-party logging and some "loud" internal loggers
@@ -68,8 +65,6 @@ SILENT_LOGGERS = [
     'website.search_migration.migrate',
     'website.util.paths',
     'requests_oauthlib.oauth2_session',
-    'raven.base.Client',
-    'raven.contrib.django.client.DjangoClient',
     'transitions.core',
     'MARKDOWN',
 ]
@@ -113,7 +108,9 @@ class AppTestCase(unittest.TestCase):
 
     def setUp(self):
         super(AppTestCase, self).setUp()
-        self.app = TestApp(test_app)
+        self.app = test_app.test_client()
+        self.app.response_wrapper = FormsTestResponse
+        self.app.application.config.update({'TESTING': True})
         self.app.lint = False  # This breaks things in Py3
         if not self.PUSH_CONTEXT:
             return
@@ -152,6 +149,9 @@ class ApiAppTestCase(unittest.TestCase):
 class SearchTestCase(unittest.TestCase):
 
     def setUp(self):
+        if settings.SEARCH_ENGINE is None:
+            return
+
         settings.ELASTIC_INDEX = uuid.uuid1().hex
         settings.ELASTIC_TIMEOUT = 60
 
@@ -165,6 +165,9 @@ class SearchTestCase(unittest.TestCase):
 
     def tearDown(self):
         super(SearchTestCase, self).tearDown()
+
+        if settings.SEARCH_ENGINE is None:
+            return
 
         from website.search import elastic_search
         elastic_search.delete_index(settings.ELASTIC_INDEX)
@@ -373,8 +376,7 @@ def assert_is_redirect(response, msg='Response is a redirect.'):
 
 def assert_before(lst, item1, item2):
     """Assert that item1 appears before item2 in lst."""
-    assert_less(lst.index(item1), lst.index(item2),
-        '{0!r} appears before {1!r}'.format(item1, item2))
+    assert (lst.index(item1)) < (lst.index(item2)), ('{0!r} appears before {1!r}'.format(item1, item2))
 
 def assert_datetime_equal(dt1, dt2, allowance=500):
     """Assert that two datetimes are about equal."""

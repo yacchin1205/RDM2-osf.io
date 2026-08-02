@@ -1,9 +1,8 @@
 import pytest
-import mock
+from unittest import mock
 from tests.base import OsfTestCase, fake
 from osf_tests.factories import AuthUserFactory, ProjectFactory, fake_email
 from website.util import api_url_for
-from nose.tools import *  # noqa PEP8 asserts
 from framework.auth.exceptions import MergeDisableError
 from framework.auth import Auth
 
@@ -26,11 +25,11 @@ class TestUpdateUser(OsfTestCase):
                               'confirmed': True},
                              {'address': email, 'primary': False,
                               'confirmed': False}]}
-        res = self.app.put_json(url, header, auth=self.user.auth)
-        assert_equal(res.status_code, 200)
-        assert_in('emails', res.json['profile'])
-        assert_equal(len(res.json['profile']['emails']), 2)
-        assert_equal(send_mail.call_count, 1)
+        res = self.app.put(url, json=header, auth=self.user.auth)
+        assert (res.status_code) == (200)
+        assert ('emails') in (res.json['profile'])
+        assert (len(res.json['profile']['emails'])) == (2)
+        assert (send_mail.call_count) == (1)
 
     @mock.patch('website.views.settings.ENABLE_USER_MERGE', False)
     @mock.patch('osf.models.user.website_settings.ENABLE_USER_MERGE', False)
@@ -43,10 +42,10 @@ class TestUpdateUser(OsfTestCase):
                               'confirmed': True},
                              {'address': existing_user.username,
                               'primary': False, 'confirmed': False}]}
-        res = self.app.put_json(url, header, auth=self.user.auth, expect_errors=True)
-        assert_equal(res.status_code, 400)
-        assert_in(res.json['message_long'], 'Existing email address')
-        assert_equal(send_mail.call_count, 0)
+        res = self.app.put(url, json=header, auth=self.user.auth)
+        assert (res.status_code) == (400)
+        assert (res.json['message_long']) in ('Existing email address')
+        assert (send_mail.call_count) == (0)
 
     @mock.patch('website.views.settings.ENABLE_USER_MERGE', False)
     @mock.patch('osf.models.user.website_settings.ENABLE_USER_MERGE', False)
@@ -66,10 +65,10 @@ class TestUpdateUser(OsfTestCase):
                               'confirmed': True},
                              {'address': unreg_user.username,
                               'primary': False, 'confirmed': False}]}
-        res = self.app.put_json(url, header, auth=self.user.auth, expect_errors=True)
-        assert_equal(res.status_code, 400)
-        assert_in(res.json['message_long'], 'Existing email address')
-        assert_equal(send_mail.call_count, 0)
+        res = self.app.put(url, json=header, auth=self.user.auth)
+        assert (res.status_code) == (400)
+        assert (res.json['message_long']) in ('Existing email address')
+        assert (send_mail.call_count) == (0)
 
     @mock.patch('website.views.settings.ENABLE_USER_MERGE', True)
     @mock.patch('osf.models.user.website_settings.ENABLE_USER_MERGE', True)
@@ -82,10 +81,10 @@ class TestUpdateUser(OsfTestCase):
                               'primary': True, 'confirmed': True},
                              {'address': existing_user.username,
                               'primary': False, 'confirmed': False}]}
-        res = self.app.put_json(url, header, auth=self.user.auth, expect_errors=True)
-        assert_equal(res.status_code, 200)
-        assert_in('emails', res.json['profile'])
-        assert_equal(send_mail.call_count, 1)
+        res = self.app.put(url, json=header, auth=self.user.auth)
+        assert (res.status_code) == (200)
+        assert ('emails') in (res.json['profile'])
+        assert (send_mail.call_count) == (1)
 
 @pytest.mark.enable_implicit_clean
 class TestMergeUser(OsfTestCase):

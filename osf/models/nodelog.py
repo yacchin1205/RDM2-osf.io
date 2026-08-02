@@ -1,5 +1,3 @@
-from include import IncludeManager
-
 from django.apps import apps
 from django.db import models
 from django.utils import timezone
@@ -16,8 +14,6 @@ class NodeLog(ObjectIDMixin, BaseModel):
         'user': 'user__guids___id',
         'original_node': 'original_node__guids___id'
     }
-
-    objects = IncludeManager()
 
     DATE_FORMAT = '%m/%d/%Y %H:%M UTC'
 
@@ -184,7 +180,8 @@ class NodeLog(ObjectIDMixin, BaseModel):
                 PREPRINT_FILE_UPDATED, PREPRINT_LICENSE_UPDATED, VIEW_ONLY_LINK_ADDED, VIEW_ONLY_LINK_REMOVED,
                 MAPCORE_MAP_GROUP_NOT_CREATED, MAPCORE_MAP_GROUP_NOT_UPDATED, MAPCORE_RDM_PROJECT_NOT_UPDATED, MAPCORE_RDM_UNKNOWN_USER,
                 TIMESTAMP_ALL_VERIFIED, TIMESTAMP_ALL_ADDED, TIMESTAMP_ADDED, TIMESTAMP_ERRORS_DOWNLOADED] + list(sum([
-                    config.actions for config in apps.get_app_configs() if config.name.startswith('addons.')
+                    config.actions for config in apps.get_app_configs()
+                    if config.name.startswith('addons.') and hasattr(config, 'actions')
                 ], tuple())))
     action_choices = [(action, action.upper()) for action in actions]
     date = NonNaiveDateTimeField(db_index=True, null=True, blank=True, default=timezone.now)

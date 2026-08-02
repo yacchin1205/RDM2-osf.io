@@ -13,7 +13,6 @@ from django.utils import timezone
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.contenttypes.fields import GenericForeignKey
 from typedmodels.models import TypedModel, TypedModelManager
-from include import IncludeManager
 
 from framework.analytics import get_basic_counters
 from framework import sentry
@@ -40,7 +39,7 @@ PROVIDER_MAP = {}
 logger = logging.getLogger(__name__)
 
 
-class BaseFileNodeManager(TypedModelManager, IncludeManager):
+class BaseFileNodeManager(TypedModelManager):
 
     def get_queryset(self):
         qs = super(BaseFileNodeManager, self).get_queryset()
@@ -543,7 +542,7 @@ class File(models.Model):
         for entry in self.history:
             # Some entry might have an undefined modified field
             if data['modified'] is not None and entry['modified'] is not None and data['modified'] < entry['modified']:
-                sentry.log_message('update() receives metatdata older than the newest entry in file history.')
+                sentry.log_message('update() receives metadata older than the newest entry in file history.')
             if ('etag' in entry and 'etag' in data) and (entry['etag'] == data['etag']):
                 break
         else:
@@ -804,8 +803,6 @@ class FileVersion(ObjectIDMixin, BaseModel):
     location = DateTimeAwareJSONField(default=None, blank=True, null=True, validators=[validate_location])
     seen_by = models.ManyToManyField('OSFUser', through=FileVersionUserMetadata, related_name='versions_seen')
     region = models.ForeignKey('addons_osfstorage.Region', null=True, blank=True, on_delete=models.CASCADE)
-
-    includable_objects = IncludeManager()
 
     @property
     def location_hash(self):

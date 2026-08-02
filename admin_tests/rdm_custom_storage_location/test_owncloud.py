@@ -2,10 +2,9 @@ from django.http import HttpResponse
 from django.test import RequestFactory
 from rest_framework import status as http_status
 import json
-import mock
+from unittest import mock
 import owncloud
 import requests
-from nose import tools as nt
 
 from addons.osfstorage.models import Region
 from admin.rdm_custom_storage_location import views
@@ -32,7 +31,6 @@ class TestConnection(AdminTestCase):
             json.dumps(params),
             content_type='application/json'
         )
-        request.is_ajax()
         request.user = self.user
         return views.TestConnectionView.as_view()(request, institution_id=self.institution.id)
 
@@ -45,8 +43,8 @@ class TestConnection(AdminTestCase):
             'owncloud_folder': 'my-valid-folder',
             'provider_short_name': 'owncloud',
         })
-        nt.assert_equals(response.status_code, http_status.HTTP_200_OK)
-        nt.assert_in('Credentials are valid', response.content.decode())
+        assert (response.status_code) == (http_status.HTTP_200_OK)
+        assert ('Credentials are valid') in (response.content.decode())
 
     @mock.patch('owncloud.Client')
     def test_success_nextcloud(self, mock_client):
@@ -57,8 +55,8 @@ class TestConnection(AdminTestCase):
             'nextcloud_folder': 'my-valid-folder',
             'provider_short_name': 'nextcloud',
         })
-        nt.assert_equals(response.status_code, http_status.HTTP_200_OK)
-        nt.assert_in('Credentials are valid', response.content.decode())
+        assert (response.status_code) == (http_status.HTTP_200_OK)
+        assert ('Credentials are valid') in (response.content.decode())
 
     @mock.patch('owncloud.Client')
     def test_success_nextcloudinstitutions(self, mock_client):
@@ -69,8 +67,8 @@ class TestConnection(AdminTestCase):
             'nextcloudinstitutions_folder': 'my-valid-folder',
             'provider_short_name': 'nextcloudinstitutions',
         })
-        nt.assert_equals(response.status_code, http_status.HTTP_200_OK)
-        nt.assert_in('Credentials are valid', response.content.decode())
+        assert (response.status_code) == (http_status.HTTP_200_OK)
+        assert ('Credentials are valid') in (response.content.decode())
 
     @mock.patch('owncloud.Client')
     def test_connection_error(self, mock_client):
@@ -83,8 +81,8 @@ class TestConnection(AdminTestCase):
             'owncloud_folder': 'my-valid-folder',
             'provider_short_name': 'owncloud',
         })
-        nt.assert_equals(response.status_code, http_status.HTTP_400_BAD_REQUEST)
-        nt.assert_in('Invalid ownCloud server.', response.content.decode())
+        assert (response.status_code) == (http_status.HTTP_400_BAD_REQUEST)
+        assert ('Invalid ownCloud server.') in (response.content.decode())
 
     @mock.patch('owncloud.Client')
     def test_unauthorized(self, mock_client):
@@ -98,8 +96,8 @@ class TestConnection(AdminTestCase):
             'owncloud_folder': 'my-valid-folder',
             'provider_short_name': 'owncloud',
         })
-        nt.assert_equals(response.status_code, http_status.HTTP_401_UNAUTHORIZED)
-        nt.assert_in('ownCloud Login failed.', response.content.decode())
+        assert (response.status_code) == (http_status.HTTP_401_UNAUTHORIZED)
+        assert ('ownCloud Login failed.') in (response.content.decode())
 
     @mock.patch('owncloud.Client')
     def test_invalid_folder_id(self, mock_client):
@@ -113,8 +111,8 @@ class TestConnection(AdminTestCase):
             'owncloud_folder': 'my-valid-folder',
             'provider_short_name': 'owncloud',
         })
-        nt.assert_equals(response.status_code, http_status.HTTP_400_BAD_REQUEST)
-        nt.assert_in('Invalid folder.', response.content.decode())
+        assert (response.status_code) == (http_status.HTTP_400_BAD_REQUEST)
+        assert ('Invalid folder.') in (response.content.decode())
 
 
 class TestSaveCredentials(AdminTestCase):
@@ -132,7 +130,6 @@ class TestSaveCredentials(AdminTestCase):
             json.dumps(params),
             content_type='application/json'
         )
-        request.is_ajax()
         request.user = self.user
         return views.SaveCredentialsView.as_view()(request, institution_id=self.institution.id)
 
@@ -149,9 +146,9 @@ class TestSaveCredentials(AdminTestCase):
             'provider_short_name': 'owncloud',
         })
 
-        nt.assert_equals(response.status_code, http_status.HTTP_400_BAD_REQUEST)
-        nt.assert_in('NG', response.content.decode())
-        nt.assert_false(Region.objects.filter(_id=self.institution._id).exists())
+        assert (response.status_code) == (http_status.HTTP_400_BAD_REQUEST)
+        assert ('NG') in (response.content.decode())
+        assert not (Region.objects.filter(_id=self.institution._id).exists())
 
     @mock.patch('admin.rdm_custom_storage_location.utils.test_owncloud_connection')
     def test_success(self, mock_testconnection):
@@ -166,21 +163,21 @@ class TestSaveCredentials(AdminTestCase):
             'provider_short_name': 'owncloud',
         })
 
-        nt.assert_equals(response.status_code, http_status.HTTP_200_OK)
-        nt.assert_in('Saved credentials successfully!!', response.content.decode())
+        assert (response.status_code) == (http_status.HTTP_200_OK)
+        assert ('Saved credentials successfully!!') in (response.content.decode())
 
         institution_storage = Region.objects.filter(_id=self.institution._id).first()
-        nt.assert_is_not_none(institution_storage)
-        nt.assert_equals(institution_storage.name, 'My storage')
+        assert (institution_storage) is not None
+        assert (institution_storage.name) == ('My storage')
 
         wb_credentials = institution_storage.waterbutler_credentials
-        nt.assert_equals(wb_credentials['storage']['host'], 'https://valid.owncloud.net')
-        nt.assert_equals(wb_credentials['storage']['username'], 'admin')
-        nt.assert_equals(wb_credentials['storage']['password'], '1234')
+        assert (wb_credentials['storage']['host']) == ('https://valid.owncloud.net')
+        assert (wb_credentials['storage']['username']) == ('admin')
+        assert (wb_credentials['storage']['password']) == ('1234')
 
         wb_settings = institution_storage.waterbutler_settings
-        nt.assert_equals(wb_settings['storage']['provider'], 'owncloud')
-        nt.assert_equals(wb_settings['storage']['folder'], '/reserved_for_osf/')
+        assert (wb_settings['storage']['provider']) == ('owncloud')
+        assert (wb_settings['storage']['folder']) == ('/reserved_for_osf/')
 
     @mock.patch('admin.rdm_custom_storage_location.utils.test_owncloud_connection')
     def test_success_superuser(self, mock_testconnection):
@@ -198,18 +195,18 @@ class TestSaveCredentials(AdminTestCase):
             'provider_short_name': 'owncloud',
         })
 
-        nt.assert_equals(response.status_code, http_status.HTTP_200_OK)
-        nt.assert_in('Saved credentials successfully!!', response.content.decode())
+        assert (response.status_code) == (http_status.HTTP_200_OK)
+        assert ('Saved credentials successfully!!') in (response.content.decode())
 
         institution_storage = Region.objects.filter(_id=self.institution._id).first()
-        nt.assert_is_not_none(institution_storage)
-        nt.assert_equals(institution_storage.name, 'My storage')
+        assert (institution_storage) is not None
+        assert (institution_storage.name) == ('My storage')
 
         wb_credentials = institution_storage.waterbutler_credentials
-        nt.assert_equals(wb_credentials['storage']['host'], 'https://valid.owncloud.net')
-        nt.assert_equals(wb_credentials['storage']['username'], 'admin')
-        nt.assert_equals(wb_credentials['storage']['password'], '1234')
+        assert (wb_credentials['storage']['host']) == ('https://valid.owncloud.net')
+        assert (wb_credentials['storage']['username']) == ('admin')
+        assert (wb_credentials['storage']['password']) == ('1234')
 
         wb_settings = institution_storage.waterbutler_settings
-        nt.assert_equals(wb_settings['storage']['provider'], 'owncloud')
-        nt.assert_equals(wb_settings['storage']['folder'], '/reserved_for_osf/')
+        assert (wb_settings['storage']['provider']) == ('owncloud')
+        assert (wb_settings['storage']['folder']) == ('/reserved_for_osf/')

@@ -82,7 +82,7 @@ class TestNodeShare:
     def test_update_registration_share(self, mock_share, registration, user):
         on_node_updated(registration._id, user._id, False, {'is_public'})
 
-        assert mock_share.calls[-1].request.headers['Authorization'] == f'Bearer mock-api-token'
+        assert mock_share.calls[-1].request.headers['Authorization'] == 'Bearer mock-api-token'
 
         data = json.loads(mock_share.calls[-1].request.body.decode())
         graphs = data['data']['attributes']['data']['@graph']
@@ -239,6 +239,7 @@ class TestNodeShare:
         graph = data['data']['attributes']['data']['@graph']
         assert graph[0]['uri'] == f'{settings.DOMAIN}{node._id}/'
 
+    @pytest.mark.skip('Synchronous retries not supported if celery >=5.0')
     def test_call_async_update_on_500_failure(self, mock_share, node, user):
         """This is meant to simulate a total outage, so the retry mechanism should try X number of times and quit."""
         mock_share.assert_all_requests_are_fired = False  # allows it to retry indefinitely

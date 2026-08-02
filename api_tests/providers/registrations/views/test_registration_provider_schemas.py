@@ -7,7 +7,7 @@ from osf_tests.factories import (
 )
 
 from osf.models import RegistrationSchema
-from waffle.models import Flag
+from waffle.testutils import override_flag
 
 from osf.migrations import update_provider_auth_groups
 
@@ -20,10 +20,8 @@ class TestRegistrationProviderSchemas:
 
     @pytest.fixture()
     def egap_flag(self):
-        flag = Flag.objects.get(name='egap_admins')
-        flag.everyone = True
-        flag.save()
-        return flag
+        with override_flag('egap_admins', active=True):
+            yield
 
     @pytest.fixture()
     def schema(self):

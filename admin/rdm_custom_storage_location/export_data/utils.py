@@ -373,10 +373,10 @@ def deep_diff(x, y, parent_key=None, exclude_keys=None, epsilon_keys=None):
         if xfl and yfl and xfl * yfl >= 0 and rho * xfl <= yfl and rho * yfl <= xfl:
             return None
 
-    if type(x) != type(y) or type(x) not in [list, dict]:
+    if type(x) is not type(y) or not isinstance(x, (list, dict)):
         return x, y
 
-    if type(x) == dict:
+    if isinstance(x, dict):
         d = {}
         for k in x.keys() ^ y.keys():
             if k in exclude_keys:

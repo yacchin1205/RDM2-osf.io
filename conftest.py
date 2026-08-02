@@ -2,16 +2,19 @@ from __future__ import print_function
 
 import logging
 
-import mock
+from unittest import mock
 import responses
 import pytest
 from faker import Factory
+from django.conf import settings as django_settings
+from elasticsearch_metrics.tests.util import djelme_test_backends
+from waffle.testutils import override_switch
 from website import settings as website_settings
 
 from framework.celery_tasks import app as celery_app
+from osf import features
 
-from elasticsearch_dsl.connections import connections
-from django.core.management import call_command
+from elasticsearch6_dsl.connections import connections
 
 logger = logging.getLogger(__name__)
 
@@ -130,28 +133,33 @@ def _test_speedups_disable(request, settings, _test_speedups):
         patcher.start()
 
 
+@pytest.fixture(scope='session')
+def setup_connections():
+    connections.create_connection(
+        **django_settings.ELASTICSEARCH_DSL['default']
+    )
+
+
 @pytest.fixture(scope='function')
-def es6_client():
+def es6_client(setup_connections):
     return connections.get_connection()
 
 
 @pytest.fixture(scope='function', autouse=True)
-def _es_marker(request, es6_client):
-    """Clear out all indices and index templates before and after
-    tests marked with ``es``.
+def _es_marker(request):
+    """Set up isolated metric indices and templates for tests marked with
+    ``es``.
     """
     marker = request.node.get_closest_marker('es')
-    if marker:
 
-        def teardown_es():
-            es6_client.indices.delete(index='*')
-            es6_client.indices.delete_template('*')
-
-        teardown_es()
-        call_command('sync_metrics')
+    if not marker:
         yield
-        teardown_es()
-    else:
+        return
+
+    with (
+        override_switch(features.ELASTICSEARCH_METRICS, active=True),
+        djelme_test_backends(),
+    ):
         yield
 
 

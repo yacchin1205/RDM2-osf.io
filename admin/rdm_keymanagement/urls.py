@@ -1,9 +1,10 @@
-from django.conf.urls import url
+from django.urls import re_path
 from . import views
 
+app_name = 'admin'
 
 urlpatterns = [
-    url(r'^$', views.InstitutionList.as_view(), name='institutions'),
-    url(r'^(?P<institution_id>[0-9]+)/$', views.RemoveUserKeyList.as_view(), name='users'),
-    url(r'^(?P<institution_id>[0-9]+)/delete/(?P<user_id>[0-9]+)/$', views.RemoveUserKey.as_view(), name='user_key_delete'),
+    re_path(r'^$', views.InstitutionList.as_view(), name='institutions'),
+    re_path(r'^(?P<institution_id>[0-9]+)/$', views.RemoveUserKeyList.as_view(), name='users'),
+    re_path(r'^(?P<institution_id>[0-9]+)/delete/(?P<user_id>[0-9]+)/$', views.RemoveUserKey.as_view(), name='user_key_delete'),
 ]

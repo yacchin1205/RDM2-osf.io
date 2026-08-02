@@ -31,11 +31,12 @@ SCHEMA_VERSION=2
 class ApiSearchPrivateTestCase:
 
     @pytest.fixture(autouse=True)
-    def index(self):
-        settings.ENABLE_PRIVATE_SEARCH = True
-        settings.ENABLE_MULTILINGUAL_SEARCH = False
-        settings.ELASTIC_INDEX = uuid.uuid4().hex
-        elastic_search.INDEX = settings.ELASTIC_INDEX
+    def index(self, monkeypatch):
+        elastic_index = uuid.uuid4().hex
+        monkeypatch.setattr(settings, 'ENABLE_PRIVATE_SEARCH', True)
+        monkeypatch.setattr(settings, 'ENABLE_MULTILINGUAL_SEARCH', False)
+        monkeypatch.setattr(settings, 'ELASTIC_INDEX', elastic_index)
+        monkeypatch.setattr(elastic_search, 'INDEX', elastic_index)
 
         search.create_index(None)
         yield

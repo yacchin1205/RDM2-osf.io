@@ -1,13 +1,12 @@
 import copy
 import json
-import mock
+from unittest import mock
 import pytest
 import uuid
 from django.core.exceptions import PermissionDenied
 from django.http import Http404, JsonResponse
 from django.test import RequestFactory
 from django.urls import reverse
-from nose import tools as nt
 
 from admin.rdm_custom_storage_location.export_data.views import management
 from admin_tests.utilities import setup_view
@@ -54,11 +53,11 @@ class TestExportBaseView(AdminTestCase):
 
     def test_load_institution(self):
         response = self.view.load_institution()
-        nt.assert_equal(response, None)
+        assert (response) == (None)
 
     def test_load_institution_not_exist(self):
         self.view.kwargs = {'institution_id': '0'}
-        with nt.assert_raises(Http404):
+        with pytest.raises(Http404):
             self.view.load_institution()
 
 
@@ -76,7 +75,7 @@ class TestMethodGetExportData(AdminTestCase):
         mock_export_data.filter.return_value = self.export_data.objects
         mock_export_data.order_by.return_value = [self.export_data]
         res = management.get_export_data(self.institution._id, check_delete=False)
-        nt.assert_is_instance(res, list)
+        assert isinstance((res), (list))
 
 
 @pytest.mark.feature_202210
@@ -108,7 +107,7 @@ class TestExportDataListView(AdminTestCase):
             mock_render.return_value = None
             with mock.patch(f'{MANAGEMENT_EXPORT_DATA_PATH}.render', mock_render):
                 res = self.view.get(self.request, institution_id=self.institution.id)
-                nt.assert_equal(res, None)
+                assert (res) == (None)
 
     def test_get_super_not_institution_id(self):
         mock_class = mock.MagicMock()
@@ -118,7 +117,7 @@ class TestExportDataListView(AdminTestCase):
             mock_render.return_value = None
             with mock.patch(f'{MANAGEMENT_EXPORT_DATA_PATH}.render', mock_render):
                 res = self.view.get(self.request)
-                nt.assert_equal(res.status_code, 302)
+                assert (res.status_code) == (302)
 
 
 @pytest.mark.feature_202210
@@ -143,7 +142,7 @@ class TestExportDataDeletedListView(AdminTestCase):
             mock_render.return_value = None
             with mock.patch(f'{MANAGEMENT_EXPORT_DATA_PATH}.render', mock_render):
                 res = self.view.get(self.request)
-                nt.assert_equal(res, None)
+                assert (res) == (None)
 
 
 @pytest.mark.feature_202210
@@ -173,7 +172,7 @@ class TestExportDataInformationView(AdminTestCase):
                     view = setup_view(view, request,
                                     institution_id=self.institution.id, data_id=self.export_data.id)
                     res = view.get(request)
-                    nt.assert_equal(res, None)
+                    assert (res) == (None)
 
     def test_get_success_not_admin(self):
         mock_validate = mock.MagicMock()
@@ -194,7 +193,7 @@ class TestExportDataInformationView(AdminTestCase):
                     view = setup_view(view, request,
                                     institution_id=self.institution.id, data_id=self.export_data.id)
                     res = view.get(request)
-                    nt.assert_equal(res, None)
+                    assert (res) == (None)
 
     @mock.patch('osf.models.export_data.requests')
     @mock.patch(f'{MANAGEMENT_EXPORT_DATA_PATH}.render_bad_request_response')
@@ -208,7 +207,7 @@ class TestExportDataInformationView(AdminTestCase):
         view = setup_view(view, request,
                           institution_id=self.institution.id, data_id=self.export_data.id)
         res = view.get(request)
-        nt.assert_equal(res.status_code, 400)
+        assert (res.status_code) == (400)
 
     def test_get_not_found(self):
         mock_class = mock.MagicMock()
@@ -310,7 +309,7 @@ class TestCheckExportData(AdminTestCase):
             view.export_data = export_data
             view = setup_view(view, request, data_id=export_data.id)
             res = view.get(request, data_id=export_data.id)
-            nt.assert_equal(res.status_code, 400)
+            assert (res.status_code) == (400)
 
     def test_cannot_connect_to_storage(self):
         mock_export_data = mock.MagicMock()
@@ -326,7 +325,7 @@ class TestCheckExportData(AdminTestCase):
                 view = setup_view(view, request, data_id=self.export_data.id)
                 view.export_data = self.export_data
                 res = view.get(request, data_id=self.export_data.id)
-                nt.assert_equals(res.status_code, 400)
+                assert (res.status_code) == (400)
 
     def test_validate_fail(self):
         mock_export_data = mock.MagicMock()
@@ -343,7 +342,7 @@ class TestCheckExportData(AdminTestCase):
                 view = setup_view(view, request, data_id=self.export_data.id)
                 view.export_data = self.export_data
                 res = view.get(request, data_id=self.export_data.id)
-                nt.assert_equals(res.status_code, 400)
+                assert (res.status_code) == (400)
 
     @mock.patch(f'{MANAGEMENT_EXPORT_DATA_PATH}.check_for_file_existent_on_export_location')
     @mock.patch.object(ExportData, 'extract_file_information_json_from_source_storage')
@@ -373,7 +372,7 @@ class TestCheckExportData(AdminTestCase):
                     view = setup_view(view, request, data_id=self.export_data.id)
                     view.export_data = self.export_data
                     res = view.get(request, data_id=self.export_data.id)
-                    nt.assert_equals(res.status_code, 200)
+                    assert (res.status_code) == (200)
 
     def test__dispatch_anonymous(self):
         request = RequestFactory().get('/fake_path')
@@ -391,7 +390,7 @@ class TestCheckExportData(AdminTestCase):
         view = management.CheckExportData()
         view = setup_view(view, request, data_id=0)
         res = view.dispatch(request)
-        nt.assert_equals(res.status_code, 404)
+        assert (res.status_code) == (404)
 
     @mock.patch(f'{MANAGEMENT_EXPORT_DATA_PATH}.check_for_file_existent_on_export_location')
     @mock.patch.object(ExportData, 'extract_file_information_json_from_source_storage')
@@ -420,7 +419,7 @@ class TestCheckExportData(AdminTestCase):
                     view = management.CheckExportData()
                     view = setup_view(view, request, data_id=self.export_data.id)
                     res = view.dispatch(request)
-                    nt.assert_equals(res.status_code, 200)
+                    assert (res.status_code) == (200)
 
     def test__test_func_normal_user(self):
         request = RequestFactory().get('/fake_path')
@@ -429,7 +428,7 @@ class TestCheckExportData(AdminTestCase):
         view = management.CheckExportData()
         view = setup_view(view, request, data_id=self.export_data.id)
         view.export_data = self.export_data
-        nt.assert_false(view.test_func())
+        assert not (view.test_func())
 
     def test__test_func_super(self):
         request = RequestFactory().get('/fake_path')
@@ -438,7 +437,7 @@ class TestCheckExportData(AdminTestCase):
         view = management.CheckExportData()
         view = setup_view(view, request, data_id=self.export_data.id)
         view.export_data = self.export_data
-        nt.assert_true(view.test_func())
+        assert (view.test_func())
 
     def test__test_func_admin_has_perrmision(self):
         request = RequestFactory().get('/fake_path')
@@ -447,7 +446,7 @@ class TestCheckExportData(AdminTestCase):
         view = management.CheckExportData()
         view = setup_view(view, request, data_id=self.export_data_01.id)
         view.export_data = self.export_data_01
-        nt.assert_true(view.test_func())
+        assert (view.test_func())
 
     def test__test_func_admin_not_perrmision(self):
         request = RequestFactory().get('/fake_path')
@@ -456,7 +455,7 @@ class TestCheckExportData(AdminTestCase):
         view = management.CheckExportData()
         view = setup_view(view, request, data_id=self.export_data_02.id)
         view.export_data = self.export_data_02
-        nt.assert_false(view.test_func())
+        assert not (view.test_func())
 
 
 @pytest.mark.feature_202210
@@ -528,7 +527,7 @@ class TestCheckRestoreData(AdminTestCase):
             view.institution_id = self.institution.id
             view.destination_id = self.export_data.source.id
             res = view.get(request, data_id=export_data.id)
-            nt.assert_equal(res.status_code, 400)
+            assert (res.status_code) == (400)
 
     @mock.patch.object(ExportData, 'get_latest_restored')
     def test_restore_data_not_completed_and_not_from_request(self, mock_class):
@@ -552,7 +551,7 @@ class TestCheckRestoreData(AdminTestCase):
             view.institution_id = self.institution.id
             view.destination_id = self.export_data.source.id
             res = view.get(request, data_id=export_data.id)
-            nt.assert_equal(res.status_code, 400)
+            assert (res.status_code) == (400)
 
     @mock.patch.object(ExportData, 'get_latest_restored_data_with_destination_id')
     def test_check_restore_data_cannot_connect_to_storage(self, mock_class):
@@ -578,7 +577,7 @@ class TestCheckRestoreData(AdminTestCase):
                 view.institution_id = self.institution.id
                 view.destination_id = self.export_data.source.id
                 res = view.get(request, data_id=export_data.id)
-                nt.assert_equals(res.status_code, 400)
+                assert (res.status_code) == (400)
 
     @mock.patch.object(ExportData, 'get_latest_restored_data_with_destination_id')
     def test_check_restore_data_with_validate_fail(self, mock_class):
@@ -605,7 +604,7 @@ class TestCheckRestoreData(AdminTestCase):
                 view.institution_id = self.institution.id
                 view.destination_id = self.export_data.source.id
                 res = view.get(request, data_id=self.export_data.id)
-                nt.assert_equals(res.status_code, 400)
+                assert (res.status_code) == (400)
 
     @mock.patch.object(ExportData, 'get_latest_restored_data_with_destination_id')
     @mock.patch.object(ExportDataRestore, 'extract_file_information_json_from_destination_storage')
@@ -641,11 +640,11 @@ class TestCheckRestoreData(AdminTestCase):
                     view.destination_id = self.export_data.source.id
                     res = view.get(request, data_id=self.export_data.id)
 
-        nt.assert_equals(res.status_code, 200)
+        assert (res.status_code) == (200)
         content_data = json.loads(res.content.decode())
         # check quantity
-        nt.assert_equal(content_data['ok'] + content_data['ng'], content_data['total'])
-        nt.assert_equal(len(content_data['list_file_ng']), content_data['ng'])
+        assert (content_data['ok'] + content_data['ng']) == (content_data['total'])
+        assert (len(content_data['list_file_ng'])) == (content_data['ng'])
 
     @mock.patch.object(ExportData, 'get_latest_restored_data_with_destination_id')
     @mock.patch.object(ExportDataRestore, 'extract_file_information_json_from_destination_storage')
@@ -701,12 +700,12 @@ class TestCheckRestoreData(AdminTestCase):
                     view.destination_id = self.export_data.source.id
                     res = view.get(request, data_id=self.export_data.id)
 
-        nt.assert_equals(res.status_code, 200)
+        assert (res.status_code) == (200)
         content_data = json.loads(res.content.decode())
         # check quantity
-        nt.assert_equal(content_data['ng'], 0)
-        nt.assert_equal(len(content_data['list_file_ng']), content_data['ng'])
-        nt.assert_equal(content_data['ok'], content_data['total'])
+        assert (content_data['ng']) == (0)
+        assert (len(content_data['list_file_ng'])) == (content_data['ng'])
+        assert (content_data['ok']) == (content_data['total'])
 
     def test__dispatch_anonymous(self):
         request = RequestFactory().get('/fake_path')
@@ -724,14 +723,14 @@ class TestCheckRestoreData(AdminTestCase):
         view = management.CheckRestoreData()
         view = setup_view(view, request, data_id=0)
         res = view.dispatch(request)
-        nt.assert_equals(res.status_code, 404)
+        assert (res.status_code) == (404)
 
         # not exist destination_id
         request.GET = {'destination_id': '0'}
         view.request = request
         view = setup_view(view, request, data_id=self.export_data.id)
         res = view.dispatch(request, data_id=self.export_data.id)
-        nt.assert_equals(res.status_code, 404)
+        assert (res.status_code) == (404)
 
     def test__dispatch_not_valid(self):
         request = RequestFactory().get('/fake_path')
@@ -742,7 +741,7 @@ class TestCheckRestoreData(AdminTestCase):
         view = setup_view(view, request, data_id=self.export_data.id)
         view.request = request
         res = view.dispatch(request, data_id=self.export_data.id)
-        nt.assert_equals(res.status_code, 400)
+        assert (res.status_code) == (400)
 
     @mock.patch.object(ExportData, 'get_latest_restored_data_with_destination_id')
     @mock.patch.object(ExportDataRestore, 'extract_file_information_json_from_destination_storage')
@@ -773,7 +772,7 @@ class TestCheckRestoreData(AdminTestCase):
                     view = setup_view(view, request, data_id=self.export_data.id)
                     view.request = request
                     res = view.dispatch(request, data_id=self.export_data.id)
-        nt.assert_equals(res.status_code, 200)
+        assert (res.status_code) == (200)
 
     def test__test_func_normal_user(self):
         request = RequestFactory().get('/fake_path')
@@ -782,7 +781,7 @@ class TestCheckRestoreData(AdminTestCase):
         view = management.CheckRestoreData()
         view = setup_view(view, request, data_id=self.export_data.id)
         view.export_data = self.export_data
-        nt.assert_false(view.test_func())
+        assert not (view.test_func())
 
     def test__test_func_super(self):
         request = RequestFactory().get('/fake_path')
@@ -791,7 +790,7 @@ class TestCheckRestoreData(AdminTestCase):
         view = management.CheckRestoreData()
         view = setup_view(view, request, data_id=self.export_data.id)
         view.export_data = self.export_data
-        nt.assert_true(view.test_func())
+        assert (view.test_func())
 
     def test__test_func_admin_has_permission(self):
         request = RequestFactory().get('/fake_path')
@@ -800,7 +799,7 @@ class TestCheckRestoreData(AdminTestCase):
         view = management.CheckRestoreData()
         view = setup_view(view, request, data_id=self.export_data_01.id)
         view.export_data = self.export_data_01
-        nt.assert_true(view.test_func())
+        assert (view.test_func())
 
     def test__test_func_admin_not_permission(self):
         request = RequestFactory().get('/fake_path')
@@ -809,7 +808,7 @@ class TestCheckRestoreData(AdminTestCase):
         view = management.CheckRestoreData()
         view = setup_view(view, request, data_id=self.export_data_02.id)
         view.export_data = self.export_data_02
-        nt.assert_false(view.test_func())
+        assert not (view.test_func())
 
 
 @pytest.mark.feature_202210
@@ -863,31 +862,31 @@ class TestExportDataFileCSVView(AdminTestCase):
         request.user = self.user
         view = setup_view(self.view, request)
         res = view.get(request)
-        nt.assert_equal(res.status_code, 200)
+        assert (res.status_code) == (200)
 
     def test__test_func_anonymus(self):
         request = RequestFactory().get('/fake_path')
         request.user = self.anon
         view = setup_view(self.view, request)
-        nt.assert_false(view.test_func())
+        assert not (view.test_func())
 
     def test__test_func_normal_user(self):
         request = RequestFactory().get('/fake_path')
         request.user = self.normal_user
         view = setup_view(self.view, request)
-        nt.assert_false(view.test_func())
+        assert not (view.test_func())
 
     def test__test_func_super_user(self):
         request = RequestFactory().get('/fake_path')
         request.user = self.superuser
         view = setup_view(self.view, request)
-        nt.assert_true(view.test_func())
+        assert (view.test_func())
 
     def test__test_func_admin_has_perrmision(self):
         request = RequestFactory().get('/fake_path')
         request.user = self.institution01_admin
         view = setup_view(self.view, request)
-        nt.assert_true(view.test_func())
+        assert (view.test_func())
 
     def test__test_func_admin_not_permission(self):
         request = RequestFactory().get('/fake_path')
@@ -895,13 +894,13 @@ class TestExportDataFileCSVView(AdminTestCase):
         self.institution01_admin.save()
         request.user = self.institution01_admin
         view = setup_view(self.view, request)
-        nt.assert_false(view.test_func())
+        assert not (view.test_func())
 
     def test__test_get_object_success(self):
         request = RequestFactory().get('/fake_path')
         request.user = self.institution01_admin
         view = setup_view(self.view, request, data_id=self.export_data_01.id)
-        nt.assert_is_not_none(view.get_object())
+        assert (view.get_object()) is not None
 
     def test__test_get_object_not_permission(self):
         request = RequestFactory().get('/fake_path')
@@ -909,7 +908,7 @@ class TestExportDataFileCSVView(AdminTestCase):
         self.institution01_admin.save()
         request.user = self.institution01_admin
         view = setup_view(self.view, request, data_id=self.export_data_02.id)
-        with nt.assert_raises(PermissionDenied):
+        with pytest.raises(PermissionDenied):
             view.get_object()
 
     def test__test_get_object_not_exit(self):
@@ -918,7 +917,7 @@ class TestExportDataFileCSVView(AdminTestCase):
         self.institution01_admin.save()
         request.user = self.institution01_admin
         view = setup_view(self.view, request, data_id=0)
-        with nt.assert_raises(Http404):
+        with pytest.raises(Http404):
             view.get_object()
 
 
@@ -974,7 +973,7 @@ class TestDeleteExportDataView(AdminTestCase):
                          'selected_source_id': '100', 'selected_location_id': '100'}
         view = setup_view(self.view, request)
         res = view.post(request)
-        nt.assert_equal(res.status_code, 302)
+        assert (res.status_code) == (302)
 
     @mock.patch(f'{MANAGEMENT_EXPORT_DATA_PATH}.ExportData.objects')
     @mock.patch('osf.models.export_data.requests')
@@ -987,7 +986,7 @@ class TestDeleteExportDataView(AdminTestCase):
         request.POST = {'list_id_export_data': '3#', 'delete_permanently': 'on'}
         view = setup_view(self.view, request)
         res = view.post(request)
-        nt.assert_equal(res.status_code, 302)
+        assert (res.status_code) == (302)
 
     @mock.patch(f'{MANAGEMENT_EXPORT_DATA_PATH}.ExportData.objects')
     @mock.patch('osf.models.export_data.requests')
@@ -1003,7 +1002,7 @@ class TestDeleteExportDataView(AdminTestCase):
                          'institution_id': self.institution.id}
         view = setup_view(self.view, request)
         res = view.post(request)
-        nt.assert_equal(res.status_code, 302)
+        assert (res.status_code) == (302)
 
     @mock.patch(f'{MANAGEMENT_EXPORT_DATA_PATH}.ExportData.objects')
     @mock.patch('osf.models.export_data.requests')
@@ -1017,7 +1016,7 @@ class TestDeleteExportDataView(AdminTestCase):
         request.POST = {'list_id_export_data': '3#', 'delete_permanently': 'on', 'institution_id': self.institution.id}
         view = setup_view(self.view, request)
         res = view.post(request)
-        nt.assert_equal(res.status_code, 302)
+        assert (res.status_code) == (302)
 
     @mock.patch(f'{MANAGEMENT_EXPORT_DATA_PATH}.ExportData.objects')
     @mock.patch('osf.models.export_data.requests')
@@ -1033,7 +1032,7 @@ class TestDeleteExportDataView(AdminTestCase):
                          'selected_source_id': '100', 'selected_location_id': '100'}
         view = setup_view(self.view, request)
         res = view.post(request)
-        nt.assert_equal(res.status_code, 400)
+        assert (res.status_code) == (400)
 
     def test_delete_not_permanently(self):
         request = RequestFactory().post('/fake_path')
@@ -1043,7 +1042,7 @@ class TestDeleteExportDataView(AdminTestCase):
                          'selected_source_id': '100', 'selected_location_id': '100'}
         view = setup_view(self.view, request)
         res = view.post(request)
-        nt.assert_equal(res.status_code, 302)
+        assert (res.status_code) == (302)
 
     def test_delete_not_permanently_not_source(self):
         request = RequestFactory().post('/fake_path')
@@ -1052,7 +1051,7 @@ class TestDeleteExportDataView(AdminTestCase):
         request.POST = {'list_id_export_data': '4#', 'delete_permanently': 'off'}
         view = setup_view(self.view, request)
         res = view.post(request)
-        nt.assert_equal(res.status_code, 302)
+        assert (res.status_code) == (302)
 
     def test_delete_not_permanently_super(self):
         request = RequestFactory().post('/fake_path')
@@ -1063,7 +1062,7 @@ class TestDeleteExportDataView(AdminTestCase):
                          'selected_location_id': '100', 'institution_id': self.institution.id}
         view = setup_view(self.view, request)
         res = view.post(request)
-        nt.assert_equal(res.status_code, 302)
+        assert (res.status_code) == (302)
 
     def test_delete_not_permanently_super_not_source(self):
         request = RequestFactory().post('/fake_path')
@@ -1073,7 +1072,7 @@ class TestDeleteExportDataView(AdminTestCase):
         request.POST = {'list_id_export_data': '4#', 'delete_permanently': 'off', 'institution_id': self.institution.id}
         view = setup_view(self.view, request)
         res = view.post(request)
-        nt.assert_equal(res.status_code, 302)
+        assert (res.status_code) == (302)
 
     def test_delete_anonymous(self):
         request = RequestFactory().post('/fake_path')
@@ -1098,7 +1097,7 @@ class TestDeleteExportDataView(AdminTestCase):
         request.POST = {'list_id_export_data': f'{self.export_data_01.id}#',
                          'delete_permanently': 'off', 'institution_id': self.institution01.id}
         res = management.DeleteExportDataView.as_view()(request)
-        nt.assert_equal(res.status_code, 302)
+        assert (res.status_code) == (302)
 
     def test_delete_super_not_permission(self):
         request = RequestFactory().post('/fake_path')
@@ -1148,7 +1147,7 @@ class TestDeleteExportDataView(AdminTestCase):
                         'selected_source_id': self.region_inst_01.id, 'selected_location_id': self.export_data_01_location.id,
                         'delete_permanently': 'off', 'institution_id': self.institution01.id}
         res = management.DeleteExportDataView.as_view()(request)
-        nt.assert_equal(res.status_code, 302)
+        assert (res.status_code) == (302)
 
     def test_delete_admin_not_permission(self):
         request = RequestFactory().post('/fake_path')
@@ -1194,7 +1193,7 @@ class TestDeleteExportDataView(AdminTestCase):
         request.POST = {'list_id_export_data': f'{self.export_data_01.id}#', 'selected_source_id': self.region_inst_01.id,
                         'selected_location_id': self.export_data_01_location.id, 'delete_permanently': 'off',
                         'institution_id': self.institution01.id}
-        self.institution01_admin.affiliated_institutions = []
+        self.institution01_admin.affiliated_institutions.clear()
         request.user = self.institution01_admin
         with self.assertRaises(PermissionDenied):
             management.DeleteExportDataView.as_view()(request)
@@ -1210,35 +1209,35 @@ class TestDeleteExportDataView(AdminTestCase):
                         'selected_location_id': self.export_data_01_location.id, 'delete_permanently': 'off',
                         'institution_id': self.institution01.id}
         res = management.DeleteExportDataView.as_view()(request)
-        nt.assert_equal(res.status_code, 400)
+        assert (res.status_code) == (400)
 
         # selected_source_id not integer value
         request.POST = {'list_id_export_data': f'{self.export_data_01.id}#', 'selected_source_id': 'abc',
                         'selected_location_id': self.export_data_01_location.id, 'delete_permanently': 'off',
                         'institution_id': self.institution01.id}
         res = management.DeleteExportDataView.as_view()(request)
-        nt.assert_equal(res.status_code, 400)
+        assert (res.status_code) == (400)
 
         # selected_location_id not integer value
         request.POST = {'list_id_export_data': f'{self.export_data_01.id}#',
                         'selected_source_id': self.region_inst_01.id, 'selected_location_id': 'abc',
                         'delete_permanently': 'off', 'institution_id': self.institution01.id}
         res = management.DeleteExportDataView.as_view()(request)
-        nt.assert_equal(res.status_code, 400)
+        assert (res.status_code) == (400)
 
         # institution_id not integer value
         request.POST = {'list_id_export_data': f'{self.export_data_01.id}#',
                         'selected_source_id': self.region_inst_01.id, 'selected_location_id': self.export_data_01_location.id,
                         'delete_permanently': 'off', 'institution_id': 'abc'}
         res = management.DeleteExportDataView.as_view()(request)
-        nt.assert_equal(res.status_code, 400)
+        assert (res.status_code) == (400)
 
         # institution_id is missing value
         request.POST = {'list_id_export_data': f'{self.export_data_01.id}#',
                         'selected_source_id': self.region_inst_01.id, 'selected_location_id': self.export_data_01_location.id,
                         'delete_permanently': 'off', 'institution_id': None}
         res = management.DeleteExportDataView.as_view()(request)
-        nt.assert_equal(res.status_code, 400)
+        assert (res.status_code) == (400)
 
 
 @pytest.mark.feature_202210
@@ -1290,7 +1289,7 @@ class TestRevertExportData(AdminTestCase):
         request.POST = {'list_id_export_data': '1000#', 'selected_source_id': '100', 'selected_location_id': '100'}
         view = setup_view(self.view, request)
         res = view.post(request)
-        nt.assert_equal(res.status_code, 302)
+        assert (res.status_code) == (302)
 
     def test_post_not_source(self):
         request = RequestFactory().post('/fake_path')
@@ -1298,7 +1297,7 @@ class TestRevertExportData(AdminTestCase):
         request.POST = {'list_id_export_data': '1000#', 'selected_source_id': None, 'selected_location_id': None}
         view = setup_view(self.view, request)
         res = view.post(request)
-        nt.assert_equal(res.status_code, 302)
+        assert (res.status_code) == (302)
 
     def test_post_super(self):
         request = RequestFactory().post('/fake_path')
@@ -1308,7 +1307,7 @@ class TestRevertExportData(AdminTestCase):
                         'selected_location_id': '100', 'institution_id': self.institution.id}
         view = setup_view(self.view, request)
         res = view.post(request)
-        nt.assert_equal(res.status_code, 302)
+        assert (res.status_code) == (302)
 
     def test_post_super_not_source(self):
         request = RequestFactory().post('/fake_path')
@@ -1318,7 +1317,7 @@ class TestRevertExportData(AdminTestCase):
                         'selected_location_id': None, 'institution_id': self.institution.id}
         view = setup_view(self.view, request)
         res = view.post(request)
-        nt.assert_equal(res.status_code, 302)
+        assert (res.status_code) == (302)
 
     def test_revert_anonymous(self):
         request = RequestFactory().post('/fake_path')
@@ -1342,7 +1341,7 @@ class TestRevertExportData(AdminTestCase):
         request.COOKIES = '213919sdasdn823193929'
         request.POST = {'list_id_export_data': f'{self.export_data_01.id}#', 'institution_id': self.institution01.id}
         res = management.RevertExportDataView.as_view()(request)
-        nt.assert_equal(res.status_code, 302)
+        assert (res.status_code) == (302)
 
     def test_revert_super_not_permission(self):
         request = RequestFactory().post('/fake_path')
@@ -1387,7 +1386,7 @@ class TestRevertExportData(AdminTestCase):
         request.POST = {'list_id_export_data': f'{self.export_data_01.id}#', 'selected_source_id': self.region_inst_01.id,
                         'selected_location_id': self.export_data_01_location.id, 'institution_id': self.institution01.id}
         res = management.RevertExportDataView.as_view()(request)
-        nt.assert_equal(res.status_code, 302)
+        assert (res.status_code) == (302)
 
     def test_revert_admin_not_permission(self):
         request = RequestFactory().post('/fake_path')
@@ -1428,7 +1427,7 @@ class TestRevertExportData(AdminTestCase):
         # admin not in institution
         request.POST = {'list_id_export_data': f'{self.export_data_01.id}#', 'selected_source_id': self.region_inst_01.id,
                         'selected_location_id': self.export_data_01_location.id, 'institution_id': self.institution01.id}
-        self.institution01_admin.affiliated_institutions = []
+        self.institution01_admin.affiliated_institutions.clear()
         request.user = self.institution01_admin
         with self.assertRaises(PermissionDenied):
             management.RevertExportDataView.as_view()(request)
@@ -1443,28 +1442,28 @@ class TestRevertExportData(AdminTestCase):
         request.POST = {'list_id_export_data': f'{self.export_data_01.id}#abc#', 'selected_source_id': self.region_inst_01.id,
                         'selected_location_id': self.export_data_01_location.id, 'institution_id': self.institution01.id}
         res = management.RevertExportDataView.as_view()(request)
-        nt.assert_equal(res.status_code, 400)
+        assert (res.status_code) == (400)
 
         # selected_source_id not integer value
         request.POST = {'list_id_export_data': f'{self.export_data_01.id}#', 'selected_source_id': 'abc',
                         'selected_location_id': self.export_data_01_location.id, 'institution_id': self.institution01.id}
         res = management.RevertExportDataView.as_view()(request)
-        nt.assert_equal(res.status_code, 400)
+        assert (res.status_code) == (400)
 
         # selected_location_id not integer value
         request.POST = {'list_id_export_data': f'{self.export_data_01.id}#', 'selected_source_id': self.region_inst_01.id,
                         'selected_location_id': 'abc', 'institution_id': self.institution01.id}
         res = management.RevertExportDataView.as_view()(request)
-        nt.assert_equal(res.status_code, 400)
+        assert (res.status_code) == (400)
 
         # institution_id not integer value
         request.POST = {'list_id_export_data': f'{self.export_data_01.id}#', 'selected_source_id': self.region_inst_01.id,
                         'selected_location_id': self.export_data_01_location.id, 'institution_id': 'abc'}
         res = management.RevertExportDataView.as_view()(request)
-        nt.assert_equal(res.status_code, 400)
+        assert (res.status_code) == (400)
 
         # institution_id is missing value
         request.POST = {'list_id_export_data': f'{self.export_data_01.id}#', 'selected_source_id': self.region_inst_01.id,
                         'selected_location_id': self.export_data_01_location.id, 'institution_id': None}
         res = management.RevertExportDataView.as_view()(request)
-        nt.assert_equal(res.status_code, 400)
+        assert (res.status_code) == (400)

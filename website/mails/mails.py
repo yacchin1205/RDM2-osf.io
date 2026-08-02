@@ -119,7 +119,7 @@ def send_mail(
 
     if hasattr(settings, 'TO_EMAIL_FOR_DEBUG') and \
        settings.TO_EMAIL_FOR_DEBUG is not None and \
-       settings.TO_EMAIL_FOR_DEBUG is not '':
+       settings.TO_EMAIL_FOR_DEBUG != '':
         subject = 'DEBUG:' + subject + ' (To:' + to_addr + ')'
         to_addr = settings.TO_EMAIL_FOR_DEBUG
 

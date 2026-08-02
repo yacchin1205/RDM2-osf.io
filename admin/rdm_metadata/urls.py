@@ -1,8 +1,9 @@
-from django.conf.urls import url
+from django.urls import re_path
 from . import views
 
+app_name = 'admin'
 
 urlpatterns = [
-    url(r'^erad$', views.ERadRecordDashboard.as_view(), name='e-rad-records'),
-    url(r'^erad/records', views.ERadRecords.as_view(), name='update-e-rad-records'),
+    re_path(r'^erad$', views.ERadRecordDashboard.as_view(), name='e-rad-records'),
+    re_path(r'^erad/records', views.ERadRecords.as_view(), name='update-e-rad-records'),
 ]

@@ -108,7 +108,7 @@ class RegistrationList(JSONAPIBaseView, generics.ListCreateAPIView, bulk_views.B
     ordering = ('-modified',)
     model_class = Registration
 
-    parser_classes = (JSONAPIMultipleRelationshipsParser, JSONAPIMultipleRelationshipsParserForRegularJSON,)
+    parser_classes = (JSONAPIMultipleRelationshipsParser, JSONAPIMultipleRelationshipsParserForRegularJSON)
 
     # overrides BulkUpdateJSONAPIView
     def get_serializer_class(self):
@@ -209,7 +209,7 @@ class RegistrationDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView, Regist
     view_category = 'registrations'
     view_name = 'registration-detail'
 
-    parser_classes = (JSONAPIMultipleRelationshipsParser, JSONAPIMultipleRelationshipsParserForRegularJSON,)
+    parser_classes = (JSONAPIMultipleRelationshipsParser, JSONAPIMultipleRelationshipsParserForRegularJSON)
 
     # overrides RetrieveAPIView
     def get_object(self):
@@ -250,7 +250,7 @@ class RegistrationContributorsList(BaseContributorList, RegistrationMixin, UserM
 
     def get_default_queryset(self):
         node = self.get_node(check_object_permissions=False)
-        return node.contributor_set.all().include('user__guids')
+        return node.contributor_set.all().prefetch_related('user__guids')
 
 
 class RegistrationContributorDetail(BaseContributorDetail, RegistrationMixin, UserMixin):
@@ -621,7 +621,7 @@ class RegistrationLinkedNodesRelationship(JSONAPIBaseView, generics.RetrieveAPIV
     required_write_scopes = [CoreScopes.NULL]
 
     serializer_class = LinkedNodesRelationshipSerializer
-    parser_classes = (JSONAPIRelationshipParser, JSONAPIRelationshipParserForRegularJSON, )
+    parser_classes = (JSONAPIRelationshipParser, JSONAPIRelationshipParserForRegularJSON)
 
     def get_object(self):
         node = self.get_node(check_object_permissions=False)
@@ -658,7 +658,7 @@ class RegistrationLinkedRegistrationsRelationship(JSONAPIBaseView, generics.Retr
     required_write_scopes = [CoreScopes.NULL]
 
     serializer_class = LinkedRegistrationsRelationshipSerializer
-    parser_classes = (JSONAPIRelationshipParser, JSONAPIRelationshipParserForRegularJSON,)
+    parser_classes = (JSONAPIRelationshipParser, JSONAPIRelationshipParserForRegularJSON)
 
     def get_object(self):
         node = self.get_node(check_object_permissions=False)

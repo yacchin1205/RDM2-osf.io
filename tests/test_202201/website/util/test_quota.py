@@ -1,8 +1,7 @@
 # -*- coding: utf-8 -*-
-import mock
+from unittest import mock
 import pytest
 from addons.osfstorage.models import OsfStorageFileNode
-from nose.tools import *  # noqa (PEP8 asserts)
 from osf.models import (
     FileInfo, UserQuota
 )
@@ -29,8 +28,8 @@ class TestUpdateUserUsedQuota(OsfTestCase):
         file_list = []
 
         # No files
-        assert_equal(quota.used_quota(self.user._id, storage_type=UserQuota.NII_STORAGE), 0)
-        assert_equal(quota.used_quota(self.user._id, storage_type=UserQuota.CUSTOM_STORAGE), 0)
+        assert (quota.used_quota(self.user._id, storage_type=UserQuota.NII_STORAGE)) == (0)
+        assert (quota.used_quota(self.user._id, storage_type=UserQuota.CUSTOM_STORAGE)) == (0)
 
         # Add a file to node[0]
         file_list.append(OsfStorageFileNode.create(
@@ -39,8 +38,8 @@ class TestUpdateUserUsedQuota(OsfTestCase):
         ))
         file_list[0].save()
         FileInfo.objects.create(file=file_list[0], file_size=500)
-        assert_equal(quota.used_quota(self.user._id, storage_type=UserQuota.NII_STORAGE), 500)
-        assert_equal(quota.used_quota(self.user._id, storage_type=UserQuota.CUSTOM_STORAGE), 0)
+        assert (quota.used_quota(self.user._id, storage_type=UserQuota.NII_STORAGE)) == (500)
+        assert (quota.used_quota(self.user._id, storage_type=UserQuota.CUSTOM_STORAGE)) == (0)
 
         # Add a file to node[1]
         file_list.append(OsfStorageFileNode.create(
@@ -50,8 +49,8 @@ class TestUpdateUserUsedQuota(OsfTestCase):
         file_list[1].save()
         FileInfo.objects.create(file=file_list[1], file_size=1000)
 
-        assert_equal(quota.used_quota(self.user._id, storage_type=UserQuota.NII_STORAGE), 1500)
-        assert_equal(quota.used_quota(self.user._id, storage_type=UserQuota.CUSTOM_STORAGE), 0)
+        assert (quota.used_quota(self.user._id, storage_type=UserQuota.NII_STORAGE)) == (1500)
+        assert (quota.used_quota(self.user._id, storage_type=UserQuota.CUSTOM_STORAGE)) == (0)
 
     @mock.patch.object(UserQuota, 'save')
     @mock.patch('website.util.quota.used_quota')
@@ -78,8 +77,8 @@ class TestUpdateUserUsedQuota(OsfTestCase):
             storage_type=UserQuota.NII_STORAGE,
         ).all()
 
-        assert_equal(len(user_quota), 2)
+        assert (len(user_quota)) == (2)
         user_quota = user_quota.filter(user=another_user)
-        assert_equal(len(user_quota), 1)
+        assert (len(user_quota)) == (1)
         user_quota = user_quota[0]
-        assert_equal(user_quota.used, 500)
+        assert (user_quota.used) == (500)

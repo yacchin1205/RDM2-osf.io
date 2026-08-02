@@ -144,24 +144,30 @@ class PreprintSerializer(TaxonomizableSerializerMixin, MetricsSerializerMixin, J
     reviews_state = ser.CharField(source='machine_state', read_only=True, max_length=15)
     date_last_transitioned = NoneIfWithdrawal(VersionedDateTimeField(read_only=True))
 
-    citation = NoneIfWithdrawal(RelationshipField(
-        related_view='preprints:preprint-citation',
-        related_view_kwargs={'preprint_id': '<_id>'},
-    ))
+    citation = NoneIfWithdrawal(
+        RelationshipField(
+            related_view='preprints:preprint-citation',
+            related_view_kwargs={'preprint_id': '<_id>'},
+        ),
+    )
 
-    identifiers = NoneIfWithdrawal(RelationshipField(
-        related_view='preprints:identifier-list',
-        related_view_kwargs={'preprint_id': '<_id>'},
-    ))
+    identifiers = NoneIfWithdrawal(
+        RelationshipField(
+            related_view='preprints:identifier-list',
+            related_view_kwargs={'preprint_id': '<_id>'},
+        ),
+    )
 
-    node = NoneIfWithdrawal(NodeRelationshipField(
-        related_view='nodes:node-detail',
-        related_view_kwargs={'node_id': '<node._id>'},
-        read_only=False,
-        many=False,
-        self_view='preprints:preprint-node-relationship',
-        self_view_kwargs={'preprint_id': '<_id>'},
-    ))
+    node = NoneIfWithdrawal(
+        NodeRelationshipField(
+            related_view='nodes:node-detail',
+            related_view_kwargs={'node_id': '<node._id>'},
+            read_only=False,
+            many=False,
+            self_view='preprints:preprint-node-relationship',
+            self_view_kwargs={'preprint_id': '<_id>'},
+        ),
+    )
 
     license = PreprintLicenseRelationshipField(
         related_view='licenses:license-detail',
@@ -175,26 +181,32 @@ class PreprintSerializer(TaxonomizableSerializerMixin, MetricsSerializerMixin, J
         read_only=False,
     )
 
-    files = NoneIfWithdrawal(RelationshipField(
-        related_view='preprints:preprint-storage-providers',
-        related_view_kwargs={'preprint_id': '<_id>'},
-    ))
+    files = NoneIfWithdrawal(
+        RelationshipField(
+            related_view='preprints:preprint-storage-providers',
+            related_view_kwargs={'preprint_id': '<_id>'},
+        ),
+    )
 
-    primary_file = NoneIfWithdrawal(PrimaryFileRelationshipField(
-        related_view='files:file-detail',
-        related_view_kwargs={'file_id': '<primary_file._id>'},
-        read_only=False,
-    ))
+    primary_file = NoneIfWithdrawal(
+        PrimaryFileRelationshipField(
+            related_view='files:file-detail',
+            related_view_kwargs={'file_id': '<primary_file._id>'},
+            read_only=False,
+        ),
+    )
 
     review_actions = RelationshipField(
         related_view='preprints:preprint-review-action-list',
         related_view_kwargs={'preprint_id': '<_id>'},
     )
 
-    requests = NoneIfWithdrawal(RelationshipField(
-        related_view='preprints:preprint-request-list',
-        related_view_kwargs={'preprint_id': '<_id>'},
-    ))
+    requests = NoneIfWithdrawal(
+        RelationshipField(
+            related_view='preprints:preprint-request-list',
+            related_view_kwargs={'preprint_id': '<_id>'},
+        ),
+    )
 
     links = LinksField(
         {
@@ -207,7 +219,7 @@ class PreprintSerializer(TaxonomizableSerializerMixin, MetricsSerializerMixin, J
 
     has_coi = DisableIfSwitch(
         SLOAN_COI_INPUT,
-        ser.NullBooleanField(required=False),
+        ser.BooleanField(required=False, allow_null=True),
     )
     conflict_of_interest_statement = DisableIfSwitch(
         SLOAN_COI_INPUT,
@@ -316,15 +328,17 @@ class PreprintSerializer(TaxonomizableSerializerMixin, MetricsSerializerMixin, J
 
         published = validated_data.pop('is_published', None)
         if published and preprint.provider.is_reviewed:
-            raise Conflict('{} uses a moderation workflow, so preprints must be submitted for review instead of published directly. Submit a preprint by creating a `submit` Action at {}'.format(
-                preprint.provider.name,
-                absolute_reverse(
-                    'preprints:preprint-review-action-list', kwargs={
-                        'version': self.context['request'].parser_context['kwargs']['version'],
-                        'preprint_id': preprint._id,
-                    },
+            raise Conflict(
+                '{} uses a moderation workflow, so preprints must be submitted for review instead of published directly. Submit a preprint by creating a `submit` Action at {}'.format(
+                    preprint.provider.name,
+                    absolute_reverse(
+                        'preprints:preprint-review-action-list', kwargs={
+                            'version': self.context['request'].parser_context['kwargs']['version'],
+                            'preprint_id': preprint._id,
+                        },
+                    ),
                 ),
-            ))
+            )
 
         save_preprint = False
         recently_published = False
@@ -493,10 +507,12 @@ class PreprintContributorsSerializer(NodeContributorsSerializer):
         related_view_kwargs={'preprint_id': '<preprint._id>'},
     )
 
-    node = HideIfPreprint(RelationshipField(
-        related_view='nodes:node-detail',
-        related_view_kwargs={'node_id': '<node._id>'},
-    ))
+    node = HideIfPreprint(
+        RelationshipField(
+            related_view='nodes:node-detail',
+            related_view_kwargs={'node_id': '<node._id>'},
+        ),
+    )
 
     class Meta:
         type_ = 'contributors'

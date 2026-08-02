@@ -20,6 +20,34 @@ var language = require('js/osfLanguage').projectSettings;
 
 
 describe('fangorn', () => {
+    describe('file links', () => {
+        var item = {
+            kind: 'file',
+            data: {
+                nodeId: 'abc12',
+                nodeUrl: '/abc12/',
+                path: '/サンプル.png',
+                provider: 'weko'
+            }
+        };
+
+        it('encodes unicode file paths once when opening files', () => {
+            var open = sinon.stub(window, 'open');
+
+            Fangorn.Fangorn.ButtonEvents._gotoFileEvent.call({pressedKey: null}, item);
+
+            assert.equal(open.firstCall.args[0], '/abc12/files/weko/%E3%82%B5%E3%83%B3%E3%83%97%E3%83%AB.png/');
+            assert.equal(open.firstCall.args[1], '_self');
+            open.restore();
+        });
+
+        it('encodes unicode file paths once in persistent links', () => {
+            var link = Fangorn.getPersistentLinkFor(item);
+
+            assert.equal(link, window.location.protocol + '//' + window.location.host + '/abc12/files/weko/%E3%82%B5%E3%83%B3%E3%83%97%E3%83%AB.png');
+        });
+    });
+
     describe('FangornMoveAndDeleteUnitTests', () => {
         // folder setup
         var folder;
@@ -585,5 +613,4 @@ describe('fangorn', () => {
         });
     });
 });
-
 

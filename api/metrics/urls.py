@@ -1,11 +1,16 @@
-from django.conf.urls import url
+from django.urls import re_path
 
 from . import views
 
 app_name = 'osf'
 
 urlpatterns = [
-    url(r'^raw/(?P<url_path>[a-z0-9._/]*)$', views.RawMetricsView.as_view(), name=views.RawMetricsView.view_name),
-    url(r'^preprints/views/$', views.PreprintViewMetrics.as_view(), name=views.PreprintViewMetrics.view_name),
-    url(r'^preprints/downloads/$', views.PreprintDownloadMetrics.as_view(), name=views.PreprintDownloadMetrics.view_name),
+    re_path(
+        r'^raw/(?P<url_path>[a-z0-9._/]*)$',
+        views.RawMetricsView.as_view(),
+        kwargs={'djelme_backend_name': 'osfmetrics_es6'},
+        name=views.RawMetricsView.view_name,
+    ),
+    re_path(r'^preprints/views/$', views.PreprintViewMetrics.as_view(), name=views.PreprintViewMetrics.view_name),
+    re_path(r'^preprints/downloads/$', views.PreprintDownloadMetrics.as_view(), name=views.PreprintDownloadMetrics.view_name),
 ]

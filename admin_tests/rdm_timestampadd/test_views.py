@@ -10,8 +10,7 @@ from admin.rdm_timestampadd.views import InstitutionNodeListExportCsv
 from admin_tests.utilities import setup_user_view
 from api.base import settings as api_settings
 from django.test import RequestFactory
-from django.core.urlresolvers import reverse
-from nose import tools as nt
+from django.urls import reverse
 from osf.models import RdmUserKey, RdmFileTimestamptokenVerifyResult, Guid, BaseFileNode, MapCoreGroup
 from osf_tests.factories import UserFactory, AuthUserFactory, InstitutionFactory, ProjectFactory
 from tests.base import AdminTestCase
@@ -20,7 +19,7 @@ from website.util.timestamp import userkey_generation
 import json
 import logging
 import os
-import mock
+from unittest import mock
 
 
 class TestInstitutionList(AdminTestCase):
@@ -39,16 +38,16 @@ class TestInstitutionList(AdminTestCase):
         self.request.user.is_superuser = True
         self.request.user.is_staff = True
         res = self.view.get(self.request, *args, **kwargs)
-        nt.assert_equal(res.status_code, 200)
-        nt.assert_is_instance(res.context_data['view'], views.InstitutionList)
+        assert (res.status_code) == (200)
+        assert isinstance((res.context_data['view']), (views.InstitutionList))
 
     def test_admin_get(self, *args, **kwargs):
         self.request.user.is_superuser = False
         self.request.user.is_staff = True
         self.request.user.affiliated_institutions.add(self.institutions[0])
         res = self.view.get(self.request, *args, **kwargs)
-        nt.assert_equal(res.status_code, 302)
-        nt.assert_in(self.redirect_url, str(res))
+        assert (res.status_code) == (302)
+        assert (self.redirect_url) in (str(res))
 
 
 class TestInstitutionNodeList(AdminTestCase):
@@ -92,9 +91,9 @@ class TestInstitutionNodeList(AdminTestCase):
         self.view.object_list = self.view.get_queryset()
         kwargs = {'object_list': self.view.object_list}
         res = self.view.get_context_data(**kwargs)
-        nt.assert_is_instance(res, dict)
-        nt.assert_equal(len(res['nodes']), 2)
-        nt.assert_is_instance(res['view'], views.InstitutionNodeList)
+        assert isinstance((res), (dict))
+        assert (len(res['nodes'])) == (2)
+        assert isinstance((res['view']), (views.InstitutionNodeList))
 
 
 class TestTimeStampAddList(AdminTestCase):
@@ -142,25 +141,25 @@ class TestTimeStampAddList(AdminTestCase):
     def test_get_context_data(self, **kwargs):
         self.view.kwargs['guid'] = self.private_project1.id
         res = self.view.get_context_data()
-        nt.assert_is_instance(res, dict)
+        assert isinstance((res), (dict))
 
-        nt.assert_not_in('osfstorage_test_file1.status_1', str(res))
-        nt.assert_in('osfstorage_test_file2.status_3', str(res))
-        nt.assert_in('osfstorage_test_file3.status_3', str(res))
-        nt.assert_in('s3_test_file1.status_3', str(res))
-        nt.assert_is_instance(res['view'], views.TimeStampAddList)
+        assert ('osfstorage_test_file1.status_1') not in (str(res))
+        assert ('osfstorage_test_file2.status_3') in (str(res))
+        assert ('osfstorage_test_file3.status_3') in (str(res))
+        assert ('s3_test_file1.status_3') in (str(res))
+        assert isinstance((res['view']), (views.TimeStampAddList))
 
         # test the presence of file creator information added to
         # website/utils/timestamp.py:get_error_list if the provider is osfstorage
         osfstorage_error_list = list(filter(lambda x: x['provider'] == 'osfstorage', res['init_project_timestamp_error_list']))[0]['error_list']
-        nt.assert_in(u'freddiemercury', osfstorage_error_list[0]['creator_email'])
-        nt.assert_in(u'Freddie Mercury', osfstorage_error_list[0]['creator_name'])
-        nt.assert_not_equal(u'', osfstorage_error_list[0]['creator_id'])
+        assert (u'freddiemercury') in (osfstorage_error_list[0]['creator_email'])
+        assert (u'Freddie Mercury') in (osfstorage_error_list[0]['creator_name'])
+        assert (u'') != (osfstorage_error_list[0]['creator_id'])
 
         other_error_list = list(filter(lambda x: x['provider'] != 'osfstorage', res['init_project_timestamp_error_list']))[0]['error_list']
-        nt.assert_in(u'freddiemercury', other_error_list[0]['creator_email'])
-        nt.assert_in(u'Freddie Mercury', other_error_list[0]['creator_name'])
-        nt.assert_not_equal(u'', other_error_list[0]['creator_id'])
+        assert (u'freddiemercury') in (other_error_list[0]['creator_email'])
+        assert (u'Freddie Mercury') in (other_error_list[0]['creator_name'])
+        assert (u'') != (other_error_list[0]['creator_id'])
 
 class TestTimestampVerifyData(AdminTestCase):
     def setUp(self):
@@ -219,8 +218,8 @@ class TestTimestampVerifyData(AdminTestCase):
         self.private_project1.reload()
 
         res = self.view.post(self, **kwargs)
-        nt.assert_equal(res.status_code, 200)
-        nt.assert_in('test_get_timestamp_error_data', res.content.decode())
+        assert (res.status_code) == (200)
+        assert ('test_get_timestamp_error_data') in (res.content.decode())
 
 
 class TestAddTimestampData(AdminTestCase):
@@ -278,14 +277,14 @@ class TestAddTimestampData(AdminTestCase):
         mock_hashes.return_value = None
 
         res_timestampaddlist = self.view.get_context_data()
-        nt.assert_is_instance(res_timestampaddlist, dict)
+        assert isinstance((res_timestampaddlist), (dict))
 
         ## check TimestampError(TimestampVerifyResult.inspection_result_statu != 1) in response
-        nt.assert_not_in('osfstorage_test_file1.status_1', str(res_timestampaddlist))
-        nt.assert_in('osfstorage_test_file2.status_3', str(res_timestampaddlist))
-        nt.assert_in('osfstorage_test_file3.status_3', str(res_timestampaddlist))
-        nt.assert_in('s3_test_file1.status_3', str(res_timestampaddlist))
-        nt.assert_is_instance(res_timestampaddlist['view'], views.TimeStampAddList)
+        assert ('osfstorage_test_file1.status_1') not in (str(res_timestampaddlist))
+        assert ('osfstorage_test_file2.status_3') in (str(res_timestampaddlist))
+        assert ('osfstorage_test_file3.status_3') in (str(res_timestampaddlist))
+        assert ('s3_test_file1.status_3') in (str(res_timestampaddlist))
+        assert isinstance((res_timestampaddlist['view']), (views.TimeStampAddList))
 
         ## AddTimestampData.post
         file_node = BaseFileNode.objects.get(name='osfstorage_test_file3.status_3')
@@ -316,7 +315,7 @@ class TestAddTimestampData(AdminTestCase):
 
         res_addtimestamp = self.view_addtimestamp.post(self, **kwargs)
         logging.info(res_addtimestamp)
-        nt.assert_equal(res_addtimestamp.status_code, 200)
+        assert (res_addtimestamp.status_code) == (200)
 
 
 @pytest.fixture
@@ -377,7 +376,7 @@ class TestInstitutionNodeListExportCsv:
             view.request = request
             assert view.test_func() is False
             res = view.handle_no_permission()
-            nt.assert_equal(res.status_code, 401)
+            assert (res.status_code) == (401)
 
         def test_test_func_with_valid_auth(self, view_instance):
             """Test permission check with valid authorization"""

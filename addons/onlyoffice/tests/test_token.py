@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """token tests for the onlyoffice addon."""
 import pytest
-import mock
+from unittest import mock
 
 from addons.onlyoffice.token import _check_schema, encrypt, decrypt, check_token
 from framework.auth import Auth

@@ -1,4 +1,3 @@
-from django.utils import six
 from collections import OrderedDict
 from django.urls import reverse
 from django.core.paginator import InvalidPage, Paginator as DjangoPaginator
@@ -42,7 +41,7 @@ class OptimaizedPagination(pagination.PageNumberPagination):
             self.page = paginator.page(page_number)
         except InvalidPage as exc:
             msg = self.invalid_page_message.format(
-                page_number=page_number, message=six.text_type(exc),
+                page_number=page_number, message=str(exc),
             )
             raise NotFound(msg)
 
@@ -191,7 +190,7 @@ class JSONAPIPagination(OptimaizedPagination):
                 self.page = paginator.page(page_number)
             except InvalidPage as exc:
                 msg = self.invalid_page_message.format(
-                    page_number=page_number, message=six.text_type(exc),
+                    page_number=page_number, message=str(exc),
                 )
                 raise NotFound(msg)
 
@@ -371,7 +370,7 @@ class SearchPagination(JSONAPIPagination):
             self.page = self.paginator.page(page_number)
         except InvalidPage as exc:
             msg = self.invalid_page_message.format(
-                page_number=page_number, message=six.text_type(exc),
+                page_number=page_number, message=str(exc),
             )
             raise NotFound(msg)
 

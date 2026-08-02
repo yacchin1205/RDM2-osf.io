@@ -179,6 +179,9 @@ MAILCHIMP_API_KEY = None
 MAILCHIMP_WEBHOOK_SECRET_KEY = 'CHANGEME'  # OSF secret key to ensure webhook is secure
 ENABLE_EMAIL_SUBSCRIPTIONS = True
 MAILCHIMP_GENERAL_LIST = 'GakuNin RDM General'
+MAILCHIMP_LIST_MAP = {
+    MAILCHIMP_GENERAL_LIST: '123',
+}
 
 #Triggered emails
 OSF_HELP_LIST = 'GakuNin RDM Help'

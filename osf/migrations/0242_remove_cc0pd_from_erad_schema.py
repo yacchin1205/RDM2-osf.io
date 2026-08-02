@@ -164,6 +164,7 @@ def migrate_CC0PD_to_CC0_for_draft_registration(*args):
 class Migration(migrations.Migration):
 
     dependencies = [
+        ('addons_metadata', '0012_registrationreportformat_order'),
         ('osf', '0241_ensure_schema_mappings'),
     ]
 

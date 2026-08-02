@@ -12,12 +12,12 @@ from django.utils import timezone
 from framework.auth.core import Auth
 from addons.base.models import BaseNodeSettings
 from bleach.callbacks import nofollow
-from bleach import Cleaner
 from functools import partial
 from bleach.linkifier import LinkifyFilter
 from django.db import models
 from framework.forms.utils import sanitize
 from markdown.extensions import codehilite, fenced_code, wikilinks
+from framework.utils import sanitize_html
 from osf.models import NodeLog, OSFUser, Comment
 from osf.models.base import BaseModel, GuidMixin, ObjectIDMixin
 from osf.models.spam import SpamStatus
@@ -68,16 +68,12 @@ def build_html_output(content, node):
         content,
         extensions=[
             wikilinks.WikiLinkExtension(
-                configs=[
-                    ('base_url', ''),
-                    ('end_url', ''),
-                    ('build_url', functools.partial(build_wiki_url, node))
-                ]
+                base_url='',
+                end_url='',
+                build_url=functools.partial(build_wiki_url, node)
             ),
             fenced_code.FencedCodeExtension(),
-            codehilite.CodeHiliteExtension(
-                [('css_class', 'highlight')]
-            )
+            codehilite.CodeHiliteExtension(css_class='highlight')
         ]
     )
 
@@ -132,13 +128,13 @@ class WikiVersion(ObjectIDMixin, BaseModel):
         """The cleaned HTML of the page"""
         html_output = build_html_output(self.content, node=node)
         try:
-            cleaner = Cleaner(
+            return sanitize_html(
+                html_output,
                 tags=settings.WIKI_WHITELIST['tags'],
                 attributes=settings.WIKI_WHITELIST['attributes'],
                 styles=settings.WIKI_WHITELIST['styles'],
                 filters=[partial(LinkifyFilter, callbacks=[nofollow, ])]
             )
-            return cleaner.clean(html_output)
         except TypeError:
             logger.warning('Returning unlinkified content.')
             return render_content(self.content, node=node)

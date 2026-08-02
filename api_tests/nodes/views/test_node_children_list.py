@@ -1,4 +1,4 @@
-import mock
+from unittest import mock
 import pytest
 
 from api.base.settings.defaults import API_BASE
@@ -203,7 +203,7 @@ class TestNodeChildrenList:
         NodeFactory(parent=child, creator=user_2, is_public=False)
 
         # child has one component. `user` can view due to implict admin perms
-        component_url = '/{}nodes/{}/children/'.format(API_BASE, child._id, auth=user.auth)
+        component_url = '/{}nodes/{}/children/'.format(API_BASE, child._id)
         res = app.get(component_url, auth=user.auth)
 
         assert len(res.json['data']) == 1

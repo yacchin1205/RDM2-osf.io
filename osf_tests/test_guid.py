@@ -1,4 +1,4 @@
-import mock
+from unittest import mock
 import pytest
 from future.moves.urllib.parse import quote
 from django.utils import timezone
@@ -148,7 +148,6 @@ class TestResolveGuid(OsfTestCase):
         res = self.app.get(
             self.node.web_url_for('node_setting', _guid=True),
             auth=self.node.creator.auth,
-            expect_errors=True,
         )
         assert res.status_code == 404
 
@@ -157,7 +156,6 @@ class TestResolveGuid(OsfTestCase):
         res = self.app.get(
             self.node.web_url_for('node_setting', _guid=True),
             auth=self.node.creator.auth,
-            expect_errors=True,
         )
         assert res.status_code == 404
 
@@ -368,12 +366,12 @@ class TestResolveGuid(OsfTestCase):
         guid = testfile.get_guid(create=True)
         testfile.save()
         testfile.delete()
-        res = self.app.get('/{}/download'.format(guid), expect_errors=True)
+        res = self.app.get('/{}/download'.format(guid))
         assert res.status_code == 404
 
         pp = PreprintFactory(is_published=False)
 
-        res = self.app.get(pp.url + 'download', expect_errors=True)
+        res = self.app.get(pp.url + 'download')
         assert res.status_code == 404
 
         pp.is_published = True
@@ -383,11 +381,11 @@ class TestResolveGuid(OsfTestCase):
 
         non_contrib = AuthUserFactory()
 
-        res = self.app.get(pp.url + 'download', auth=non_contrib.auth, expect_errors=True)
+        res = self.app.get(pp.url + 'download', auth=non_contrib.auth)
         assert res.status_code == 403
 
         pp.deleted = timezone.now()
         pp.save()
 
-        res = self.app.get(pp.url + 'download', auth=non_contrib.auth, expect_errors=True)
+        res = self.app.get(pp.url + 'download', auth=non_contrib.auth)
         assert res.status_code == 410

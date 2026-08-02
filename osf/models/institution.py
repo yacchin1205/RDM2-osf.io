@@ -15,7 +15,7 @@ from osf.models.contributor import InstitutionalContributor
 from osf.models.mixins import Loggable, GuardianMixin
 from website import settings as website_settings
 
-from django.utils.translation import ugettext_lazy as _
+from django.utils.translation import gettext_lazy as _
 
 logger = logging.getLogger(__name__)
 
@@ -71,7 +71,7 @@ class Institution(DirtyFieldsMixin, Loggable, base.ObjectIDMixin, base.BaseModel
     class Meta:
         # custom permissions for use in the GakuNin RDM Admin App
         permissions = (
-            ('view_institution', 'Can view institution details'),
+            # 'view_institution' is a built-in Django permission.
             ('view_institutional_metrics', 'Can access metrics endpoints for their Institution'),
         )
 

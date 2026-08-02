@@ -1,8 +1,7 @@
 from django.test import RequestFactory
 from rest_framework import status as http_status
 import json
-import mock
-from nose import tools as nt
+from unittest import mock
 from swiftclient import exceptions as swift_exceptions
 
 from addons.osfstorage.models import Region
@@ -52,7 +51,6 @@ class TestConnection(AdminTestCase):
             json.dumps(params),
             content_type='application/json'
         )
-        request.is_ajax()
         request.user = self.user
         return views.TestConnectionView.as_view()(request, institution_id=self.institution.id)
 
@@ -67,8 +65,8 @@ class TestConnection(AdminTestCase):
             'provider_short_name': 'swift',
         }
         request_post_response = self.view_post(params)
-        nt.assert_equals(request_post_response.status_code, http_status.HTTP_400_BAD_REQUEST)
-        nt.assert_in('All the fields above are required.', request_post_response.content.decode())
+        assert (request_post_response.status_code) == (http_status.HTTP_400_BAD_REQUEST)
+        assert ('All the fields above are required.') in (request_post_response.content.decode())
 
     def test_empty_user_domain_name(self):
         params = {
@@ -83,8 +81,8 @@ class TestConnection(AdminTestCase):
             'provider_short_name': 'swift',
         }
         request_post_response = self.view_post(params)
-        nt.assert_equals(request_post_response.status_code, http_status.HTTP_400_BAD_REQUEST)
-        nt.assert_in('The field `user_domain_name` is required when you choose identity V3.', request_post_response.content.decode())
+        assert (request_post_response.status_code) == (http_status.HTTP_400_BAD_REQUEST)
+        assert ('The field `user_domain_name` is required when you choose identity V3.') in (request_post_response.content.decode())
 
     def test_empty_project_domain_name(self):
         params = {
@@ -99,8 +97,8 @@ class TestConnection(AdminTestCase):
             'provider_short_name': 'swift',
         }
         request_post_response = self.view_post(params)
-        nt.assert_equals(request_post_response.status_code, http_status.HTTP_400_BAD_REQUEST)
-        nt.assert_in('The field `project_domain_name` is required when you choose identity V3.', request_post_response.content.decode())
+        assert (request_post_response.status_code) == (http_status.HTTP_400_BAD_REQUEST)
+        assert ('The field `project_domain_name` is required when you choose identity V3.') in (request_post_response.content.decode())
 
     @mock.patch('addons.swift.views.utils.get_user_info', return_value=None)
     def test_invalid_credentials(self, mock_uid):
@@ -116,10 +114,10 @@ class TestConnection(AdminTestCase):
             'provider_short_name': 'swift',
         }
         request_post_response = self.view_post(params)
-        nt.assert_equals(request_post_response.status_code, http_status.HTTP_400_BAD_REQUEST)
-        nt.assert_in('Unable to access account.\\n'
+        assert (request_post_response.status_code) == (http_status.HTTP_400_BAD_REQUEST)
+        assert ('Unable to access account.\\n'
                 'Check to make sure that the above credentials are valid, '
-                'and that they have permission to list containers.', request_post_response.content.decode())
+                'and that they have permission to list containers.') in (request_post_response.content.decode())
 
     @mock.patch('addons.swift.views.utils.connect_swift')
     def test_cant_list(self, mock_connect):
@@ -137,9 +135,9 @@ class TestConnection(AdminTestCase):
             'provider_short_name': 'swift',
         }
         request_post_response = self.view_post(params)
-        nt.assert_equals(request_post_response.status_code, http_status.HTTP_400_BAD_REQUEST)
-        nt.assert_in('Unable to list containers.\\n'
-                'Listing containers is required permission.', request_post_response.content.decode())
+        assert (request_post_response.status_code) == (http_status.HTTP_400_BAD_REQUEST)
+        assert ('Unable to list containers.\\n'
+                'Listing containers is required permission.') in (request_post_response.content.decode())
 
     @mock.patch('addons.swift.views.utils.connect_swift')
     def test_invalid_container(self, mock_connect):
@@ -161,8 +159,8 @@ class TestConnection(AdminTestCase):
             'provider_short_name': 'swift',
         }
         request_post_response = self.view_post(params)
-        nt.assert_equals(request_post_response.status_code, http_status.HTTP_400_BAD_REQUEST)
-        nt.assert_in('Invalid container name.', request_post_response.content.decode())
+        assert (request_post_response.status_code) == (http_status.HTTP_400_BAD_REQUEST)
+        assert ('Invalid container name.') in (request_post_response.content.decode())
 
     @mock.patch('addons.swift.views.utils.connect_swift')
     def test_valid_container(self, mock_connect):
@@ -185,8 +183,8 @@ class TestConnection(AdminTestCase):
             'provider_short_name': 'swift',
         }
         request_post_response = self.view_post(params)
-        nt.assert_equals(request_post_response.status_code, http_status.HTTP_200_OK)
-        nt.assert_in('Credentials are valid', request_post_response.content.decode())
+        assert (request_post_response.status_code) == (http_status.HTTP_200_OK)
+        assert ('Credentials are valid') in (request_post_response.content.decode())
 
 
 class TestSaveCredentials(AdminTestCase):
@@ -205,7 +203,6 @@ class TestSaveCredentials(AdminTestCase):
             json.dumps(params),
             content_type='application/json'
         )
-        request.is_ajax()
         request.user = self.user
         return views.SaveCredentialsView.as_view()(request, institution_id=self.institution.id)
 
@@ -223,8 +220,8 @@ class TestSaveCredentials(AdminTestCase):
             'container': 'Non-empty-container',
         })
 
-        nt.assert_equals(response.status_code, http_status.HTTP_400_BAD_REQUEST)
-        nt.assert_in('Provider is missing.', response.content.decode())
+        assert (response.status_code) == (http_status.HTTP_400_BAD_REQUEST)
+        assert ('Provider is missing.') in (response.content.decode())
 
     def test_invalid_provider(self):
         response = self.view_post({
@@ -241,8 +238,8 @@ class TestSaveCredentials(AdminTestCase):
             'provider_short_name': 'invalidprovider',
         })
 
-        nt.assert_equals(response.status_code, http_status.HTTP_400_BAD_REQUEST)
-        nt.assert_in('Invalid provider.', response.content.decode())
+        assert (response.status_code) == (http_status.HTTP_400_BAD_REQUEST)
+        assert ('Invalid provider.') in (response.content.decode())
 
     @mock.patch('admin.rdm_custom_storage_location.utils.test_swift_connection')
     def test_success(self, mock_testconnection):
@@ -260,20 +257,20 @@ class TestSaveCredentials(AdminTestCase):
             'provider_short_name': 'swift',
         })
 
-        nt.assert_equals(response.status_code, http_status.HTTP_200_OK)
-        nt.assert_in('Saved credentials successfully!!', response.content.decode())
+        assert (response.status_code) == (http_status.HTTP_200_OK)
+        assert ('Saved credentials successfully!!') in (response.content.decode())
 
         institution_storage = Region.objects.filter(_id=self.institution._id).first()
-        nt.assert_is_not_none(institution_storage)
-        nt.assert_equals(institution_storage.name, 'My storage')
+        assert (institution_storage) is not None
+        assert (institution_storage.name) == ('My storage')
 
         wb_credentials = institution_storage.waterbutler_credentials
-        nt.assert_equals(wb_credentials['storage']['username'], 'Non-empty-access-key')
-        nt.assert_equals(wb_credentials['storage']['password'], 'Non-empty-secret-key')
+        assert (wb_credentials['storage']['username']) == ('Non-empty-access-key')
+        assert (wb_credentials['storage']['password']) == ('Non-empty-secret-key')
 
         wb_settings = institution_storage.waterbutler_settings
-        nt.assert_equals(wb_settings['storage']['provider'], 'swift')
-        nt.assert_equals(wb_settings['storage']['container'], 'Non-empty-container')
+        assert (wb_settings['storage']['provider']) == ('swift')
+        assert (wb_settings['storage']['container']) == ('Non-empty-container')
 
     @mock.patch('admin.rdm_custom_storage_location.utils.test_swift_connection')
     def test_invalid_credentials(self, mock_testconnection):
@@ -292,9 +289,9 @@ class TestSaveCredentials(AdminTestCase):
             'provider_short_name': 'swift',
         })
 
-        nt.assert_equals(response.status_code, http_status.HTTP_400_BAD_REQUEST)
-        nt.assert_in('NG', response.content.decode())
-        nt.assert_false(Region.objects.filter(_id=self.institution._id).exists())
+        assert (response.status_code) == (http_status.HTTP_400_BAD_REQUEST)
+        assert ('NG') in (response.content.decode())
+        assert not (Region.objects.filter(_id=self.institution._id).exists())
 
     @mock.patch('admin.rdm_custom_storage_location.utils.test_swift_connection')
     def test_success_superuser(self, mock_testconnection):
@@ -315,17 +312,17 @@ class TestSaveCredentials(AdminTestCase):
             'provider_short_name': 'swift',
         })
 
-        nt.assert_equals(response.status_code, http_status.HTTP_200_OK)
-        nt.assert_in('Saved credentials successfully!!', response.content.decode())
+        assert (response.status_code) == (http_status.HTTP_200_OK)
+        assert ('Saved credentials successfully!!') in (response.content.decode())
 
         institution_storage = Region.objects.filter(_id=self.institution._id).first()
-        nt.assert_is_not_none(institution_storage)
-        nt.assert_equals(institution_storage.name, 'My storage')
+        assert (institution_storage) is not None
+        assert (institution_storage.name) == ('My storage')
 
         wb_credentials = institution_storage.waterbutler_credentials
-        nt.assert_equals(wb_credentials['storage']['username'], 'Non-empty-access-key')
-        nt.assert_equals(wb_credentials['storage']['password'], 'Non-empty-secret-key')
+        assert (wb_credentials['storage']['username']) == ('Non-empty-access-key')
+        assert (wb_credentials['storage']['password']) == ('Non-empty-secret-key')
 
         wb_settings = institution_storage.waterbutler_settings
-        nt.assert_equals(wb_settings['storage']['provider'], 'swift')
-        nt.assert_equals(wb_settings['storage']['container'], 'Non-empty-container')
+        assert (wb_settings['storage']['provider']) == ('swift')
+        assert (wb_settings['storage']['container']) == ('Non-empty-container')

@@ -14,7 +14,7 @@ import os
 import requests
 
 import tempfile
-import mock
+from unittest import mock
 
 from website import settings
 

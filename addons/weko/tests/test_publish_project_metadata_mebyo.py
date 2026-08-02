@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-import mock
+from unittest import mock
 import pytest
 
 from framework.exceptions import HTTPError

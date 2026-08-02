@@ -1,8 +1,7 @@
 from django.test import RequestFactory
 from rest_framework import status as http_status
 import json
-import mock
-from nose import tools as nt
+from unittest import mock
 
 from addons.osfstorage.models import Region
 from admin.rdm_custom_storage_location import views
@@ -31,7 +30,6 @@ class TestSaveCredentials(AdminTestCase):
             json.dumps(params),
             content_type='application/json'
         )
-        request.is_ajax()
         request.user = self.user
         return views.SaveCredentialsView.as_view()(request, institution_id=self.institution.id)
 
@@ -48,9 +46,9 @@ class TestSaveCredentials(AdminTestCase):
             'provider_short_name': 'nextcloud',
         })
 
-        nt.assert_equals(response.status_code, http_status.HTTP_400_BAD_REQUEST)
-        nt.assert_in('NG', response.content.decode())
-        nt.assert_false(Region.objects.filter(_id=self.institution._id).exists())
+        assert (response.status_code) == (http_status.HTTP_400_BAD_REQUEST)
+        assert ('NG') in (response.content.decode())
+        assert not (Region.objects.filter(_id=self.institution._id).exists())
 
     @mock.patch('admin.rdm_custom_storage_location.utils.test_owncloud_connection')
     def test_success(self, mock_testconnection):
@@ -65,21 +63,21 @@ class TestSaveCredentials(AdminTestCase):
             'provider_short_name': 'nextcloud',
         })
 
-        nt.assert_equals(response.status_code, http_status.HTTP_200_OK)
-        nt.assert_in('Saved credentials successfully!!', response.content.decode())
+        assert (response.status_code) == (http_status.HTTP_200_OK)
+        assert ('Saved credentials successfully!!') in (response.content.decode())
 
         institution_storage = Region.objects.filter(_id=self.institution._id).first()
-        nt.assert_is_not_none(institution_storage)
-        nt.assert_equals(institution_storage.name, 'My storage')
+        assert (institution_storage) is not None
+        assert (institution_storage.name) == ('My storage')
 
         wb_credentials = institution_storage.waterbutler_credentials
-        nt.assert_equals(wb_credentials['storage']['host'], 'https://valid.nextcloud.net')
-        nt.assert_equals(wb_credentials['storage']['username'], 'admin')
-        nt.assert_equals(wb_credentials['storage']['password'], '1234')
+        assert (wb_credentials['storage']['host']) == ('https://valid.nextcloud.net')
+        assert (wb_credentials['storage']['username']) == ('admin')
+        assert (wb_credentials['storage']['password']) == ('1234')
 
         wb_settings = institution_storage.waterbutler_settings
-        nt.assert_equals(wb_settings['storage']['provider'], 'nextcloud')
-        nt.assert_equals(wb_settings['storage']['folder'], '/reserved_for_osf/')
+        assert (wb_settings['storage']['provider']) == ('nextcloud')
+        assert (wb_settings['storage']['folder']) == ('/reserved_for_osf/')
 
     @mock.patch('admin.rdm_custom_storage_location.utils.test_owncloud_connection')
     def test_success_superuser(self, mock_testconnection):
@@ -97,18 +95,18 @@ class TestSaveCredentials(AdminTestCase):
             'provider_short_name': 'nextcloud',
         })
 
-        nt.assert_equals(response.status_code, http_status.HTTP_200_OK)
-        nt.assert_in('Saved credentials successfully!!', response.content.decode())
+        assert (response.status_code) == (http_status.HTTP_200_OK)
+        assert ('Saved credentials successfully!!') in (response.content.decode())
 
         institution_storage = Region.objects.filter(_id=self.institution._id).first()
-        nt.assert_is_not_none(institution_storage)
-        nt.assert_equals(institution_storage.name, 'My storage')
+        assert (institution_storage) is not None
+        assert (institution_storage.name) == ('My storage')
 
         wb_credentials = institution_storage.waterbutler_credentials
-        nt.assert_equals(wb_credentials['storage']['host'], 'https://valid.nextcloud.net')
-        nt.assert_equals(wb_credentials['storage']['username'], 'admin')
-        nt.assert_equals(wb_credentials['storage']['password'], '1234')
+        assert (wb_credentials['storage']['host']) == ('https://valid.nextcloud.net')
+        assert (wb_credentials['storage']['username']) == ('admin')
+        assert (wb_credentials['storage']['password']) == ('1234')
 
         wb_settings = institution_storage.waterbutler_settings
-        nt.assert_equals(wb_settings['storage']['provider'], 'nextcloud')
-        nt.assert_equals(wb_settings['storage']['folder'], '/reserved_for_osf/')
+        assert (wb_settings['storage']['provider']) == ('nextcloud')
+        assert (wb_settings['storage']['folder']) == ('/reserved_for_osf/')

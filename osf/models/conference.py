@@ -91,7 +91,7 @@ class Conference(ObjectIDMixin, BaseModel):
     class Meta:
         # custom permissions for use in the GakuNin RDM Admin App
         permissions = (
-            ('view_conference', 'Can view conference details in the admin app.'),
+            # 'view_conference' is a built-in Django permission.
         )
 
 

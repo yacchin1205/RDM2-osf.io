@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 
 import json
-from nose import tools as nt
 from django.test import RequestFactory
 from django.http import Http404
 
@@ -58,46 +57,46 @@ class TestOAuthView(AdminTestCase):
     def test_super_admin_login(self):
         """test superuser login"""
         self.request.user.is_superuser = True
-        nt.assert_true(self.view.test_func())
+        assert (self.view.test_func())
 
     def test_admin_login(self):
         """test institution administrator login """
         self.request.user.is_superuser = False
         self.request.user.is_staff = True
-        nt.assert_true(self.view.test_func())
+        assert (self.view.test_func())
 
     def test_non_admin_login(self):
         """test user not superuser or institution administrator login"""
         self.request.user.is_superuser = False
         self.request.user.is_staff = False
-        nt.assert_equal(self.view.test_func(), False)
+        assert (self.view.test_func()) == (False)
 
     def test_non_active_user_login(self):
         """test invalid user login"""
         self.request.user.is_active = False
-        nt.assert_equal(self.view.test_func(), False)
+        assert (self.view.test_func()) == (False)
 
     def test_non_registered_user_login(self):
         """test unregistered user login"""
         self.request.user.is_registered = False
-        nt.assert_equal(self.view.test_func(), False)
+        assert (self.view.test_func()) == (False)
 
     def test_non_affiliated_institution_user_login(self):
         """test unaffiliated institution user login"""
         self.request.user.is_superuser = False
         self.request.user.is_staff = True
         self.view.kwargs['institution_id'] = self.rdm_addon_option.institution.id + 1
-        nt.assert_equal(self.view.test_func(), False)
+        assert (self.view.test_func()) == (False)
         self.view.kwargs['institution_id'] = self.rdm_addon_option.institution.id
 
     def test_delete(self, *args, **kwargs):
         self.request.user.is_superuser = False
         self.request.user.is_staff = True
-        nt.assert_equal(self.user.external_accounts.count(), 1)
-        nt.assert_equal(self.rdm_addon_option.external_accounts.count(), 1)
+        assert (self.user.external_accounts.count()) == (1)
+        assert (self.rdm_addon_option.external_accounts.count()) == (1)
         self.view.delete(self.request, *args, **self.view.kwargs)
-        nt.assert_equal(self.user.external_accounts.count(), 0)
-        nt.assert_equal(self.rdm_addon_option.external_accounts.count(), 0)
+        assert (self.user.external_accounts.count()) == (0)
+        assert (self.rdm_addon_option.external_accounts.count()) == (0)
 
     def test_delete_dummy(self, *args, **kwargs):
         self.view.kwargs['external_account_id'] = self.external_account._id + 'dummy'
@@ -135,50 +134,50 @@ class TestSettingsView(AdminTestCase):
     def test_super_admin_login(self):
         """test superuser login"""
         self.request.user.is_superuser = True
-        nt.assert_true(self.view.test_func())
+        assert (self.view.test_func())
 
     def test_admin_login(self):
         """test institution administrator login"""
         self.request.user.is_superuser = False
         self.request.user.is_staff = True
-        nt.assert_true(self.view.test_func())
+        assert (self.view.test_func())
 
     def test_non_admin_login(self):
         """test user not superuser or institution administrator login"""
         self.request.user.is_superuser = False
         self.request.user.is_staff = False
-        nt.assert_equal(self.view.test_func(), False)
+        assert (self.view.test_func()) == (False)
 
     def test_non_active_user_login(self):
         """test invalid user login"""
         self.request.user.is_active = False
-        nt.assert_equal(self.view.test_func(), False)
+        assert (self.view.test_func()) == (False)
 
     def test_non_registered_user_login(self):
         """test unregistered user login"""
         self.request.user.is_registered = False
-        nt.assert_equal(self.view.test_func(), False)
+        assert (self.view.test_func()) == (False)
 
     def test_non_affiliated_institution_user_login(self):
         """test user unaffiliated institution login"""
         self.request.user.is_superuser = False
         self.request.user.is_staff = True
         self.view.kwargs = {'institution_id': self.institution.id + 1}
-        nt.assert_equal(self.view.test_func(), False)
+        assert (self.view.test_func()) == (False)
 
     def test_get_dataverse(self, *args, **kwargs):
         self.request.user.is_superuser = False
         self.request.user.is_staff = True
         res = self.view.get(self.request, *args, **self.view.kwargs)
-        nt.assert_equal(res.status_code, 200)
-        nt.assert_true('result' in res.content.decode())
+        assert (res.status_code) == (200)
+        assert ('result' in res.content.decode())
 
     def test_get_dummy_addon(self, *args, **kwargs):
         self.request.user.is_superuser = False
         self.request.user.is_staff = True
         self.view.kwargs['addon_name'] = 'dummy'
         res = self.view.get(self.request, *args, **self.view.kwargs)
-        nt.assert_equal(res.status_code, 200)
+        assert (res.status_code) == (200)
         self.assertJSONEqual(res.content, {})
 
 
@@ -221,42 +220,42 @@ class TestAccountsView(AdminTestCase):
     def test_super_admin_login(self):
         """test superuser login"""
         self.request.user.is_superuser = True
-        nt.assert_true(self.view.test_func())
+        assert (self.view.test_func())
 
     def test_admin_login(self):
         """test institution administrator login"""
         self.request.user.is_superuser = False
         self.request.user.is_staff = True
-        nt.assert_true(self.view.test_func())
+        assert (self.view.test_func())
 
     def test_non_admin_login(self):
         """test user not superuser or institution administrator login"""
         self.request.user.is_superuser = False
         self.request.user.is_staff = False
-        nt.assert_equal(self.view.test_func(), False)
+        assert (self.view.test_func()) == (False)
 
     def test_non_active_user_login(self):
         """test invalid user login"""
         self.request.user.is_active = False
-        nt.assert_equal(self.view.test_func(), False)
+        assert (self.view.test_func()) == (False)
 
     def test_non_registered_user_login(self):
         """test unregistered user login"""
         self.request.user.is_registered = False
-        nt.assert_equal(self.view.test_func(), False)
+        assert (self.view.test_func()) == (False)
 
     def test_non_affiliated_institution_user_login(self):
         """test user unaffiliated institution login"""
         self.request.user.is_superuser = False
         self.request.user.is_staff = True
         self.view.kwargs = {'institution_id': self.rdm_addon_option.institution.id + 1}
-        nt.assert_equal(self.view.test_func(), False)
+        assert (self.view.test_func()) == (False)
 
     def test_get(self, *args, **kwargs):
         res = self.view.get(self.request, *args, **self.view.kwargs)
-        nt.assert_equal(res.status_code, 200)
+        assert (res.status_code) == (200)
         content = json.loads(res.content)
-        nt.assert_equal(len(content['accounts']), 1)
+        assert (len(content['accounts'])) == (1)
 
     def test_post_empty(self, *args, **kwargs):
         self.request = RequestFactory().post(
@@ -266,7 +265,7 @@ class TestAccountsView(AdminTestCase):
         )
         self.view.kwargs['addon_name'] = 'dummy'
         res = self.view.post(self.request, *args, **self.view.kwargs)
-        nt.assert_equal(res.status_code, 400)
+        assert (res.status_code) == (400)
 
     def test_post_fake_s3_account(self, *args, **kwargs):
         self.request = RequestFactory().post(
@@ -276,4 +275,4 @@ class TestAccountsView(AdminTestCase):
         )
         self.view.kwargs['addon_name'] = 's3'
         res = self.view.post(self.request, *args, **self.view.kwargs)
-        nt.assert_equal(res.status_code, 400)
+        assert (res.status_code) == (400)

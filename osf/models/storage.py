@@ -18,7 +18,7 @@ PROVIDER_ASSET_NAME_CHOICES = [
 class ProviderAssetFile(BaseModel):
     class Meta:
         permissions = (
-            ('view_providerassetfile', 'Can view provider asset files'),
+            # 'view_providerassetfile' is a built-in Django permission.
         )
 
     name = models.CharField(choices=PROVIDER_ASSET_NAME_CHOICES, max_length=63)

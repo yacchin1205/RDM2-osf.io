@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 """Serializer tests for the AzureBlobStorage addon."""
-import mock
-from nose.tools import *  # noqa (PEP8 asserts)
+from unittest import mock
 
 from website.util import web_url_for
 from addons.base.tests.serializers import StorageAddonSerializerTestSuiteMixin

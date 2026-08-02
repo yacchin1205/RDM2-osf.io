@@ -1,16 +1,15 @@
+import pytest
 from datetime import datetime
 import flask
 import logging
 from rest_framework import status as http_status
 import json
 import logging
-import mock
+from unittest import mock
 import time
 from future.moves.urllib.parse import urlparse, urljoin, parse_qs
 
 import responses
-from nose.tools import *  # noqa
-from nose import tools as nt
 import pytz
 from oauthlib.oauth2 import OAuth2Error
 from requests_oauthlib import OAuth2Session
@@ -126,11 +125,8 @@ class TestExternalAccount(OsfTestCase):
         self.user.save()
 
         # If the external account isn't attached, this test has no meaning
-        nt.assert_greater_equal(ExternalAccount.objects.all().count(), 1)
-        assert_in(
-            external_account,
-            self.user.external_accounts.all(),
-        )
+        assert (ExternalAccount.objects.all().count()) >= (1)
+        assert (external_account) in (self.user.external_accounts.all())
 
         response = self.app.delete(
             api_url_for('oauth_disconnect',
@@ -139,22 +135,16 @@ class TestExternalAccount(OsfTestCase):
         )
 
         # Request succeeded
-        assert_equal(
-            response.status_code,
-            http_status.HTTP_200_OK,
-        )
+        assert (response.status_code) == (http_status.HTTP_200_OK)
 
         self.user.reload()
         # external_account.reload()
 
         # External account has been disassociated with the user
-        assert_not_in(
-            external_account,
-            self.user.external_accounts.all(),
-        )
+        assert (external_account) not in (self.user.external_accounts.all())
 
         # External account is still in the database
-        assert_equal(ExternalAccount.objects.all().count(), 1)
+        assert (ExternalAccount.objects.all().count()) == (1)
 
     def test_disconnect_with_multiple_connected(self):
         # Disconnect an account connected to multiple users from one user
@@ -177,29 +167,20 @@ class TestExternalAccount(OsfTestCase):
         )
 
         # Request succeeded
-        assert_equal(
-            response.status_code,
-            http_status.HTTP_200_OK,
-        )
+        assert (response.status_code) == (http_status.HTTP_200_OK)
 
         self.user.reload()
 
         # External account has been disassociated with the user
-        assert_not_in(
-            external_account,
-            self.user.external_accounts.all(),
-        )
+        assert (external_account) not in (self.user.external_accounts.all())
 
         # External account is still in the database
-        nt.assert_greater_equal(ExternalAccount.objects.all().count(), 1)
+        assert (ExternalAccount.objects.all().count()) >= (1)
 
         other_user.reload()
 
         # External account is still associated with the other user
-        assert_in(
-            external_account,
-            other_user.external_accounts.all(),
-        )
+        assert (external_account) in (other_user.external_accounts.all())
 
 
 class TestExternalProviderOAuth1(OsfTestCase):
@@ -225,7 +206,7 @@ class TestExternalProviderOAuth1(OsfTestCase):
             )
         )
 
-        with self.app.app.test_request_context('/oauth/connect/mock1a/'):
+        with self.app.application.test_request_context('/oauth/connect/mock1a/'):
 
             # make sure the user is logged in
             authenticate(user=self.user, access_token=None, response=None)
@@ -236,12 +217,12 @@ class TestExternalProviderOAuth1(OsfTestCase):
             url = self.provider.auth_url
 
             # The URL to which the user would be redirected
-            assert_equal(url, 'http://mock1a.com/auth?oauth_token=temp_token')
+            assert (url) == ('http://mock1a.com/auth?oauth_token=temp_token')
 
             # Temporary credentials are added to the session
             creds = session.data['oauth_states'][self.provider.short_name]
-            assert_equal(creds['token'], 'temp_token')
-            assert_equal(creds['secret'], 'temp_secret')
+            assert (creds['token']) == ('temp_token')
+            assert (creds['secret']) == ('temp_secret')
 
     @responses.activate
     def test_callback(self):
@@ -264,7 +245,7 @@ class TestExternalProviderOAuth1(OsfTestCase):
         user = UserFactory()
 
         # Fake a request context for the callback
-        ctx = self.app.app.test_request_context(
+        ctx = self.app.application.test_request_context(
             path='/oauth/callback/mock1a/',
             query_string='oauth_token=temp_key&oauth_verifier=mock_verifier',
         )
@@ -285,10 +266,10 @@ class TestExternalProviderOAuth1(OsfTestCase):
             self.provider.auth_callback(user=user)
 
         account = ExternalAccount.objects.last()
-        assert_equal(account.oauth_key, 'perm_token')
-        assert_equal(account.oauth_secret, 'perm_secret')
-        assert_equal(account.provider_id, 'mock_provider_id')
-        assert_equal(account.provider_name, 'Mock OAuth 1.0a Provider')
+        assert (account.oauth_key) == ('perm_token')
+        assert (account.oauth_secret) == ('perm_secret')
+        assert (account.provider_id) == ('mock_provider_id')
+        assert (account.provider_name) == ('Mock OAuth 1.0a Provider')
 
     @responses.activate
     def test_callback_wrong_user(self):
@@ -330,14 +311,14 @@ class TestExternalProviderOAuth1(OsfTestCase):
         malicious_user = UserFactory()
 
         # Fake a request context for the callback
-        with self.app.app.test_request_context(
+        with self.app.application.test_request_context(
                 path='/oauth/callback/mock1a/',
                 query_string='oauth_token=temp_key&oauth_verifier=mock_verifier'
         ):
             # make sure the user is logged in
             authenticate(user=malicious_user, access_token=None, response=None)
 
-            with assert_raises(PermissionsError):
+            with pytest.raises(PermissionsError):
                 # do the key exchange
                 self.provider.auth_callback(user=malicious_user)
 
@@ -352,7 +333,7 @@ class TestExternalProviderOAuth2(OsfTestCase):
 
     def test_oauth_version_default(self):
         # OAuth 2.0 is the default version
-        assert_is(self.provider._oauth_version, OAUTH2)
+        assert (self.provider._oauth_version) is (OAUTH2)
 
     def test_start_flow_oauth_standard(self):
         # Generate the appropriate URL and state token - addons that follow standard OAuth protocol
@@ -362,7 +343,7 @@ class TestExternalProviderOAuth2(OsfTestCase):
         # without resetting the `ADDONS_OAUTH_NO_REDIRECT` list.
         assert self.provider.short_name not in ADDONS_OAUTH_NO_REDIRECT
 
-        with self.app.app.test_request_context('/oauth/connect/mock2/'):
+        with self.app.application.test_request_context('/oauth/connect/mock2/'):
 
             # Make sure the user is logged in
             authenticate(user=self.user, access_token=None, response=None)
@@ -373,7 +354,7 @@ class TestExternalProviderOAuth2(OsfTestCase):
 
             # Temporary credentials are added to the session
             creds = session.data['oauth_states'][self.provider.short_name]
-            assert_in('state', creds)
+            assert ('state') in (creds)
 
             # The URL to which the user would be redirected
             parsed = urlparse(url)
@@ -392,10 +373,10 @@ class TestExternalProviderOAuth2(OsfTestCase):
                     )
                 ]
             }
-            assert_equal(params, expected_params)
+            assert (params) == (expected_params)
 
             # Check base URL
-            assert_equal(url.split('?')[0], 'https://mock2.com/auth')
+            assert (url.split('?')[0]) == ('https://mock2.com/auth')
 
     def test_start_flow_oauth_no_redirect(self):
         # Generate the appropriate URL and state token - addons that do not allow `redirect_uri`
@@ -403,7 +384,7 @@ class TestExternalProviderOAuth2(OsfTestCase):
         # Temporarily add the mock provider to the `ADDONS_OAUTH_NO_REDIRECT` list
         ADDONS_OAUTH_NO_REDIRECT.append(self.provider.short_name)
 
-        with self.app.app.test_request_context('/oauth/connect/mock2/'):
+        with self.app.application.test_request_context('/oauth/connect/mock2/'):
 
             # Make sure the user is logged in
             authenticate(user=self.user, access_token=None, response=None)
@@ -414,7 +395,7 @@ class TestExternalProviderOAuth2(OsfTestCase):
 
             # Temporary credentials are added to the session
             creds = session.data['oauth_states'][self.provider.short_name]
-            assert_in('state', creds)
+            assert ('state') in (creds)
 
             # The URL to which the user would be redirected
             parsed = urlparse(url)
@@ -426,10 +407,10 @@ class TestExternalProviderOAuth2(OsfTestCase):
                 'response_type': ['code'],
                 'client_id': [self.provider.client_id]
             }
-            assert_equal(params, expected_params)
+            assert (params) == (expected_params)
 
             # Check base URL
-            assert_equal(url.split('?')[0], 'https://mock2.com/auth')
+            assert (url.split('?')[0]) == ('https://mock2.com/auth')
 
         # Reset the `ADDONS_OAUTH_NO_REDIRECT` list
         ADDONS_OAUTH_NO_REDIRECT.remove(self.provider.short_name)
@@ -448,7 +429,7 @@ class TestExternalProviderOAuth2(OsfTestCase):
 
         user = UserFactory()
 
-        with self.app.app.test_request_context(path='/oauth/callback/mock2/',
+        with self.app.application.test_request_context(path='/oauth/callback/mock2/',
                                                query_string='code=mock_code&state=mock_state'):
             authenticate(user=self.user, access_token=None, response=None)
             session.data['oauth_states'] = {self.provider.short_name: {'state': 'mock_state'}}
@@ -461,6 +442,12 @@ class TestExternalProviderOAuth2(OsfTestCase):
             )
 
         mock_oauth2session.assert_called_with(self.provider.client_id, redirect_uri=redirect_uri)
+        mock_fetch_token.assert_called_once_with(
+            self.provider.callback_url,
+            include_client_id=True,
+            client_secret=self.provider.client_secret,
+            code='mock_code',
+        )
 
     @mock.patch('osf.models.external.OAuth2Session')
     @mock.patch('osf.models.external.OAuth2Session.fetch_token')
@@ -476,7 +463,7 @@ class TestExternalProviderOAuth2(OsfTestCase):
 
         user = UserFactory()
 
-        with self.app.app.test_request_context(path='/oauth/callback/mock2/',
+        with self.app.application.test_request_context(path='/oauth/callback/mock2/',
                                                query_string='code=mock_code&state=mock_state'):
             authenticate(user=self.user, access_token=None, response=None)
             session.data['oauth_states'] = {self.provider.short_name: {'state': 'mock_state'}}
@@ -484,6 +471,12 @@ class TestExternalProviderOAuth2(OsfTestCase):
             self.provider.auth_callback(user=user)
 
         mock_oauth2session.assert_called_with(self.provider.client_id, redirect_uri=None)
+        mock_fetch_token.assert_called_once_with(
+            self.provider.callback_url,
+            include_client_id=True,
+            client_secret=self.provider.client_secret,
+            code='mock_code',
+        )
 
         # Reset the `ADDONS_OAUTH_NO_REDIRECT` list.
         ADDONS_OAUTH_NO_REDIRECT.remove(self.provider.short_name)
@@ -498,7 +491,7 @@ class TestExternalProviderOAuth2(OsfTestCase):
         user = UserFactory()
 
         # Fake a request context for the callback
-        with self.app.app.test_request_context(
+        with self.app.application.test_request_context(
                 path='/oauth/callback/mock2/',
                 query_string='code=mock_code&state=mock_state'
         ):
@@ -518,8 +511,8 @@ class TestExternalProviderOAuth2(OsfTestCase):
             self.provider.auth_callback(user=user)
 
         account = ExternalAccount.objects.last()
-        assert_equal(account.oauth_key, 'mock_access_token')
-        assert_equal(account.provider_id, 'mock_provider_id')
+        assert (account.oauth_key) == ('mock_access_token')
+        assert (account.provider_id) == ('mock_provider_id')
 
     @responses.activate
     def test_callback_with_institution(self):
@@ -536,7 +529,7 @@ class TestExternalProviderOAuth2(OsfTestCase):
         region.save()
 
         # Fake a request context for the callback
-        with self.app.app.test_request_context(
+        with self.app.application.test_request_context(
                 path='/oauth/callback/mock2/',
                 query_string='code=mock_code&state=mock_state'
         ):
@@ -557,8 +550,8 @@ class TestExternalProviderOAuth2(OsfTestCase):
             self.provider.auth_callback(user=user)
 
         account = ExternalAccount.objects.last()
-        assert_equal(account.oauth_key, 'mock_access_token')
-        assert_equal(account.provider_id, 'mock_provider_id')
+        assert (account.oauth_key) == ('mock_access_token')
+        assert (account.provider_id) == ('mock_provider_id')
 
     @responses.activate
     def test_provider_down(self):
@@ -568,7 +561,7 @@ class TestExternalProviderOAuth2(OsfTestCase):
 
         user = UserFactory()
         # Fake a request context for the callback
-        with self.app.app.test_request_context(
+        with self.app.application.test_request_context(
                 path='/oauth/callback/mock2/',
                 query_string='code=mock_code&state=mock_state'
         ):
@@ -584,13 +577,10 @@ class TestExternalProviderOAuth2(OsfTestCase):
 
             # do the key exchange
 
-            with assert_raises(HTTPError) as error_raised:
+            with pytest.raises(HTTPError) as error_raised:
                 self.provider.auth_callback(user=user)
 
-            assert_equal(
-                error_raised.exception.code,
-                503,
-            )
+            assert (error_raised.value.code) == (503)
 
     @responses.activate
     def test_user_denies_access(self):
@@ -600,7 +590,7 @@ class TestExternalProviderOAuth2(OsfTestCase):
 
         user = UserFactory()
         # Fake a request context for the callback
-        with self.app.app.test_request_context(
+        with self.app.application.test_request_context(
                 path='/oauth/callback/mock2/',
                 query_string='error=mock_error&code=mock_code&state=mock_state'
         ):
@@ -614,7 +604,7 @@ class TestExternalProviderOAuth2(OsfTestCase):
             }
             session.save()
 
-            assert_false(self.provider.auth_callback(user=user))
+            assert not (self.provider.auth_callback(user=user))
 
     @responses.activate
     def test_multiple_users_associated(self):
@@ -644,7 +634,7 @@ class TestExternalProviderOAuth2(OsfTestCase):
         _prepare_mock_oauth2_handshake_response()
 
         # Fake a request context for the callback
-        with self.app.app.test_request_context(
+        with self.app.application.test_request_context(
                 path='/oauth/callback/mock2/',
                 query_string='code=mock_code&state=mock_state'
         ) as ctx:
@@ -666,15 +656,9 @@ class TestExternalProviderOAuth2(OsfTestCase):
         user_b.reload()
         external_account.reload()
 
-        assert_equal(
-            list(user_a.external_accounts.values_list('pk', flat=True)),
-            list(user_b.external_accounts.values_list('pk', flat=True)),
-        )
+        assert (list(user_a.external_accounts.values_list('pk', flat=True))) == (list(user_b.external_accounts.values_list('pk', flat=True)))
 
-        nt.assert_greater_equal(
-            ExternalAccount.objects.all().count(),
-            1
-        )
+        assert (ExternalAccount.objects.all().count()) >= (1)
 
     @responses.activate
     def test_force_refresh_oauth_key(self):
@@ -705,10 +689,10 @@ class TestExternalProviderOAuth2(OsfTestCase):
         self.provider.refresh_oauth_key(force=True)
         external_account.reload()
 
-        assert_equal(external_account.oauth_key, 'refreshed_access_token')
-        assert_equal(external_account.refresh_token, 'refreshed_refresh_token')
-        assert_not_equal(external_account.expires_at, old_expiry)
-        assert_true(external_account.expires_at > old_expiry)
+        assert (external_account.oauth_key) == ('refreshed_access_token')
+        assert (external_account.refresh_token) == ('refreshed_refresh_token')
+        assert (external_account.expires_at) != (old_expiry)
+        assert (external_account.expires_at > old_expiry)
 
     @responses.activate
     def test_does_need_refresh(self):
@@ -739,10 +723,10 @@ class TestExternalProviderOAuth2(OsfTestCase):
         self.provider.refresh_oauth_key(force=False)
         external_account.reload()
 
-        assert_equal(external_account.oauth_key, 'refreshed_access_token')
-        assert_equal(external_account.refresh_token, 'refreshed_refresh_token')
-        assert_not_equal(external_account.expires_at, old_expiry)
-        assert_true(external_account.expires_at > old_expiry)
+        assert (external_account.oauth_key) == ('refreshed_access_token')
+        assert (external_account.refresh_token) == ('refreshed_refresh_token')
+        assert (external_account.expires_at) != (old_expiry)
+        assert (external_account.expires_at > old_expiry)
 
     @responses.activate
     def test_does_not_need_refresh(self):
@@ -779,9 +763,9 @@ class TestExternalProviderOAuth2(OsfTestCase):
         self.provider.refresh_oauth_key(force=False)
         external_account.reload()
 
-        assert_equal(external_account.oauth_key, 'old_key')
-        assert_equal(external_account.refresh_token, 'old_refresh')
-        assert_equal(external_account.expires_at, old_expiry)
+        assert (external_account.oauth_key) == ('old_key')
+        assert (external_account.refresh_token) == ('old_refresh')
+        assert (external_account.expires_at) == (old_expiry)
 
     @responses.activate
     def test_refresh_oauth_key_does_not_need_refresh(self):
@@ -808,7 +792,7 @@ class TestExternalProviderOAuth2(OsfTestCase):
 
         self.provider.account = external_account
         ret = self.provider.refresh_oauth_key(force=False)
-        assert_false(ret)
+        assert not (ret)
 
     @responses.activate
     def test_refresh_with_broken_provider(self):
@@ -837,7 +821,7 @@ class TestExternalProviderOAuth2(OsfTestCase):
         )
 
         ret = self.provider.refresh_oauth_key(force=False)
-        assert_false(ret)
+        assert not (ret)
 
     @responses.activate
     def test_refresh_without_account_or_refresh_url(self):
@@ -863,7 +847,7 @@ class TestExternalProviderOAuth2(OsfTestCase):
         )
 
         ret = self.provider.refresh_oauth_key(force=False)
-        assert_false(ret)
+        assert not (ret)
 
     @responses.activate
     def test_refresh_with_expired_credentials(self):
@@ -890,7 +874,7 @@ class TestExternalProviderOAuth2(OsfTestCase):
         )
 
         ret = self.provider.refresh_oauth_key(force=False)
-        assert_false(ret)
+        assert not (ret)
 
     @responses.activate
     def test_force_refresh_with_expired_credentials(self):
@@ -916,7 +900,7 @@ class TestExternalProviderOAuth2(OsfTestCase):
             )
         )
 
-        with assert_raises(OAuth2Error):
+        with pytest.raises(OAuth2Error):
             self.provider.refresh_oauth_key(force=True)
 
 class TestExternalProviderOAuth2GoogleDrive(OsfTestCase):
@@ -933,12 +917,12 @@ class TestExternalProviderOAuth2GoogleDrive(OsfTestCase):
 
     def test_oauth_version_default(self):
         # OAuth 2.0 is the default version
-        assert_is(self.provider._oauth_version, OAUTH2)
+        assert (self.provider._oauth_version) is (OAUTH2)
 
     def test_start_flow(self):
         # Generate the appropriate URL and state token
 
-        with self.app.app.test_request_context('/oauth/connect/mock2/'):
+        with self.app.application.test_request_context('/oauth/connect/mock2/'):
 
             # make sure the user is logged in
             authenticate(user=self.user, access_token=None, response=None)
@@ -950,16 +934,14 @@ class TestExternalProviderOAuth2GoogleDrive(OsfTestCase):
 
             # Temporary credentials are added to the session
             creds = session.data['oauth_states'][self.provider.short_name]
-            assert_in('state', creds)
+            assert ('state') in (creds)
 
             # The URL to which the user would be redirected
             parsed = urlparse(url)
             params = parse_qs(parsed.query)
 
             # check parameters
-            assert_equal(
-                params,
-                {
+            assert (params) == ({
                     'state': [creds['state']],
                     'response_type': ['code'],
                     'client_id': [self.provider.client_id],
@@ -968,14 +950,10 @@ class TestExternalProviderOAuth2GoogleDrive(OsfTestCase):
                                     service_name=self.provider.short_name,
                                     _absolute=True)
                     ]
-                }
-            )
+                })
 
             # check base URL
-            assert_equal(
-                url.split('?')[0],
-                'https://mock2.com/auth',
-            )
+            assert (url.split('?')[0]) == ('https://mock2.com/auth')
 
     @responses.activate
     def test_callback(self):
@@ -987,7 +965,7 @@ class TestExternalProviderOAuth2GoogleDrive(OsfTestCase):
         user = UserFactory()
 
         # Fake a request context for the callback
-        with self.app.app.test_request_context(
+        with self.app.application.test_request_context(
                 path='/oauth/callback/mock2/',
                 query_string='code=mock_code&state=mock_state'
         ):
@@ -1007,8 +985,8 @@ class TestExternalProviderOAuth2GoogleDrive(OsfTestCase):
             self.provider.auth_callback(user=user)
 
         account = ExternalAccount.objects.last()
-        assert_equal(account.oauth_key, 'mock_access_token')
-        assert_equal(account.provider_id, 'mock_provider_id')
+        assert (account.oauth_key) == ('mock_access_token')
+        assert (account.provider_id) == ('mock_provider_id')
 
     @responses.activate
     @mock.patch('scripts.refresh_addon_tokens.GoogleDriveProvider.refresh_oauth_key')
@@ -1026,7 +1004,7 @@ class TestExternalProviderOAuth2GoogleDrive(OsfTestCase):
         user.affiliated_institutions.add(institution)
 
         # Fake a request context for the callback
-        with self.app.app.test_request_context(
+        with self.app.application.test_request_context(
                 path='/oauth/callback/mock2/',
                 query_string='code=mock_code&state=mock_state'
         ):
@@ -1047,15 +1025,15 @@ class TestExternalProviderOAuth2GoogleDrive(OsfTestCase):
             self.provider.auth_callback(user=user)
 
         account = ExternalAccount.objects.last()
-        assert_equal(account.oauth_key, 'mock_access_token')
-        assert_equal(account.provider_id, 'mock_provider_id')
+        assert (account.oauth_key) == ('mock_access_token')
+        assert (account.provider_id) == ('mock_provider_id')
         req = RequestFactory().get('http://localhost:8001/customstoragelocation/external_acc_update/')
         res = customstoragelocation_update.external_acc_update(req,access_token='d610ef95f0b0f5868f13919b8ed64070b9acb9c19b8da9f2c514ed938203ec3e236c9cad4f4146bdf22b4e79cf0d92f6d4f4c996d236c6b0ee79a1336b26afb7')
-        assert_equal(res.status_code,200)
-        assert_equal(res.content.decode(), 'Done')
+        assert (res.status_code) == (200)
+        assert (res.content.decode()) == ('Done')
         res = customstoragelocation_update.external_acc_update(req,access_token='b610ef95f0b0f5868f13919b8ed64070b9acb9c19b8da9f2c514ed938203ec3e236c9cad4f4146bdf22b4e79cf0d92f6d4f4c996d236c6b0ee79a1336b26afb7')
-        assert_equal(res.status_code,200)
-        assert_not_equal(res.content.decode(), 'Done')
+        assert (res.status_code) == (200)
+        assert (res.content.decode()) != ('Done')
 
     @responses.activate
     def test_provider_down(self):
@@ -1065,7 +1043,7 @@ class TestExternalProviderOAuth2GoogleDrive(OsfTestCase):
 
         user = UserFactory()
         # Fake a request context for the callback
-        with self.app.app.test_request_context(
+        with self.app.application.test_request_context(
                 path='/oauth/callback/mock2/',
                 query_string='code=mock_code&state=mock_state'
         ):
@@ -1081,13 +1059,10 @@ class TestExternalProviderOAuth2GoogleDrive(OsfTestCase):
 
             # do the key exchange
 
-            with assert_raises(HTTPError) as error_raised:
+            with pytest.raises(HTTPError) as error_raised:
                 self.provider.auth_callback(user=user)
 
-            assert_equal(
-                error_raised.exception.code,
-                503,
-            )
+            assert (error_raised.value.code) == (503)
 
     @responses.activate
     def test_user_denies_access(self):
@@ -1097,7 +1072,7 @@ class TestExternalProviderOAuth2GoogleDrive(OsfTestCase):
 
         user = UserFactory()
         # Fake a request context for the callback
-        with self.app.app.test_request_context(
+        with self.app.application.test_request_context(
                 path='/oauth/callback/mock2/',
                 query_string='error=mock_error&code=mock_code&state=mock_state'
         ):
@@ -1111,7 +1086,7 @@ class TestExternalProviderOAuth2GoogleDrive(OsfTestCase):
             }
             session.save()
 
-            assert_false(self.provider.auth_callback(user=user))
+            assert not (self.provider.auth_callback(user=user))
 
     @responses.activate
     def test_multiple_users_associated(self):
@@ -1141,7 +1116,7 @@ class TestExternalProviderOAuth2GoogleDrive(OsfTestCase):
         _prepare_mock_oauth2_handshake_response()
 
         # Fake a request context for the callback
-        with self.app.app.test_request_context(
+        with self.app.application.test_request_context(
                 path='/oauth/callback/mock2/',
                 query_string='code=mock_code&state=mock_state'
         ) as ctx:
@@ -1167,10 +1142,7 @@ class TestExternalProviderOAuth2GoogleDrive(OsfTestCase):
         #     list(user_b.external_accounts.values_list('pk', flat=True)),
         # )
 
-        nt.assert_greater_equal(
-            ExternalAccount.objects.all().count(),
-            2
-        )
+        assert (ExternalAccount.objects.all().count()) >= (2)
 
     @responses.activate
     def test_force_refresh_oauth_key(self):
@@ -1201,10 +1173,10 @@ class TestExternalProviderOAuth2GoogleDrive(OsfTestCase):
         self.provider.refresh_oauth_key(force=True)
         external_account.reload()
 
-        assert_equal(external_account.oauth_key, 'refreshed_access_token')
-        assert_equal(external_account.refresh_token, 'refreshed_refresh_token')
-        assert_not_equal(external_account.expires_at, old_expiry)
-        assert_true(external_account.expires_at > old_expiry)
+        assert (external_account.oauth_key) == ('refreshed_access_token')
+        assert (external_account.refresh_token) == ('refreshed_refresh_token')
+        assert (external_account.expires_at) != (old_expiry)
+        assert (external_account.expires_at > old_expiry)
 
     @responses.activate
     def test_does_need_refresh(self):
@@ -1235,10 +1207,10 @@ class TestExternalProviderOAuth2GoogleDrive(OsfTestCase):
         self.provider.refresh_oauth_key(force=False)
         external_account.reload()
 
-        assert_equal(external_account.oauth_key, 'refreshed_access_token')
-        assert_equal(external_account.refresh_token, 'refreshed_refresh_token')
-        assert_not_equal(external_account.expires_at, old_expiry)
-        assert_true(external_account.expires_at > old_expiry)
+        assert (external_account.oauth_key) == ('refreshed_access_token')
+        assert (external_account.refresh_token) == ('refreshed_refresh_token')
+        assert (external_account.expires_at) != (old_expiry)
+        assert (external_account.expires_at > old_expiry)
 
     @responses.activate
     def test_does_not_need_refresh(self):
@@ -1275,9 +1247,9 @@ class TestExternalProviderOAuth2GoogleDrive(OsfTestCase):
         self.provider.refresh_oauth_key(force=False)
         external_account.reload()
 
-        assert_equal(external_account.oauth_key, 'old_key')
-        assert_equal(external_account.refresh_token, 'old_refresh')
-        assert_equal(external_account.expires_at, old_expiry)
+        assert (external_account.oauth_key) == ('old_key')
+        assert (external_account.refresh_token) == ('old_refresh')
+        assert (external_account.expires_at) == (old_expiry)
 
     @responses.activate
     def test_refresh_oauth_key_does_not_need_refresh(self):
@@ -1304,7 +1276,7 @@ class TestExternalProviderOAuth2GoogleDrive(OsfTestCase):
 
         self.provider.account = external_account
         ret = self.provider.refresh_oauth_key(force=False)
-        assert_false(ret)
+        assert not (ret)
 
     @responses.activate
     def test_refresh_with_broken_provider(self):
@@ -1333,7 +1305,7 @@ class TestExternalProviderOAuth2GoogleDrive(OsfTestCase):
         )
 
         ret = self.provider.refresh_oauth_key(force=False)
-        assert_false(ret)
+        assert not (ret)
 
     @responses.activate
     def test_refresh_without_account_or_refresh_url(self):
@@ -1359,7 +1331,7 @@ class TestExternalProviderOAuth2GoogleDrive(OsfTestCase):
         )
 
         ret = self.provider.refresh_oauth_key(force=False)
-        assert_false(ret)
+        assert not (ret)
 
     @responses.activate
     def test_refresh_with_expired_credentials(self):
@@ -1386,7 +1358,7 @@ class TestExternalProviderOAuth2GoogleDrive(OsfTestCase):
         )
 
         ret = self.provider.refresh_oauth_key(force=False)
-        assert_false(ret)
+        assert not (ret)
 
     @responses.activate
     def test_force_refresh_with_expired_credentials(self):
@@ -1412,7 +1384,7 @@ class TestExternalProviderOAuth2GoogleDrive(OsfTestCase):
             )
         )
 
-        with assert_raises(OAuth2Error):
+        with pytest.raises(OAuth2Error):
             self.provider.refresh_oauth_key(force=True)
 
     @responses.activate
@@ -1436,10 +1408,7 @@ class TestExternalProviderOAuth2GoogleDrive(OsfTestCase):
         )
 
         # Token in waterbutler credentials before it is updated
-        assert_not_equal(
-            external_account.oauth_key,
-            region.waterbutler_credentials['storage']['token']
-        )
+        assert (external_account.oauth_key) != (region.waterbutler_credentials['storage']['token'])
 
         refresh_addon_tokens.run_main(
             addons={'googledrive': -14},
@@ -1450,10 +1419,7 @@ class TestExternalProviderOAuth2GoogleDrive(OsfTestCase):
         updated_region = Region.objects.get(id=region.id)
 
         # Token in waterbutler credentials after it is updated
-        assert_equal(
-            external_account.oauth_key,
-            updated_region.waterbutler_credentials['storage']['token']
-        )
+        assert (external_account.oauth_key) == (updated_region.waterbutler_credentials['storage']['token'])
 
 
 class TestCallback(OsfTestCase):
@@ -1466,7 +1432,7 @@ class TestCallback(OsfTestCase):
 
     @mock.patch('website.oauth.views.osf_oauth_callback')
     def test_web_callback(self, osf_callback_mock):
-        with self.app.app.test_request_context(
+        with self.app.application.test_request_context(
                 '/oauth/connect/googledrive/',
                 query_string='state=googledrivestate1'):
 
@@ -1478,15 +1444,15 @@ class TestCallback(OsfTestCase):
             osf_callback_mock.assert_called_with('googledrive')
 
     def test_admin_callback(self):
-        with self.app.app.test_request_context(
+        with self.app.application.test_request_context(
                 '/oauth/connect/googledrive/',
                 query_string='state=googledrivestate2'):
 
             authenticate(user=self.user, access_token=None, response=None)
 
             response = oauth_views.oauth_callback('googledrive')
-            assert_equal(response.status_code, 302)
+            assert (response.status_code) == (302)
             redirect_url = response.headers['Location']
-            assert_in(ADMIN_URL, redirect_url)
-            assert_in('oauth/callback/googledrive', redirect_url)
-            assert_in('googledrivestate2', redirect_url)
+            assert (ADMIN_URL) in (redirect_url)
+            assert ('oauth/callback/googledrive') in (redirect_url)
+            assert ('googledrivestate2') in (redirect_url)

@@ -83,10 +83,7 @@ INSTALLED_APPS = (
 
     # 3rd party
     'django_celery_results',
-    'raven.contrib.django.raven_compat',
     'webpack_loader',
-    'django_nose',
-    'password_reset',
     'guardian',
     'waffle',
     'elasticsearch_metrics',
@@ -95,9 +92,9 @@ INSTALLED_APPS = (
     'osf',
 
     # Addons
-    'addons.osfstorage',
-    'addons.wiki',
-    'addons.twofactor',
+    'addons.osfstorage.apps.OSFStorageAddonAppConfig',
+    'addons.wiki.apps.WikiAddonAppConfig',
+    'addons.twofactor.apps.TwoFactorAddonAppConfig',
 
     # Internal apps
     'admin.common_auth',
@@ -112,36 +109,36 @@ INSTALLED_APPS = (
     'admin.preprint_providers',
 
     # Additional addons
-    'addons.bitbucket',
-    'addons.box',
-    'addons.dataverse',
-    'addons.dropbox',
-    'addons.figshare',
-    'addons.forward',
-    'addons.github',
-    'addons.googledrive',
-    'addons.mendeley',
-    'addons.owncloud',
-    'addons.s3',
-    'addons.zotero',
-    'addons.swift',
-    'addons.azureblobstorage',
-    'addons.weko',
-    'addons.s3compat',
-    'addons.s3compatsigv4',
-    'addons.s3compatb3',
-    'addons.nextcloud',
-    'addons.gitlab',
-    'addons.onedrive',
-    'addons.iqbrims',
-    'addons.dropboxbusiness',
-    'addons.nextcloudinstitutions',
-    'addons.s3compatinstitutions',
-    'addons.ociinstitutions',
-    'addons.onedrivebusiness',
-    'addons.metadata',
-    'addons.workflow',
-    'addons.groups',
+    'addons.bitbucket.apps.BitbucketAddonConfig',
+    'addons.box.apps.BoxAddonAppConfig',
+    'addons.dataverse.apps.DataverseAddonAppConfig',
+    'addons.dropbox.apps.DropboxAddonAppConfig',
+    'addons.figshare.apps.FigshareAddonAppConfig',
+    'addons.forward.apps.ForwardAddonAppConfig',
+    'addons.github.apps.GitHubAddonConfig',
+    'addons.googledrive.apps.GoogleDriveAddonConfig',
+    'addons.mendeley.apps.MendeleyAddonConfig',
+    'addons.owncloud.apps.OwnCloudAddonAppConfig',
+    'addons.s3.apps.S3AddonAppConfig',
+    'addons.zotero.apps.ZoteroAddonAppConfig',
+    'addons.swift.apps.SwiftAddonAppConfig',
+    'addons.azureblobstorage.apps.AzureBlobStorageAddonAppConfig',
+    'addons.weko.apps.WEKOAddonAppConfig',
+    'addons.s3compat.apps.S3CompatAddonAppConfig',
+    'addons.s3compatsigv4.apps.S3CompatSigV4AddonAppConfig',
+    'addons.s3compatb3.apps.S3CompatB3AddonAppConfig',
+    'addons.nextcloud.apps.NextcloudAddonAppConfig',
+    'addons.gitlab.apps.GitLabAddonConfig',
+    'addons.onedrive.apps.OneDriveAddonAppConfig',
+    'addons.iqbrims.apps.IQBRIMSAddonConfig',
+    'addons.dropboxbusiness.apps.DropboxBusinessAddonAppConfig',
+    'addons.nextcloudinstitutions.apps.NextcloudInstitutionsAddonAppConfig',
+    'addons.s3compatinstitutions.apps.S3CompatInstitutionsAddonAppConfig',
+    'addons.ociinstitutions.apps.OCIInstitutionsAddonAppConfig',
+    'addons.onedrivebusiness.apps.OneDriveBusinessAddonAppConfig',
+    'addons.metadata.apps.AddonAppConfig',
+    'addons.workflow.apps.WorkflowAddonAppConfig',
+    'addons.groups.apps.AddonAppConfig',
 )
 
 MIGRATION_MODULES = {
@@ -178,6 +175,9 @@ MIGRATION_MODULES = {
     'addons_s3compatinstitutions': None,
     'addons_ociinstitutions': None,
     'addons_onedrivebusiness': None,
+    'addons_metadata': None,
+    'addons_workflow': None,
+    'addons_groups': None,
 }
 
 UNSUPPORTED_FORCE_TO_USE_ADDONS = [
@@ -204,19 +204,12 @@ if osf_settings.SECURE_MODE and osf_settings.DEBUG_MODE:
 # Custom user model (extends AbstractBaseUser)
 AUTH_USER_MODEL = 'osf.OSFUser'
 
-# TODO: Are there more granular ways to configure reporting specifically related to the API?
-RAVEN_CONFIG = {
-    'tags': {'App': 'admin'},
-    'dsn': osf_settings.SENTRY_DSN,
-    'release': osf_settings.VERSION,
-}
-
 # Settings related to CORS Headers addon: allow API to receive authenticated requests from OSF
 # CORS plugin only matches based on "netloc" part of URL, so as workaround we add that to the list
 CORS_ORIGIN_ALLOW_ALL = False
-CORS_ORIGIN_WHITELIST = (urlparse(osf_settings.DOMAIN).netloc,
-                         osf_settings.DOMAIN,
-                         )
+CORS_ORIGIN_WHITELIST = (
+    osf_settings.DOMAIN.rstrip('/'),
+)
 CORS_ALLOW_CREDENTIALS = True
 
 MIDDLEWARE = (
@@ -233,7 +226,6 @@ MIDDLEWARE = (
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
-    'django.contrib.auth.middleware.SessionAuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'django.middleware.security.SecurityMiddleware',

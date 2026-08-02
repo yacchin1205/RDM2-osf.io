@@ -1,6 +1,6 @@
 from past.builtins import basestring
 from rest_framework import status as http_status
-from django.utils.translation import ugettext_lazy as _
+from django.utils.translation import gettext_lazy as _
 
 from rest_framework import status
 from rest_framework.exceptions import APIException, AuthenticationFailed, ErrorDetail

@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 import unittest
-from nose.tools import assert_raises, assert_equal
 import pytest
 
 from django.core.exceptions import ValidationError
@@ -24,7 +23,7 @@ class TestNodeSettings(unittest.TestCase):
         assert registration.has_addon('forward')
 
         forward = registration.get_addon('forward')
-        assert_equal(forward.url, 'http://frozen.pizza.reviews/')
+        assert (forward.url) == ('http://frozen.pizza.reviews/')
 
 @pytest.mark.enable_implicit_clean
 class TestSettingsValidation(unittest.TestCase):
@@ -35,7 +34,7 @@ class TestSettingsValidation(unittest.TestCase):
 
     def test_validate_url_bad(self):
         self.settings.url = 'badurl'
-        with assert_raises(ValidationError):
+        with pytest.raises(ValidationError):
             self.settings.save()
 
     def test_validate_url_good(self):
@@ -54,5 +53,5 @@ class TestSettingsValidation(unittest.TestCase):
 
     def test_label_unsanitary(self):
         self.settings.label = 'un<br />safe'
-        with assert_raises(ValidationError):
+        with pytest.raises(ValidationError):
             self.settings.save()

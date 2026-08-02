@@ -292,7 +292,7 @@ class ModeratorSerializer(JSONAPISerializer):
             user.username,
             template,
             mimetype='html',
-            **context
+            **context,
         )
         return user
 

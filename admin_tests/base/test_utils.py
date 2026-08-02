@@ -1,4 +1,3 @@
-from nose.tools import *  # noqa: F403
 import datetime as datetime
 import pytest
 
@@ -135,34 +134,34 @@ class TestNodeChanges(AdminTestCase):
 
     def test_change_embargo_date(self):
 
-        assert_false(self.registration.embargo)
-        assert_true(self.registration.is_public)
+        assert not (self.registration.embargo)
+        assert (self.registration.is_public)
 
         # Note: Date comparisons accept a difference up to a day because embargoes start at midnight
 
         # Create an embargo from a registration with none
         change_embargo_date(self.registration, self.user, self.date_valid)
-        assert_almost_equal(self.registration.embargo.end_date, self.date_valid, delta=datetime.timedelta(days=1))
+        assert abs((self.registration.embargo.end_date) - (self.date_valid)) <= (datetime.timedelta(days=1))
 
         # Make sure once embargo is set, registration is made private
         self.registration.reload()
-        assert_false(self.registration.is_public)
+        assert not (self.registration.is_public)
 
         # Update an embargo end date
         change_embargo_date(self.registration, self.user, self.date_valid2)
-        assert_almost_equal(self.registration.embargo.end_date, self.date_valid2, delta=datetime.timedelta(days=1))
+        assert abs((self.registration.embargo.end_date) - (self.date_valid2)) <= (datetime.timedelta(days=1))
 
         # Test invalid dates
-        with assert_raises(ValidationError):
+        with pytest.raises(ValidationError):
             change_embargo_date(self.registration, self.user, self.date_too_late)
-        with assert_raises(ValidationError):
+        with pytest.raises(ValidationError):
             change_embargo_date(self.registration, self.user, self.date_too_soon)
 
         # Test that checks user has permission
-        with assert_raises(PermissionDenied):
+        with pytest.raises(PermissionDenied):
             change_embargo_date(self.registration, UserFactory(), self.date_valid)
 
-        assert_almost_equal(self.registration.embargo.end_date, self.date_valid2, delta=datetime.timedelta(days=1))
+        assert abs((self.registration.embargo.end_date) - (self.date_valid2)) <= (datetime.timedelta(days=1))
 
         # Add a test to check privatizing
 
@@ -208,9 +207,9 @@ class TestGroupCollectionsPreprints:
         queryset = formfield.queryset
 
         collections_group = Collection.objects.filter(creator=user, is_bookmark_collection=True)[0].get_group('admin')
-        assert(collections_group not in queryset)
+        assert (collections_group not in queryset)
 
-        assert(preprint.get_group('admin') not in queryset)
+        assert (preprint.get_group('admin') not in queryset)
 
     @pytest.mark.enable_bookmark_creation
     def test_admin_app_save_related_collections(self, post_request, osf_user_admin, user, preprint):
@@ -233,7 +232,7 @@ class TestGroupCollectionsPreprints:
             else:
                 data_dict[field] = '{}'
         post_form = form(data_dict, instance=user)
-        assert(post_form.is_valid())
+        assert (post_form.is_valid())
         post_form.save(commit=False)
         qdict = QueryDict('', mutable=True)
         qdict.update(data_dict)
@@ -241,9 +240,9 @@ class TestGroupCollectionsPreprints:
         osf_user_admin.save_related(request=post_request, form=post_form, formsets=[], change=True)
 
         collections_group = Collection.objects.filter(creator=user, is_bookmark_collection=True)[0].get_group('admin')
-        assert(collections_group in user.groups.all())
+        assert (collections_group in user.groups.all())
 
-        assert(preprint.get_group('admin') in user.groups.all())
+        assert (preprint.get_group('admin') in user.groups.all())
 
 
 @pytest.mark.feature_202210

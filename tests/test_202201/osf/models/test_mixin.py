@@ -1,5 +1,4 @@
 import pytest
-from nose.tools import assert_not_in
 
 from framework.auth import Auth
 from osf.models import Contributor
@@ -64,10 +63,7 @@ class TestContributorMethods:
 
         assert isinstance(user, Contributor) is False
 
-        assert_not_in(
-            project._primary_key,
-            user.unclaimed_records.keys()
-        )
+        assert (project._primary_key) not in (user.unclaimed_records.keys())
 
     def test_cancel_invite_get_identifier_value(self, node, auth):
         user = AuthUserFactory()

@@ -1,9 +1,8 @@
 # -*- coding: utf-8 -*-
 from datetime import datetime
-import mock
+from unittest import mock
 import pytest
 import random
-from nose.tools import *  # noqa:
 
 from api.base.settings.defaults import API_BASE
 from api.nodes.serializers import NodeContributorsCreateSerializer
@@ -1714,10 +1713,10 @@ class TestNodeContributorBulkCreate(NodeCRUDTestCase):
             {'data': [payload_one, payload_two]},
             auth=user.auth, bulk=True)
         assert res.status_code == 201
-        assert_equals([res.json['data'][0]['attributes']['bibliographic'],
-                            res.json['data'][1]['attributes']['bibliographic']], [True, False])
-        assert_equals([res.json['data'][0]['attributes']['permission'],
-                            res.json['data'][1]['attributes']['permission']], [permissions.ADMIN, permissions.READ])
+        assert ([res.json['data'][0]['attributes']['bibliographic'],
+                            res.json['data'][1]['attributes']['bibliographic']]) == ([True, False])
+        assert ([res.json['data'][0]['attributes']['permission'],
+                            res.json['data'][1]['attributes']['permission']]) == ([permissions.ADMIN, permissions.READ])
         assert res.content_type == 'application/vnd.api+json'
 
         res = app.get(url_public, auth=user.auth)
@@ -1729,10 +1728,10 @@ class TestNodeContributorBulkCreate(NodeCRUDTestCase):
                                 auth=user.auth, expect_errors=True, bulk=True)
         assert res.status_code == 201
         assert len(res.json['data']) == 2
-        assert_equals([res.json['data'][0]['attributes']['bibliographic'],
-                            res.json['data'][1]['attributes']['bibliographic']], [True, False])
-        assert_equals([res.json['data'][0]['attributes']['permission'],
-                            res.json['data'][1]['attributes']['permission']], [permissions.ADMIN, permissions.READ])
+        assert ([res.json['data'][0]['attributes']['bibliographic'],
+                            res.json['data'][1]['attributes']['bibliographic']]) == ([True, False])
+        assert ([res.json['data'][0]['attributes']['permission'],
+                            res.json['data'][1]['attributes']['permission']]) == ([permissions.ADMIN, permissions.READ])
         assert res.content_type == 'application/vnd.api+json'
 
         res = app.get(url_private, auth=user.auth)
@@ -1949,12 +1948,9 @@ class TestNodeContributorBulkUpdate(NodeCRUDTestCase):
 
         res = app.get(url_public, auth=user.auth)
         data = res.json['data']
-        assert_equals(
-            [data[0]['attributes']['permission'],
+        assert ([data[0]['attributes']['permission'],
              data[1]['attributes']['permission'],
-             data[2]['attributes']['permission']],
-            [permissions.ADMIN, permissions.READ, permissions.READ]
-        )
+             data[2]['attributes']['permission']]) == ([permissions.ADMIN, permissions.READ, permissions.READ])
 
     #   test_bulk_update_contributors_public_projects_logged_out
         res = app.put_json_api(
@@ -1968,12 +1964,9 @@ class TestNodeContributorBulkUpdate(NodeCRUDTestCase):
 
         res = app.get(url_public, auth=user.auth)
         data = res.json['data']
-        assert_equals(
-            [data[0]['attributes']['permission'],
+        assert ([data[0]['attributes']['permission'],
              data[1]['attributes']['permission'],
-             data[2]['attributes']['permission']],
-            [permissions.ADMIN, permissions.READ, permissions.READ]
-        )
+             data[2]['attributes']['permission']]) == ([permissions.ADMIN, permissions.READ, permissions.READ])
 
     #   test_bulk_update_contributors_private_projects_logged_out
         res = app.put_json_api(
@@ -1987,11 +1980,9 @@ class TestNodeContributorBulkUpdate(NodeCRUDTestCase):
 
         res = app.get(url_private, auth=user.auth)
         data = res.json['data']
-        assert_equals(
-            [data[0]['attributes']['permission'],
+        assert ([data[0]['attributes']['permission'],
              data[1]['attributes']['permission'],
-             data[2]['attributes']['permission']],
-            [permissions.ADMIN, permissions.READ, permissions.READ])
+             data[2]['attributes']['permission']]) == ([permissions.ADMIN, permissions.READ, permissions.READ])
 
     #   test_bulk_update_contributors_private_projects_logged_in_non_contrib
         res = app.put_json_api(
@@ -2006,11 +1997,9 @@ class TestNodeContributorBulkUpdate(NodeCRUDTestCase):
 
         res = app.get(url_private, auth=user.auth)
         data = res.json['data']
-        assert_equals(
-            [data[0]['attributes']['permission'],
+        assert ([data[0]['attributes']['permission'],
              data[1]['attributes']['permission'],
-             data[2]['attributes']['permission']],
-            [permissions.ADMIN, permissions.READ, permissions.READ])
+             data[2]['attributes']['permission']]) == ([permissions.ADMIN, permissions.READ, permissions.READ])
 
     #   test_bulk_update_contributors_private_projects_logged_in_read_only_contrib
         res = app.put_json_api(
@@ -2025,12 +2014,9 @@ class TestNodeContributorBulkUpdate(NodeCRUDTestCase):
 
         res = app.get(url_private, auth=user.auth)
         data = res.json['data']
-        assert_equals(
-            [data[0]['attributes']['permission'],
+        assert ([data[0]['attributes']['permission'],
              data[1]['attributes']['permission'],
-             data[2]['attributes']['permission']],
-            [permissions.ADMIN, permissions.READ, permissions.READ]
-        )
+             data[2]['attributes']['permission']]) == ([permissions.ADMIN, permissions.READ, permissions.READ])
 
     #   test_bulk_update_contributors_projects_send_dictionary_not_list
         res = app.put_json_api(
@@ -2134,12 +2120,9 @@ class TestNodeContributorBulkUpdate(NodeCRUDTestCase):
 
         res = app.get(url_public, auth=user.auth)
         data = res.json['data']
-        assert_equals(
-            [data[0]['attributes']['permission'],
+        assert ([data[0]['attributes']['permission'],
              data[1]['attributes']['permission'],
-             data[2]['attributes']['permission']],
-            [permissions.ADMIN, permissions.READ, permissions.READ]
-        )
+             data[2]['attributes']['permission']]) == ([permissions.ADMIN, permissions.READ, permissions.READ])
 
     #   test_bulk_update_contributors_invalid_bibliographic
         res = app.put_json_api(
@@ -2160,16 +2143,13 @@ class TestNodeContributorBulkUpdate(NodeCRUDTestCase):
             auth=user.auth,
             expect_errors=True, bulk=True)
         assert res.status_code == 400
-        assert res.json['errors'][0]['detail'] == '"true and false" is not a valid boolean.'
+        assert res.json['errors'][0]['detail'] == 'Must be a valid boolean.'
 
         res = app.get(url_public, auth=user.auth)
         data = res.json['data']
-        assert_equals(
-            [data[0]['attributes']['permission'],
+        assert ([data[0]['attributes']['permission'],
              data[1]['attributes']['permission'],
-             data[2]['attributes']['permission']],
-            [permissions.ADMIN, permissions.READ, permissions.READ]
-        )
+             data[2]['attributes']['permission']]) == ([permissions.ADMIN, permissions.READ, permissions.READ])
 
     #   test_bulk_update_contributors_must_have_at_least_one_bibliographic_contributor
         res = app.put_json_api(
@@ -2231,11 +2211,8 @@ class TestNodeContributorBulkUpdate(NodeCRUDTestCase):
         )
         assert res.status_code == 200
         data = res.json['data']
-        assert_equals(
-            [data[0]['attributes']['permission'],
-             data[1]['attributes']['permission']],
-            [permissions.ADMIN, permissions.WRITE]
-        )
+        assert ([data[0]['attributes']['permission'],
+             data[1]['attributes']['permission']]) == ([permissions.ADMIN, permissions.WRITE])
 
     def test_bulk_update_contributors_private_projects_logged_in_contrib(
             self, app, user, payload_private_one, payload_private_two, url_private):
@@ -2246,11 +2223,8 @@ class TestNodeContributorBulkUpdate(NodeCRUDTestCase):
         )
         assert res.status_code == 200
         data = res.json['data']
-        assert_equals(
-            [data[0]['attributes']['permission'],
-             data[1]['attributes']['permission']],
-            [permissions.ADMIN, permissions.WRITE]
-        )
+        assert ([data[0]['attributes']['permission'],
+             data[1]['attributes']['permission']]) == ([permissions.ADMIN, permissions.WRITE])
 
 
 @pytest.mark.django_db
@@ -2391,12 +2365,9 @@ class TestNodeContributorBulkPartialUpdate(NodeCRUDTestCase):
 
         res = app.get(url_public, auth=user.auth)
         data = res.json['data']
-        assert_equals(
-            [data[0]['attributes']['permission'],
+        assert ([data[0]['attributes']['permission'],
              data[1]['attributes']['permission'],
-             data[2]['attributes']['permission']],
-            [permissions.ADMIN, permissions.READ, permissions.READ]
-        )
+             data[2]['attributes']['permission']]) == ([permissions.ADMIN, permissions.READ, permissions.READ])
 
     #   test_bulk_partial_update_contributors_public_projects_logged_out
         res = app.patch_json_api(
@@ -2407,12 +2378,9 @@ class TestNodeContributorBulkPartialUpdate(NodeCRUDTestCase):
 
         res = app.get(url_public, auth=user.auth)
         data = res.json['data']
-        assert_equals(
-            [data[0]['attributes']['permission'],
+        assert ([data[0]['attributes']['permission'],
              data[1]['attributes']['permission'],
-             data[2]['attributes']['permission']],
-            [permissions.ADMIN, permissions.READ, permissions.READ]
-        )
+             data[2]['attributes']['permission']]) == ([permissions.ADMIN, permissions.READ, permissions.READ])
 
     #   test_bulk_partial_update_contributors_private_projects_logged_out
         res = app.patch_json_api(
@@ -2424,11 +2392,9 @@ class TestNodeContributorBulkPartialUpdate(NodeCRUDTestCase):
 
         res = app.get(url_private, auth=user.auth)
         data = res.json['data']
-        assert_equals(
-            [data[0]['attributes']['permission'],
+        assert ([data[0]['attributes']['permission'],
              data[1]['attributes']['permission'],
-             data[2]['attributes']['permission']],
-            [permissions.ADMIN, permissions.READ, permissions.READ])
+             data[2]['attributes']['permission']]) == ([permissions.ADMIN, permissions.READ, permissions.READ])
 
     #   test_bulk_partial_update_contributors_private_projects_logged_in_non_contrib
         res = app.patch_json_api(
@@ -2441,12 +2407,9 @@ class TestNodeContributorBulkPartialUpdate(NodeCRUDTestCase):
 
         res = app.get(url_private, auth=user.auth)
         data = res.json['data']
-        assert_equals(
-            [data[0]['attributes']['permission'],
+        assert ([data[0]['attributes']['permission'],
              data[1]['attributes']['permission'],
-             data[2]['attributes']['permission']],
-            [permissions.ADMIN, permissions.READ, permissions.READ]
-        )
+             data[2]['attributes']['permission']]) == ([permissions.ADMIN, permissions.READ, permissions.READ])
 
     #   test_bulk_partial_update_contributors_private_projects_logged_in_read_only_contrib
         res = app.patch_json_api(
@@ -2459,11 +2422,9 @@ class TestNodeContributorBulkPartialUpdate(NodeCRUDTestCase):
 
         res = app.get(url_private, auth=user.auth)
         data = res.json['data']
-        assert_equals(
-            [data[0]['attributes']['permission'],
+        assert ([data[0]['attributes']['permission'],
              data[1]['attributes']['permission'],
-             data[2]['attributes']['permission']],
-            [permissions.ADMIN, permissions.READ, permissions.READ])
+             data[2]['attributes']['permission']]) == ([permissions.ADMIN, permissions.READ, permissions.READ])
 
     #   test_bulk_partial_update_contributors_projects_send_dictionary_not_list
         res = app.patch_json_api(
@@ -2556,11 +2517,9 @@ class TestNodeContributorBulkPartialUpdate(NodeCRUDTestCase):
 
         res = app.get(url_public, auth=user.auth)
         data = res.json['data']
-        assert_equals(
-            [data[0]['attributes']['permission'],
+        assert ([data[0]['attributes']['permission'],
              data[1]['attributes']['permission'],
-             data[2]['attributes']['permission']],
-            [permissions.ADMIN, permissions.READ, permissions.READ])
+             data[2]['attributes']['permission']]) == ([permissions.ADMIN, permissions.READ, permissions.READ])
 
     #   test_bulk_partial_update_invalid_bibliographic
         res = app.patch_json_api(
@@ -2578,15 +2537,13 @@ class TestNodeContributorBulkPartialUpdate(NodeCRUDTestCase):
             auth=user.auth,
             expect_errors=True, bulk=True)
         assert res.status_code == 400
-        assert res.json['errors'][0]['detail'] == '"true and false" is not a valid boolean.'
+        assert res.json['errors'][0]['detail'] == 'Must be a valid boolean.'
 
         res = app.get(url_public, auth=user.auth)
         data = res.json['data']
-        assert_equals(
-            [data[0]['attributes']['permission'],
+        assert ([data[0]['attributes']['permission'],
              data[1]['attributes']['permission'],
-             data[2]['attributes']['permission']],
-            [permissions.ADMIN, permissions.READ, permissions.READ])
+             data[2]['attributes']['permission']]) == ([permissions.ADMIN, permissions.READ, permissions.READ])
 
     def test_bulk_partial_update_contributors_public_projects_logged_in(
             self, app, user, payload_public_one, payload_public_two, url_public):
@@ -2596,10 +2553,8 @@ class TestNodeContributorBulkPartialUpdate(NodeCRUDTestCase):
             auth=user.auth, bulk=True)
         assert res.status_code == 200
         data = res.json['data']
-        assert_equals(
-            [data[0]['attributes']['permission'],
-             data[1]['attributes']['permission']],
-            [permissions.ADMIN, permissions.WRITE])
+        assert ([data[0]['attributes']['permission'],
+             data[1]['attributes']['permission']]) == ([permissions.ADMIN, permissions.WRITE])
 
     def test_bulk_partial_update_contributors_private_projects_logged_in_contrib(
             self, app, user, payload_private_one, payload_private_two, url_private):
@@ -2609,10 +2564,8 @@ class TestNodeContributorBulkPartialUpdate(NodeCRUDTestCase):
             auth=user.auth, bulk=True)
         assert res.status_code == 200
         data = res.json['data']
-        assert_equals(
-            [data[0]['attributes']['permission'],
-             data[1]['attributes']['permission']],
-            [permissions.ADMIN, permissions.WRITE])
+        assert ([data[0]['attributes']['permission'],
+             data[1]['attributes']['permission']]) == ([permissions.ADMIN, permissions.WRITE])
 
 
 class TestNodeContributorBulkDelete(NodeCRUDTestCase):
@@ -2974,20 +2927,20 @@ class TestNodeContributorFiltering:
         project.add_contributor(user_two, permissions.WRITE)
         project.add_contributor(user_three, permissions.READ, visible=False)
     #   test_filtering_permission_field_admin
-        filter_url = '{}?filter[permission]=admin'.format(url, project._id)
+        filter_url = '{}?filter[permission]=admin'.format(url)
         res = app.get(filter_url, auth=user.auth, expect_errors=True)
         assert res.status_code == 200
         assert len(res.json['data']) == 1
         assert res.json['data'][0]['attributes'].get('permission') == permissions.ADMIN
 
     #   test_filtering_permission_field_write
-        filter_url = '{}?filter[permission]=write'.format(url, project._id)
+        filter_url = '{}?filter[permission]=write'.format(url)
         res = app.get(filter_url, auth=user.auth, expect_errors=True)
         assert res.status_code == 200
         assert len(res.json['data']) == 2
 
     #   test_filtering_permission_field_read
-        filter_url = '{}?filter[permission]=read'.format(url, project._id)
+        filter_url = '{}?filter[permission]=read'.format(url)
         res = app.get(filter_url, auth=user.auth, expect_errors=True)
         assert res.status_code == 200
         assert len(res.json['data']) == 3
@@ -3011,7 +2964,7 @@ class TestNodeContributorFiltering:
         assert len(res.json['data']) == 1
 
     #   test_filtering_on_invalid_field
-        filter_url = '{}?filter[invalid]=foo'.format(url, project._id)
+        filter_url = '{}?filter[invalid]=foo'.format(url)
         res = app.get(filter_url, auth=user.auth, expect_errors=True)
         assert res.status_code == 400
         errors = res.json['errors']

@@ -7,13 +7,12 @@ import string
 import random
 import base64
 from urllib.parse import urlencode
-from urllib.parse import urlparse
+from urllib.parse import parse_qs, urlparse
 
 from django.utils import timezone
 
-import mock
+from unittest import mock
 import pytest
-from nose.tools import *  # noqa PEP8 asserts
 
 from framework.auth.core import Auth
 from osf.models import AbstractNode, NodeLog
@@ -73,8 +72,8 @@ class TestOAuthOfMAPCore(OsfTestCase):
         self.me.save()
 
     def test_no_map_profile(self):
-        assert_equal(self.me.map_profile, None)
-        with assert_raises(MAPCoreTokenExpired):
+        assert (self.me.map_profile) == (None)
+        with pytest.raises(MAPCoreTokenExpired):
             mapcore_api_is_available(self.me)
 
     def _common_mapcore_request_authcode_with_next_url(self, next_url):
@@ -100,7 +99,7 @@ class TestOAuthOfMAPCore(OsfTestCase):
                 entity_id, encode_uri_component(target))
         else:
             expected_url = target
-        assert_equal(redirect_url, expected_url)
+        assert (redirect_url) == (expected_url)
 
     @mock.patch('nii.mapcore.MAPCORE_CLIENTID', 'fake_clientid')
     def test_mapcore_request_authcode_with_next_url(self):
@@ -134,14 +133,14 @@ class TestOAuthOfMAPCore(OsfTestCase):
         next_url = u'http://nexturl.example.com/\u00c3\u00c3\u00c3'
         state = settings.MAPCORE_AUTHCODE_MAGIC + next_url
         params = {'code': 'abc', 'state': base64.b64encode(state.encode('utf-8')).decode()}
-        assert_equal(self.me.map_profile, None)
+        assert (self.me.map_profile) == (None)
         # set self.me.map_profile
         ret = mapcore_receive_authcode(self.me, params)
-        assert_equal(next_url, ret)
+        assert (next_url) == (ret)
 
         self.me.reload()
-        assert_equal(self.me.map_profile.oauth_access_token, ACCESS_TOKEN)
-        assert_equal(self.me.map_profile.oauth_refresh_token, REFRESH_TOKEN)
+        assert (self.me.map_profile.oauth_access_token) == (ACCESS_TOKEN)
+        assert (self.me.map_profile.oauth_refresh_token) == (REFRESH_TOKEN)
 
         api_version = requests.Response()
         api_version.status_code = requests.codes.ok
@@ -158,8 +157,8 @@ class TestOAuthOfMAPCore(OsfTestCase):
         mapcore_api_is_available(self.me)
         self.me.reload()
         # tokens are not updated (refresh_token() is not called)
-        assert_equal(self.me.map_profile.oauth_access_token, ACCESS_TOKEN)
-        assert_equal(self.me.map_profile.oauth_refresh_token, REFRESH_TOKEN)
+        assert (self.me.map_profile.oauth_access_token) == (ACCESS_TOKEN)
+        assert (self.me.map_profile.oauth_refresh_token) == (REFRESH_TOKEN)
 
         api_version_e = requests.Response()
         api_version_e.status_code = 401
@@ -170,8 +169,8 @@ class TestOAuthOfMAPCore(OsfTestCase):
         mapcore_api_is_available(self.me)
         self.me.reload()
         # tokens are updated (refresh_token() is called)
-        assert_equal(self.me.map_profile.oauth_access_token, ACCESS_TOKEN2)
-        assert_equal(self.me.map_profile.oauth_refresh_token, REFRESH_TOKEN2)
+        assert (self.me.map_profile.oauth_access_token) == (ACCESS_TOKEN2)
+        assert (self.me.map_profile.oauth_refresh_token) == (REFRESH_TOKEN2)
 
 
 
@@ -213,28 +212,28 @@ class TestFuncOfMAPCore(OsfTestCase):
 
     @mock.patch('nii.mapcore.MAPCORE_CLIENTID', None)
     def test_sync_is_disabled(self):
-        assert_equal(mapcore_sync_is_enabled(), False)
+        assert (mapcore_sync_is_enabled()) == (False)
 
     @mock.patch('nii.mapcore.MAPCORE_CLIENTID', 'test_enabled')
     def test_sync_is_enabled(self):
-        assert_equal(mapcore_sync_is_enabled(), True)
+        assert (mapcore_sync_is_enabled()) == (True)
 
     @mock.patch('nii.mapcore.MAPCORE_CLIENTID', 'dummy_client_id')
     def test_sync_set_enabled(self):
         mapcore_sync_set_disabled()
-        assert_equal(mapcore_sync_is_enabled(), False)
+        assert (mapcore_sync_is_enabled()) == (False)
         mapcore_sync_set_enabled()
-        assert_equal(mapcore_sync_is_enabled(), True)
+        assert (mapcore_sync_is_enabled()) == (True)
 
     @mock.patch('nii.mapcore.MAPCORE_CLIENTID', 'dummy_client_id')
     @mock.patch('nii.mapcore.mapcore_sync_rdm_project_or_map_group')
     def test_sync_upload_all(self, mock_sync):
         mapcore_sync_set_disabled()
         mapcore_sync_upload_all()
-        assert_equal(mock_sync.call_count, 0)
+        assert (mock_sync.call_count) == (0)
         mapcore_sync_set_enabled()
         mapcore_sync_upload_all()
-        assert_not_equal(mock_sync.call_count, 0)
+        assert (mock_sync.call_count) != (0)
         # testing mapcore_set_standby_to_upload() exists in test_sync_rdm_project_or_map_group
 
     # include testing mapcore_set_standby_to_upload()
@@ -246,15 +245,15 @@ class TestFuncOfMAPCore(OsfTestCase):
                                  mapcore_unset_standby_to_upload)
 
         # create a new group (GRDM -> mAP)
-        assert_equal(self.project.map_group_key, None)
+        assert (self.project.map_group_key) == (None)
         with mock.patch('nii.mapcore.mapcore_sync_map_new_group') as mock1, \
              mock.patch('nii.mapcore.mapcore_sync_map_group') as mock2, \
              mock.patch('nii.mapcore.mapcore_sync_rdm_project') as mock3:
             mock1.return_value = 'fake_group_key'
             mapcore_sync_rdm_project_or_map_group(self.me, self.project)
-            assert_equal(mock1.call_count, 1)
-            assert_equal(mock2.call_count, 1)
-            assert_equal(mock3.call_count, 0)
+            assert (mock1.call_count) == (1)
+            assert (mock2.call_count) == (1)
+            assert (mock3.call_count) == (0)
 
         # GRDM -> mAP
         # use mock: mapcore_is_on_standby_to_upload
@@ -265,8 +264,8 @@ class TestFuncOfMAPCore(OsfTestCase):
              mock.patch('nii.mapcore.mapcore_sync_map_group') as mock2:
             mock1.return_value = True
             mapcore_sync_rdm_project_or_map_group(self.me, self.project)
-            assert_equal(mock1.call_count, 1)
-            assert_equal(mock2.call_count, 1)
+            assert (mock1.call_count) == (1)
+            assert (mock2.call_count) == (1)
 
         # GRDM -> mAP
         # not use mock: mapcore_is_on_standby_to_upload
@@ -274,36 +273,36 @@ class TestFuncOfMAPCore(OsfTestCase):
         with mock.patch('nii.mapcore.mapcore_sync_map_group') as mock1:
             mapcore_set_standby_to_upload(self.project, log=True)
             mapcore_sync_rdm_project_or_map_group(self.me, self.project)
-            assert_equal(mock1.call_count, 1)
+            assert (mock1.call_count) == (1)
 
         # mAP -> GRDM
         # use mock: mapcore_is_on_standby_to_upload
         mapcore_clear_sync_time(self.project)
         with mock.patch('nii.mapcore.mapcore_is_on_standby_to_upload') as mock1, \
              mock.patch('nii.mapcore.mapcore_sync_rdm_project') as mock2:
-            assert_equal(mapcore_is_sync_time_expired(self.project), True)
+            assert (mapcore_is_sync_time_expired(self.project)) == (True)
             mock1.return_value = False
             mapcore_sync_rdm_project_or_map_group(self.me, self.project)
-            assert_equal(mock1.call_count, 1)
-            assert_equal(mock2.call_count, 1)
+            assert (mock1.call_count) == (1)
+            assert (mock2.call_count) == (1)
             self.project.reload()
-            assert_equal(mapcore_is_sync_time_expired(self.project), False)
+            assert (mapcore_is_sync_time_expired(self.project)) == (False)
             mapcore_sync_rdm_project_or_map_group(self.me, self.project)
-            assert_equal(mock1.call_count, 1)  # not incremented
-            assert_equal(mock2.call_count, 1)  # not incremented
+            assert (mock1.call_count) == (1)  # not incremented
+            assert (mock2.call_count) == (1)  # not incremented
 
         # mAP -> GRDM
         # not use mock: mapcore_is_on_standby_to_upload
         mapcore_clear_sync_time(self.project)
         with mock.patch('nii.mapcore.mapcore_sync_rdm_project') as mock2:
-            assert_equal(mapcore_is_sync_time_expired(self.project), True)
+            assert (mapcore_is_sync_time_expired(self.project)) == (True)
             mapcore_unset_standby_to_upload(self.project)
             mapcore_sync_rdm_project_or_map_group(self.me, self.project)
-            assert_equal(mock2.call_count, 1)
+            assert (mock2.call_count) == (1)
             self.project.reload()
-            assert_equal(mapcore_is_sync_time_expired(self.project), False)
+            assert (mapcore_is_sync_time_expired(self.project)) == (False)
             mapcore_sync_rdm_project_or_map_group(self.me, self.project)
-            assert_equal(mock2.call_count, 1)  # not incremented
+            assert (mock2.call_count) == (1)  # not incremented
 
 
     @mock.patch('nii.mapcore_api.MAPCORE_SECRET', 'fake_secret')
@@ -322,8 +321,8 @@ class TestFuncOfMAPCore(OsfTestCase):
 
         mapcore_sync_map_new_group(self.me, self.project, use_raise=True)
         args, kwargs = mock_post.call_args
-        assert_equal(args[0].endswith('/group'), True)
-        assert_equal(mock_edit.call_count, 1)
+        assert (args[0].endswith('/group')) == (True)
+        assert (mock_edit.call_count) == (1)
 
     @mock.patch('nii.mapcore_api.MAPCORE_SECRET', 'fake_secret')
     @mock.patch('nii.mapcore_api.MAPCORE_HOSTNAME', 'fake_hostname')
@@ -343,8 +342,7 @@ class TestFuncOfMAPCore(OsfTestCase):
                                title_desc=True, contributors=False,
                                use_raise=True)
         args, kwargs = mock_post.call_args
-        assert_equal(args[0].endswith('/group/' + self.project.map_group_key),
-                     True)
+        assert (args[0].endswith('/group/' + self.project.map_group_key)) == (True)
 
     @mock.patch('nii.mapcore_api.MAPCORE_SECRET', 'fake_secret')
     @mock.patch('nii.mapcore_api.MAPCORE_HOSTNAME', 'fake_hostname')
@@ -368,10 +366,10 @@ class TestFuncOfMAPCore(OsfTestCase):
         mapcore_sync_map_group(self.me, self.project,
                                title_desc=False, contributors=True,
                                use_raise=True)
-        assert_equal(mock_get_grinfo.call_count, 1)
-        assert_equal(mock_add.call_count, 0)
-        assert_equal(mock_remove.call_count, 0)
-        assert_equal(mock_edit.call_count, 0)
+        assert (mock_get_grinfo.call_count) == (1)
+        assert (mock_add.call_count) == (0)
+        assert (mock_remove.call_count) == (0)
+        assert (mock_edit.call_count) == (0)
         mock_get_grinfo.call_count = 0
 
         # test #2 : add
@@ -382,10 +380,10 @@ class TestFuncOfMAPCore(OsfTestCase):
         mapcore_sync_map_group(self.me, self.project,
                                title_desc=False, contributors=True,
                                use_raise=True)
-        assert_equal(mock_get_grinfo.call_count, 1)
-        assert_equal(mock_add.call_count, 1)
-        assert_equal(mock_remove.call_count, 0)
-        assert_equal(mock_edit.call_count, 0)
+        assert (mock_get_grinfo.call_count) == (1)
+        assert (mock_add.call_count) == (1)
+        assert (mock_remove.call_count) == (0)
+        assert (mock_edit.call_count) == (0)
         mock_get_grinfo.call_count = 0
         mock_add.call_count = 0
         self.project.remove_contributor(self.user2, auth=Auth(self.me))
@@ -400,10 +398,10 @@ class TestFuncOfMAPCore(OsfTestCase):
         mapcore_sync_map_group(self.me, self.project,
                                title_desc=False, contributors=True,
                                use_raise=True)
-        assert_equal(mock_get_grinfo.call_count, 1)
-        assert_equal(mock_add.call_count, 0)
-        assert_equal(mock_remove.call_count, 1)
-        assert_equal(mock_edit.call_count, 0)
+        assert (mock_get_grinfo.call_count) == (1)
+        assert (mock_add.call_count) == (0)
+        assert (mock_remove.call_count) == (1)
+        assert (mock_edit.call_count) == (0)
         mock_get_grinfo.call_count = 0
         mock_remove.call_count = 0
 
@@ -418,13 +416,13 @@ class TestFuncOfMAPCore(OsfTestCase):
         mapcore_sync_map_group(self.me, self.project,
                                title_desc=False, contributors=True,
                                use_raise=True)
-        assert_equal(mock_get_grinfo.call_count, 1)
-        assert_equal(mock_add.call_count, 0)
-        assert_equal(mock_remove.call_count, 0)
-        assert_equal(mock_edit.call_count, 1)
+        assert (mock_get_grinfo.call_count) == (1)
+        assert (mock_add.call_count) == (0)
+        assert (mock_remove.call_count) == (0)
+        assert (mock_edit.call_count) == (1)
         args, kwargs = mock_edit.call_args
-        assert_equal(args[3], self.user2.eppn)
-        assert_equal(args[4], MAPCore.MODE_ADMIN)
+        assert (args[3]) == (self.user2.eppn)
+        assert (args[4]) == (MAPCore.MODE_ADMIN)
         mock_get_grinfo.call_count = 0
         mock_edit.call_count = 0
 
@@ -439,13 +437,13 @@ class TestFuncOfMAPCore(OsfTestCase):
         mapcore_sync_map_group(self.me, self.project,
                                title_desc=False, contributors=True,
                                use_raise=True)
-        assert_equal(mock_get_grinfo.call_count, 1)
-        assert_equal(mock_add.call_count, 0)
-        assert_equal(mock_remove.call_count, 0)
-        assert_equal(mock_edit.call_count, 1)
+        assert (mock_get_grinfo.call_count) == (1)
+        assert (mock_add.call_count) == (0)
+        assert (mock_remove.call_count) == (0)
+        assert (mock_edit.call_count) == (1)
         args, kwargs = mock_edit.call_args
-        assert_equal(args[3], self.user2.eppn)
-        assert_equal(args[4], MAPCore.MODE_MEMBER)
+        assert (args[3]) == (self.user2.eppn)
+        assert (args[4]) == (MAPCore.MODE_MEMBER)
 
         self.project.remove_contributor(self.user2, auth=Auth(self.me))
         self.project.save()
@@ -456,10 +454,9 @@ class TestFuncOfMAPCore(OsfTestCase):
 
         mock_sync.side_effect = Exception('fake error message')
         mapcore_sync_map_group(self.me, self.project, use_raise=False)
-        assert_equal(mock_sync.call_count, 1)
+        assert (mock_sync.call_count) == (1)
         node_copy = AbstractNode.objects.get(guids___id=self.project._id)
-        assert_equal(node_copy.logs.latest().action,
-                     NodeLog.MAPCORE_MAP_GROUP_NOT_UPDATED)
+        assert (node_copy.logs.latest().action) == (NodeLog.MAPCORE_MAP_GROUP_NOT_UPDATED)
 
     @mock.patch('nii.mapcore_api.MAPCORE_SECRET', 'fake_secret')
     @mock.patch('nii.mapcore_api.MAPCORE_HOSTNAME', 'fake_hostname')
@@ -479,13 +476,12 @@ class TestFuncOfMAPCore(OsfTestCase):
         mapcore_sync_map_group(self.me, self.project,
                                title_desc=False, contributors=True,
                                use_raise=True)
-        assert_equal(mock_get_grinfo.call_count, 1)
-        assert_equal(mock_add.call_count, 0)
-        assert_equal(mock_remove.call_count, 0)  # not called
-        assert_equal(mock_edit.call_count, 0)
+        assert (mock_get_grinfo.call_count) == (1)
+        assert (mock_add.call_count) == (0)
+        assert (mock_remove.call_count) == (0)  # not called
+        assert (mock_edit.call_count) == (0)
         node_copy = AbstractNode.objects.get(guids___id=self.project._id)
-        assert_equal(node_copy.logs.latest().action,
-                     NodeLog.MAPCORE_RDM_UNKNOWN_USER)
+        assert (node_copy.logs.latest().action) == (NodeLog.MAPCORE_RDM_UNKNOWN_USER)
 
     @mock.patch('nii.mapcore_api.MAPCORE_SECRET', 'fake_secret')
     @mock.patch('nii.mapcore_api.MAPCORE_HOSTNAME', 'fake_hostname')
@@ -511,11 +507,11 @@ class TestFuncOfMAPCore(OsfTestCase):
         mapcore_sync_map_group(self.me, self.project,
                                title_desc=False, contributors=True,
                                use_raise=True)
-        assert_equal(mock_get_group.call_count, 1)
-        assert_equal(mock_get_members.call_count, 1)
-        assert_equal(mock_add.call_count, 0)
-        assert_equal(mock_remove.call_count, 0)
-        assert_equal(mock_edit.call_count, 0)
+        assert (mock_get_group.call_count) == (1)
+        assert (mock_get_members.call_count) == (1)
+        assert (mock_add.call_count) == (0)
+        assert (mock_remove.call_count) == (0)
+        assert (mock_edit.call_count) == (0)
 
     @mock.patch('nii.mapcore_api.MAPCORE_SECRET', 'fake_secret')
     @mock.patch('nii.mapcore_api.MAPCORE_HOSTNAME', 'fake_hostname')
@@ -538,11 +534,11 @@ class TestFuncOfMAPCore(OsfTestCase):
         mock_get.side_effect = func_get
 
         mapcore_get_extended_group_info(self.me, self.project, group_key, base_grp=None)
-        assert_equal(mock_get.call_count, 2)
+        assert (mock_get.call_count) == (2)
         args, kwargs = mock_get.call_args_list[0]
-        assert_equal(args[0].endswith('/group/' + group_key), True)
+        assert (args[0].endswith('/group/' + group_key)) == (True)
         args, kwargs = mock_get.call_args_list[1]
-        assert_equal(args[0].endswith('/member/' + group_key), True)
+        assert (args[0].endswith('/member/' + group_key)) == (True)
 
     @mock.patch('nii.mapcore_api.MAPCORE_SECRET', 'fake_secret')
     @mock.patch('nii.mapcore_api.MAPCORE_HOSTNAME', 'fake_hostname')
@@ -562,7 +558,7 @@ class TestFuncOfMAPCore(OsfTestCase):
 
         mapcore_add_to_group(self.me, self.project, group_key, self.me.eppn, MAPCore.MODE_ADMIN)
         args, kwargs = mock_post.call_args
-        assert_equal(args[0].endswith('/member/' + self.project.map_group_key + '/' + self.me.eppn), True)
+        assert (args[0].endswith('/member/' + self.project.map_group_key + '/' + self.me.eppn)) == (True)
 
     @mock.patch('nii.mapcore_api.MAPCORE_SECRET', 'fake_secret')
     @mock.patch('nii.mapcore_api.MAPCORE_HOSTNAME', 'fake_hostname')
@@ -582,7 +578,7 @@ class TestFuncOfMAPCore(OsfTestCase):
 
         mapcore_remove_from_group(self.me, self.project, group_key, self.me.eppn)
         args, kwargs = mock_delete.call_args
-        assert_equal(args[0].endswith('/member/' + self.project.map_group_key + '/' + self.me.eppn), True)
+        assert (args[0].endswith('/member/' + self.project.map_group_key + '/' + self.me.eppn)) == (True)
 
     @mock.patch('nii.mapcore_api.MAPCORE_SECRET', 'fake_secret')
     @mock.patch('nii.mapcore_api.MAPCORE_HOSTNAME', 'fake_hostname')
@@ -594,8 +590,8 @@ class TestFuncOfMAPCore(OsfTestCase):
 
         group_key = 'fake_group_key'
         mapcore_edit_member(self.me, self.project, group_key, self.me.eppn, MAPCore.MODE_ADMIN)
-        assert_equal(mock_remove.call_count, 1)
-        assert_equal(mock_add.call_count, 1)
+        assert (mock_remove.call_count) == (1)
+        assert (mock_add.call_count) == (1)
 
     @mock.patch('nii.mapcore_api.MAPCORE_SECRET', 'fake_secret')
     @mock.patch('nii.mapcore_api.MAPCORE_HOSTNAME', 'fake_hostname')
@@ -624,13 +620,13 @@ class TestFuncOfMAPCore(OsfTestCase):
             mapcore_sync_rdm_project(self.me, self.project,
                                      title_desc=True, contributors=False,
                                      use_raise=True)
-            assert_equal(mock_get_grinfo.call_count, 1)
-            assert_equal(mock_add.call_count, 0)
-            assert_equal(mock_remove.call_count, 0)
-            assert_equal(mock_edit.call_count, 0)
+            assert (mock_get_grinfo.call_count) == (1)
+            assert (mock_add.call_count) == (0)
+            assert (mock_remove.call_count) == (0)
+            assert (mock_edit.call_count) == (0)
         node2 = AbstractNode.objects.get(guids___id=self.project._id)
-        assert_equal(node2.title, group_name)
-        assert_equal(node2.description, introduction)
+        assert (node2.title) == (group_name)
+        assert (node2.description) == (introduction)
 
     @mock.patch('nii.mapcore_api.MAPCORE_SECRET', 'fake_secret')
     @mock.patch('nii.mapcore_api.MAPCORE_HOSTNAME', 'fake_hostname')
@@ -658,10 +654,10 @@ class TestFuncOfMAPCore(OsfTestCase):
             mapcore_sync_rdm_project(self.me, self.project,
                                      title_desc=False, contributors=True,
                                      use_raise=True)
-            assert_equal(mock_get_grinfo.call_count, 1)
-            assert_equal(mock_add.call_count, 0)
-            assert_equal(mock_remove.call_count, 0)
-            assert_equal(mock_edit.call_count, 0)
+            assert (mock_get_grinfo.call_count) == (1)
+            assert (mock_add.call_count) == (0)
+            assert (mock_remove.call_count) == (0)
+            assert (mock_edit.call_count) == (0)
         mock_get_grinfo.call_count = 0
 
         # test #2 : remove
@@ -677,10 +673,10 @@ class TestFuncOfMAPCore(OsfTestCase):
             mapcore_sync_rdm_project(self.me, self.project,
                                      title_desc=False, contributors=True,
                                      use_raise=True)
-            assert_equal(mock_get_grinfo.call_count, 1)
-            assert_equal(mock_add.call_count, 0)
-            assert_equal(mock_remove.call_count, 1)
-            assert_equal(mock_edit.call_count, 0)
+            assert (mock_get_grinfo.call_count) == (1)
+            assert (mock_add.call_count) == (0)
+            assert (mock_remove.call_count) == (1)
+            assert (mock_edit.call_count) == (0)
         mock_get_grinfo.call_count = 0
         self.project.remove_contributor(self.user2, auth=Auth(self.me))
         self.project.save()
@@ -700,10 +696,10 @@ class TestFuncOfMAPCore(OsfTestCase):
             mapcore_sync_rdm_project(self.me, self.project,
                                      title_desc=False, contributors=True,
                                      use_raise=True)
-            assert_equal(mock_get_grinfo.call_count, 1)
-            assert_equal(mock_add.call_count, 1)
-            assert_equal(mock_remove.call_count, 0)
-            assert_equal(mock_edit.call_count, 0)
+            assert (mock_get_grinfo.call_count) == (1)
+            assert (mock_add.call_count) == (1)
+            assert (mock_remove.call_count) == (0)
+            assert (mock_edit.call_count) == (0)
         mock_get_grinfo.call_count = 0
 
         # test #4 : set DEFAULT_CONTRIBUTOR_PERMISSIONS
@@ -723,13 +719,13 @@ class TestFuncOfMAPCore(OsfTestCase):
             mapcore_sync_rdm_project(self.me, self.project,
                                      title_desc=False, contributors=True,
                                      use_raise=True)
-            assert_equal(mock_get_grinfo.call_count, 1)
-            assert_equal(mock_add.call_count, 0)
-            assert_equal(mock_remove.call_count, 0)
-            assert_equal(mock_edit.call_count, 1)
+            assert (mock_get_grinfo.call_count) == (1)
+            assert (mock_add.call_count) == (0)
+            assert (mock_remove.call_count) == (0)
+            assert (mock_edit.call_count) == (1)
             args, kwargs = mock_edit.call_args
-            assert_equal(args[0].eppn, self.user2.eppn)
-            assert_equal(args[1], DEFAULT_CONTRIBUTOR_PERMISSIONS)
+            assert (args[0].eppn) == (self.user2.eppn)
+            assert (args[1]) == (DEFAULT_CONTRIBUTOR_PERMISSIONS)
         mock_get_grinfo.call_count = 0
 
         # test #5 : set CREATOR_PERMISSIONS
@@ -749,13 +745,13 @@ class TestFuncOfMAPCore(OsfTestCase):
             mapcore_sync_rdm_project(self.me, self.project,
                                      title_desc=False, contributors=True,
                                      use_raise=True)
-            assert_equal(mock_get_grinfo.call_count, 1)
-            assert_equal(mock_add.call_count, 0)
-            assert_equal(mock_remove.call_count, 0)
-            assert_equal(mock_edit.call_count, 1)
+            assert (mock_get_grinfo.call_count) == (1)
+            assert (mock_add.call_count) == (0)
+            assert (mock_remove.call_count) == (0)
+            assert (mock_edit.call_count) == (1)
             args, kwargs = mock_edit.call_args
-            assert_equal(args[0].eppn, self.user2.eppn)
-            assert_equal(args[1], CREATOR_PERMISSIONS)
+            assert (args[0].eppn) == (self.user2.eppn)
+            assert (args[1]) == (CREATOR_PERMISSIONS)
 
         self.project.remove_contributor(self.user2, auth=Auth(self.me))
         self.project.save()
@@ -766,10 +762,9 @@ class TestFuncOfMAPCore(OsfTestCase):
 
         mock_sync.side_effect = Exception('fake error message')
         mapcore_sync_rdm_project(self.me, self.project, use_raise=False)
-        assert_equal(mock_sync.call_count, 1)
+        assert (mock_sync.call_count) == (1)
         node_copy = AbstractNode.objects.get(guids___id=self.project._id)
-        assert_equal(node_copy.logs.latest().action,
-                     NodeLog.MAPCORE_RDM_PROJECT_NOT_UPDATED)
+        assert (node_copy.logs.latest().action) == (NodeLog.MAPCORE_RDM_PROJECT_NOT_UPDATED)
 
     @mock.patch('nii.mapcore_api.MAPCORE_SECRET', 'fake_secret')
     @mock.patch('nii.mapcore_api.MAPCORE_HOSTNAME', 'fake_hostname')
@@ -792,13 +787,12 @@ class TestFuncOfMAPCore(OsfTestCase):
         mapcore_sync_rdm_project(self.me, self.project,
                                  title_desc=False, contributors=True,
                                  use_raise=True)
-        assert_equal(mock_get_grinfo.call_count, 1)
-        assert_equal(mock_add.call_count, 0)  # not called
-        assert_equal(mock_remove.call_count, 0)
-        assert_equal(mock_edit.call_count, 0)
+        assert (mock_get_grinfo.call_count) == (1)
+        assert (mock_add.call_count) == (0)  # not called
+        assert (mock_remove.call_count) == (0)
+        assert (mock_edit.call_count) == (0)
         node_copy = AbstractNode.objects.get(guids___id=self.project._id)
-        assert_equal(node_copy.logs.latest().action,
-                     NodeLog.MAPCORE_RDM_UNKNOWN_USER)
+        assert (node_copy.logs.latest().action) == (NodeLog.MAPCORE_RDM_UNKNOWN_USER)
 
     @mock.patch('nii.mapcore_api.MAPCORE_SECRET', 'fake_secret')
     @mock.patch('nii.mapcore_api.MAPCORE_HOSTNAME', 'fake_hostname')
@@ -824,11 +818,11 @@ class TestFuncOfMAPCore(OsfTestCase):
         mapcore_sync_rdm_project(self.me, self.project,
                                  title_desc=False, contributors=True,
                                  use_raise=True)
-        assert_equal(mock_get_group.call_count, 1)
-        assert_equal(mock_get_members.call_count, 1)
-        assert_equal(mock_add.call_count, 0)
-        assert_equal(mock_remove.call_count, 0)
-        assert_equal(mock_edit.call_count, 0)
+        assert (mock_get_group.call_count) == (1)
+        assert (mock_get_members.call_count) == (1)
+        assert (mock_add.call_count) == (0)
+        assert (mock_remove.call_count) == (0)
+        assert (mock_edit.call_count) == (0)
 
     @mock.patch('nii.mapcore_api.MAPCORE_SECRET', 'fake_secret')
     @mock.patch('nii.mapcore_api.MAPCORE_HOSTNAME', 'fake_hostname')
@@ -851,18 +845,18 @@ class TestFuncOfMAPCore(OsfTestCase):
         self.project.map_group_key = 'fake_group_key1'
         self.project.save()
         mapcore_sync_rdm_my_projects(self.me, use_raise=True)
-        assert_equal(mock_mygr.call_count, 1)
-        assert_equal(mock_or.call_count, 0)
-        assert_equal(mock_sync_rdm.call_count, 0)
+        assert (mock_mygr.call_count) == (1)
+        assert (mock_or.call_count) == (0)
+        assert (mock_sync_rdm.call_count) == (0)
         mock_mygr.call_count = 0
 
         # test #2 : same groups, different title
         self.project.title = 'fake_group_name1' + randstr(4)
         self.project.save()
         mapcore_sync_rdm_my_projects(self.me, use_raise=True)
-        assert_equal(mock_mygr.call_count, 1)
-        assert_equal(mock_or.call_count, 1)
-        assert_equal(mock_sync_rdm.call_count, 0)
+        assert (mock_mygr.call_count) == (1)
+        assert (mock_or.call_count) == (1)
+        assert (mock_sync_rdm.call_count) == (0)
         mock_mygr.call_count = 0
         mock_or.call_count = 0
 
@@ -887,9 +881,9 @@ class TestFuncOfMAPCore(OsfTestCase):
         project2.map_group_key = 'fake_group_key2'
         project2.save()  # self.me is not a member.
         mapcore_sync_rdm_my_projects(self.me, use_raise=True)
-        assert_equal(mock_mygr.call_count, 1)
-        assert_equal(mock_or.call_count, 1)
-        assert_equal(mock_sync_rdm.call_count, 0)
+        assert (mock_mygr.call_count) == (1)
+        assert (mock_or.call_count) == (1)
+        assert (mock_sync_rdm.call_count) == (0)
         mock_mygr.call_count = 0
         mock_or.call_count = 0
         project2.delete()
@@ -908,7 +902,7 @@ class TestFuncOfMAPCore(OsfTestCase):
         # self.project.title = 'fake_group_name1'
         # self.project.map_group_key = 'fake_group_key1'
         # self.project.save()
-        with assert_raises(ObjectDoesNotExist):
+        with pytest.raises(ObjectDoesNotExist):
             AbstractNode.objects.get(map_group_key='fake_group_key2')
         with mock.patch('nii.mapcore.mapcore_get_extended_group_info') as mock_gi:
             mock_gi.return_value = {
@@ -923,15 +917,15 @@ class TestFuncOfMAPCore(OsfTestCase):
                     {'eppn': self.user2.eppn, 'admin': MAPCore.MODE_MEMBER,
                      'is_admin': False}]}
             mapcore_sync_rdm_my_projects(self.me, use_raise=True)
-            assert_equal(mock_gi.call_count, 1)
-            assert_equal(mock_mygr.call_count, 1)
-            assert_equal(mock_or.call_count, 0)
-            assert_equal(mock_sync_rdm.call_count, 1)
+            assert (mock_gi.call_count) == (1)
+            assert (mock_mygr.call_count) == (1)
+            assert (mock_or.call_count) == (0)
+            assert (mock_sync_rdm.call_count) == (1)
         n = AbstractNode.objects.get(map_group_key='fake_group_key2')
-        assert_equal(n.is_public, False)
-        assert_equal(n.title, 'fake_group_name2')
-        assert_equal(n.map_group_key, 'fake_group_key2')
-        assert_equal(n.description, 'fake_introduction2')
+        assert (n.is_public) == (False)
+        assert (n.title) == ('fake_group_name2')
+        assert (n.map_group_key) == ('fake_group_key2')
+        assert (n.description) == ('fake_introduction2')
         n.delete()
         mock_mygr.call_count = 0
         mock_sync_rdm.call_count = 0
@@ -942,9 +936,9 @@ class TestFuncOfMAPCore(OsfTestCase):
         self.project.map_group_key = None
         self.project.save()
         mapcore_sync_rdm_my_projects(self.me, use_raise=True)
-        assert_equal(mock_mygr.call_count, 1)
-        assert_equal(mock_or.call_count, 0)  # not called
-        assert_equal(mock_sync_rdm.call_count, 0)
+        assert (mock_mygr.call_count) == (1)
+        assert (mock_or.call_count) == (0)  # not called
+        assert (mock_sync_rdm.call_count) == (0)
         mock_mygr.call_count = 0
 
         # test #6 : RDM project only, has map_group_key
@@ -953,9 +947,9 @@ class TestFuncOfMAPCore(OsfTestCase):
         self.project.map_group_key = 'fake_group_key1'
         self.project.save()
         mapcore_sync_rdm_my_projects(self.me, use_raise=True)
-        assert_equal(mock_mygr.call_count, 1)
-        assert_equal(mock_or.call_count, 1)
-        assert_equal(mock_sync_rdm.call_count, 0)
+        assert (mock_mygr.call_count) == (1)
+        assert (mock_or.call_count) == (1)
+        assert (mock_sync_rdm.call_count) == (0)
         mock_mygr.call_count = 0
 
     @mock.patch('nii.mapcore_api.MAPCORE_SECRET', 'fake_secret')
@@ -973,7 +967,7 @@ class TestFuncOfMAPCore(OsfTestCase):
         )
         project2.map_group_key = 'fake_group_key2'
         project2.save()
-        assert_equal(project2.is_deleted, False)
+        assert (project2.is_deleted) == (False)
 
         m = MAPCore(self.me)
         m.api_error_code = 208
@@ -984,7 +978,7 @@ class TestFuncOfMAPCore(OsfTestCase):
                                  use_raise=True)
         # reload
         project2a = AbstractNode.objects.get(guids___id=project2._id)
-        assert_equal(project2a.is_deleted, True)
+        assert (project2a.is_deleted) == (True)
         project2a.delete()
 
     @mock.patch('nii.mapcore_api.MAPCORE_SECRET', 'fake_secret')
@@ -999,7 +993,7 @@ class TestFuncOfMAPCore(OsfTestCase):
         mapcore = MAPCore(self.me)
         mapcore.get_my_groups()
         args, kwargs = mock_get.call_args
-        assert_equal(args[0].endswith('/mygroup'), True)
+        assert (args[0].endswith('/mygroup')) == (True)
 
 
 @pytest.mark.django_db
@@ -1030,14 +1024,13 @@ class TestViewsWithMAPCore(OsfTestCase):
 
         url = web_url_for('dashboard', _absolute=True)
         res = self.app.get(url, auth=self.me.auth)
-        assert_equal(res.status_code, 302)
-        assert_equal(mock_sync.call_count, 1)
-        assert_equal(mock_ember.call_count, 0)
+        assert (res.status_code) == (302)
+        assert (mock_sync.call_count) == (1)
+        assert (mock_ember.call_count) == (0)
         mapcore_oauth_start_url = web_url_for('mapcore_oauth_start')
-        assert_in(mapcore_oauth_start_url + '?next_url=',
-                  res.headers.get('Location'))
-        res2 = res.follow(auth=self.me.auth)
-        assert_equal(mock_ac.call_count, 1)
+        assert (mapcore_oauth_start_url + '?next_url=') in (res.headers.get('Location'))
+        res2 = self.app.get(res.location, auth=self.me.auth)
+        assert (mock_ac.call_count) == (1)
 
     @mock.patch('nii.mapcore.MAPCORE_CLIENTID', 'test_my_projects')
     @mock.patch('nii.mapcore.mapcore_sync_rdm_my_projects0')
@@ -1048,13 +1041,12 @@ class TestViewsWithMAPCore(OsfTestCase):
 
         url = web_url_for('my_projects', _absolute=True)
         res = self.app.get(url, auth=self.me.auth)
-        assert_equal(res.status_code, 302)
-        assert_equal(mock_sync.call_count, 1)
+        assert (res.status_code) == (302)
+        assert (mock_sync.call_count) == (1)
         mapcore_oauth_start_url = web_url_for('mapcore_oauth_start')
-        assert_in(mapcore_oauth_start_url + '?next_url=',
-                  res.headers.get('Location'))
-        res2 = res.follow(auth=self.me.auth)
-        assert_equal(mock_ac.call_count, 1)
+        assert (mapcore_oauth_start_url + '?next_url=') in (res.headers.get('Location'))
+        res2 = self.app.get(res.location, auth=self.me.auth)
+        assert (mock_ac.call_count) == (1)
 
     @mock.patch('nii.mapcore.MAPCORE_CLIENTID', 'test_view_project')
     @mock.patch('nii.mapcore.mapcore_sync_rdm_project_or_map_group0')
@@ -1065,14 +1057,13 @@ class TestViewsWithMAPCore(OsfTestCase):
         mock_sync2.side_effect = MAPCoreTokenExpired(mapcore, 'test message')
 
         res = self.app.get(self.project_url, auth=self.me.auth)
-        assert_equal(res.status_code, 302)
-        assert_equal(mock_sync1.call_count, 0)
-        assert_equal(mock_sync2.call_count, 1)
+        assert (res.status_code) == (302)
+        assert (mock_sync1.call_count) == (0)
+        assert (mock_sync2.call_count) == (1)
         mapcore_oauth_start_url = web_url_for('mapcore_oauth_start')
-        assert_in(mapcore_oauth_start_url + '?next_url=',
-                  res.headers.get('Location'))
-        res2 = res.follow(auth=self.me.auth)
-        assert_equal(mock_ac.call_count, 1)
+        assert (mapcore_oauth_start_url + '?next_url=') in (res.headers.get('Location'))
+        res2 = self.app.get(res.location, auth=self.me.auth)
+        assert (mock_ac.call_count) == (1)
 
     @mock.patch('nii.mapcore.MAPCORE_CLIENTID', 'test_dashboard')
     @mock.patch('website.views.use_ember_app')
@@ -1080,17 +1071,17 @@ class TestViewsWithMAPCore(OsfTestCase):
     def test_dashboard(self, mock_sync, mock_ember):
         url = web_url_for('dashboard', _absolute=True)
         res = self.app.get(url, auth=self.me.auth)
-        assert_equal(res.status_code, 200)
-        assert_equal(mock_sync.call_count, 1)
-        assert_equal(mock_ember.call_count, 1)
+        assert (res.status_code) == (200)
+        assert (mock_sync.call_count) == (1)
+        assert (mock_ember.call_count) == (1)
 
     @mock.patch('nii.mapcore.MAPCORE_CLIENTID', 'test_my_projects')
     @mock.patch('nii.mapcore.mapcore_sync_rdm_my_projects0')
     def test_my_projects(self, mock_sync):
         url = web_url_for('my_projects', _absolute=True)
         res = self.app.get(url, auth=self.me.auth)
-        assert_equal(res.status_code, 200)
-        assert_equal(mock_sync.call_count, 1)
+        assert (res.status_code) == (200)
+        assert (mock_sync.call_count) == (1)
 
     @mock.patch('nii.mapcore.MAPCORE_CLIENTID', 'test_view_project')
     @mock.patch('nii.mapcore.mapcore_sync_rdm_project_or_map_group0')
@@ -1098,9 +1089,9 @@ class TestViewsWithMAPCore(OsfTestCase):
     #@mock.patch('framework.auth.decorators.mapcore_sync_rdm_project_or_map_group')  # cannot hook
     def test_view_project(self, mock_sync2, mock_sync1):
         res = self.app.get(self.project_url, auth=self.me.auth)
-        assert_equal(res.status_code, 200)
-        assert_equal(mock_sync1.call_count, 2)  # at decorator.py and _view_project()
-        assert_equal(mock_sync2.call_count, 1)
+        assert (res.status_code) == (200)
+        assert (mock_sync1.call_count) == (2)  # at decorator.py and _view_project()
+        assert (mock_sync2.call_count) == (1)
 
     @mock.patch('nii.mapcore.MAPCORE_CLIENTID', 'test_dashboard_disabled')
     @mock.patch('website.views.use_ember_app')
@@ -1109,9 +1100,9 @@ class TestViewsWithMAPCore(OsfTestCase):
         mapcore_sync_set_disabled()
         url = web_url_for('dashboard', _absolute=True)
         res = self.app.get(url, auth=self.me.auth)
-        assert_equal(res.status_code, 200)
-        assert_equal(mock_sync.call_count, 0)
-        assert_equal(mock_ember.call_count, 1)
+        assert (res.status_code) == (200)
+        assert (mock_sync.call_count) == (0)
+        assert (mock_ember.call_count) == (1)
 
     @mock.patch('nii.mapcore.MAPCORE_CLIENTID', 'test_my_projects_disabled')
     @mock.patch('nii.mapcore.mapcore_sync_rdm_my_projects0')
@@ -1119,8 +1110,8 @@ class TestViewsWithMAPCore(OsfTestCase):
         mapcore_sync_set_disabled()
         url = web_url_for('my_projects', _absolute=True)
         res = self.app.get(url, auth=self.me.auth)
-        assert_equal(res.status_code, 200)
-        assert_equal(mock_sync.call_count, 0)
+        assert (res.status_code) == (200)
+        assert (mock_sync.call_count) == (0)
 
     @mock.patch('nii.mapcore.MAPCORE_CLIENTID', 'test_view_project_disabled')
     @mock.patch('nii.mapcore.mapcore_sync_rdm_project_or_map_group0')
@@ -1128,9 +1119,9 @@ class TestViewsWithMAPCore(OsfTestCase):
     def test_view_project_disabled(self, mock_sync2, mock_sync1):
         mapcore_sync_set_disabled()
         res = self.app.get(self.project_url, auth=self.me.auth)
-        assert_equal(res.status_code, 200)
-        assert_equal(mock_sync1.call_count, 0)
-        assert_equal(mock_sync2.call_count, 0)
+        assert (res.status_code) == (200)
+        assert (mock_sync1.call_count) == (0)
+        assert (mock_sync2.call_count) == (0)
 
     ### from tests/test_views.py::test_edit_node_title
     @mock.patch('nii.mapcore.MAPCORE_CLIENTID', 'test_edit_node_title')
@@ -1140,16 +1131,16 @@ class TestViewsWithMAPCore(OsfTestCase):
     def test_edit_node_title(self, mock_sync3, mock_sync2, mock_sync1):
         url = '/api/v1/project/{0}/edit/'.format(self.project._id)
         # The title is changed though posting form data
-        self.app.post_json(url, {'name': 'title', 'value': 'Bacon'},
-                           auth=self.me.auth).maybe_follow()
-        assert_equal(mock_sync1.call_count, 1)
-        assert_equal(mock_sync2.call_count, 1)
-        assert_equal(mock_sync3.call_count, 1)
+        self.app.post(url, json={'name': 'title', 'value': 'Bacon'},
+                           auth=self.me.auth, follow_redirects=True)
+        assert (mock_sync1.call_count) == (1)
+        assert (mock_sync2.call_count) == (1)
+        assert (mock_sync3.call_count) == (1)
         self.project.reload()
         # The title was changed
-        assert_equal(self.project.title, 'Bacon')
+        assert (self.project.title) == ('Bacon')
         # A log event was saved
-        assert_equal(self.project.logs.latest().action, 'edit_title')
+        assert (self.project.logs.latest().action) == ('edit_title')
 
     ### from tests/test_views.py::test_edit_description
     @mock.patch('nii.mapcore.MAPCORE_CLIENTID', 'test_edit_description')
@@ -1158,14 +1149,14 @@ class TestViewsWithMAPCore(OsfTestCase):
     @mock.patch('nii.mapcore.mapcore_api_is_available0')
     def test_edit_description(self, mock_sync3, mock_sync2, mock_sync1):
         url = '/api/v1/project/{0}/edit/'.format(self.project._id)
-        self.app.post_json(url,
-                           {'name': 'description', 'value': 'Deep-fried'},
+        self.app.post(url,
+                           json={'name': 'description', 'value': 'Deep-fried'},
                            auth=self.me.auth)
-        assert_equal(mock_sync1.call_count, 1)
-        assert_equal(mock_sync2.call_count, 1)
-        assert_equal(mock_sync3.call_count, 1)
+        assert (mock_sync1.call_count) == (1)
+        assert (mock_sync2.call_count) == (1)
+        assert (mock_sync3.call_count) == (1)
         self.project.reload()
-        assert_equal(self.project.description, 'Deep-fried')
+        assert (self.project.description) == ('Deep-fried')
 
     ### from tests/test_views.py::test_add_contributor_post
     @mock.patch('nii.mapcore.MAPCORE_CLIENTID', 'test_add_contributors')
@@ -1190,26 +1181,26 @@ class TestViewsWithMAPCore(OsfTestCase):
             'visible': False,
         })
 
-        self.app.post_json(
+        self.app.post(
             url,
-            {
+            json={
                 'users': [dict2, dict3],
                 'node_ids': [project._id],
             },
             content_type='application/json',
-            auth=self.me.auth,
-        ).maybe_follow()
-        assert_equal(mock_sync1.call_count, 1)
-        assert_equal(mock_sync2.call_count, 1)
-        assert_equal(mock_sync3.call_count, 1)
+            auth=self.me.auth, follow_redirects=True,
+        )
+        assert (mock_sync1.call_count) == (1)
+        assert (mock_sync2.call_count) == (1)
+        assert (mock_sync3.call_count) == (1)
         project.reload()
-        assert_in(user2, project.contributors)
+        assert (user2) in (project.contributors)
         # A log event was added
-        assert_equal(project.logs.latest().action, 'contributor_added')
-        assert_equal(len(project.contributors), 3)
+        assert (project.logs.latest().action) == ('contributor_added')
+        assert (len(project.contributors)) == (3)
 
-        assert_equal(project.get_permissions(user2), ['read', 'write', 'admin'])
-        assert_equal(project.get_permissions(user3), ['read', 'write'])
+        assert (project.get_permissions(user2)) == (['read', 'write', 'admin'])
+        assert (project.get_permissions(user3)) == (['read', 'write'])
 
     ### from tests/test_views.py::test_contributor_manage_reorder
     @mock.patch('nii.mapcore.MAPCORE_CLIENTID', 'test_contributor_manage_reorder')
@@ -1237,9 +1228,9 @@ class TestViewsWithMAPCore(OsfTestCase):
         )
 
         url = project.api_url + 'contributors/manage/'
-        self.app.post_json(
+        self.app.post(
             url,
-            {
+            json={
                 'contributors': [
                     {'id': reg_user2._id,
                      'permission': permissions.ADMIN,
@@ -1257,19 +1248,12 @@ class TestViewsWithMAPCore(OsfTestCase):
             },
             auth=self.me.auth,
         )
-        assert_equal(mock_sync1.call_count, 1)
-        assert_equal(mock_sync2.call_count, 1)
-        assert_equal(mock_sync3.call_count, 1)
+        assert (mock_sync1.call_count) == (1)
+        assert (mock_sync2.call_count) == (1)
+        assert (mock_sync3.call_count) == (1)
         project.reload()
-        assert_equal(
-            # Note: Cast ForeignList to list for comparison
-            list(project.contributors),
-            [reg_user2, project.creator, unregistered_user, reg_user1]
-        )
-        assert_equal(
-            list(project.visible_contributors),
-            [project.creator, unregistered_user, reg_user1]
-        )
+        assert (list(project.contributors)) == ([reg_user2, project.creator, unregistered_user, reg_user1])
+        assert (list(project.visible_contributors)) == ([project.creator, unregistered_user, reg_user1])
 
     ### from tests/test_views.py::test_project_remove_contributor
     @mock.patch('nii.mapcore.MAPCORE_CLIENTID', 'test_remove_contributor')
@@ -1281,16 +1265,16 @@ class TestViewsWithMAPCore(OsfTestCase):
         # User 1 removes user2
         payload = {'contributorID': self.user2._id,
                    'nodeIDs': [self.project._id]}
-        self.app.post(url, json.dumps(payload),
+        self.app.post(url, data=json.dumps(payload),
                       content_type='application/json',
-                      auth=self.me.auth).maybe_follow()
-        assert_equal(mock_sync1.call_count, 1)
-        assert_equal(mock_sync2.call_count, 1)
-        assert_equal(mock_sync3.call_count, 1)
+                      auth=self.me.auth, follow_redirects=True)
+        assert (mock_sync1.call_count) == (1)
+        assert (mock_sync2.call_count) == (1)
+        assert (mock_sync3.call_count) == (1)
         self.project.reload()
-        assert_not_in(self.user2._id, self.project.contributors)
+        assert (self.user2._id) not in (self.project.contributors)
         # A log event was added
-        assert_equal(self.project.logs.latest().action, 'contributor_removed')
+        assert (self.project.logs.latest().action) == ('contributor_removed')
 
 
 @pytest.mark.django_db
@@ -1374,7 +1358,7 @@ class TestOSFAPIWithMAPCore:
     def test_create_project(
             self, mock_sync, app, user_one, private_project_json, nodes_url):
         res = app.post_json_api(nodes_url, private_project_json, auth=user_one.auth)
-        assert_equal(mock_sync.call_count, 1)
+        assert (mock_sync.call_count) == (1)
         assert res.status_code == 201
         assert res.content_type == 'application/vnd.api+json'
         assert res.json['data']['attributes']['title'] == private_project_json['data']['attributes']['title']
@@ -1391,7 +1375,7 @@ class TestOSFAPIWithMAPCore:
         mock_sync.side_effect = Exception('fake error message')
         res = app.post_json_api(nodes_url, private_project_json, auth=user_one.auth)
         # Node creation: no error
-        assert_equal(mock_sync.call_count, 1)
+        assert (mock_sync.call_count) == (1)
         assert res.status_code == 201
         assert res.content_type == 'application/vnd.api+json'
         assert res.json['data']['attributes']['title'] == private_project_json['data']['attributes']['title']
@@ -1417,7 +1401,7 @@ class TestOSFAPIWithMAPCore:
                     'type': 'nodes',
                 }
             }, auth=user_one.auth)
-            assert_equal(mock_sync.call_count, 1)
+            assert (mock_sync.call_count) == (1)
             assert res.status_code == 200
             assert res.content_type == 'application/vnd.api+json'
             assert res.json['data']['attributes']['title'] == title_new
@@ -1441,35 +1425,40 @@ class TestAuthViewsLoginByEppn(OsfTestCase):
         ### redirect to user_account_email
         url = web_url_for('dashboard', _absolute=True)
         res = self.app.get(url, auth=self.user.auth)
-        assert_equal(res.status_code, 302)
+        assert (res.status_code) == (302)
         user_account_email_url = web_url_for('user_account_email')
-        assert_in(user_account_email_url, res.headers.get('Location'))
+        assert (user_account_email_url) in (res.headers.get('Location'))
 
         ### set email
         email = 'test@mail.com'
         token = self.user.add_unconfirmed_email(email)
         self.user.save()
         self.user.reload()
-        assert_equal(self.user.email_verifications[token]['confirmed'], False)
+        assert (self.user.email_verifications[token]['confirmed']) == (False)
         url = '/confirm/{}/{}/?logout=1'.format(self.user._id, token, self.user.username)
         res = self.app.get(url)
-        assert_equal(res.status_code, 302)
-        cas_redirect_url = '{}/logout?service={}/login?service={}myprojects/'.format(settings.CAS_SERVER_URL, settings.CAS_SERVER_URL, settings.DOMAIN)
-        assert_in(cas_redirect_url, res.headers.get('Location'))
+        assert (res.status_code) == (302)
+        logout_url = urlparse(res.headers.get('Location'))
+        assert logout_url.path.endswith('/logout')
+        login_url = urlparse(parse_qs(logout_url.query)['service'][0])
+        assert login_url.path.endswith('/login')
+        assert parse_qs(login_url.query)['service'] == [
+            web_url_for('my_projects', _absolute=True)
+        ]
 
         self.user.reload()
-        assert_equal(self.user.email_verifications[token]['confirmed'], True)
+        assert (self.user.email_verifications[token]['confirmed']) == (True)
         email_verifications = self.user.unconfirmed_email_info
-        assert_equal(email_verifications[0]['address'], 'test@mail.com')
+        assert (email_verifications[0]['address']) == ('test@mail.com')
 
         url = web_url_for('dashboard', _absolute=True)
         res = self.app.get(url, auth=self.user.auth)
-        assert_equal(res.status_code, 200)
-        assert_equal(mock_ember.call_count, 1)
+        assert (res.status_code) == (200)
+        assert (mock_ember.call_count) == (1)
 
     @mock.patch('website.mapcore.views.mapcore_receive_authcode')
     def test_mapcore_oauth_complete(self, mock):
         url = web_url_for('mapcore_oauth_complete')
         res = self.app.get(url, auth=self.user.auth)
-        assert_equal(res.status_code, 302)
-        assert_equal(mock.call_count, 1)
+        assert (res.status_code) == (302)
+        assert (mock.call_count) == (1)

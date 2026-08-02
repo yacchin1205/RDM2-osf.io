@@ -404,21 +404,25 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
         related_view_kwargs={'node_id': '<_id>'},
     )
 
-    addons = HideIfRegistration(RelationshipField(
-        related_view='nodes:node-addons',
-        related_view_kwargs={'node_id': '<_id>'},
-    ))
+    addons = HideIfRegistration(
+        RelationshipField(
+            related_view='nodes:node-addons',
+            related_view_kwargs={'node_id': '<_id>'},
+        ),
+    )
 
     settings = RelationshipField(
         related_view='nodes:node-settings',
         related_view_kwargs={'node_id': '<_id>'},
     )
 
-    wikis = HideIfWikiDisabled(RelationshipField(
-        related_view='nodes:node-wikis',
-        related_view_kwargs={'node_id': '<_id>'},
-        related_meta={'count': 'get_wiki_page_count'},
-    ))
+    wikis = HideIfWikiDisabled(
+        RelationshipField(
+            related_view='nodes:node-wikis',
+            related_view_kwargs={'node_id': '<_id>'},
+            related_meta={'count': 'get_wiki_page_count'},
+        ),
+    )
 
     forked_from = RelationshipField(
         related_view=lambda n: 'registrations:registration-detail' if getattr(n, 'is_registration', False) else 'nodes:node-detail',
@@ -483,17 +487,21 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
         required=False,
     )
 
-    draft_registrations = HideIfRegistration(RelationshipField(
-        related_view='nodes:node-draft-registrations',
-        related_view_kwargs={'node_id': '<_id>'},
-        related_meta={'count': 'get_draft_registration_count'},
-    ))
+    draft_registrations = HideIfRegistration(
+        RelationshipField(
+            related_view='nodes:node-draft-registrations',
+            related_view_kwargs={'node_id': '<_id>'},
+            related_meta={'count': 'get_draft_registration_count'},
+        ),
+    )
 
-    registrations = HideIfRegistration(RelationshipField(
-        related_view='nodes:node-registrations',
-        related_view_kwargs={'node_id': '<_id>'},
-        related_meta={'count': 'get_registration_count'},
-    ))
+    registrations = HideIfRegistration(
+        RelationshipField(
+            related_view='nodes:node-registrations',
+            related_view_kwargs={'node_id': '<_id>'},
+            related_meta={'count': 'get_registration_count'},
+        ),
+    )
 
     region = RegionRelationshipField(
         related_view='regions:region-detail',
@@ -540,10 +548,12 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
         related_view_kwargs={'node_id': '<_id>'},
     )
 
-    preprints = HideIfRegistration(RelationshipField(
-        related_view='nodes:node-preprints',
-        related_view_kwargs={'node_id': '<_id>'},
-    ))
+    preprints = HideIfRegistration(
+        RelationshipField(
+            related_view='nodes:node-preprints',
+            related_view_kwargs={'node_id': '<_id>'},
+        ),
+    )
 
     quota_rate = ser.SerializerMethodField()
     quota_threshold = ser.SerializerMethodField()
@@ -872,14 +882,16 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
                 parts = node_group.group.name.rsplit('_', 1)
                 if len(parts) == 2:
                     parent_permission = parts[1]
-                to_create.append(MapCoreNodeGroup(
-                    node=node,
-                    group_id=auth_groups.get(parent_permission),
-                    mapcore_group=node_group.mapcore_group,
-                    visible=node_group.visible,
-                    _order=node_group._order,
-                    creator=user,
-                ))
+                to_create.append(
+                    MapCoreNodeGroup(
+                        node=node,
+                        group_id=auth_groups.get(parent_permission),
+                        mapcore_group=node_group.mapcore_group,
+                        visible=node_group.visible,
+                        _order=node_group._order,
+                        creator=user,
+                    ),
+                )
                 to_create_mapcore_group_ids.append(node_group.mapcore_group.id)
             MapCoreNodeGroup.objects.bulk_create(to_create)
             params = node.log_params
@@ -1109,11 +1121,13 @@ class NodeAddonSettingsSerializer(NodeAddonSettingsSerializerBase):
         return external_account
 
     def should_call_set_folder(self, folder_info, instance, auth, node_settings):
-        if (folder_info and not (   # If we have folder information to set
+        if (
+            folder_info and not (   # If we have folder information to set
                 instance and getattr(instance, 'folder_id', False) and (  # and the settings aren't already configured with this folder
                     instance.folder_id == folder_info or (hasattr(folder_info, 'get') and instance.folder_id == folder_info.get('id', False))
                 )
-        )):
+            )
+        ):
             if auth.user._id != node_settings.user_settings.owner._id:  # And the user is allowed to do this
                 raise exceptions.PermissionDenied('Requested action requires addon ownership.')
             return True
@@ -1956,7 +1970,7 @@ class NodeSettingsUpdateSerializer(NodeSettingsSerializer):
         Returns addon, if exists, otherwise returns None
         """
         addon = obj.get_or_add_addon(addon_name, auth=auth) if should_enable else obj.delete_addon(addon_name, auth)
-        if type(addon) == bool:
+        if isinstance(addon, bool):
             addon = None
         return addon
 
@@ -2349,11 +2363,13 @@ class NodeMapCoreGroupUpdateSerializer(NodeMapCoreGroupSerializer):
             order_dict[ngid] = index
             to_update_node_group_ids.add(ngid)
 
-        mapcore_node_groups = list(MapCoreNodeGroup.objects.filter(
-            node=node,
-            id__in=to_update_node_group_ids,
-            is_deleted=False,
-        ))
+        mapcore_node_groups = list(
+            MapCoreNodeGroup.objects.filter(
+                node=node,
+                id__in=to_update_node_group_ids,
+                is_deleted=False,
+            ),
+        )
         for updated_mapcore_node_group in mapcore_node_groups:
             permission = permission_dict.get(updated_mapcore_node_group.id)
             if permission and updated_mapcore_node_group.group_id != auth_groups_map[permission]:

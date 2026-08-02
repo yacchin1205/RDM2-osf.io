@@ -1,11 +1,10 @@
-import mock
+from unittest import mock
 import csv
 import furl
 import pytz
 import pytest
 from datetime import datetime, timedelta
 
-from nose import tools as nt
 from django.test import RequestFactory
 from django.http import Http404
 from django.core.files.uploadedfile import SimpleUploadedFile
@@ -51,7 +50,7 @@ class TestUserView(AdminTestCase):
         request = RequestFactory().get('/fake_path')
         view = views.UserView()
         view = setup_view(view, request)
-        with nt.assert_raises(AttributeError):
+        with pytest.raises(AttributeError):
             view.get_object()
 
     def test_load_data(self):
@@ -61,7 +60,7 @@ class TestUserView(AdminTestCase):
         view = views.UserView()
         view = setup_view(view, request, guid=guid)
         res = view.get_object()
-        nt.assert_is_instance(res, dict)
+        assert isinstance((res), (dict))
 
     def test_name_data(self):
         user = UserFactory()
@@ -72,7 +71,7 @@ class TestUserView(AdminTestCase):
         temp_object = view.get_object()
         view.object = temp_object
         res = view.get_context_data()
-        nt.assert_equal(res[views.UserView.context_object_name], temp_object)
+        assert (res[views.UserView.context_object_name]) == (temp_object)
 
     def test_unauthenticated(self):
         user = UserFactory()
@@ -83,8 +82,8 @@ class TestUserView(AdminTestCase):
         request = RequestFactory().get(reverse('users:user', kwargs={'guid': guid}))
         request.user = AnonymousUser()
         view = setup_view(self.view, request, guid=guid)
-        nt.assert_false(view.test_func())
-        nt.assert_false(view.raise_exception)
+        assert not (view.test_func())
+        assert not (view.raise_exception)
 
     def test_user_login(self):
         user = UserFactory()
@@ -97,8 +96,8 @@ class TestUserView(AdminTestCase):
         request.user.is_active = True
         request.user.is_registered = True
         view = setup_view(self.view, request, guid=guid)
-        nt.assert_false(view.test_func())
-        nt.assert_true(view.raise_exception)
+        assert not (view.test_func())
+        assert (view.raise_exception)
 
     def test_admin_login(self):
         user = UserFactory()
@@ -113,8 +112,8 @@ class TestUserView(AdminTestCase):
         request.user.is_superuser = False
         request.user.is_staff = True
         view = setup_view(self.view, request, guid=guid)
-        nt.assert_false(view.test_func())
-        nt.assert_true(view.raise_exception)
+        assert not (view.test_func())
+        assert (view.raise_exception)
 
     def test_super_admin_login(self):
         user = UserFactory()
@@ -128,7 +127,7 @@ class TestUserView(AdminTestCase):
         request.user.is_registered = True
         request.user.is_superuser = True
         view = setup_view(self.view, request, guid=guid)
-        nt.assert_true(view.test_func())
+        assert (view.test_func())
 
     def test_super_admin_login__user_guid_not_found(self):
         request = RequestFactory().get(reverse('users:user', kwargs={'guid': 'test'}))
@@ -137,7 +136,7 @@ class TestUserView(AdminTestCase):
         request.user.is_registered = True
         request.user.is_superuser = True
         view = setup_view(self.view, request, guid='test')
-        with nt.assert_raises(Http404):
+        with pytest.raises(Http404):
             view.test_func()
 
     def test_super_admin_login__user_does_not_have_affiliated_institutions(self):
@@ -150,8 +149,8 @@ class TestUserView(AdminTestCase):
         request.user.is_registered = True
         request.user.is_superuser = True
         view = setup_view(self.view, request, guid=guid)
-        nt.assert_false(view.test_func())
-        nt.assert_true(view.raise_exception)
+        assert not (view.test_func())
+        assert (view.raise_exception)
 
 
 class TestResetPasswordView(AdminTestCase):
@@ -167,15 +166,15 @@ class TestResetPasswordView(AdminTestCase):
         self.view.user = self.user
         self.view.get_initial()
         res = self.view.initial
-        nt.assert_is_instance(res, dict)
-        nt.assert_equal(res['guid'], self.user._id)
-        nt.assert_equal(res['emails'], [(r, r) for r in self.user.emails.values_list('address', flat=True)])
+        assert isinstance((res), (dict))
+        assert (res['guid']) == (self.user._id)
+        assert (res['emails']) == ([(r, r) for r in self.user.emails.values_list('address', flat=True)])
 
     def test_reset_password_context(self):
         self.view.user = self.user
         res = self.view.get_context_data()
-        nt.assert_is_instance(res, dict)
-        nt.assert_in((self.user.emails.first().address, self.user.emails.first().address), self.view.initial['emails'])
+        assert isinstance((res), (dict))
+        assert ((self.user.emails.first().address, self.user.emails.first().address)) in (self.view.initial['emails'])
 
     def test_no_user_permissions_raises_error(self):
         user = UserFactory()
@@ -211,7 +210,7 @@ class TestDeleteUser(AdminTestCase):
 
     def test_get_object(self):
         obj = self.view().get_object()
-        nt.assert_is_instance(obj, OSFUser)
+        assert isinstance((obj), (OSFUser))
 
     def test_gdpr_delete_user(self):
         # django.contrib.messages has a bug which effects unittests
@@ -223,12 +222,12 @@ class TestDeleteUser(AdminTestCase):
         count = AdminLogEntry.objects.count()
         self.view().delete(self.request)
         self.user.reload()
-        nt.assert_true(self.user.deleted)
-        nt.assert_equal(AdminLogEntry.objects.count(), count + 1)
+        assert (self.user.deleted)
+        assert (AdminLogEntry.objects.count()) == (count + 1)
 
     def test_no_user(self):
         view = setup_view(views.UserGDPRDeleteView(), self.request, guid='meh')
-        with nt.assert_raises(Http404):
+        with pytest.raises(Http404):
             view.delete(self.request)
 
     def test_no_user_permissions_raises_error(self):
@@ -264,20 +263,20 @@ class TestDisableUser(AdminTestCase):
 
     def test_get_object(self):
         obj = self.view().get_object()
-        nt.assert_is_instance(obj, OSFUser)
+        assert isinstance((obj), (OSFUser))
 
     def test_get_context(self):
         res = self.view().get_context_data(object=self.user)
-        nt.assert_in('guid', res)
-        nt.assert_equal(res.get('guid'), self.user._id)
+        assert ('guid') in (res)
+        assert (res.get('guid')) == (self.user._id)
 
     def test_disable_user(self):
         settings.ENABLE_EMAIL_SUBSCRIPTIONS = False
         count = AdminLogEntry.objects.count()
         self.view().delete(self.request)
         self.user.reload()
-        nt.assert_true(self.user.is_disabled)
-        nt.assert_equal(AdminLogEntry.objects.count(), count + 1)
+        assert (self.user.is_disabled)
+        assert (AdminLogEntry.objects.count()) == (count + 1)
 
     def test_reactivate_user(self):
         settings.ENABLE_EMAIL_SUBSCRIPTIONS = False
@@ -285,13 +284,13 @@ class TestDisableUser(AdminTestCase):
         count = AdminLogEntry.objects.count()
         self.view().delete(self.request)
         self.user.reload()
-        nt.assert_false(self.user.is_disabled)
-        nt.assert_false(self.user.requested_deactivation)
-        nt.assert_equal(AdminLogEntry.objects.count(), count + 1)
+        assert not (self.user.is_disabled)
+        assert not (self.user.requested_deactivation)
+        assert (AdminLogEntry.objects.count()) == (count + 1)
 
     def test_no_user(self):
         view = setup_view(views.UserDeleteView(), self.request, guid='meh')
-        with nt.assert_raises(Http404):
+        with pytest.raises(Http404):
             view.delete(self.request)
 
     def test_no_user_permissions_raises_error(self):
@@ -327,22 +326,22 @@ class TestHamUserRestore(AdminTestCase):
 
     def test_get_object(self):
         obj = self.view().get_object()
-        nt.assert_is_instance(obj, OSFUser)
+        assert isinstance((obj), (OSFUser))
 
     def test_get_context(self):
         res = self.view().get_context_data(object=self.user)
-        nt.assert_in('guid', res)
-        nt.assert_equal(res.get('guid'), self.user._id)
+        assert ('guid') in (res)
+        assert (res.get('guid')) == (self.user._id)
 
     def test_enable_user(self):
         self.user.disable_account()
         self.user.save()
-        nt.assert_true(self.user.is_disabled)
+        assert (self.user.is_disabled)
         self.view().delete(self.request)
         self.user.reload()
 
-        nt.assert_false(self.user.is_disabled)
-        nt.assert_true(self.user.spam_status == SpamStatus.HAM)
+        assert not (self.user.is_disabled)
+        assert (self.user.spam_status == SpamStatus.HAM)
 
 
 class TestDisableSpamUser(AdminTestCase):
@@ -356,12 +355,12 @@ class TestDisableSpamUser(AdminTestCase):
 
     def test_get_object(self):
         obj = self.view().get_object()
-        nt.assert_is_instance(obj, OSFUser)
+        assert isinstance((obj), (OSFUser))
 
     def test_get_context(self):
         res = self.view().get_context_data(object=self.user)
-        nt.assert_in('guid', res)
-        nt.assert_equal(res.get('guid'), self.user._id)
+        assert ('guid') in (res)
+        assert (res.get('guid')) == (self.user._id)
 
     def test_disable_spam_user(self):
         settings.ENABLE_EMAIL_SUBSCRIPTIONS = False
@@ -369,14 +368,14 @@ class TestDisableSpamUser(AdminTestCase):
         self.view().delete(self.request)
         self.user.reload()
         self.public_node.reload()
-        nt.assert_true(self.user.is_disabled)
-        nt.assert_true(self.user.spam_status == SpamStatus.SPAM)
-        nt.assert_false(self.public_node.is_public)
-        nt.assert_equal(AdminLogEntry.objects.count(), count + 3)
+        assert (self.user.is_disabled)
+        assert (self.user.spam_status == SpamStatus.SPAM)
+        assert not (self.public_node.is_public)
+        assert (AdminLogEntry.objects.count()) == (count + 3)
 
     def test_no_user(self):
         view = setup_view(self.view(), self.request, guid='meh')
-        with nt.assert_raises(Http404):
+        with pytest.raises(Http404):
             view.delete(self.request)
 
     def test_no_user_permissions_raises_error(self):
@@ -454,8 +453,8 @@ class TestFlaggedSpamUserList(SpamUserListMixin, AdminTestCase):
 
     def test_get_queryset(self):
         qs = self.view.get_queryset()
-        nt.assert_equal(qs.count(), 1)
-        nt.assert_equal(qs[0]._id, self.flagged_user._id)
+        assert (qs.count()) == (1)
+        assert (qs[0]._id) == (self.flagged_user._id)
 
 
 class TestConfirmedSpamUserList(SpamUserListMixin, AdminTestCase):
@@ -468,8 +467,8 @@ class TestConfirmedSpamUserList(SpamUserListMixin, AdminTestCase):
 
     def test_get_queryset(self):
         qs = self.view.get_queryset()
-        nt.assert_equal(qs.count(), 1)
-        nt.assert_equal(qs[0]._id, self.spam_user._id)
+        assert (qs.count()) == (1)
+        assert (qs[0]._id) == (self.spam_user._id)
 
 
 class TestConfirmedHamUserList(SpamUserListMixin, AdminTestCase):
@@ -482,8 +481,8 @@ class TestConfirmedHamUserList(SpamUserListMixin, AdminTestCase):
 
     def test_get_queryset(self):
         qs = self.view.get_queryset()
-        nt.assert_equal(qs.count(), 1)
-        nt.assert_equal(qs[0]._id, self.ham_user._id)
+        assert (qs.count()) == (1)
+        assert (qs[0]._id) == (self.ham_user._id)
 
 
 class TestRemove2Factor(AdminTestCase):
@@ -503,14 +502,14 @@ class TestRemove2Factor(AdminTestCase):
 
     def test_integration_delete_two_factor(self):
         user_addon = self.user.get_or_add_addon('twofactor')
-        nt.assert_not_equal(user_addon, None)
+        assert (user_addon) != (None)
         user_settings = self.user.get_addon('twofactor')
-        nt.assert_not_equal(user_settings, None)
+        assert (user_settings) != (None)
         count = AdminLogEntry.objects.count()
         self.setup_view.delete(self.request)
         post_addon = self.user.get_addon('twofactor')
-        nt.assert_equal(post_addon, None)
-        nt.assert_equal(AdminLogEntry.objects.count(), count + 1)
+        assert (post_addon) == (None)
+        assert (AdminLogEntry.objects.count()) == (count + 1)
 
     def test_no_user_permissions_raises_error(self):
         guid = self.user._id
@@ -577,7 +576,7 @@ class TestUserWorkshopFormView(AdminTestCase):
         self._setup_workshop(self.node.created)
         added_columns = ['OSF ID', 'Logs Since Workshop', 'Nodes Created Since Workshop', 'Last Log Data']
         result_csv = self.view.parse(self.data)
-        nt.assert_equal(len(self.data[0]) + len(added_columns), len(result_csv[0]))
+        assert (len(self.data[0]) + len(added_columns)) == (len(result_csv[0]))
 
     def test_user_activity_day_of_workshop_and_before(self):
         self._setup_workshop(self.node.created)
@@ -588,8 +587,8 @@ class TestUserWorkshopFormView(AdminTestCase):
         user_logs_since_workshop = result_csv[1][-3]
         user_nodes_created_since_workshop = result_csv[1][-2]
 
-        nt.assert_equal(user_logs_since_workshop, 0)
-        nt.assert_equal(user_nodes_created_since_workshop, 0)
+        assert (user_logs_since_workshop) == (0)
+        assert (user_nodes_created_since_workshop) == (0)
 
     def test_user_activity_after_workshop(self):
         self._setup_workshop(self.node.created - timedelta(hours=25))
@@ -600,8 +599,8 @@ class TestUserWorkshopFormView(AdminTestCase):
         user_nodes_created_since_workshop = result_csv[1][-2]
 
         # 1 node created, 1 node log
-        nt.assert_equal(user_logs_since_workshop, 2)
-        nt.assert_equal(user_nodes_created_since_workshop, 1)
+        assert (user_logs_since_workshop) == (2)
+        assert (user_nodes_created_since_workshop) == (1)
 
         # Test workshop 30 days ago
         self._setup_workshop(self.node.created - timedelta(days=30))
@@ -610,8 +609,8 @@ class TestUserWorkshopFormView(AdminTestCase):
         user_logs_since_workshop = result_csv[1][-3]
         user_nodes_created_since_workshop = result_csv[1][-2]
 
-        nt.assert_equal(user_logs_since_workshop, 2)
-        nt.assert_equal(user_nodes_created_since_workshop, 1)
+        assert (user_logs_since_workshop) == (2)
+        assert (user_nodes_created_since_workshop) == (1)
 
         # Test workshop a year ago
         self._setup_workshop(self.node.created - timedelta(days=365))
@@ -620,8 +619,8 @@ class TestUserWorkshopFormView(AdminTestCase):
         user_logs_since_workshop = result_csv[1][-3]
         user_nodes_created_since_workshop = result_csv[1][-2]
 
-        nt.assert_equal(user_logs_since_workshop, 2)
-        nt.assert_equal(user_nodes_created_since_workshop, 1)
+        assert (user_logs_since_workshop) == (2)
+        assert (user_nodes_created_since_workshop) == (1)
 
     # Regression test for OSF-8089
     def test_utc_new_day(self):
@@ -632,7 +631,7 @@ class TestUserWorkshopFormView(AdminTestCase):
 
         result_csv = self.view.parse(self.data)
         user_logs_since_workshop = result_csv[1][-3]
-        nt.assert_equal(user_logs_since_workshop, 1)
+        assert (user_logs_since_workshop) == (1)
 
     # Regression test for OSF-8089
     def test_utc_new_day_plus_hour(self):
@@ -643,7 +642,7 @@ class TestUserWorkshopFormView(AdminTestCase):
 
         result_csv = self.view.parse(self.data)
         user_logs_since_workshop = result_csv[1][-3]
-        nt.assert_equal(user_logs_since_workshop, 1)
+        assert (user_logs_since_workshop) == (1)
 
     # Regression test for OSF-8089
     def test_utc_new_day_minus_hour(self):
@@ -654,7 +653,7 @@ class TestUserWorkshopFormView(AdminTestCase):
 
         result_csv = self.view.parse(self.data)
         user_logs_since_workshop = result_csv[1][-3]
-        nt.assert_equal(user_logs_since_workshop, 1)
+        assert (user_logs_since_workshop) == (1)
 
     def test_user_osf_account_not_found(self):
         self._setup_workshop(self.node.created)
@@ -664,10 +663,10 @@ class TestUserWorkshopFormView(AdminTestCase):
         user_logs_since_workshop = result_csv[1][-3]
         user_nodes_created_since_workshop = result_csv[1][-2]
 
-        nt.assert_equal(user_id, '')
-        nt.assert_equal(last_log_date, '')
-        nt.assert_equal(user_logs_since_workshop, 0)
-        nt.assert_equal(user_nodes_created_since_workshop, 0)
+        assert (user_id) == ('')
+        assert (last_log_date) == ('')
+        assert (user_logs_since_workshop) == (0)
+        assert (user_nodes_created_since_workshop) == (0)
 
     def test_user_found_by_name(self):
         self._setup_workshop(self.node.created)
@@ -677,10 +676,10 @@ class TestUserWorkshopFormView(AdminTestCase):
         user_logs_since_workshop = result_csv[1][-3]
         user_nodes_created_since_workshop = result_csv[1][-2]
 
-        nt.assert_equal(user_id, self.user._id)
-        nt.assert_equal(last_log_date, '')
-        nt.assert_equal(user_logs_since_workshop, 0)
-        nt.assert_equal(user_nodes_created_since_workshop, 0)
+        assert (user_id) == (self.user._id)
+        assert (last_log_date) == ('')
+        assert (user_logs_since_workshop) == (0)
+        assert (user_nodes_created_since_workshop) == (0)
 
     def test_form_valid(self):
         request = RequestFactory().post('/fake_path')
@@ -720,50 +719,50 @@ class TestUserSearchView(AdminTestCase):
             'guid': self.user_1.guids.first()._id
         }
         form = UserSearchForm(data=form_data)
-        nt.assert_true(form.is_valid())
+        assert (form.is_valid())
         response = self.view.form_valid(form)
-        nt.assert_equal(response.status_code, 302)
-        nt.assert_equal(self.view.success_url, '/users/{}/'.format(self.user_1.guids.first()._id))
+        assert (response.status_code) == (302)
+        assert (self.view.success_url) == ('/users/{}/'.format(self.user_1.guids.first()._id))
 
     def test_search_user_by_name(self):
         form_data = {
             'name': 'Hardy'
         }
         form = UserSearchForm(data=form_data)
-        nt.assert_true(form.is_valid())
+        assert (form.is_valid())
         response = self.view.form_valid(form)
-        nt.assert_equal(response.status_code, 302)
-        nt.assert_equal(self.view.success_url, '/users/search/Hardy/')
+        assert (response.status_code) == (302)
+        assert (self.view.success_url) == ('/users/search/Hardy/')
 
     def test_search_user_by_name_with_punctuation(self):
         form_data = {
             'name': 'Dr. Sportello-Fay, PI @, #, $, %, ^, &, *, (, ), ~'
         }
         form = UserSearchForm(data=form_data)
-        nt.assert_true(form.is_valid())
+        assert (form.is_valid())
         response = self.view.form_valid(form)
-        nt.assert_equal(response.status_code, 302)
-        nt.assert_equal(self.view.success_url, '/users/search/Dr.%20Sportello-Fay,%20PI%20@,%20%23,%20$,%20%25,%20%5E,%20&,%20*,%20(,%20),%20~/')
+        assert (response.status_code) == (302)
+        assert (self.view.success_url) == ('/users/search/Dr.%20Sportello-Fay,%20PI%20@,%20%23,%20$,%20%25,%20%5E,%20&,%20*,%20(,%20),%20~/')
 
     def test_search_user_by_username(self):
         form_data = {
             'email': self.user_1.username
         }
         form = UserSearchForm(data=form_data)
-        nt.assert_true(form.is_valid())
+        assert (form.is_valid())
         response = self.view.form_valid(form)
-        nt.assert_equal(response.status_code, 302)
-        nt.assert_equal(self.view.success_url, '/users/{}/'.format(self.user_1.guids.first()._id))
+        assert (response.status_code) == (302)
+        assert (self.view.success_url) == ('/users/{}/'.format(self.user_1.guids.first()._id))
 
     def test_search_user_by_alternate_email(self):
         form_data = {
             'email': self.user_2_alternate_email
         }
         form = UserSearchForm(data=form_data)
-        nt.assert_true(form.is_valid())
+        assert (form.is_valid())
         response = self.view.form_valid(form)
-        nt.assert_equal(response.status_code, 302)
-        nt.assert_equal(self.view.success_url, '/users/{}/'.format(self.user_2.guids.first()._id))
+        assert (response.status_code) == (302)
+        assert (self.view.success_url) == ('/users/{}/'.format(self.user_2.guids.first()._id))
 
     def test_search_user_list(self):
         view = views.UserSearchList()
@@ -772,9 +771,9 @@ class TestUserSearchView(AdminTestCase):
 
         results = view.get_queryset()
 
-        nt.assert_equal(len(results), 3)
+        assert (len(results)) == (3)
         for user in results:
-            nt.assert_in('Hardy', user.fullname)
+            assert ('Hardy') in (user.fullname)
 
     def test_search_user_list_case_insensitive(self):
         view = views.UserSearchList()
@@ -783,9 +782,9 @@ class TestUserSearchView(AdminTestCase):
 
         results = view.get_queryset()
 
-        nt.assert_equal(len(results), 3)
+        assert (len(results)) == (3)
         for user in results:
-            nt.assert_in('Hardy', user.fullname)
+            assert ('Hardy') in (user.fullname)
 
 
 class TestGetLinkView(AdminTestCase):
@@ -801,7 +800,7 @@ class TestGetLinkView(AdminTestCase):
         link = view.get_link(user)
         link_path = str(furl.furl(link).path)
 
-        nt.assert_equal(link_path, ideal_link_path)
+        assert (link_path) == (ideal_link_path)
 
     def test_get_user_confirmation_link_with_expired_token(self):
         user = UnconfirmedUserFactory()
@@ -819,7 +818,7 @@ class TestGetLinkView(AdminTestCase):
         link_path = str(furl.furl(link).path)
         ideal_link_path = '/confirm/{}/{}/'.format(user._id, new_user_token)
 
-        nt.assert_equal(link_path, ideal_link_path)
+        assert (link_path) == (ideal_link_path)
 
     def test_get_password_reset_link(self):
         user = UnconfirmedUserFactory()
@@ -830,12 +829,12 @@ class TestGetLinkView(AdminTestCase):
         link = view.get_link(user)
 
         user_token = user.verification_key_v2.get('token')
-        nt.assert_is_not_none(user_token)
+        assert (user_token) is not None
 
         ideal_link_path = '/resetpassword/{}/{}'.format(user._id, user_token)
         link_path = str(furl.furl(link).path)
 
-        nt.assert_equal(link_path, ideal_link_path)
+        assert (link_path) == (ideal_link_path)
 
     def test_get_unclaimed_node_links(self):
         project = ProjectFactory()
@@ -849,12 +848,12 @@ class TestGetLinkView(AdminTestCase):
         links = view.get_claim_links(unregistered_contributor)
         unclaimed_records = unregistered_contributor.unclaimed_records
 
-        nt.assert_equal(len(links), 1)
-        nt.assert_equal(len(links), len(unclaimed_records.keys()))
+        assert (len(links)) == (1)
+        assert (len(links)) == (len(unclaimed_records.keys()))
         link = links[0]
 
-        nt.assert_in(project._id, link)
-        nt.assert_in(unregistered_contributor.unclaimed_records[project._id]['token'], link)
+        assert (project._id) in (link)
+        assert (unregistered_contributor.unclaimed_records[project._id]['token']) in (link)
 
 
 class TestUserReindex(AdminTestCase):
@@ -871,8 +870,8 @@ class TestUserReindex(AdminTestCase):
         view = setup_log_view(view, self.request, guid=self.user._id)
         view.delete(self.request)
 
-        nt.assert_true(mock_reindex_elastic.called)
-        nt.assert_equal(AdminLogEntry.objects.count(), count + 1)
+        assert (mock_reindex_elastic.called)
+        assert (AdminLogEntry.objects.count()) == (count + 1)
 
 class TestUserMerge(AdminTestCase):
     def setUp(self):
@@ -890,11 +889,11 @@ class TestUserMerge(AdminTestCase):
         invalid_form = MergeUserForm(data={'user_guid_to_be_merged': 'Not a valid Guid'})
         valid_form = MergeUserForm(data={'user_guid_to_be_merged': user_merged._id})
 
-        nt.assert_false(invalid_form.is_valid())
-        nt.assert_true(valid_form.is_valid())
+        assert not (invalid_form.is_valid())
+        assert (valid_form.is_valid())
 
         view.form_valid(valid_form)
-        nt.assert_true(mock_merge_user.called_with())
+        mock_merge_user.assert_called_with(user_merged)
 
 
 class TestGetUserQuota(AdminTestCase):
@@ -911,7 +910,7 @@ class TestGetUserQuota(AdminTestCase):
             guid=self.user._id
         )
         context = response.get_object()
-        nt.assert_equal(context['quota'], api_settings.DEFAULT_MAX_QUOTA)
+        assert (context['quota']) == (api_settings.DEFAULT_MAX_QUOTA)
 
     def test_get_custom_quota(self):
         UserQuota.objects.create(
@@ -925,7 +924,7 @@ class TestGetUserQuota(AdminTestCase):
             guid=self.user._id
         )
         context = response.get_object()
-        nt.assert_equal(context['quota'], 200)
+        assert (context['quota']) == (200)
 
     def test_get_nii_storage_custom_quota(self):
         institution = InstitutionFactory()
@@ -945,8 +944,8 @@ class TestGetUserQuota(AdminTestCase):
             guid=self.user._id
         )
         context = response.get_object()
-        nt.assert_equal(context['quota'], 200)
-        nt.assert_true(context['use_nii_storage'])
+        assert (context['quota']) == (200)
+        assert (context['use_nii_storage'])
 
     def test_get_institution_storage_custom_quota(self):
         institution = InstitutionFactory()
@@ -966,8 +965,8 @@ class TestGetUserQuota(AdminTestCase):
             guid=self.user._id
         )
         context = response.get_object()
-        nt.assert_equal(context['quota'], 200)
-        nt.assert_false(context['use_nii_storage'])
+        assert (context['quota']) == (200)
+        assert not (context['use_nii_storage'])
 
 
 class TestSetUserQuota(AdminTestCase):
@@ -986,8 +985,8 @@ class TestSetUserQuota(AdminTestCase):
         request = RequestFactory().post(reverse('users:quota', kwargs={'guid': user._id}), {'maxQuota': 150})
         request.user = AnonymousUser()
         view = setup_view(self.view, request, guid=user._id)
-        nt.assert_false(view.test_func())
-        nt.assert_false(view.raise_exception)
+        assert not (view.test_func())
+        assert not (view.raise_exception)
 
     def test_user_login(self):
         user = UserFactory()
@@ -996,8 +995,8 @@ class TestSetUserQuota(AdminTestCase):
         request.user.is_active = True
         request.user.is_registered = True
         view = setup_view(self.view, request, guid=user._id)
-        nt.assert_false(view.test_func())
-        nt.assert_true(view.raise_exception)
+        assert not (view.test_func())
+        assert (view.raise_exception)
 
     def test_admin_login(self):
         user = UserFactory()
@@ -1008,8 +1007,8 @@ class TestSetUserQuota(AdminTestCase):
         request.user.is_superuser = False
         request.user.is_staff = True
         view = setup_view(self.view, request, guid=user._id)
-        nt.assert_false(view.test_func())
-        nt.assert_true(view.raise_exception)
+        assert not (view.test_func())
+        assert (view.raise_exception)
 
     def test_super_admin_login(self):
         user = UserFactory()
@@ -1019,7 +1018,7 @@ class TestSetUserQuota(AdminTestCase):
         request.user.is_registered = True
         request.user.is_superuser = True
         view = setup_view(self.view, request, guid=user._id)
-        nt.assert_true(view.test_func())
+        assert (view.test_func())
 
     def test_new_quota__nii_storage_default(self):
         request = RequestFactory().post(
@@ -1027,13 +1026,13 @@ class TestSetUserQuota(AdminTestCase):
             {'maxQuota': 150})
         self.view = setup_view(self.view, request, guid=self.user._id)
         response = self.view.post(request)
-        nt.assert_equal(response.status_code, 302)
+        assert (response.status_code) == (302)
 
         user_quota = UserQuota.objects.filter(
             user=self.user, storage_type=UserQuota.NII_STORAGE
         ).first()
-        nt.assert_is_not_none(user_quota)
-        nt.assert_equal(user_quota.max_quota, 150)
+        assert (user_quota) is not None
+        assert (user_quota.max_quota) == (150)
 
     def test_new_quota__institution_storage(self):
         self.region._id = self.institution.guid
@@ -1044,13 +1043,13 @@ class TestSetUserQuota(AdminTestCase):
             {'maxQuota': 150})
         self.view = setup_view(self.view, request, guid=self.user._id)
         response = self.view.post(request)
-        nt.assert_equal(response.status_code, 302)
+        assert (response.status_code) == (302)
 
         user_quota = UserQuota.objects.filter(
             user=self.user, storage_type=UserQuota.CUSTOM_STORAGE
         ).first()
-        nt.assert_is_not_none(user_quota)
-        nt.assert_equal(user_quota.max_quota, 150)
+        assert (user_quota) is not None
+        assert (user_quota.max_quota) == (150)
 
     def test_new_quota__no_affiliated_institutions(self):
         self.user.affiliated_institutions.clear()
@@ -1059,7 +1058,7 @@ class TestSetUserQuota(AdminTestCase):
             reverse('users:quota', kwargs={'guid': self.user._id}),
             {'maxQuota': 150})
         self.view = setup_view(self.view, request, guid=self.user._id)
-        with nt.assert_raises(Http404):
+        with pytest.raises(Http404):
             self.view.post(request)
 
     def test_update_quota__nii_storage_default(self):
@@ -1070,13 +1069,13 @@ class TestSetUserQuota(AdminTestCase):
             {'maxQuota': 200})
         self.view = setup_view(self.view, request, guid=self.user._id)
         response = self.view.post(request)
-        nt.assert_equal(response.status_code, 302)
+        assert (response.status_code) == (302)
 
         user_quota = UserQuota.objects.filter(
             user=self.user, storage_type=UserQuota.NII_STORAGE
         ).first()
-        nt.assert_is_not_none(user_quota)
-        nt.assert_equal(user_quota.max_quota, 200)
+        assert (user_quota) is not None
+        assert (user_quota.max_quota) == (200)
 
     def test_update_quota__institutional_storage(self):
         self.region._id = self.institution.guid
@@ -1089,13 +1088,13 @@ class TestSetUserQuota(AdminTestCase):
             {'maxQuota': 200})
         self.view = setup_view(self.view, request, guid=self.user._id)
         response = self.view.post(request)
-        nt.assert_equal(response.status_code, 302)
+        assert (response.status_code) == (302)
 
         user_quota = UserQuota.objects.filter(
             user=self.user, storage_type=UserQuota.CUSTOM_STORAGE
         ).first()
-        nt.assert_is_not_none(user_quota)
-        nt.assert_equal(user_quota.max_quota, 200)
+        assert (user_quota) is not None
+        assert (user_quota.max_quota) == (200)
 
     def test_update_quota__zero(self):
         self.region._id = self.institution.guid
@@ -1108,13 +1107,13 @@ class TestSetUserQuota(AdminTestCase):
             {'maxQuota': 0})
         self.view = setup_view(self.view, request, guid=self.user._id)
         response = self.view.post(request)
-        nt.assert_equal(response.status_code, 302)
+        assert (response.status_code) == (302)
 
         user_quota = UserQuota.objects.filter(
             user=self.user, storage_type=UserQuota.CUSTOM_STORAGE
         ).first()
-        nt.assert_is_not_none(user_quota)
-        nt.assert_equal(user_quota.max_quota, 0)
+        assert (user_quota) is not None
+        assert (user_quota.max_quota) == (0)
 
     def test_update_quota__none(self):
         self.region._id = self.institution.guid
@@ -1127,13 +1126,13 @@ class TestSetUserQuota(AdminTestCase):
             {})
         self.view = setup_view(self.view, request, guid=self.user._id)
         response = self.view.post(request)
-        nt.assert_equal(response.status_code, 302)
+        assert (response.status_code) == (302)
 
         user_quota = UserQuota.objects.filter(
             user=self.user, storage_type=UserQuota.CUSTOM_STORAGE
         ).first()
-        nt.assert_is_not_none(user_quota)
-        nt.assert_equal(user_quota.max_quota, 100)
+        assert (user_quota) is not None
+        assert (user_quota.max_quota) == (100)
 
     def test_update_quota__string(self):
         self.region._id = self.institution.guid
@@ -1146,13 +1145,13 @@ class TestSetUserQuota(AdminTestCase):
             {'maxQuota': 'test'})
         self.view = setup_view(self.view, request, guid=self.user._id)
         response = self.view.post(request)
-        nt.assert_equal(response.status_code, 302)
+        assert (response.status_code) == (302)
 
         user_quota = UserQuota.objects.filter(
             user=self.user, storage_type=UserQuota.CUSTOM_STORAGE
         ).first()
-        nt.assert_is_not_none(user_quota)
-        nt.assert_equal(user_quota.max_quota, 100)
+        assert (user_quota) is not None
+        assert (user_quota.max_quota) == (100)
 
     def test_update_quota_negative(self):
         self.region._id = self.institution.guid
@@ -1165,13 +1164,13 @@ class TestSetUserQuota(AdminTestCase):
             {'maxQuota': -200})
         self.view = setup_view(self.view, request, guid=self.user._id)
         response = self.view.post(request)
-        nt.assert_equal(response.status_code, 302)
+        assert (response.status_code) == (302)
 
         user_quota = UserQuota.objects.filter(
             user=self.user, storage_type=UserQuota.CUSTOM_STORAGE
         ).first()
-        nt.assert_is_not_none(user_quota)
-        nt.assert_equal(user_quota.max_quota, 100)
+        assert (user_quota) is not None
+        assert (user_quota.max_quota) == (100)
 
     def test_update_quota_too_large(self):
         self.region._id = self.institution.guid
@@ -1184,13 +1183,13 @@ class TestSetUserQuota(AdminTestCase):
             {'maxQuota': 1000000000000})
         self.view = setup_view(self.view, request, guid=self.user._id)
         response = self.view.post(request)
-        nt.assert_equal(response.status_code, 302)
+        assert (response.status_code) == (302)
 
         user_quota = UserQuota.objects.filter(
             user=self.user, storage_type=UserQuota.CUSTOM_STORAGE
         ).first()
-        nt.assert_is_not_none(user_quota)
-        nt.assert_equal(user_quota.max_quota, 100)
+        assert (user_quota) is not None
+        assert (user_quota.max_quota) == (100)
 
 
 class TestGetUserInstitutionQuota(AdminTestCase):
@@ -1206,8 +1205,8 @@ class TestGetUserInstitutionQuota(AdminTestCase):
         request = RequestFactory().get(reverse('users:user_details', kwargs={'guid': self.user._id}))
         request.user = AnonymousUser()
         view = setup_view(self.view, request, guid=self.user._id)
-        nt.assert_false(view.test_func())
-        nt.assert_false(view.raise_exception)
+        assert not (view.test_func())
+        assert not (view.raise_exception)
 
     def test_user_login(self):
         request = RequestFactory().get(reverse('users:user_details', kwargs={'guid': self.user._id}))
@@ -1215,8 +1214,8 @@ class TestGetUserInstitutionQuota(AdminTestCase):
         request.user.is_active = True
         request.user.is_registered = True
         view = setup_view(self.view, request, guid=self.user._id)
-        nt.assert_false(view.test_func())
-        nt.assert_true(view.raise_exception)
+        assert not (view.test_func())
+        assert (view.raise_exception)
 
     def test_admin_login(self):
         request = RequestFactory().get(reverse('users:user_details', kwargs={'guid': self.user._id}))
@@ -1226,7 +1225,7 @@ class TestGetUserInstitutionQuota(AdminTestCase):
         request.user.is_superuser = False
         request.user.is_staff = True
         view = setup_view(self.view, request, guid=self.user._id)
-        nt.assert_true(view.test_func())
+        assert (view.test_func())
 
     def test_super_admin_login(self):
         request = RequestFactory().get(reverse('users:user_details', kwargs={'guid': self.user._id}))
@@ -1236,8 +1235,8 @@ class TestGetUserInstitutionQuota(AdminTestCase):
         request.user.is_superuser = True
         request.user.is_staff = True
         view = setup_view(self.view, request, guid=self.user._id)
-        nt.assert_false(view.test_func())
-        nt.assert_true(view.raise_exception)
+        assert not (view.test_func())
+        assert (view.raise_exception)
 
     def test_admin_login__user_guid_not_found(self):
         request = RequestFactory().get(reverse('users:user_details', kwargs={'guid': 'test'}))
@@ -1247,7 +1246,7 @@ class TestGetUserInstitutionQuota(AdminTestCase):
         request.user.is_superuser = False
         request.user.is_staff = True
         view = setup_view(self.view, request, guid='test')
-        with nt.assert_raises(Http404):
+        with pytest.raises(Http404):
             view.test_func()
 
     def test_admin_login__user_does_not_have_affiliated_institutions(self):
@@ -1259,8 +1258,8 @@ class TestGetUserInstitutionQuota(AdminTestCase):
         request.user.is_superuser = False
         request.user.is_staff = True
         view = setup_view(self.view, request, guid=user._id)
-        nt.assert_false(view.test_func())
-        nt.assert_true(view.raise_exception)
+        assert not (view.test_func())
+        assert (view.raise_exception)
 
     def test_admin_login__no_permission_for_user_affiliated_institutions(self):
         institution = InstitutionFactory()
@@ -1274,13 +1273,13 @@ class TestGetUserInstitutionQuota(AdminTestCase):
         request.user.is_superuser = False
         request.user.is_staff = True
         view = setup_view(self.view, request, guid=user._id)
-        nt.assert_false(view.test_func())
-        nt.assert_true(view.raise_exception)
+        assert not (view.test_func())
+        assert (view.raise_exception)
 
     def test_get_default_quota_deleted_institution(self):
         self.institution.is_deleted = True
         self.institution.save()
-        with nt.assert_raises(Http404):
+        with pytest.raises(Http404):
             response = setup_view(
                 self.view,
                 RequestFactory().get(reverse('users:user_details', kwargs={'guid': self.user._id})),
@@ -1295,7 +1294,7 @@ class TestGetUserInstitutionQuota(AdminTestCase):
             guid=self.user._id
         )
         context = response.get_object()
-        nt.assert_equal(context['quota'], api_settings.DEFAULT_MAX_QUOTA)
+        assert (context['quota']) == (api_settings.DEFAULT_MAX_QUOTA)
 
     def test_get_custom_quota(self):
         UserQuota.objects.create(
@@ -1309,7 +1308,7 @@ class TestGetUserInstitutionQuota(AdminTestCase):
             guid=self.user._id
         )
         context = response.get_object()
-        nt.assert_equal(context['quota'], 200)
+        assert (context['quota']) == (200)
 
     def test_get_nii_default_storage_quota(self):
         UserQuota.objects.create(
@@ -1326,8 +1325,8 @@ class TestGetUserInstitutionQuota(AdminTestCase):
             guid=self.user._id
         )
         context = response.get_object()
-        nt.assert_equal(context['quota'], 200)
-        nt.assert_equal(context['disable_update_max_quota'], True)
+        assert (context['quota']) == (200)
+        assert (context['disable_update_max_quota']) == (True)
 
     def test_get_nii_custom_storage_quota(self):
         UserQuota.objects.create(
@@ -1344,8 +1343,8 @@ class TestGetUserInstitutionQuota(AdminTestCase):
             guid=self.user._id
         )
         context = response.get_object()
-        nt.assert_equal(context['quota'], 200)
-        nt.assert_equal(context['disable_update_max_quota'], False)
+        assert (context['quota']) == (200)
+        assert (context['disable_update_max_quota']) == (False)
 
 
 class TestSetUserInstitutionQuota(AdminTestCase):
@@ -1365,15 +1364,15 @@ class TestSetUserInstitutionQuota(AdminTestCase):
         response = views.UserInstitutionQuotaView.as_view()(
             request, guid=self.user._id
         )
-        nt.assert_equal(response.status_code, 302)
-        nt.assert_in('login', str(response))
+        assert (response.status_code) == (302)
+        assert ('login') in (str(response))
 
     def test_permissions_user(self):
         request = RequestFactory().post(
             reverse('users:institution_quota', kwargs={'guid': self.user._id}),
             {'maxQuota': 200})
         request.user = self.user
-        with nt.assert_raises(PermissionDenied):
+        with pytest.raises(PermissionDenied):
             views.UserInstitutionQuotaView.as_view()(
                 request, guid=self.user._id
             )
@@ -1386,7 +1385,7 @@ class TestSetUserInstitutionQuota(AdminTestCase):
         request.user.is_superuser = False
         request.user.is_staff = True
         request.user.affiliated_institutions.clear()
-        with nt.assert_raises(PermissionDenied):
+        with pytest.raises(PermissionDenied):
             views.UserInstitutionQuotaView.as_view()(
                 request, guid=self.user._id
             )
@@ -1401,8 +1400,8 @@ class TestSetUserInstitutionQuota(AdminTestCase):
         response = views.UserInstitutionQuotaView.as_view()(
             request, guid=self.user._id
         )
-        nt.assert_equal(response.status_code, 302)
-        nt.assert_not_in('login', str(response))
+        assert (response.status_code) == (302)
+        assert ('login') not in (str(response))
 
     def test_permissions_superuser(self):
         request = RequestFactory().post(
@@ -1411,7 +1410,7 @@ class TestSetUserInstitutionQuota(AdminTestCase):
         request.user = self.user
         request.user.is_superuser = True
         request.user.is_staff = False
-        with nt.assert_raises(PermissionDenied):
+        with pytest.raises(PermissionDenied):
             views.UserInstitutionQuotaView.as_view()(
                 request, guid=self.user._id
             )
@@ -1425,13 +1424,13 @@ class TestSetUserInstitutionQuota(AdminTestCase):
             {'maxQuota': 150})
         self.view = setup_view(self.view, request, guid=self.user._id)
         response = self.view.post(request)
-        nt.assert_equal(response.status_code, 302)
+        assert (response.status_code) == (302)
 
         user_quota = UserQuota.objects.filter(
             user=self.user, storage_type=UserQuota.CUSTOM_STORAGE
         ).first()
-        nt.assert_is_not_none(user_quota)
-        nt.assert_equal(user_quota.max_quota, 150)
+        assert (user_quota) is not None
+        assert (user_quota.max_quota) == (150)
 
     def test_new_quota_no_affiliated_institutions(self):
         self.user.affiliated_institutions.clear()
@@ -1440,7 +1439,7 @@ class TestSetUserInstitutionQuota(AdminTestCase):
             reverse('users:institution_quota', kwargs={'guid': self.user._id}),
             {'maxQuota': 150})
         self.view = setup_view(self.view, request, guid=self.user._id)
-        with nt.assert_raises(Http404):
+        with pytest.raises(Http404):
             self.view.post(request)
 
     def test_new_quota_not_using_institutional_storage(self):
@@ -1452,12 +1451,12 @@ class TestSetUserInstitutionQuota(AdminTestCase):
             {'maxQuota': 150})
         self.view = setup_view(self.view, request, guid=self.user._id)
         response = self.view.post(request)
-        nt.assert_equal(response.status_code, 302)
+        assert (response.status_code) == (302)
 
         user_quota = UserQuota.objects.filter(
             user=self.user, storage_type=UserQuota.CUSTOM_STORAGE
         ).first()
-        nt.assert_is_none(user_quota)
+        assert (user_quota) is None
 
     def test_update_quota(self):
         self.region._id = self.institution.guid
@@ -1470,13 +1469,13 @@ class TestSetUserInstitutionQuota(AdminTestCase):
             {'maxQuota': 200})
         self.view = setup_view(self.view, request, guid=self.user._id)
         response = self.view.post(request)
-        nt.assert_equal(response.status_code, 302)
+        assert (response.status_code) == (302)
 
         user_quota = UserQuota.objects.filter(
             user=self.user, storage_type=UserQuota.CUSTOM_STORAGE
         ).first()
-        nt.assert_is_not_none(user_quota)
-        nt.assert_equal(user_quota.max_quota, 200)
+        assert (user_quota) is not None
+        assert (user_quota.max_quota) == (200)
 
     def test_update_quota_none(self):
         self.region._id = self.institution.guid
@@ -1489,13 +1488,13 @@ class TestSetUserInstitutionQuota(AdminTestCase):
             {})
         self.view = setup_view(self.view, request, guid=self.user._id)
         response = self.view.post(request)
-        nt.assert_equal(response.status_code, 302)
+        assert (response.status_code) == (302)
 
         user_quota = UserQuota.objects.filter(
             user=self.user, storage_type=UserQuota.CUSTOM_STORAGE
         ).first()
-        nt.assert_is_not_none(user_quota)
-        nt.assert_equal(user_quota.max_quota, 100)
+        assert (user_quota) is not None
+        assert (user_quota.max_quota) == (100)
 
     def test_update_quota_string(self):
         self.region._id = self.institution.guid
@@ -1508,13 +1507,13 @@ class TestSetUserInstitutionQuota(AdminTestCase):
             {'maxQuota': 'test'})
         self.view = setup_view(self.view, request, guid=self.user._id)
         response = self.view.post(request)
-        nt.assert_equal(response.status_code, 302)
+        assert (response.status_code) == (302)
 
         user_quota = UserQuota.objects.filter(
             user=self.user, storage_type=UserQuota.CUSTOM_STORAGE
         ).first()
-        nt.assert_is_not_none(user_quota)
-        nt.assert_equal(user_quota.max_quota, 100)
+        assert (user_quota) is not None
+        assert (user_quota.max_quota) == (100)
 
     def test_update_quota_negative(self):
         self.region._id = self.institution.guid
@@ -1527,13 +1526,13 @@ class TestSetUserInstitutionQuota(AdminTestCase):
             {'maxQuota': -200})
         self.view = setup_view(self.view, request, guid=self.user._id)
         response = self.view.post(request)
-        nt.assert_equal(response.status_code, 302)
+        assert (response.status_code) == (302)
 
         user_quota = UserQuota.objects.filter(
             user=self.user, storage_type=UserQuota.CUSTOM_STORAGE
         ).first()
-        nt.assert_is_not_none(user_quota)
-        nt.assert_equal(user_quota.max_quota, 100)
+        assert (user_quota) is not None
+        assert (user_quota.max_quota) == (100)
 
     def test_update_quota_too_large(self):
         self.region._id = self.institution.guid
@@ -1546,10 +1545,10 @@ class TestSetUserInstitutionQuota(AdminTestCase):
             {'maxQuota': 1000000000000})
         self.view = setup_view(self.view, request, guid=self.user._id)
         response = self.view.post(request)
-        nt.assert_equal(response.status_code, 302)
+        assert (response.status_code) == (302)
 
         user_quota = UserQuota.objects.filter(
             user=self.user, storage_type=UserQuota.CUSTOM_STORAGE
         ).first()
-        nt.assert_is_not_none(user_quota)
-        nt.assert_equal(user_quota.max_quota, 100)
+        assert (user_quota) is not None
+        assert (user_quota.max_quota) == (100)

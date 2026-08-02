@@ -34,7 +34,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='abstractprovider',
             name='in_sloan_study',
-            field=models.NullBooleanField(default=True),
+            field=models.BooleanField(null=True, default=True),
         ),
         migrations.AddField(
             model_name='preprint',
@@ -50,17 +50,17 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='preprint',
             name='has_coi',
-            field=models.NullBooleanField(),
+            field=models.BooleanField(null=True),
         ),
         migrations.AddField(
             model_name='preprint',
             name='has_data_links',
-            field=models.NullBooleanField(),
+            field=models.BooleanField(null=True),
         ),
         migrations.AddField(
             model_name='preprint',
             name='has_prereg_links',
-            field=models.NullBooleanField(),
+            field=models.BooleanField(null=True),
         ),
         migrations.AddField(
             model_name='preprint',

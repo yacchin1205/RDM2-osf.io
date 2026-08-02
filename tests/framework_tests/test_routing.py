@@ -1,9 +1,7 @@
 # -*- coding: utf-8 -*-
 import unittest
 
-from nose.tools import *  # noqa (PEP8 asserts)
 from flask import Flask
-from webtest_plus import TestApp
 
 from framework.exceptions import HTTPError
 from framework.routing import json_renderer, process_rules, Rule
@@ -23,20 +21,20 @@ class TestJSONRenderer(unittest.TestCase):
         self.app = Flask(__name__)
         self.app.debug = True
 
-        self.wt = TestApp(self.app)
+        self.wt = self.app.test_client()
 
     def test_error_handling(self):
         rule = Rule(['/error/'], 'get', error_view, renderer=json_renderer)
         process_rules(self.app, [rule])
-        res = self.wt.get('/error/', expect_errors=True)
-        assert_equal(res.status_code, 400)
-        assert_true(isinstance(res.json, dict))
+        res = self.wt.get('/error/')
+        assert (res.status_code) == (400)
+        assert (isinstance(res.json, dict))
 
     def test_error_handling_with_message(self):
         rule = Rule(['/error/'], 'get', error_with_msg, renderer=json_renderer)
         process_rules(self.app, [rule])
-        res = self.wt.get('/error/', expect_errors=True)
-        assert_equal(res.status_code, 400)
+        res = self.wt.get('/error/')
+        assert (res.status_code) == (400)
         data = res.json
-        assert_equal(data['message_short'], 'Invalid')
-        assert_equal(data['message_long'], 'Invalid request')
+        assert (data['message_short']) == ('Invalid')
+        assert (data['message_long']) == ('Invalid request')

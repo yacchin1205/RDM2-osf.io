@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-from nose import tools as nt
 
 from django.test import RequestFactory
 from tests.base import AdminTestCase
@@ -43,7 +42,7 @@ class TestIndexView(AdminTestCase):
         self.request.user.is_active = True
         self.request.user.is_registered = True
         self.request.user.is_superuser = True
-        nt.assert_true(self.view.test_func())
+        assert (self.view.test_func())
 
     def test_admin_login(self):
         """test institution administrator login"""
@@ -51,7 +50,7 @@ class TestIndexView(AdminTestCase):
         self.request.user.is_registered = True
         self.request.user.is_superuser = False
         self.request.user.is_staff = True
-        nt.assert_true(self.view.test_func())
+        assert (self.view.test_func())
 
     def test_non_admin_login(self):
         """test user not superuser or institution administrator login"""
@@ -59,7 +58,7 @@ class TestIndexView(AdminTestCase):
         self.request.user.is_registered = True
         self.request.user.is_superuser = False
         self.request.user.is_staff = False
-        nt.assert_equal(self.view.test_func(), False)
+        assert (self.view.test_func()) == (False)
 
     def test_non_active_user_login(self):
         """test invalid user login"""
@@ -67,7 +66,7 @@ class TestIndexView(AdminTestCase):
         self.request.user.is_registered = True
         self.request.user.is_superuser = True
         self.request.user.is_staff = True
-        nt.assert_equal(self.view.test_func(), False)
+        assert (self.view.test_func()) == (False)
 
     def test_non_registered_user_login(self):
         """test unregistered user login"""
@@ -75,7 +74,7 @@ class TestIndexView(AdminTestCase):
         self.request.user.is_registered = False
         self.request.user.is_superuser = True
         self.request.user.is_staff = True
-        nt.assert_equal(self.view.test_func(), False)
+        assert (self.view.test_func()) == (False)
 
     def test_super_admin_get(self, *args, **kwargs):
         """test superuser GET method"""
@@ -84,7 +83,7 @@ class TestIndexView(AdminTestCase):
         self.request.user.is_superuser = True
         self.request.user.is_staff = True
         res = self.view.get(self.request, *args, **kwargs)
-        nt.assert_equal(res.status_code, 200)
+        assert (res.status_code) == (200)
 
     def test_admin_get(self, *args, **kwargs):
         """test institution administrator GET method"""
@@ -93,12 +92,12 @@ class TestIndexView(AdminTestCase):
         self.request.user.is_superuser = False
         self.request.user.is_staff = True
         res = self.view.get(self.request, *args, **kwargs)
-        nt.assert_equal(res.status_code, 200)
+        assert (res.status_code) == (200)
 
     def test_get_context_data(self):
         res = self.view.get_context_data()
-        nt.assert_is_instance(res, dict)
-        nt.assert_equal(res['form'], PreviewForm)
+        assert isinstance((res), (dict))
+        assert (res['form']) == (PreviewForm)
 
     def test_post_option_check_okay(self):
         mod_data = dict(option_data)
@@ -107,9 +106,9 @@ class TestIndexView(AdminTestCase):
         test_option.save()
         self.form = PreviewForm(data)
         ret = self.view.option_check(data)
-        nt.assert_is_instance(test_option, RdmAnnouncementOption)
-        nt.assert_true(self.form.is_valid())
-        nt.assert_true(ret)
+        assert isinstance((test_option), (RdmAnnouncementOption))
+        assert (self.form.is_valid())
+        assert (ret)
 
     def test_post_option_check_raise(self):
         mod_data = dict(option_data)
@@ -120,9 +119,9 @@ class TestIndexView(AdminTestCase):
         mod_data2.update({'announcement_type': 'SNS (Twitter)'})
         self.form = PreviewForm(mod_data2)
         ret = self.view.option_check(mod_data2)
-        nt.assert_is_instance(test_option, RdmAnnouncementOption)
-        nt.assert_true(self.form.is_valid())
-        nt.assert_false(ret)
+        assert isinstance((test_option), (RdmAnnouncementOption))
+        assert (self.form.is_valid())
+        assert not (ret)
 
     ''' disable #GRDM-6902
     def test_post_option_check_raise2(self):
@@ -156,7 +155,7 @@ class TestSettingsView(AdminTestCase):
         self.request.user.is_active = True
         self.request.user.is_registered = True
         self.request.user.is_superuser = True
-        nt.assert_true(self.view.test_func())
+        assert (self.view.test_func())
 
     def test_admin_login(self):
         """test institution administraror login"""
@@ -164,7 +163,7 @@ class TestSettingsView(AdminTestCase):
         self.request.user.is_registered = True
         self.request.user.is_superuser = False
         self.request.user.is_staff = True
-        nt.assert_true(self.view.test_func())
+        assert (self.view.test_func())
 
     def test_non_admin_login(self):
         """test user not superuser or institution administrator login"""
@@ -172,7 +171,7 @@ class TestSettingsView(AdminTestCase):
         self.request.user.is_registered = True
         self.request.user.is_superuser = False
         self.request.user.is_staff = False
-        nt.assert_equal(self.view.test_func(), False)
+        assert (self.view.test_func()) == (False)
 
     def test_non_active_user_login(self):
         """test invalid user login"""
@@ -180,7 +179,7 @@ class TestSettingsView(AdminTestCase):
         self.request.user.is_registered = True
         self.request.user.is_superuser = True
         self.request.user.is_staff = True
-        nt.assert_equal(self.view.test_func(), False)
+        assert (self.view.test_func()) == (False)
 
     def test_non_registered_user_login(self):
         """login at unregisterd user"""
@@ -188,7 +187,7 @@ class TestSettingsView(AdminTestCase):
         self.request.user.is_registered = False
         self.request.user.is_superuser = True
         self.request.user.is_staff = True
-        nt.assert_equal(self.view.test_func(), False)
+        assert (self.view.test_func()) == (False)
 
     def test_super_admin_get(self, *args, **kwargs):
         """test superuser GET method"""
@@ -197,7 +196,7 @@ class TestSettingsView(AdminTestCase):
         self.request.user.is_superuser = True
         self.request.user.is_staff = True
         res = self.view.get(self.request, *args, **kwargs)
-        nt.assert_equal(res.status_code, 200)
+        assert (res.status_code) == (200)
 
     def test_admin_get(self, *args, **kwargs):
         """test institution administrator GET method"""
@@ -206,12 +205,12 @@ class TestSettingsView(AdminTestCase):
         self.request.user.is_superuser = False
         self.request.user.is_staff = True
         res = self.view.get(self.request, *args, **kwargs)
-        nt.assert_equal(res.status_code, 200)
+        assert (res.status_code) == (200)
 
     def test_get_context_data(self):
         res = self.view.get_context_data()
-        nt.assert_is_instance(res, dict)
-        nt.assert_equal(res['form'], SettingsForm)
+        assert isinstance((res), (dict))
+        assert (res['form']) == (SettingsForm)
 
     def test_get_exist_option_set(self):
         """test superuser"""
@@ -229,8 +228,8 @@ class TestSettingsView(AdminTestCase):
         new_user_option = RdmAnnouncementOption.objects.create(**mod_data)
         new_user_option.save()
         ret = self.view.get_exist_option_set()
-        nt.assert_is_instance(new_user_option, RdmAnnouncementOption)
-        nt.assert_true(ret)
+        assert isinstance((new_user_option), (RdmAnnouncementOption))
+        assert (ret)
 
     def test_get_exist_option_set2(self):
         """test institution administrator"""
@@ -248,8 +247,8 @@ class TestSettingsView(AdminTestCase):
         new_user_option = RdmAnnouncementOption.objects.create(**mod_data)
         new_user_option.save()
         ret = self.view.get_exist_option_set()
-        nt.assert_is_instance(new_user_option, RdmAnnouncementOption)
-        nt.assert_true(ret)
+        assert isinstance((new_user_option), (RdmAnnouncementOption))
+        assert (ret)
 
     def test_get_exist_option_set3(self):
         """test user not superuser or institution administrator"""
@@ -267,8 +266,8 @@ class TestSettingsView(AdminTestCase):
         new_user_option = RdmAnnouncementOption.objects.create(**mod_data)
         new_user_option.save()
         ret = self.view.get_exist_option_set()
-        nt.assert_is_instance(new_user_option, RdmAnnouncementOption)
-        nt.assert_equal(ret, 'False')
+        assert isinstance((new_user_option), (RdmAnnouncementOption))
+        assert (ret) == ('False')
 
 class TestSettingsUpdateView(AdminTestCase):
     def setUp(self):
@@ -287,7 +286,7 @@ class TestSettingsUpdateView(AdminTestCase):
         self.request.user.is_active = True
         self.request.user.is_registered = True
         self.request.user.is_superuser = True
-        nt.assert_true(self.view.test_func())
+        assert (self.view.test_func())
 
     def test_admin_login(self):
         """test institution administrator login"""
@@ -295,7 +294,7 @@ class TestSettingsUpdateView(AdminTestCase):
         self.request.user.is_registered = True
         self.request.user.is_superuser = False
         self.request.user.is_staff = True
-        nt.assert_true(self.view.test_func())
+        assert (self.view.test_func())
 
     def test_non_admin_login(self):
         """test user not superuser or institution administrator login"""
@@ -303,7 +302,7 @@ class TestSettingsUpdateView(AdminTestCase):
         self.request.user.is_registered = True
         self.request.user.is_superuser = False
         self.request.user.is_staff = False
-        nt.assert_equal(self.view.test_func(), False)
+        assert (self.view.test_func()) == (False)
 
     def test_non_active_user_login(self):
         """test invalid user login"""
@@ -311,7 +310,7 @@ class TestSettingsUpdateView(AdminTestCase):
         self.request.user.is_registered = True
         self.request.user.is_superuser = True
         self.request.user.is_staff = True
-        nt.assert_equal(self.view.test_func(), False)
+        assert (self.view.test_func()) == (False)
 
     def test_non_registered_user_login(self):
         """test unregistered user login"""
@@ -319,7 +318,7 @@ class TestSettingsUpdateView(AdminTestCase):
         self.request.user.is_registered = False
         self.request.user.is_superuser = True
         self.request.user.is_staff = True
-        nt.assert_equal(self.view.test_func(), False)
+        assert (self.view.test_func()) == (False)
 
 class TestSendView(AdminTestCase):
     def setUp(self):
@@ -338,7 +337,7 @@ class TestSendView(AdminTestCase):
         self.request.user.is_active = True
         self.request.user.is_registered = True
         self.request.user.is_superuser = True
-        nt.assert_true(self.view.test_func())
+        assert (self.view.test_func())
 
     def test_admin_login(self):
         """test institution administrator login"""
@@ -346,7 +345,7 @@ class TestSendView(AdminTestCase):
         self.request.user.is_registered = True
         self.request.user.is_superuser = False
         self.request.user.is_staff = True
-        nt.assert_true(self.view.test_func())
+        assert (self.view.test_func())
 
     def test_non_admin_login(self):
         """test user not superuser or institution administrator login"""
@@ -354,7 +353,7 @@ class TestSendView(AdminTestCase):
         self.request.user.is_registered = True
         self.request.user.is_superuser = False
         self.request.user.is_staff = False
-        nt.assert_equal(self.view.test_func(), False)
+        assert (self.view.test_func()) == (False)
 
     def test_non_active_user_login(self):
         """test invalid user login"""
@@ -362,7 +361,7 @@ class TestSendView(AdminTestCase):
         self.request.user.is_registered = True
         self.request.user.is_superuser = True
         self.request.user.is_staff = True
-        nt.assert_equal(self.view.test_func(), False)
+        assert (self.view.test_func()) == (False)
 
     def test_non_registered_user_login(self):
         """test unregistered user login"""
@@ -370,4 +369,4 @@ class TestSendView(AdminTestCase):
         self.request.user.is_registered = False
         self.request.user.is_superuser = True
         self.request.user.is_staff = True
-        nt.assert_equal(self.view.test_func(), False)
+        assert (self.view.test_func()) == (False)

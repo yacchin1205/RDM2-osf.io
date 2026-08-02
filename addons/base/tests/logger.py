@@ -1,6 +1,5 @@
 import abc
 
-from nose.tools import *  # noqa (PEP8 asserts)
 
 from framework.auth import Auth
 from osf_tests.factories import AuthUserFactory, ProjectFactory
@@ -35,21 +34,21 @@ class StorageAddonNodeLoggerTestSuiteMixin(AddonNodeLoggerTestSuiteMixinBase):
         self.logger.log('file_added', save=True)
         last_log = self.node.logs.latest()
 
-        assert_equal(last_log.action, '{0}_{1}'.format(self.addon_short_name, 'file_added'))
+        assert (last_log.action) == ('{0}_{1}'.format(self.addon_short_name, 'file_added'))
 
     def test_log_file_removed(self):
         self.logger.log('file_removed', save=True)
         last_log = self.node.logs.latest()
 
-        assert_equal(last_log.action, '{0}_{1}'.format(self.addon_short_name, 'file_removed'))
+        assert (last_log.action) == ('{0}_{1}'.format(self.addon_short_name, 'file_removed'))
 
     def test_log_deauthorized_when_node_settings_are_deleted(self):
         node_settings = self.node.get_addon(self.addon_short_name)
         node_settings.delete(save=True)
         # sanity check
-        assert_true(node_settings.deleted)
+        assert (node_settings.deleted)
 
         self.logger.log(action='node_deauthorized', save=True)
 
         last_log = self.node.logs.latest()
-        assert_equal(last_log.action, '{0}_node_deauthorized'.format(self.addon_short_name))
+        assert (last_log.action) == ('{0}_node_deauthorized'.format(self.addon_short_name))

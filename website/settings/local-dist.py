@@ -64,6 +64,11 @@ MAIL_PASSWORD = 'CHANGEME'
 
 # Mailchimp email subscriptions
 ENABLE_EMAIL_SUBSCRIPTIONS = False
+# Enabling subscriptions requires account-specific Mailchimp API and list IDs.
+# MAILCHIMP_API_KEY = 'CHANGEME'
+# MAILCHIMP_LIST_MAP = {
+#     defaults.MAILCHIMP_GENERAL_LIST: 'CHANGEME',
+# }
 
 # Session
 COOKIE_NAME = 'osf'

@@ -1,5 +1,4 @@
 import json
-from nose import tools as nt
 
 from django.test import RequestFactory
 
@@ -25,8 +24,8 @@ class TestDashboard(AdminTestCase):
         self.user.is_superuser = True
         self.user.is_staff = False
         res = view.get(request, *args, **kwargs)
-        nt.assert_equal(res.status_code, 200)
-        nt.assert_equal(res.context_data, {})
+        assert (res.status_code) == (200)
+        assert (res.context_data) == ({})
 
 class TestRecords(AdminTestCase):
     def setUp(self):
@@ -43,8 +42,8 @@ class TestRecords(AdminTestCase):
         view = views.ERadRecords()
         view = setup_user_view(view, request, user=self.user)
         res = view.post(request, *args, **kwargs)
-        nt.assert_equal(res.status_code, 200)
-        nt.assert_equal(res.content, b'{"status": "OK", "records": 0}')
+        assert (res.status_code) == (200)
+        assert (res.content) == (b'{"status": "OK", "records": 0}')
 
     def test_post_some_data(self, *args, **kwargs):
         data = '\t'.join(erad.ERAD_COLUMNS) + '\n'
@@ -66,8 +65,8 @@ class TestRecords(AdminTestCase):
         view = views.ERadRecords()
         view = setup_user_view(view, request, user=self.user)
         res = view.post(request, *args, **kwargs)
-        nt.assert_equal(res.status_code, 200)
-        nt.assert_equal(res.content, b'{"status": "OK", "records": 10}')
+        assert (res.status_code) == (200)
+        assert (res.content) == (b'{"status": "OK", "records": 10}')
 
     def test_post_bad_data(self, *args, **kwargs):
         request = RequestFactory().post(
@@ -85,8 +84,5 @@ class TestRecords(AdminTestCase):
         view = views.ERadRecords()
         view = setup_user_view(view, request, user=self.user)
         res = view.post(request, *args, **kwargs)
-        nt.assert_equal(res.status_code, 400)
-        nt.assert_equal(
-            res.content,
-            b'{"status": "error", "message": "Column \\"KENKYUSHA_NO\\" not exists (record=0)"}'
-        )
+        assert (res.status_code) == (400)
+        assert (res.content) == (b'{"status": "error", "message": "Column \\"KENKYUSHA_NO\\" not exists (record=0)"}')

@@ -1,7 +1,7 @@
 import jwe
 from cryptography.exceptions import InvalidTag
 from django.db import models
-from django.contrib.postgres.fields.jsonb import JSONField
+from django.db.models import JSONField
 from website import settings
 from osf.utils.functional import rapply
 
@@ -86,7 +86,7 @@ class EncryptedTextField(models.TextField):
     def to_python(self, value):
         return decrypt_string(value, prefix=self.prefix)
 
-    def from_db_value(self, value, expression, connection, context):
+    def from_db_value(self, value, expression, connection):
         return self.to_python(value)
 
 
@@ -109,8 +109,8 @@ class EncryptedJSONField(JSONField):
         return super(EncryptedJSONField, self).get_prep_value(value, **kwargs)
 
     def to_python(self, value):
-        value = rapply(value, decrypt_string, prefix=self.prefix)
-        return super(EncryptedJSONField, self).to_python(value)
+        return rapply(value, decrypt_string, prefix=self.prefix)
 
-    def from_db_value(self, value, expression, connection, context):
+    def from_db_value(self, value, expression, connection):
+        value = super().from_db_value(value, expression, connection)
         return self.to_python(value)

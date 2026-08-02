@@ -493,7 +493,7 @@ class _Validator:
         targets = set()
         for alias_id, source_id in alias.items():
             if not isinstance(alias_id, str) or not alias_id:
-                self.error(f'rdmWizard.alias: key must be a non-empty string')
+                self.error('rdmWizard.alias: key must be a non-empty string')
                 continue
             if not isinstance(source_id, str) or not source_id:
                 self.error(f'rdmWizard.alias[{alias_id!r}]: value must be a non-empty string')

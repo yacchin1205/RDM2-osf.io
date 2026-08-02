@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 import logging
-import mock
-from nose.tools import *  # noqa
+from unittest import mock
 import json
 import os
 import tempfile
@@ -103,57 +102,57 @@ class TestWEKOBagIt(OsfTestCase):
         # check headers
         mock_client.deposit.assert_called_once()
         deposit_kwargs = mock_client.deposit.call_args[1]
-        assert_equal(deposit_kwargs['headers']['Packaging'], 'http://purl.org/net/sword/3.0/package/SimpleZip')
-        assert_equal(deposit_kwargs['headers']['Content-Disposition'], 'attachment; filename=payload.zip')
+        assert (deposit_kwargs['headers']['Packaging']) == ('http://purl.org/net/sword/3.0/package/SimpleZip')
+        assert (deposit_kwargs['headers']['Content-Disposition']) == ('attachment; filename=payload.zip')
 
         # check files
         files = mock_client.deposit.call_args[0]
         filename, content_reader, mimetype = files[0]['file']
-        assert_equal(filename, 'payload.zip')
-        assert_equal(mimetype, 'application/zip')
+        assert (filename) == ('payload.zip')
+        assert (mimetype) == ('application/zip')
         logger.info(f'Reader: {content_reader}')
 
         # unzip the files of content_reader
         tmp_dir = tempfile.mkdtemp()
         with ZipFile(content_reader, 'r') as zipf:
             zipf.extractall(tmp_dir)
-        assert_true(os.path.exists(os.path.join(tmp_dir, 'bagit.txt')))
-        assert_true(os.path.exists(os.path.join(tmp_dir, 'bag-info.txt')))
-        assert_true(os.path.exists(os.path.join(tmp_dir, 'tagmanifest-sha256.txt')))
-        assert_true(os.path.exists(os.path.join(tmp_dir, 'manifest-sha256.txt')))
-        assert_true(os.path.exists(os.path.join(tmp_dir, 'manifest-sha512.txt')))
-        assert_true(os.path.exists(os.path.join(tmp_dir, 'data/index.csv')))
-        assert_true(os.path.exists(os.path.join(tmp_dir, 'data/ro-crate-metadata.json')))
-        assert_true(os.path.exists(os.path.join(tmp_dir, 'data/files/dummy')))
+        assert (os.path.exists(os.path.join(tmp_dir, 'bagit.txt')))
+        assert (os.path.exists(os.path.join(tmp_dir, 'bag-info.txt')))
+        assert (os.path.exists(os.path.join(tmp_dir, 'tagmanifest-sha256.txt')))
+        assert (os.path.exists(os.path.join(tmp_dir, 'manifest-sha256.txt')))
+        assert (os.path.exists(os.path.join(tmp_dir, 'manifest-sha512.txt')))
+        assert (os.path.exists(os.path.join(tmp_dir, 'data/index.csv')))
+        assert (os.path.exists(os.path.join(tmp_dir, 'data/ro-crate-metadata.json')))
+        assert (os.path.exists(os.path.join(tmp_dir, 'data/files/dummy')))
 
-        assert_equal(open(os.path.join(tmp_dir, 'data/files/dummy'), 'r').read(), dummy_text)
+        assert (open(os.path.join(tmp_dir, 'data/files/dummy'), 'r').read()) == (dummy_text)
         bagit_content = open(os.path.join(tmp_dir, 'bagit.txt'), 'r').read()
         logger.info(f'BagIt: {bagit_content}')
-        assert_in('Tag-File-Character-Encoding: UTF-8', bagit_content)
+        assert ('Tag-File-Character-Encoding: UTF-8') in (bagit_content)
         bag_info_content = open(os.path.join(tmp_dir, 'bag-info.txt'), 'r').read()
         logger.info(f'BagInfo: {bag_info_content}')
-        assert_in('Contact-Name: ', bag_info_content)
+        assert ('Contact-Name: ') in (bag_info_content)
         tagmanifest_sha256_content = open(os.path.join(tmp_dir, 'tagmanifest-sha256.txt'), 'r').read()
         logger.info(f'TagManifest: {tagmanifest_sha256_content}')
-        assert_not_in('data/index.csv', tagmanifest_sha256_content)
+        assert ('data/index.csv') not in (tagmanifest_sha256_content)
         manifest_sha256_content = open(os.path.join(tmp_dir, 'manifest-sha256.txt'), 'r').read()
         logger.info(f'Manifest: {manifest_sha256_content}')
-        assert_in('data/index.csv', manifest_sha256_content)
-        assert_in('data/ro-crate-metadata.json', manifest_sha256_content)
-        assert_in('data/files/dummy', manifest_sha256_content)
+        assert ('data/index.csv') in (manifest_sha256_content)
+        assert ('data/ro-crate-metadata.json') in (manifest_sha256_content)
+        assert ('data/files/dummy') in (manifest_sha256_content)
         manifest_sha512_content = open(os.path.join(tmp_dir, 'manifest-sha512.txt'), 'r').read()
         logger.info(f'Manifest: {manifest_sha512_content}')
-        assert_in('data/index.csv', manifest_sha512_content)
-        assert_in('data/ro-crate-metadata.json', manifest_sha512_content)
-        assert_in('data/files/dummy', manifest_sha512_content)
+        assert ('data/index.csv') in (manifest_sha512_content)
+        assert ('data/ro-crate-metadata.json') in (manifest_sha512_content)
+        assert ('data/files/dummy') in (manifest_sha512_content)
         index_csv_content = open(os.path.join(tmp_dir, 'data/index.csv'), 'r').read()
         logger.info(f'Index CSV: {index_csv_content}')
-        assert_in('ENGLISH TITLE', index_csv_content)
-        assert_in('日本語説明', index_csv_content)
+        assert ('ENGLISH TITLE') in (index_csv_content)
+        assert ('日本語説明') in (index_csv_content)
         ro_crate_metadata_content = open(os.path.join(tmp_dir, 'data/ro-crate-metadata.json'), 'r').read()
         logger.info(f'RO-Crate Metadata: {ro_crate_metadata_content}')
-        assert_in('@graph', json.loads(ro_crate_metadata_content))
-        assert_in('ENGLISH TITLE', ro_crate_metadata_content)
-        assert_in('日本語説明', ro_crate_metadata_content)
+        assert ('@graph') in (json.loads(ro_crate_metadata_content))
+        assert ('ENGLISH TITLE') in (ro_crate_metadata_content)
+        assert ('日本語説明') in (ro_crate_metadata_content)
 
         mock_create_log.assert_called_once()

@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
-import mock
-from nose.tools import (assert_equals, assert_true, assert_false)
+from unittest import mock
 from openpyxl import Workbook
 
 from addons.base.tests.base import OAuthAddonTestCaseMixin, AddonTestCase
@@ -33,7 +32,7 @@ class OneDriveBusinessAddonTestCase(OAuthAddonTestCaseMixin, AddonTestCase):
         mock_node.creator = mock_user
 
         ret = utils.get_region_external_account(mock_node)
-        assert_equals(ret, None)
+        assert (ret) == (None)
 
     @mock.patch('addons.onedrivebusiness.utils.RdmAddonOption.objects.filter')
     def test_get_region_external_account_with_unconfigured_institutions(
@@ -58,7 +57,7 @@ class OneDriveBusinessAddonTestCase(OAuthAddonTestCaseMixin, AddonTestCase):
         mock_rdm_addon_option_objects_filter.return_value = mock_rdm_addon_option_objects
 
         ret = utils.get_region_external_account(mock_node)
-        assert_equals(ret, None)
+        assert (ret) == (None)
         mock_rdm_addon_option_objects_filter.assert_has_calls([
             mock.call(institution_id=1234, is_allowed=True, provider='onedrivebusiness'),
         ])
@@ -95,8 +94,8 @@ class OneDriveBusinessAddonTestCase(OAuthAddonTestCaseMixin, AddonTestCase):
         mock_region_external_account_objects_get.return_value = {'test': True}
 
         ret = utils.get_region_external_account(mock_node)
-        assert_true(ret is not None)
-        assert_true(ret['test'])
+        assert (ret is not None)
+        assert (ret['test'])
 
     @mock.patch('addons.onedrivebusiness.utils.UserListClient.get_workbook_sheet')
     def test_get_user_map(self, mock_get_workbook_sheet):
@@ -118,7 +117,7 @@ class OneDriveBusinessAddonTestCase(OAuthAddonTestCaseMixin, AddonTestCase):
         }
 
         user_map = utils.get_user_map(mock_region_client, None, 'test_get_user_map_folder_1234')
-        assert_equals(user_map, {'eppn1234': {
+        assert (user_map) == ({'eppn1234': {
             'id': 'msaccount-id',
             'mail': 'msaccount-mail',
             'userPrincipalName': 'msaccount5678',

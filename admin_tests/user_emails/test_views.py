@@ -1,10 +1,9 @@
-import mock
+from unittest import mock
 import pytest
 from django.contrib.sessions.middleware import SessionMiddleware
 from django.core.exceptions import PermissionDenied
 from django.test import RequestFactory
 from django.urls import reverse
-from nose import tools as nt
 
 from admin.user_emails import views
 from admin.user_emails.forms import UserEmailsSearchForm
@@ -43,55 +42,46 @@ class TestUserEmailsFormView(AdminTestCase):
             'guid': self.user_1.guids.first()._id
         }
         form = UserEmailsSearchForm(data=form_data)
-        nt.assert_true(form.is_valid())
+        assert (form.is_valid())
         response = self.view.form_valid(form)
-        nt.assert_equal(response.status_code, 302)
-        nt.assert_equal(
-            self.view.success_url,
-            '/user-emails/search/guid/{}/'.format(
-                self.user_1.guids.first()._id
-            )
-        )
+        assert (response.status_code) == (302)
+        assert (self.view.success_url) == ('/user-emails/search/guid/{}/'.format(
+            self.user_1.guids.first()._id
+        ))
 
     def test_form_valid_search_user_by_name(self):
         form_data = {
             'name': 'Hardy'
         }
         form = UserEmailsSearchForm(data=form_data)
-        nt.assert_true(form.is_valid())
+        assert (form.is_valid())
         response = self.view.form_valid(form)
-        nt.assert_equal(response.status_code, 302)
-        nt.assert_equal(
-            self.view.success_url,
-            '/user-emails/search/name/Hardy/'
-        )
+        assert (response.status_code) == (302)
+        assert (self.view.success_url) == ('/user-emails/search/name/Hardy/')
 
     def test_form_valid_search_user_by_name_with_punctuation(self):
         form_data = {
             'name': 'Dr. Sportello-Fay, PI @, #, $, %, ^, &, *, (, ), ~'
         }
         form = UserEmailsSearchForm(data=form_data)
-        nt.assert_true(form.is_valid())
+        assert (form.is_valid())
         response = self.view.form_valid(form)
-        nt.assert_equal(response.status_code, 302)
+        assert (response.status_code) == (302)
         _url = '/user-emails/search/name/Dr.%20Sportello-Fay,' \
                '%20PI%20@,%20%23,%20$,%20%25,%20%5E,%20&,%20*,%20(,%20),%20~/'
-        nt.assert_equal(self.view.success_url, _url)
+        assert (self.view.success_url) == (_url)
 
     def test_form_valid_search_user_by_username(self):
         form_data = {
             'email': self.user_1.username
         }
         form = UserEmailsSearchForm(data=form_data)
-        nt.assert_true(form.is_valid())
+        assert (form.is_valid())
         response = self.view.form_valid(form)
-        nt.assert_equal(response.status_code, 302)
-        nt.assert_equal(
-            self.view.success_url,
-            '/user-emails/search/guid/{}/'.format(
-                self.user_1.guids.first()._id
-            )
-        )
+        assert (response.status_code) == (302)
+        assert (self.view.success_url) == ('/user-emails/search/guid/{}/'.format(
+            self.user_1.guids.first()._id
+        ))
 
     @mock.patch('admin.user_emails.views.UserEmailsFormView.is_admin')
     def test_form_valid_is_admin(self, mock_is_admin):
@@ -112,29 +102,23 @@ class TestUserEmailsFormView(AdminTestCase):
         view = setup_form_view(view, request, form=UserEmailsSearchForm())
 
         form = UserEmailsSearchForm(data=form_data)
-        nt.assert_true(form.is_valid())
+        assert (form.is_valid())
         response = view.form_valid(form)
 
-        nt.assert_equal(response.status_code, 302)
-        nt.assert_equal(
-            view.success_url,
-            '/user-emails/search/guid/{}/'.format(user_1.guids.first()._id)
-        )
+        assert (response.status_code) == (302)
+        assert (view.success_url) == ('/user-emails/search/guid/{}/'.format(user_1.guids.first()._id))
 
     def test_form_valid_search_user_by_alternate_email(self):
         form_data = {
             'email': self.user_2_alternate_email
         }
         form = UserEmailsSearchForm(data=form_data)
-        nt.assert_true(form.is_valid())
+        assert (form.is_valid())
         response = self.view.form_valid(form)
-        nt.assert_equal(response.status_code, 302)
-        nt.assert_equal(
-            self.view.success_url,
-            '/user-emails/search/guid/{}/'.format(
-                self.user_2.guids.first()._id
-            )
-        )
+        assert (response.status_code) == (302)
+        assert (self.view.success_url) == ('/user-emails/search/guid/{}/'.format(
+            self.user_2.guids.first()._id
+        ))
 
     def test_form_valid_search_user_list_case_insensitive(self):
         view = views.UserEmailsSearchList()
@@ -143,18 +127,18 @@ class TestUserEmailsFormView(AdminTestCase):
 
         results = view.get_queryset()
 
-        nt.assert_equal(len(results), 3)
+        assert (len(results)) == (3)
         for user in results:
-            nt.assert_in('Hardy', user.fullname)
+            assert ('Hardy') in (user.fullname)
 
     def test_form_valid_search_user_by_email_not_found(self):
         form_data = {
             'email': 'abcd@gmail.com'
         }
         form = UserEmailsSearchForm(data=form_data)
-        nt.assert_true(form.is_valid())
+        assert (form.is_valid())
         response = self.view.form_valid(form)
-        nt.assert_equal(response.status_code, 404)
+        assert (response.status_code) == (404)
 
     @mock.patch('admin.user_emails.views.OSFUser.objects')
     def test_form_valid_with_multiple_OSFUser_returned(self, mockOSFUser):
@@ -167,10 +151,10 @@ class TestUserEmailsFormView(AdminTestCase):
             side_effect = OSFUser.MultipleObjectsReturned
 
         form = UserEmailsSearchForm(data=data)
-        nt.assert_true(form.is_valid())
+        assert (form.is_valid())
 
         response = self.view.form_valid(form)
-        nt.assert_equal(response.status_code, 404)
+        assert (response.status_code) == (404)
 
     def test_TestUserEmailsFormView_correct_view_permissions(self):
         user = UserFactory()
@@ -178,7 +162,7 @@ class TestUserEmailsFormView(AdminTestCase):
 
         request = RequestFactory().get(reverse('user-emails:search'))
 
-        with nt.assert_raises(PermissionDenied):
+        with pytest.raises(PermissionDenied):
             request.user = user
             self.view_permission.as_view()(request, guid=guid)
 
@@ -219,16 +203,16 @@ class TestUserEmailSearchList(AdminTestCase):
 
         results = view.get_queryset()
 
-        nt.assert_equal(len(results), 3)
+        assert (len(results)) == (3)
         for user in results:
-            nt.assert_in('Hardy', user.fullname)
+            assert ('Hardy') in (user.fullname)
 
     def test_get_method(self):
         view = views.UserEmailsSearchList()
         view = setup_view(view, self.request)
         view.kwargs = {'name': 'Hardy'}
         result = view.get(self.request)
-        nt.assert_equal(result.status_code, 200)
+        assert (result.status_code) == (200)
 
     @mock.patch('admin.user_emails.views.render_bad_request_response')
     def test_get_method_not_keyword(self, mock_render):
@@ -238,7 +222,7 @@ class TestUserEmailSearchList(AdminTestCase):
         view.kwargs = {'name': ''}
         result = view.get(self.request)
         mock_render.assert_called_once()
-        nt.assert_equal(result.status_code, 400)
+        assert (result.status_code) == (400)
 
     @mock.patch('admin.user_emails.views.UserEmailsSearchList.is_admin')
     def test_get_queryset_method_is_admin(self, mock_is_admin):
@@ -252,7 +236,7 @@ class TestUserEmailSearchList(AdminTestCase):
 
         results = view.get_queryset()
         for user in results:
-            nt.assert_in(self.user_1.fullname, user.fullname)
+            assert (self.user_1.fullname) in (user.fullname)
 
     def test_get_context_data_method(self):
         view = views.UserEmailsSearchList()
@@ -262,16 +246,16 @@ class TestUserEmailSearchList(AdminTestCase):
         view.object_list = [{'name': 'Broken Matt Hardy'}]
         result = view.get_context_data()
 
-        nt.assert_is_instance(result, dict)
-        nt.assert_equal(result['users'][0]['name'], data['name'])
-        nt.assert_equal(result['object_list'][0]['name'], data['name'])
+        assert isinstance((result), (dict))
+        assert (result['users'][0]['name']) == (data['name'])
+        assert (result['object_list'][0]['name']) == (data['name'])
 
     def test_UserEmailsSearchList_with_correct_view_permissions(self):
         user = UserFactory()
 
         request = RequestFactory().get(reverse('user-emails:search_list',
                                                kwargs={'name': 'Hardy'}))
-        with nt.assert_raises(PermissionDenied):
+        with pytest.raises(PermissionDenied):
             request.user = user
             self.view_permission.kwargs = {'name': 'Hardy'}
             self.view_permission.as_view()(request, name='Hardy')
@@ -291,7 +275,7 @@ class TestUserEmailSearchList(AdminTestCase):
 
 def add_session_to_request(request):
     """Annotate a request object with a session"""
-    middleware = SessionMiddleware()
+    middleware = SessionMiddleware(lambda request: None)
     middleware.process_request(request)
     request.session.save()
 
@@ -317,7 +301,7 @@ class TestUserEmailsView(AdminTestCase):
                                                kwargs={'guid': guid}))
         add_session_to_request(request)
 
-        with nt.assert_raises(PermissionDenied):
+        with pytest.raises(PermissionDenied):
             request.user = user
             views.UserEmailsView.as_view()(request, guid=guid)
 
@@ -337,11 +321,11 @@ class TestUserEmailsView(AdminTestCase):
         self.view.request = self.request
         result = self.view.get_object()
 
-        nt.assert_is_instance(result, dict)
-        nt.assert_equal(result['username'], self.user.username)
-        nt.assert_equal(result['name'], self.user.fullname)
-        nt.assert_equal(result['id'], self.user._id)
-        nt.assert_equal(list(result['emails']), list(
+        assert isinstance((result), (dict))
+        assert (result['username']) == (self.user.username)
+        assert (result['name']) == (self.user.fullname)
+        assert (result['id']) == (self.user._id)
+        assert (list(result['emails'])) == (list(
             self.user.emails.values_list('address', flat=True)))
 
     def test_get_object_is_admin(self):
@@ -359,12 +343,12 @@ class TestUserEmailsView(AdminTestCase):
             guid=self.user._id
         )
 
-        nt.assert_equal(response.status_code, 200)
-        nt.assert_is_instance(result, dict)
-        nt.assert_equal(result['username'], self.user.username)
-        nt.assert_equal(result['name'], self.user.fullname)
-        nt.assert_equal(result['id'], self.user._id)
-        nt.assert_equal(list(result['emails']), list(
+        assert (response.status_code) == (200)
+        assert isinstance((result), (dict))
+        assert (result['username']) == (self.user.username)
+        assert (result['name']) == (self.user.fullname)
+        assert (result['id']) == (self.user._id)
+        assert (list(result['emails'])) == (list(
             self.user.emails.values_list('address', flat=True)))
 
     def test_get_object_pk_not_in_all_institution_users_id(self):
@@ -373,14 +357,14 @@ class TestUserEmailsView(AdminTestCase):
         self.request.user = self.user
         self.view.request = self.request
 
-        with nt.assert_raises(PermissionDenied):
+        with pytest.raises(PermissionDenied):
             self.view.get_object()
 
     def test_get_context_data(self):
         self.view.request = self.request
         self.view.object = self.user
         res = self.view.get_context_data()
-        nt.assert_is_instance(res, dict)
+        assert isinstance((res), (dict))
 
 
 class TestUserPrimaryEmail(AdminTestCase):
@@ -407,8 +391,8 @@ class TestUserPrimaryEmail(AdminTestCase):
             request,
             guid=self.user._id
         )
-        nt.assert_equal(response.status_code, 302)
-        nt.assert_equal(response.url, '/user-emails/{}/'.format(self.user._id))
+        assert (response.status_code) == (302)
+        assert (response.url) == ('/user-emails/{}/'.format(self.user._id))
 
     def test_post_primary_email_not_in_email_list(self):
         primary_email = 'test@gmail.com'
@@ -423,7 +407,7 @@ class TestUserPrimaryEmail(AdminTestCase):
         )
         is_exist = Email.objects.filter(address=primary_email).exists()
         assert is_exist is True
-        nt.assert_equal(response.url, '/user-emails/{}/'.format(self.user._id))
+        assert (response.url) == ('/user-emails/{}/'.format(self.user._id))
 
     def test_post_alternate_email_equal_primary_email(self):
         request = RequestFactory().post(
@@ -435,8 +419,8 @@ class TestUserPrimaryEmail(AdminTestCase):
             request,
             guid=self.user._id
         )
-        nt.assert_equal(response.status_code, 302)
-        nt.assert_equal(response.url, '/user-emails/{}/'.format(self.user._id))
+        assert (response.status_code) == (302)
+        assert (response.url) == ('/user-emails/{}/'.format(self.user._id))
 
     @mock.patch('admin.user_emails.views.mailchimp_utils.'
                 'unsubscribe_mailchimp_async')
@@ -478,7 +462,7 @@ class TestUserPrimaryEmail(AdminTestCase):
         request = RequestFactory().post(reverse('user-emails:primary',
                                                 kwargs={'guid': guid}))
 
-        with nt.assert_raises(PermissionDenied):
+        with pytest.raises(PermissionDenied):
             request.user = user
             self.view_permission.as_view()(request, guid=guid)
 
@@ -507,8 +491,8 @@ class TestUserPrimaryEmail(AdminTestCase):
             request,
             guid=user._id
         )
-        nt.assert_equal(response.status_code, 302)
-        nt.assert_equal(response.url, '/user-emails/{}/'.format(user._id))
+        assert (response.status_code) == (302)
+        assert (response.url) == ('/user-emails/{}/'.format(user._id))
 
     @mock.patch('admin.user_emails.views.UserPrimaryEmail.is_admin')
     def test_post_permission_denied(self, mock_is_admin):
@@ -521,4 +505,4 @@ class TestUserPrimaryEmail(AdminTestCase):
             request,
             guid=self.user._id
         )
-        nt.assert_equal(response.status_code, 403)
+        assert (response.status_code) == (403)

@@ -8,9 +8,8 @@ import functools
 from unicodedata import normalize
 from pprint import pformat as pp
 
-import mock
+from unittest import mock
 import pytest
-from nose.tools import *  # noqa: F403
 
 from framework.auth.core import Auth
 from osf_tests import factories
@@ -183,7 +182,7 @@ def use_ja_analyzer(func):
 
     return wrapped
 
-def setup(cls, self, create_obj=True):
+def setup_search_test(cls, self, create_obj=True):
     super(cls, self).setUp()
     search.delete_all()
     search.create_index(None)
@@ -293,30 +292,27 @@ def query_private_search(self, qs, user, category=None, version=1, sort=None):
     if category:
         url = url + category + '/'
     DEBUG('query_private_search: url=', url)
-    res = self.app.post_json(
+    res = self.app.post(
         url,
-        build_private_search_query(qs, version=version, sort=sort),
-        auth=user.auth,
-        expect_errors=True
+        json=build_private_search_query(qs, version=version, sort=sort),
+        auth=user.auth
     )
     DEBUG('query_private_search: res=', res.json)
     return res, res.json.get('results')
 
 def query_public_search(self, qs, user):
-    res = self.app.post_json(
+    res = self.app.post(
         api_url_for('search_search'),
-        build_query(qs),
-        auth=user.auth,
-        expect_errors=True
+        json=build_query(qs),
+        auth=user.auth
     )
     return res, res.json.get('results')
 
 def query_search_contributor(self, qs, user):
     res = self.app.get(
         api_url_for('search_contributor'),
-        {'query': qs, 'page': 0, 'size': 100},
-        auth=user.auth,
-        expect_errors=True
+        query_string={'query': qs, 'page': 0, 'size': 100},
+        auth=user.auth
     )
     DEBUG('query_search_contributor', res)
     return res, res.json.get('users')
@@ -362,7 +358,7 @@ def retry_call_func(func, **kwargs):
 @enable_private_search
 def rebuild_search(self_):
     migrate(delete=False, remove=True,
-            index=None, app=self_.app.app)
+            index=None, app=self_.app.application)
 
 def run_after_rebuild_search(self_, func, **kwargs):
     # _use_migrate = False の場合は rebuild_search を実行しない。
@@ -408,7 +404,7 @@ class TestSearchJapanese(OsfTestCase):
     @enable_private_search
     @use_ja_analyzer
     def setUp(self):
-        setup(TestSearchJapanese, self, create_obj=False)
+        setup_search_test(TestSearchJapanese, self, create_obj=False)
 
     @enable_private_search
     @use_ja_analyzer
@@ -561,9 +557,9 @@ class TestSearchJapanese(OsfTestCase):
             osfstorage = project.get_addon('osfstorage')
             root_node = osfstorage.get_root()
             test_file = update_dummy_file(user, root_node, filename, count)
-            assert_equal(test_file.versions.count(), count)
+            assert (test_file.versions.count()) == (count)
             # first() of file.versions is latest
-            assert_equal(test_file.versions.all().first().creator, user)
+            assert (test_file.versions.all().first().creator) == (user)
             return test_file
 
         def _save_file_name(val):
@@ -615,9 +611,9 @@ class TestSearchJapanese(OsfTestCase):
             else:
                 wiki = WikiPage.objects.create_for_node(
                     project, wikiname, content, Auth(user))
-            assert_equal(wiki.versions.count(), count)
+            assert (wiki.versions.count()) == (count)
             # latest
-            assert_equal(wiki.get_versions().first().user, user)
+            assert (wiki.get_versions().first().user) == (user)
             return wiki
 
         def _save_wiki_name(val):
@@ -675,7 +671,7 @@ class TestSearchJapanese(OsfTestCase):
                 self, u'{}'.format(qs), user=search_user, version=2)
             DEBUG('results()', results)
             try:
-                assert_equal(len(results), 1)
+                assert (len(results)) == (1)
             except Exception:
                 DEBUG('test ID={}: error'.format(_id))
                 raise
@@ -782,7 +778,7 @@ class TestSearchBugfix(OsfTestCase):
     @enable_private_search
     @use_ja_analyzer
     def setUp(self):
-        setup(TestSearchBugfix, self, create_obj=False)
+        setup_search_test(TestSearchBugfix, self, create_obj=False)
 
     @enable_private_search
     @use_ja_analyzer
@@ -806,7 +802,7 @@ class TestSearchBugfix(OsfTestCase):
                 self, u'{}'.format(qs), user=search_user, version=2)
             DEBUG('results', results)
             try:
-                assert_equal(len(results), num)
+                assert (len(results)) == (num)
             except Exception:
                 DEBUG('test ID={}: error'.format(_id))
                 raise
@@ -1059,7 +1055,7 @@ class TestPrivateSearch(OsfTestCase):
 
     @enable_private_search
     def setUp(self):
-        setup(TestPrivateSearch, self)
+        setup_search_test(TestPrivateSearch, self)
 
     @enable_private_search
     def tearDown(self):
@@ -1074,14 +1070,14 @@ class TestPrivateSearch(OsfTestCase):
         """
         qs = '日本'
         res, results = query_public_search(self, qs, self.user1)
-        assert_equal(res.status_code, 400)
+        assert (res.status_code) == (400)
         DEBUG('results', results)
-        assert_equal(results, None)
+        assert (results) == (None)
 
         res, results = query_private_search(self, qs, self.user1)
-        assert_equal(res.status_code, 400)
+        assert (res.status_code) == (400)
         DEBUG('results', results)
-        assert_equal(results, None)
+        assert (results) == (None)
 
     @enable_private_search
     def test_private_search_user1(self):
@@ -1107,27 +1103,18 @@ class TestPrivateSearch(OsfTestCase):
         DEBUG('filenames', filenames)
         DEBUG('category count', category_count_map)
 
-        assert_equal(len(results), 9)
-        assert_equal(category_count_map['user'], 2)
-        assert_equal(category_count_map['project'], 4)
-        assert_equal(category_count_map['file'], 3)
-        assert_equal(len(user_fullnames), 2)
-        assert_equal(len(node_titles), 4)  # private=2, public=2
-        assert_equal(len(contributors), 1)
-        assert_equal(len(tags), 3)
-        assert_equal(len(filenames), 3)
-        assert_not_in(
-            s2u(self.project_private_user2_1.title),
-            s2u(node_titles)
-        )
-        assert_not_in(
-            s2u(self.project_private_user2_2.title),
-            s2u(node_titles)
-        )
-        assert_not_in(
-            s2u(self.user2.fullname),
-            s2u(contributors)
-        )
+        assert (len(results)) == (9)
+        assert (category_count_map['user']) == (2)
+        assert (category_count_map['project']) == (4)
+        assert (category_count_map['file']) == (3)
+        assert (len(user_fullnames)) == (2)
+        assert (len(node_titles)) == (4)  # private=2, public=2
+        assert (len(contributors)) == (1)
+        assert (len(tags)) == (3)
+        assert (len(filenames)) == (3)
+        assert (s2u(self.project_private_user2_1.title)) not in (s2u(node_titles))
+        assert (s2u(self.project_private_user2_2.title)) not in (s2u(node_titles))
+        assert (s2u(self.user2.fullname)) not in (s2u(contributors))
 
     @enable_private_search
     def test_private_search_user2(self):
@@ -1151,20 +1138,14 @@ class TestPrivateSearch(OsfTestCase):
         DEBUG('tags', tags)
         DEBUG('filenames', filenames)
 
-        assert_equal(len(results), 6)  # user=2, project=4, file=0
-        assert_equal(len(user_fullnames), 2)
-        assert_equal(len(node_titles), 4)  # private=2, public=2
-        assert_equal(len(contributors), 1)
-        assert_equal(len(tags), 0)
-        assert_equal(len(filenames), 0)
-        assert_not_in(
-            s2u(self.project_private_user1_1.title),
-            s2u(node_titles)
-        )
-        assert_not_in(
-            s2u(self.user1.fullname),
-            s2u(contributors)
-        )
+        assert (len(results)) == (6)  # user=2, project=4, file=0
+        assert (len(user_fullnames)) == (2)
+        assert (len(node_titles)) == (4)  # private=2, public=2
+        assert (len(contributors)) == (1)
+        assert (len(tags)) == (0)
+        assert (len(filenames)) == (0)
+        assert (s2u(self.project_private_user1_1.title)) not in (s2u(node_titles))
+        assert (s2u(self.user1.fullname)) not in (s2u(contributors))
 
     @enable_private_search
     def test_no_match(self):
@@ -1186,12 +1167,12 @@ class TestPrivateSearch(OsfTestCase):
         DEBUG('tags', tags)
         DEBUG('filenames', filenames)
 
-        assert_equal(len(results), 0)
-        assert_equal(len(user_fullnames), 0)
-        assert_equal(len(node_titles), 0)
-        assert_equal(len(contributors), 0)
-        assert_equal(len(tags), 0)
-        assert_equal(len(filenames), 0)
+        assert (len(results)) == (0)
+        assert (len(user_fullnames)) == (0)
+        assert (len(node_titles)) == (0)
+        assert (len(contributors)) == (0)
+        assert (len(tags)) == (0)
+        assert (len(filenames)) == (0)
 
     @enable_private_search
     def test_tags(self):
@@ -1214,12 +1195,12 @@ class TestPrivateSearch(OsfTestCase):
         DEBUG('tags', tags)
         DEBUG('filenames', filenames)
 
-        assert_equal(len(results), 1)
-        assert_equal(len(user_fullnames), 0)
-        assert_equal(len(node_titles), 1)
-        assert_equal(len(contributors), 1)
-        assert_equal(len(tags), 3)
-        assert_equal(len(filenames), 0)
+        assert (len(results)) == (1)
+        assert (len(user_fullnames)) == (0)
+        assert (len(node_titles)) == (1)
+        assert (len(contributors)) == (1)
+        assert (len(tags)) == (3)
+        assert (len(filenames)) == (0)
 
     @enable_private_search
     def test_tags_no_match(self):
@@ -1241,12 +1222,12 @@ class TestPrivateSearch(OsfTestCase):
         DEBUG('tags', tags)
         DEBUG('filenames', filenames)
 
-        assert_equal(len(results), 0)
-        assert_equal(len(user_fullnames), 0)
-        assert_equal(len(node_titles), 0)
-        assert_equal(len(contributors), 0)
-        assert_equal(len(tags), 0)
-        assert_equal(len(filenames), 0)
+        assert (len(results)) == (0)
+        assert (len(user_fullnames)) == (0)
+        assert (len(node_titles)) == (0)
+        assert (len(contributors)) == (0)
+        assert (len(tags)) == (0)
+        assert (len(filenames)) == (0)
 
 
     @enable_private_search
@@ -1270,12 +1251,12 @@ class TestPrivateSearch(OsfTestCase):
         DEBUG('tags', tags)
         DEBUG('filenames', filenames)
 
-        assert_equal(len(results), 1)  # file=1
-        assert_equal(len(user_fullnames), 0)
-        assert_equal(len(node_titles), 0)
-        assert_equal(len(contributors), 0)
-        assert_equal(len(tags), 0)
-        assert_equal(len(filenames), 1)
+        assert (len(results)) == (1)  # file=1
+        assert (len(user_fullnames)) == (0)
+        assert (len(node_titles)) == (0)
+        assert (len(contributors)) == (0)
+        assert (len(tags)) == (0)
+        assert (len(filenames)) == (1)
 
     @enable_private_search
     def _common_normalize(self, qs, category=None, user=None, version=1):
@@ -1294,8 +1275,8 @@ class TestPrivateSearch(OsfTestCase):
         user_fullnames = get_user_fullnames(results)
         DEBUG('results', results)
         DEBUG('user_fullnames', user_fullnames)
-        assert_equal(len(results), 1)
-        assert_equal(len(user_fullnames), 1)
+        assert (len(results)) == (1)
+        assert (len(user_fullnames)) == (1)
 
     def test_normalize_user2(self):
         """
@@ -1308,8 +1289,8 @@ class TestPrivateSearch(OsfTestCase):
         user_fullnames = get_user_fullnames(results)
         DEBUG('results', results)
         DEBUG('user_fullnames', user_fullnames)
-        assert_equal(len(results), 1)
-        assert_equal(len(user_fullnames), 1)
+        assert (len(results)) == (1)
+        assert (len(user_fullnames)) == (1)
 
     @enable_private_search
     def _set_job_school(self, user, nmlz):
@@ -1371,9 +1352,9 @@ class TestPrivateSearch(OsfTestCase):
                 res, results = self._common_normalize(qs, 'user')
                 user_fullnames = get_user_fullnames(results)
                 DEBUG('results', results)
-                assert_equal(len(results), 1)
+                assert (len(results)) == (1)
                 r = results[0]
-                assert_equal(r['ongoing_' + p[1]], nfd(p[0]))  # DB側の形式
+                assert (r['ongoing_' + p[1]]) == (nfd(p[0]))  # DB側の形式
 
         run_after_rebuild_search(self, test1)
 
@@ -1385,9 +1366,9 @@ class TestPrivateSearch(OsfTestCase):
                 res, results = self._common_normalize(qs, 'user')
                 user_fullnames = get_user_fullnames(results)
                 DEBUG('results', results)
-                assert_equal(len(results), 1)
+                assert (len(results)) == (1)
                 r = results[0]
-                assert_equal(r['ongoing_' + p[1]], nfc(p[0]))  # DB側の形式
+                assert (r['ongoing_' + p[1]]) == (nfc(p[0]))  # DB側の形式
 
         run_after_rebuild_search(self, test2)
 
@@ -1403,8 +1384,8 @@ class TestPrivateSearch(OsfTestCase):
         node_titles = get_node_titles(results)
         DEBUG('results', results)
         DEBUG('node_titles', node_titles)
-        assert_equal(len(results), 1)
-        assert_equal(len(node_titles), 1)
+        assert (len(results)) == (1)
+        assert (len(node_titles)) == (1)
 
     def test_normalize_prj_title2(self):
         """
@@ -1417,8 +1398,8 @@ class TestPrivateSearch(OsfTestCase):
         node_titles = get_node_titles(results)
         DEBUG('results', results)
         DEBUG('node_titles', node_titles)
-        assert_equal(len(results), 1)
-        assert_equal(len(node_titles), 1)
+        assert (len(results)) == (1)
+        assert (len(node_titles)) == (1)
 
     def test_normalize_prj_description1(self):
         """
@@ -1432,8 +1413,8 @@ class TestPrivateSearch(OsfTestCase):
         node_titles = get_node_titles(results)
         DEBUG('results', results)
         DEBUG('node_titles', node_titles)
-        assert_equal(len(results), 1)
-        assert_equal(len(node_titles), 1)
+        assert (len(results)) == (1)
+        assert (len(node_titles)) == (1)
 
     def test_normalize_prj_description2(self):
         """
@@ -1446,8 +1427,8 @@ class TestPrivateSearch(OsfTestCase):
         node_titles = get_node_titles(results)
         DEBUG('results', results)
         DEBUG('node_titles', node_titles)
-        assert_equal(len(results), 1)
-        assert_equal(len(node_titles), 1)
+        assert (len(results)) == (1)
+        assert (len(node_titles)) == (1)
 
     def test_normalize_prj_creator1(self):
         """
@@ -1461,12 +1442,12 @@ class TestPrivateSearch(OsfTestCase):
         node_titles = get_node_titles(results)
         DEBUG('results', results)
         DEBUG('node_titles', node_titles)
-        assert_equal(len(results), 1)
-        assert_equal(len(node_titles), 1)
+        assert (len(results)) == (1)
+        assert (len(node_titles)) == (1)
         r = results[0]
         c = u'\u304b\u3099' # か+濁点
-        assert_equal(r['creator_id'], self.user3._id)
-        assert_equal(r['creator_name'], c)
+        assert (r['creator_id']) == (self.user3._id)
+        assert (r['creator_name']) == (c)
 
     def test_normalize_prj_creator2(self):
         """
@@ -1480,12 +1461,12 @@ class TestPrivateSearch(OsfTestCase):
         node_titles = get_node_titles(results)
         DEBUG('results', results)
         DEBUG('node_titles', node_titles)
-        assert_equal(len(results), 1)
-        assert_equal(len(node_titles), 1)
+        assert (len(results)) == (1)
+        assert (len(node_titles)) == (1)
         r = results[0]
         c2 = u'\u304e' # ぎ
-        assert_equal(r['creator_id'], self.user4._id)
-        assert_equal(r['creator_name'], c2)
+        assert (r['creator_id']) == (self.user4._id)
+        assert (r['creator_name']) == (c2)
 
     def test_normalize_prj_modifier1(self):
         """
@@ -1500,12 +1481,12 @@ class TestPrivateSearch(OsfTestCase):
         node_titles = get_node_titles(results)
         DEBUG('results', results)
         DEBUG('node_titles', node_titles)
-        assert_equal(len(results), 1)
-        assert_equal(len(node_titles), 1)
+        assert (len(results)) == (1)
+        assert (len(node_titles)) == (1)
         r = results[0]
         c2 = u'\u306f\u3099' # は+濁点
-        assert_equal(r['modifier_id'], self.user5._id)
-        assert_equal(r['modifier_name'], c2)
+        assert (r['modifier_id']) == (self.user5._id)
+        assert (r['modifier_name']) == (c2)
 
     def test_normalize_prj_modifier2(self):
         """
@@ -1519,12 +1500,12 @@ class TestPrivateSearch(OsfTestCase):
         node_titles = get_node_titles(results)
         DEBUG('results', results)
         DEBUG('node_titles', node_titles)
-        assert_equal(len(results), 1)
-        assert_equal(len(node_titles), 1)
+        assert (len(results)) == (1)
+        assert (len(node_titles)) == (1)
         r = results[0]
         c2 = u'\u3073' # び
-        assert_equal(r['modifier_id'], self.user6._id)
-        assert_equal(r['modifier_name'], c2)
+        assert (r['modifier_id']) == (self.user6._id)
+        assert (r['modifier_name']) == (c2)
 
     def test_normalize_prj_wikiname1(self):
         """
@@ -1540,9 +1521,9 @@ class TestPrivateSearch(OsfTestCase):
         DEBUG('results', results)
         DEBUG('node_titles', node_titles)
         DEBUG('tags', tags)
-        assert_equal(len(results), 1)
-        assert_equal(len(node_titles), 1)
-        assert_equal(len(tags), 3)
+        assert (len(results)) == (1)
+        assert (len(node_titles)) == (1)
+        assert (len(tags)) == (3)
 
     def test_normalize_prj_wikiname2(self):
         """
@@ -1557,9 +1538,9 @@ class TestPrivateSearch(OsfTestCase):
         DEBUG('results', results)
         DEBUG('node_titles', node_titles)
         DEBUG('tags', tags)
-        assert_equal(len(results), 1)
-        assert_equal(len(node_titles), 1)
-        assert_equal(len(tags), 3)
+        assert (len(results)) == (1)
+        assert (len(node_titles)) == (1)
+        assert (len(tags)) == (3)
 
     def test_normalize_prj_wikicontent1(self):
         """
@@ -1575,9 +1556,9 @@ class TestPrivateSearch(OsfTestCase):
         DEBUG('results', results)
         DEBUG('node_titles', node_titles)
         DEBUG('tags', tags)
-        assert_equal(len(results), 1)
-        assert_equal(len(node_titles), 1)
-        assert_equal(len(tags), 3)
+        assert (len(results)) == (1)
+        assert (len(node_titles)) == (1)
+        assert (len(tags)) == (3)
 
     def test_normalize_prj_wikicontent2(self):
         """
@@ -1592,9 +1573,9 @@ class TestPrivateSearch(OsfTestCase):
         DEBUG('results', results)
         DEBUG('node_titles', node_titles)
         DEBUG('tags', tags)
-        assert_equal(len(results), 1)
-        assert_equal(len(node_titles), 1)
-        assert_equal(len(tags), 3)
+        assert (len(results)) == (1)
+        assert (len(node_titles)) == (1)
+        assert (len(tags)) == (3)
 
     def test_normalize_filename1(self):
         """
@@ -1608,8 +1589,8 @@ class TestPrivateSearch(OsfTestCase):
         filenames = get_filenames(results)
         DEBUG('results', results)
         DEBUG('filenames', filenames)
-        assert_equal(len(results), 1)
-        assert_equal(len(filenames), 1)
+        assert (len(results)) == (1)
+        assert (len(filenames)) == (1)
 
     def test_normalize_filename2(self):
         """
@@ -1622,8 +1603,8 @@ class TestPrivateSearch(OsfTestCase):
         filenames = get_filenames(results)
         DEBUG('results', results)
         DEBUG('filenames', filenames)
-        assert_equal(len(results), 1)
-        assert_equal(len(filenames), 1)
+        assert (len(results)) == (1)
+        assert (len(filenames)) == (1)
 
     def test_normalize_tags1(self):
         """
@@ -1639,9 +1620,9 @@ class TestPrivateSearch(OsfTestCase):
         DEBUG('results', results)
         DEBUG('node_titles', node_titles)
         DEBUG('tags', tags)
-        assert_equal(len(results), 1)
-        assert_equal(len(node_titles), 1)
-        assert_equal(len(tags), 3)
+        assert (len(results)) == (1)
+        assert (len(node_titles)) == (1)
+        assert (len(tags)) == (3)
 
     def test_normalize_tags2(self):
         """
@@ -1656,9 +1637,9 @@ class TestPrivateSearch(OsfTestCase):
         DEBUG('results', results)
         DEBUG('node_titles', node_titles)
         DEBUG('tags', tags)
-        assert_equal(len(results), 1)
-        assert_equal(len(node_titles), 1)
-        assert_equal(len(tags), 3)
+        assert (len(results)) == (1)
+        assert (len(node_titles)) == (1)
+        assert (len(tags)) == (3)
 
     def test_normalize_filetags1(self):
         """
@@ -1673,9 +1654,9 @@ class TestPrivateSearch(OsfTestCase):
         DEBUG('results', results)
         DEBUG('filenames', filenames)
         DEBUG('tags', tags)
-        assert_equal(len(results), 1)
-        assert_equal(len(filenames), 1)
-        assert_equal(len(tags), 2)
+        assert (len(results)) == (1)
+        assert (len(filenames)) == (1)
+        assert (len(tags)) == (2)
 
     def test_normalize_filetags2(self):
         """
@@ -1690,9 +1671,9 @@ class TestPrivateSearch(OsfTestCase):
         DEBUG('results', results)
         DEBUG('filenames', filenames)
         DEBUG('tags', tags)
-        assert_equal(len(results), 1)
-        assert_equal(len(filenames), 1)
-        assert_equal(len(tags), 2)
+        assert (len(results)) == (1)
+        assert (len(filenames)) == (1)
+        assert (len(tags)) == (2)
 
     @enable_private_search
     def _update_file(self, project, user, count):
@@ -1702,9 +1683,9 @@ class TestPrivateSearch(OsfTestCase):
             name = 'test_file'
             test_file = update_dummy_file(user, root_node, name, count)
 
-        assert_equal(test_file.versions.count(), count)
+        assert (test_file.versions.count()) == (count)
         # first() of file.versions is latest
-        assert_equal(test_file.versions.all().first().creator, user)
+        assert (test_file.versions.all().first().creator) == (user)
 
     def test_normalize_file_creator_modifier1(self):
         """
@@ -1723,13 +1704,13 @@ class TestPrivateSearch(OsfTestCase):
             DEBUG('results', results)
             DEBUG('filenames', filenames)
             DEBUG('tags', tags)
-            assert_equal(len(results), 1)
-            assert_equal(len(filenames), 1)
-            assert_equal(len(tags), 0)
+            assert (len(results)) == (1)
+            assert (len(filenames)) == (1)
+            assert (len(tags)) == (0)
             r = results[0]
             c2 = u'\u304b\u3099' # か+濁点
-            assert_equal(r['creator_id'], self.user3._id)
-            assert_equal(r['creator_name'], c2)
+            assert (r['creator_id']) == (self.user3._id)
+            assert (r['creator_name']) == (c2)
 
             c1 = u'\u3070'  # ば (user5)
             qs = u'category:file AND modifier_name:' + c1
@@ -1739,13 +1720,13 @@ class TestPrivateSearch(OsfTestCase):
             DEBUG('results', results)
             DEBUG('filenames', filenames)
             DEBUG('tags', tags)
-            assert_equal(len(results), 1)
-            assert_equal(len(filenames), 1)
-            assert_equal(len(tags), 0)
+            assert (len(results)) == (1)
+            assert (len(filenames)) == (1)
+            assert (len(tags)) == (0)
             r = results[0]
             c2 = u'\u306f\u3099' # は+濁点
-            assert_equal(r['modifier_id'], self.user5._id)
-            assert_equal(r['modifier_name'], c2)
+            assert (r['modifier_id']) == (self.user5._id)
+            assert (r['modifier_name']) == (c2)
 
         # creator
         self._update_file(self.project_private_user3, self.user3, 1)
@@ -1769,13 +1750,13 @@ class TestPrivateSearch(OsfTestCase):
             DEBUG('results', results)
             DEBUG('filenames', filenames)
             DEBUG('tags', tags)
-            assert_equal(len(results), 1)
-            assert_equal(len(filenames), 1)
-            assert_equal(len(tags), 0)
+            assert (len(results)) == (1)
+            assert (len(filenames)) == (1)
+            assert (len(tags)) == (0)
             r = results[0]
             c2 = u'\u304e' # ぎ
-            assert_equal(r['creator_id'], self.user4._id)
-            assert_equal(r['creator_name'], c2)
+            assert (r['creator_id']) == (self.user4._id)
+            assert (r['creator_name']) == (c2)
 
             c1 = u'\u3072\u3099'  # ひ+濁点 (user6)
             qs = u'category:file AND modifier_name:' + c1
@@ -1785,13 +1766,13 @@ class TestPrivateSearch(OsfTestCase):
             DEBUG('results', results)
             DEBUG('filenames', filenames)
             DEBUG('tags', tags)
-            assert_equal(len(results), 1)
-            assert_equal(len(filenames), 1)
-            assert_equal(len(tags), 0)
+            assert (len(results)) == (1)
+            assert (len(filenames)) == (1)
+            assert (len(tags)) == (0)
             r = results[0]
             c2 = u'\u3073'  # び
-            assert_equal(r['modifier_id'], self.user6._id)
-            assert_equal(r['modifier_name'], c2)
+            assert (r['modifier_id']) == (self.user6._id)
+            assert (r['modifier_name']) == (c2)
 
         # creator
         self._update_file(self.project_private_user4, self.user4, 1)
@@ -1809,8 +1790,8 @@ class TestPrivateSearch(OsfTestCase):
         user_fullnames = [r['fullname'] for r in results]
         DEBUG('results', results)
         DEBUG('user_fullnames', user_fullnames)
-        assert_equal(len(results), 1)
-        assert_equal(len(user_fullnames), 1)
+        assert (len(results)) == (1)
+        assert (len(user_fullnames)) == (1)
 
     def test_normalize_search_contributor1(self):
         """
@@ -1851,13 +1832,12 @@ class TestPrivateSearch(OsfTestCase):
             return build_query(query_string)
 
         def bad_request(query):
-            res = self.app.post_json(
+            res = self.app.post(
                 api_url_for('search_search'),
-                query,
-                auth=self.user1.auth,
-                expect_errors=True
+                json=query,
+                auth=self.user1.auth
             )
-            assert_equal(res.status_code, 400)
+            assert (res.status_code) == (400)
 
         qs = 'てすと'
         bad_request(build_invalid_query1(qs, 1000, 'grdm'))
@@ -1872,25 +1852,23 @@ class TestPrivateSearch(OsfTestCase):
         検索ページの場合は、リダイレクトすることを確認する。
         """
         qs = 'てすと'
-        res = self.app.post_json(
+        res = self.app.post(
             api_url_for('search_search'),
-            build_private_search_query(qs),
-            auth=None,
-            expect_errors=True
+            json=build_private_search_query(qs),
+            auth=None
         )
-        assert_equal(res.status_code, 401)  # Unauthorized
+        assert (res.status_code) == (401)  # Unauthorized
 
         res = self.app.get(
             api_url_for('search_search'),
-            auth=None,
-            expect_errors=True
+            auth=None
         )
-        assert_equal(res.status_code, 401)  # Unauthorized
+        assert (res.status_code) == (401)  # Unauthorized
 
         # view
         url = web_url_for('search_view', _absolute=True)
         res = self.app.get(url, auth=None)
-        assert_equal(res.status_code, 302)
+        assert (res.status_code) == (302)
 
     _use_migrate = False
 
@@ -1910,7 +1888,7 @@ class TestSearchExt(OsfTestCase):
 
     @enable_private_search
     def setUp(self):
-        setup(TestSearchExt, self)
+        setup_search_test(TestSearchExt, self)
 
     @enable_private_search
     def tearDown(self):
@@ -1939,28 +1917,19 @@ class TestSearchExt(OsfTestCase):
         DEBUG('filenames', filenames)
         DEBUG('category count', category_count_map)
 
-        assert_equal(len(results), 11)
-        assert_equal(category_count_map['user'], 2)
-        assert_equal(category_count_map['project'], 4)
-        assert_equal(category_count_map['file'], 3)
-        assert_equal(category_count_map['wiki'], 2)
-        assert_equal(len(user_fullnames), 2)
-        assert_equal(len(node_titles), 4)  # private=2, public=2
-        assert_equal(len(contributors), 1)
-        assert_equal(len(tags), 3)
-        assert_equal(len(filenames), 3)
-        assert_not_in(
-            s2u(self.project_private_user2_1.title),
-            s2u(node_titles)
-        )
-        assert_not_in(
-            s2u(self.project_private_user2_2.title),
-            s2u(node_titles)
-        )
-        assert_not_in(
-            s2u(self.user2.fullname),
-            s2u(contributors)
-        )
+        assert (len(results)) == (11)
+        assert (category_count_map['user']) == (2)
+        assert (category_count_map['project']) == (4)
+        assert (category_count_map['file']) == (3)
+        assert (category_count_map['wiki']) == (2)
+        assert (len(user_fullnames)) == (2)
+        assert (len(node_titles)) == (4)  # private=2, public=2
+        assert (len(contributors)) == (1)
+        assert (len(tags)) == (3)
+        assert (len(filenames)) == (3)
+        assert (s2u(self.project_private_user2_1.title)) not in (s2u(node_titles))
+        assert (s2u(self.project_private_user2_2.title)) not in (s2u(node_titles))
+        assert (s2u(self.user2.fullname)) not in (s2u(contributors))
 
     @enable_private_search
     def _common_normalize(self, qs, category=None, user=None, version=1):
@@ -1977,10 +1946,10 @@ class TestSearchExt(OsfTestCase):
         qs = u'\u3056'  # ざ
         res, results = self._common_normalize(qs, 'wiki', version=2)
         DEBUG('results', results)
-        assert_equal(len(results), 1)
+        assert (len(results)) == (1)
         r = results[0]
         c2 = u'\u3055\u3099' # さ+濁点
-        assert_equal(r['name'], c2)
+        assert (r['name']) == (c2)
 
     def test_normalize_wiki_name2(self):
         """
@@ -1991,10 +1960,10 @@ class TestSearchExt(OsfTestCase):
         qs = u'category:wiki AND \u3057\u3099'  # し+濁点
         res, results = self._common_normalize(qs, version=2)
         DEBUG('results', results)
-        assert_equal(len(results), 1)
+        assert (len(results)) == (1)
         r = results[0]
         c2 = u'\u3058' # じ
-        assert_equal(r['name'], c2)
+        assert (r['name']) == (c2)
 
     def test_normalize_wiki_content1(self):
         """
@@ -2006,11 +1975,11 @@ class TestSearchExt(OsfTestCase):
         qs = u'\u305a'  # ず
         res, results = self._common_normalize(qs, 'wiki', version=2)
         DEBUG('results', results)
-        assert_equal(len(results), 1)
+        assert (len(results)) == (1)
         r = results[0]
         # text is not return to original strings.
         c2 = u'\u3059\u3099' # す+濁点
-        assert_equal(r['text'], c2)
+        assert (r['text']) == (c2)
 
     def test_normalize_wiki_content2(self):
         """
@@ -2022,9 +1991,9 @@ class TestSearchExt(OsfTestCase):
         qs = u'category:wiki AND ' + c1
         res, results = self._common_normalize(qs, version=2)
         DEBUG('results', results)
-        assert_equal(len(results), 1)
+        assert (len(results)) == (1)
         r = results[0]
-        assert_equal(r['text'], c1)
+        assert (r['text']) == (c1)
         # c2 = u'\u305c' # ぜ
         # assert_not_equal(r['text'], c2)
 
@@ -2040,9 +2009,9 @@ class TestSearchExt(OsfTestCase):
                 wiki = WikiPage.objects.create_for_node(
                     project, name, content, Auth(user))
 
-        assert_equal(wiki.versions.count(), count)
+        assert (wiki.versions.count()) == (count)
         # latest
-        assert_equal(wiki.get_versions().first().user, user)
+        assert (wiki.get_versions().first().user) == (user)
 
     def test_normalize_wiki_creator_modifier1(self):
         """
@@ -2062,21 +2031,21 @@ class TestSearchExt(OsfTestCase):
             qs = u'category:wiki AND creator_name:' + c1
             res, results = self._common_normalize(qs, user=self.user3, version=2)
             DEBUG('results', results)
-            assert_equal(len(results), 1)
+            assert (len(results)) == (1)
             r = results[0]
             c2 = u'\u304b\u3099' # か+濁点
-            assert_equal(r['creator_id'], self.user3._id)
-            assert_equal(r['creator_name'], c2)
+            assert (r['creator_id']) == (self.user3._id)
+            assert (r['creator_name']) == (c2)
 
             c1 = u'\u3070'  # ば (user5)
             qs = u'category:wiki AND modifier_name:' + c1
             res, results = self._common_normalize(qs, user=self.user3, version=2)
             DEBUG('results', results)
-            assert_equal(len(results), 1)
+            assert (len(results)) == (1)
             r = results[0]
             c2 = u'\u306f\u3099' # は+濁点
-            assert_equal(r['modifier_id'], self.user5._id)
-            assert_equal(r['modifier_name'], c2)
+            assert (r['modifier_id']) == (self.user5._id)
+            assert (r['modifier_name']) == (c2)
 
         run_after_rebuild_search(self, test1)
 
@@ -2099,11 +2068,11 @@ class TestSearchExt(OsfTestCase):
             filenames = get_filenames(results)
             tags = get_filetags(results, self.f1.name)
             DEBUG('results', results)
-            assert_equal(len(results), 1)
+            assert (len(results)) == (1)
             r = results[0]
             c2 = u'\u304e' # ぎ
-            assert_equal(r['creator_id'], self.user4._id)
-            assert_equal(r['creator_name'], c2)
+            assert (r['creator_id']) == (self.user4._id)
+            assert (r['creator_name']) == (c2)
 
             c1 = u'\u3072\u3099'  # ひ+濁点 (user6)
             qs = u'category:wiki AND modifier_name:' + c1
@@ -2111,11 +2080,11 @@ class TestSearchExt(OsfTestCase):
             filenames = get_filenames(results)
             tags = get_filetags(results, self.f1.name)
             DEBUG('results', results)
-            assert_equal(len(results), 1)
+            assert (len(results)) == (1)
             r = results[0]
             c2 = u'\u3073'  # び
-            assert_equal(r['modifier_id'], self.user6._id)
-            assert_equal(r['modifier_name'], c2)
+            assert (r['modifier_id']) == (self.user6._id)
+            assert (r['modifier_name']) == (c2)
 
         run_after_rebuild_search(self, test1)
 
@@ -2137,7 +2106,7 @@ class TestSearchHighlight(OsfTestCase):
 
     @enable_private_search
     def setUp(self):
-        setup(TestSearchHighlight, self, create_obj=False)
+        setup_search_test(TestSearchHighlight, self, create_obj=False)
 
     @enable_private_search
     def tearDown(self):
@@ -2192,32 +2161,32 @@ class TestSearchHighlight(OsfTestCase):
             qs = u'ぎぐげ'
             res, results = _search(qs)
             DEBUG('results', results)
-            assert_equal(len(results), 1)
+            assert (len(results)) == (1)
             r = results[0]
             comment = r.get('comment')
-            assert_equal(comment['user_id'], u1._id)
-            assert_equal(comment['user_name'], u1.fullname)
-            assert_equal(comment['replyto_user_id'], None)
-            assert_equal(comment['replyto_user_name'], None)
-            assert_in(self._tagged(qs), comment['text'])
+            assert (comment['user_id']) == (u1._id)
+            assert (comment['user_name']) == (u1.fullname)
+            assert (comment['replyto_user_id']) == (None)
+            assert (comment['replyto_user_name']) == (None)
+            assert (self._tagged(qs)) in (comment['text'])
             size = len(comment['text'])
-            assert_greater_equal(size, HIGHLIGHT_SIZE_TEXT)
-            assert_less_equal(size, HIGHLIGHT_SIZE_TEXT + self.taglen)
+            assert (size) >= (HIGHLIGHT_SIZE_TEXT)
+            assert (size) <= (HIGHLIGHT_SIZE_TEXT + self.taglen)
 
             qs = u'じずぜ'
             res, results = _search(qs)
             DEBUG('results', results)
-            assert_equal(len(results), 1)
+            assert (len(results)) == (1)
             r = results[0]
             comment = r.get('comment')
-            assert_equal(comment['user_id'], u2._id)
-            assert_equal(comment['user_name'], u2.fullname)
-            assert_equal(comment['replyto_user_id'], u1._id)
-            assert_equal(comment['replyto_user_name'], u1.fullname)
-            assert_in(self._tagged(qs), comment['text'])
+            assert (comment['user_id']) == (u2._id)
+            assert (comment['user_name']) == (u2.fullname)
+            assert (comment['replyto_user_id']) == (u1._id)
+            assert (comment['replyto_user_name']) == (u1.fullname)
+            assert (self._tagged(qs)) in (comment['text'])
             size = len(comment['text'])
-            assert_greater_equal(size, HIGHLIGHT_SIZE_TEXT)
-            assert_less_equal(size, HIGHLIGHT_SIZE_TEXT + self.taglen)
+            assert (size) >= (HIGHLIGHT_SIZE_TEXT)
+            assert (size) <= (HIGHLIGHT_SIZE_TEXT + self.taglen)
 
         run_after_rebuild_search(self, test1)
 
@@ -2257,32 +2226,32 @@ class TestSearchHighlight(OsfTestCase):
             qs = u'ぎぐげ'
             res, results = _search(qs)
             DEBUG('results', results)
-            assert_equal(len(results), 1)
+            assert (len(results)) == (1)
             r = results[0]
             comment = r.get('comment')
-            assert_equal(comment['user_id'], u1._id)
-            assert_equal(comment['user_name'], u1.fullname)
-            assert_equal(comment['replyto_user_id'], None)
-            assert_equal(comment['replyto_user_name'], None)
-            assert_in(self._tagged(qs), comment['text'])
+            assert (comment['user_id']) == (u1._id)
+            assert (comment['user_name']) == (u1.fullname)
+            assert (comment['replyto_user_id']) == (None)
+            assert (comment['replyto_user_name']) == (None)
+            assert (self._tagged(qs)) in (comment['text'])
             size = len(comment['text'])
-            assert_greater_equal(size, HIGHLIGHT_SIZE_TEXT)
-            assert_less_equal(size, HIGHLIGHT_SIZE_TEXT + self.taglen)
+            assert (size) >= (HIGHLIGHT_SIZE_TEXT)
+            assert (size) <= (HIGHLIGHT_SIZE_TEXT + self.taglen)
 
             qs = u'じずぜ'
             res, results = _search(qs)
             DEBUG('results', results)
-            assert_equal(len(results), 1)
+            assert (len(results)) == (1)
             r = results[0]
             comment = r.get('comment')
-            assert_equal(comment['user_id'], u2._id)
-            assert_equal(comment['user_name'], u2.fullname)
-            assert_equal(comment['replyto_user_id'], u1._id)
-            assert_equal(comment['replyto_user_name'], u1.fullname)
-            assert_in(self._tagged(qs), comment['text'])
+            assert (comment['user_id']) == (u2._id)
+            assert (comment['user_name']) == (u2.fullname)
+            assert (comment['replyto_user_id']) == (u1._id)
+            assert (comment['replyto_user_name']) == (u1.fullname)
+            assert (self._tagged(qs)) in (comment['text'])
             size = len(comment['text'])
-            assert_greater_equal(size, HIGHLIGHT_SIZE_TEXT)
-            assert_less_equal(size, HIGHLIGHT_SIZE_TEXT + self.taglen)
+            assert (size) >= (HIGHLIGHT_SIZE_TEXT)
+            assert (size) <= (HIGHLIGHT_SIZE_TEXT + self.taglen)
 
         run_after_rebuild_search(self, test1)
 
@@ -2322,32 +2291,32 @@ class TestSearchHighlight(OsfTestCase):
             qs = u'ぎぐげ'
             res, results = _search(qs)
             DEBUG('results', results)
-            assert_equal(len(results), 1)
+            assert (len(results)) == (1)
             r = results[0]
             comment = r.get('comment')
-            assert_equal(comment['user_id'], u1._id)
-            assert_equal(comment['user_name'], u1.fullname)
-            assert_equal(comment['replyto_user_id'], None)
-            assert_equal(comment['replyto_user_name'], None)
-            assert_in(self._tagged(qs), comment['text'])
+            assert (comment['user_id']) == (u1._id)
+            assert (comment['user_name']) == (u1.fullname)
+            assert (comment['replyto_user_id']) == (None)
+            assert (comment['replyto_user_name']) == (None)
+            assert (self._tagged(qs)) in (comment['text'])
             size = len(comment['text'])
-            assert_greater_equal(size, HIGHLIGHT_SIZE_TEXT)
-            assert_less_equal(size, HIGHLIGHT_SIZE_TEXT + self.taglen)
+            assert (size) >= (HIGHLIGHT_SIZE_TEXT)
+            assert (size) <= (HIGHLIGHT_SIZE_TEXT + self.taglen)
 
             qs = u'じずぜ'
             res, results = _search(qs)
             DEBUG('results', results)
-            assert_equal(len(results), 1)
+            assert (len(results)) == (1)
             r = results[0]
             comment = r.get('comment')
-            assert_equal(comment['user_id'], u2._id)
-            assert_equal(comment['user_name'], u2.fullname)
-            assert_equal(comment['replyto_user_id'], u1._id)
-            assert_equal(comment['replyto_user_name'], u1.fullname)
-            assert_in(self._tagged(qs), comment['text'])
+            assert (comment['user_id']) == (u2._id)
+            assert (comment['user_name']) == (u2.fullname)
+            assert (comment['replyto_user_id']) == (u1._id)
+            assert (comment['replyto_user_name']) == (u1.fullname)
+            assert (self._tagged(qs)) in (comment['text'])
             size = len(comment['text'])
-            assert_greater_equal(size, HIGHLIGHT_SIZE_TEXT)
-            assert_less_equal(size, HIGHLIGHT_SIZE_TEXT + self.taglen)
+            assert (size) >= (HIGHLIGHT_SIZE_TEXT)
+            assert (size) <= (HIGHLIGHT_SIZE_TEXT + self.taglen)
 
         run_after_rebuild_search(self, test1)
 
@@ -2370,14 +2339,14 @@ class TestSearchHighlight(OsfTestCase):
             qs = u'ぢづで'
             res, results = _search(qs)
             DEBUG('results', results)
-            assert_equal(len(results), 1)
+            assert (len(results)) == (1)
             r = results[0]
-            assert_equal(r['id'], p1._id)
+            assert (r['id']) == (p1._id)
             title = r['highlight']['title'][0]
-            assert_in(self._tagged(qs), title)
+            assert (self._tagged(qs)) in (title)
             size = len(title)
-            assert_greater_equal(size, HIGHLIGHT_SIZE_TITLE)
-            assert_less_equal(size, HIGHLIGHT_SIZE_TITLE + self.taglen)
+            assert (size) >= (HIGHLIGHT_SIZE_TITLE)
+            assert (size) <= (HIGHLIGHT_SIZE_TITLE + self.taglen)
 
     @enable_private_search
     def test_highlight_file_name(self):
@@ -2401,14 +2370,14 @@ class TestSearchHighlight(OsfTestCase):
             qs = u'ぢづで'
             res, results = _search(qs)
             DEBUG('results', results)
-            assert_equal(len(results), 1)
+            assert (len(results)) == (1)
             r = results[0]
-            assert_equal(r['id'], f1._id)
+            assert (r['id']) == (f1._id)
             title = r['highlight']['name'][0]
-            assert_in(self._tagged(qs), title)
+            assert (self._tagged(qs)) in (title)
             size = len(title)
-            assert_greater_equal(size, HIGHLIGHT_SIZE_TITLE)
-            assert_less_equal(size, HIGHLIGHT_SIZE_TITLE + self.taglen)
+            assert (size) >= (HIGHLIGHT_SIZE_TITLE)
+            assert (size) <= (HIGHLIGHT_SIZE_TITLE + self.taglen)
 
     @enable_private_search
     def test_highlight_wiki_title_text(self):
@@ -2432,26 +2401,26 @@ class TestSearchHighlight(OsfTestCase):
             qs = u'ぢづで'
             res, results = _search(qs)
             DEBUG('results', results)
-            assert_equal(len(results), 1)
+            assert (len(results)) == (1)
             r = results[0]
-            assert_equal(r['id'], w1._id)
+            assert (r['id']) == (w1._id)
             title = r['highlight']['name'][0]
-            assert_in(self._tagged(qs), title)
+            assert (self._tagged(qs)) in (title)
             size = len(title)
-            assert_greater_equal(size, HIGHLIGHT_SIZE_TITLE)
-            assert_less_equal(size, HIGHLIGHT_SIZE_TITLE + self.taglen)
+            assert (size) >= (HIGHLIGHT_SIZE_TITLE)
+            assert (size) <= (HIGHLIGHT_SIZE_TITLE + self.taglen)
 
             qs = u'びぶべ'
             res, results = _search(qs)
             DEBUG('results', results)
-            assert_equal(len(results), 1)
+            assert (len(results)) == (1)
             r = results[0]
-            assert_equal(r['id'], w1._id)
+            assert (r['id']) == (w1._id)
             text = r['highlight']['text'][0]
-            assert_in(self._tagged(qs), text)
+            assert (self._tagged(qs)) in (text)
             size = len(text)
-            assert_greater_equal(size, HIGHLIGHT_SIZE_TEXT)
-            assert_less_equal(size, HIGHLIGHT_SIZE_TEXT + self.taglen)
+            assert (size) >= (HIGHLIGHT_SIZE_TEXT)
+            assert (size) <= (HIGHLIGHT_SIZE_TEXT + self.taglen)
 
         run_after_rebuild_search(self, test1)
 
@@ -2472,14 +2441,14 @@ class TestSearchHighlight(OsfTestCase):
             qs = u'ぢづで'
             res, results = _search(qs)
             DEBUG('results', results)
-            assert_equal(len(results), 1)
+            assert (len(results)) == (1)
             r = results[0]
-            assert_equal(r['id'], u1._id)
+            assert (r['id']) == (u1._id)
             title = r['highlight']['user'][0]
-            assert_in(self._tagged(qs), title)
+            assert (self._tagged(qs)) in (title)
             size = len(title)
-            assert_greater_equal(size, HIGHLIGHT_SIZE_TITLE)
-            assert_less_equal(size, HIGHLIGHT_SIZE_TITLE + self.taglen)
+            assert (size) >= (HIGHLIGHT_SIZE_TITLE)
+            assert (size) <= (HIGHLIGHT_SIZE_TITLE + self.taglen)
 
     @enable_private_search
     def test_highlight_institution_name(self):
@@ -2498,14 +2467,14 @@ class TestSearchHighlight(OsfTestCase):
             qs = u'ぢづで'
             res, results = _search(qs)
             DEBUG('results', results)
-            assert_equal(len(results), 1)
+            assert (len(results)) == (1)
             r = results[0]
-            assert_equal(r['id'], i1._id)
+            assert (r['id']) == (i1._id)
             title = r['highlight']['name'][0]
-            assert_in(self._tagged(qs), title)
+            assert (self._tagged(qs)) in (title)
             size = len(title)
-            assert_greater_equal(size, HIGHLIGHT_SIZE_TITLE)
-            assert_less_equal(size, HIGHLIGHT_SIZE_TITLE + self.taglen)
+            assert (size) >= (HIGHLIGHT_SIZE_TITLE)
+            assert (size) <= (HIGHLIGHT_SIZE_TITLE + self.taglen)
 
     _use_migrate = False
 
@@ -2525,7 +2494,7 @@ class TestSearchSort(OsfTestCase):
 
     @enable_private_search
     def setUp(self):
-        setup(TestSearchSort, self, create_obj=False)
+        setup_search_test(TestSearchSort, self, create_obj=False)
 
     @enable_private_search
     def tearDown(self):
@@ -2563,20 +2532,20 @@ class TestSearchSort(OsfTestCase):
             for sort in asc_list:
                 res, results = _search(sort)
                 DEBUG('results', results)
-                assert_equal(len(results), 3)
-                assert_equal(results[0]['title'], p1.title)
-                assert_equal(results[1]['title'], p2.title)
-                assert_equal(results[2]['title'], p3.title)
+                assert (len(results)) == (3)
+                assert (results[0]['title']) == (p1.title)
+                assert (results[1]['title']) == (p2.title)
+                assert (results[2]['title']) == (p3.title)
 
             # default: sort=None -> modified_desc
             desc_list = (None, 'created_desc', 'modified_desc', 'project_desc')
             for sort in desc_list:
                 res, results = _search(sort)
                 DEBUG('results', results)
-                assert_equal(len(results), 3)
-                assert_equal(results[0]['title'], p3.title)
-                assert_equal(results[1]['title'], p2.title)
-                assert_equal(results[2]['title'], p1.title)
+                assert (len(results)) == (3)
+                assert (results[0]['title']) == (p3.title)
+                assert (results[1]['title']) == (p2.title)
+                assert (results[2]['title']) == (p1.title)
 
         run_after_rebuild_search(self, test1)
 
@@ -2607,20 +2576,20 @@ class TestSearchSort(OsfTestCase):
             for sort in asc_list:
                 res, results = _search(sort)
                 DEBUG('results', results)
-                assert_equal(len(results), 3)
-                assert_equal(results[0]['name'], f1.name)
-                assert_equal(results[1]['name'], f2.name)
-                assert_equal(results[2]['name'], f3.name)
+                assert (len(results)) == (3)
+                assert (results[0]['name']) == (f1.name)
+                assert (results[1]['name']) == (f2.name)
+                assert (results[2]['name']) == (f3.name)
 
             # default: sort=None -> modified_desc
             desc_list = (None, 'created_desc', 'modified_desc', 'project_desc', 'file_desc')
             for sort in desc_list:
                 res, results = _search(sort)
                 DEBUG('results', results)
-                assert_equal(len(results), 3)
-                assert_equal(results[0]['name'], f3.name)
-                assert_equal(results[1]['name'], f2.name)
-                assert_equal(results[2]['name'], f1.name)
+                assert (len(results)) == (3)
+                assert (results[0]['name']) == (f3.name)
+                assert (results[1]['name']) == (f2.name)
+                assert (results[2]['name']) == (f1.name)
 
         run_after_rebuild_search(self, test1)
 
@@ -2653,20 +2622,20 @@ class TestSearchSort(OsfTestCase):
             for sort in asc_list:
                 res, results = _search(sort)
                 DEBUG('results', results)
-                assert_equal(len(results), 3)
-                assert_equal(results[0]['name'], n1)
-                assert_equal(results[1]['name'], n2)
-                assert_equal(results[2]['name'], n3)
+                assert (len(results)) == (3)
+                assert (results[0]['name']) == (n1)
+                assert (results[1]['name']) == (n2)
+                assert (results[2]['name']) == (n3)
 
             # default: sort=None -> modified_desc
             desc_list = (None, 'created_desc', 'modified_desc', 'project_desc', 'wiki_desc')
             for sort in desc_list:
                 res, results = _search(sort)
                 DEBUG('results', results)
-                assert_equal(len(results), 3)
-                assert_equal(results[0]['name'], n3)
-                assert_equal(results[1]['name'], n2)
-                assert_equal(results[2]['name'], n1)
+                assert (len(results)) == (3)
+                assert (results[0]['name']) == (n3)
+                assert (results[1]['name']) == (n2)
+                assert (results[2]['name']) == (n1)
 
         run_after_rebuild_search(self, test1)
 
@@ -2695,20 +2664,20 @@ class TestSearchSort(OsfTestCase):
             for sort in asc_list:
                 res, results = _search(sort)
                 DEBUG('results', results)
-                assert_equal(len(results), 3)
-                assert_equal(results[0]['user'], n1)
-                assert_equal(results[1]['user'], n2)
-                assert_equal(results[2]['user'], n3)
+                assert (len(results)) == (3)
+                assert (results[0]['user']) == (n1)
+                assert (results[1]['user']) == (n2)
+                assert (results[2]['user']) == (n3)
 
             # default: sort=None -> modified_desc
             desc_list = (None, 'created_desc', 'modified_desc', 'user_desc')
             for sort in desc_list:
                 res, results = _search(sort)
                 DEBUG('results', results)
-                assert_equal(len(results), 3)
-                assert_equal(results[0]['user'], n3)
-                assert_equal(results[1]['user'], n2)
-                assert_equal(results[2]['user'], n1)
+                assert (len(results)) == (3)
+                assert (results[0]['user']) == (n3)
+                assert (results[1]['user']) == (n2)
+                assert (results[2]['user']) == (n1)
 
         run_after_rebuild_search(self, test1)
 
@@ -2738,20 +2707,20 @@ class TestSearchSort(OsfTestCase):
             for sort in asc_list:
                 res, results = _search(sort)
                 DEBUG('results', results)
-                assert_equal(len(results), 3)
-                assert_equal(results[0]['name'], n1)
-                assert_equal(results[1]['name'], n2)
-                assert_equal(results[2]['name'], n3)
+                assert (len(results)) == (3)
+                assert (results[0]['name']) == (n1)
+                assert (results[1]['name']) == (n2)
+                assert (results[2]['name']) == (n3)
 
             # default: sort=None -> modified_desc
             desc_list = (None, 'created_desc', 'modified_desc', 'user_desc')
             for sort in desc_list:
                 res, results = _search(sort)
                 DEBUG('results', results)
-                assert_equal(len(results), 3)
-                assert_equal(results[0]['name'], n3)
-                assert_equal(results[1]['name'], n2)
-                assert_equal(results[2]['name'], n1)
+                assert (len(results)) == (3)
+                assert (results[0]['name']) == (n3)
+                assert (results[1]['name']) == (n2)
+                assert (results[2]['name']) == (n1)
 
         run_after_rebuild_search(self, test1)
 
@@ -2769,10 +2738,10 @@ class TestSearchSort(OsfTestCase):
         for sort in unknown_list:
             res, results = _search(sort)
             expected_msg = 'unknown sort parameter: {}'.format(sort)
-            assert_equal(res.status_code, 400)
-            assert_equal(res.json.get('code'), 400)
-            assert_equal(res.json.get('message_short'), expected_msg)
-            assert_equal(res.json.get('message_long'), expected_msg)
+            assert (res.status_code) == (400)
+            assert (res.json.get('code')) == (400)
+            assert (res.json.get('message_short')) == (expected_msg)
+            assert (res.json.get('message_long')) == (expected_msg)
 
     _use_migrate = False
 
@@ -2787,7 +2756,7 @@ class TestSearchSort(OsfTestCase):
 class TestOriginalSearch(OsfTestCase):
 
     def setUp(self):
-        setup(TestOriginalSearch, self)
+        setup_search_test(TestOriginalSearch, self)
 
     def tearDown(self):
         tear_down(TestOriginalSearch, self)
@@ -2814,13 +2783,13 @@ class TestOriginalSearch(OsfTestCase):
         DEBUG('tags', tags)
         DEBUG('filenames', filenames)
 
-        assert_not_equal(len(results), 0)
-        assert_not_equal(len(user_fullnames), 0)
-        assert_not_equal(len(node_titles), 0)
-        assert_equal(len(priv_contributors), 0)  # cannot access
-        assert_equal(len(pub_contributors), 1)
-        assert_equal(len(tags), 0)  # cannot access
-        assert_equal(len(filenames), 0)  # cannot access
+        assert (len(results)) != (0)
+        assert (len(user_fullnames)) != (0)
+        assert (len(node_titles)) != (0)
+        assert (len(priv_contributors)) == (0)  # cannot access
+        assert (len(pub_contributors)) == (1)
+        assert (len(tags)) == (0)  # cannot access
+        assert (len(filenames)) == (0)  # cannot access
 
 
 class TestQueryString(OsfTestCase):

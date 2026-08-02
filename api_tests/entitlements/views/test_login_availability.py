@@ -1,6 +1,5 @@
 import pytest
 from api.base.settings.defaults import API_BASE
-from nose import tools as nt
 from osf_tests.factories import InstitutionFactory, AuthUserFactory, InstitutionEntitlementFactory
 
 
@@ -30,8 +29,8 @@ class TestLoginAvailability:
 
         res = app.simple_post_api(url, data, expect_errors=True)
         res_data = res.json['login_availability']
-        nt.assert_equal(res.status_code, 200)
-        nt.assert_equal(res_data, False)
+        assert (res.status_code) == (200)
+        assert (res_data) == (False)
 
     def test_post_serializer_invalid(self, app):
         self.institution = InstitutionFactory()
@@ -54,4 +53,4 @@ class TestLoginAvailability:
         }
 
         res = app.simple_post_api(url, data, expect_errors=True)
-        nt.assert_equal(res.status_code, 400)
+        assert (res.status_code) == (400)

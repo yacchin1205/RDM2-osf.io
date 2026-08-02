@@ -186,7 +186,7 @@ class UserDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView, UserMixin):
     view_name = 'user-detail'
 
     serializer_class = UserDetailSerializer
-    parser_classes = (JSONAPIMultipleRelationshipsParser, JSONAPIMultipleRelationshipsParserForRegularJSON,)
+    parser_classes = (JSONAPIMultipleRelationshipsParser, JSONAPIMultipleRelationshipsParserForRegularJSON)
 
     def get_serializer_class(self):
         if self.request.auth:
@@ -337,7 +337,7 @@ class UserNodes(JSONAPIBaseView, generics.ListAPIView, UserMixin, UserNodesFilte
         return (
             self.get_queryset_from_request()
             .select_related('node_license')
-            .include('root__guids', limit_includes=10)
+            .prefetch_related('root__guids')
         )
 
 
@@ -353,7 +353,7 @@ class UserGroups(JSONAPIBaseView, generics.ListAPIView, UserMixin, ListFilterMix
     serializer_class = GroupSerializer
     view_category = 'users'
     view_name = 'user-groups'
-    ordering = ('-modified', )
+    ordering = ('-modified',)
 
     @require_flag(OSF_GROUPS)
     def get_default_queryset(self):
@@ -392,7 +392,7 @@ class UserQuickFiles(JSONAPIBaseView, generics.ListAPIView, WaterButlerMixin, Us
         self.kwargs[self.provider_lookup_url_kwarg] = 'osfstorage'
         files_list = self.fetch_from_waterbutler()
 
-        return files_list.children.prefetch_related('versions', 'tags').include('guids')
+        return files_list.children.prefetch_related('versions', 'tags', 'guids')
 
     # overrides ListAPIView
     def get_queryset(self):
@@ -449,7 +449,7 @@ class UserInstitutions(JSONAPIBaseView, generics.ListAPIView, UserMixin):
     view_category = 'users'
     view_name = 'user-institutions'
 
-    ordering = ('-pk', )
+    ordering = ('-pk',)
 
     def get_default_odm_query(self):
         return None
@@ -488,7 +488,10 @@ class UserRegistrations(JSONAPIBaseView, generics.ListAPIView, UserMixin, NodesF
 
     # overrides ListAPIView
     def get_queryset(self):
-        return self.get_queryset_from_request().select_related('node_license').include('contributor__user__guids', 'root__guids', limit_includes=10)
+        return self.get_queryset_from_request().select_related('node_license').prefetch_related(
+            'contributor_set__user__guids',
+            'root__guids',
+        )
 
 class UserDraftRegistrations(JSONAPIBaseView, generics.ListAPIView, UserMixin):
     permission_classes = (
@@ -524,7 +527,7 @@ class UserInstitutionsRelationship(JSONAPIBaseView, generics.RetrieveDestroyAPIV
     required_write_scopes = [CoreScopes.USERS_WRITE]
 
     serializer_class = UserInstitutionsRelationshipSerializer
-    parser_classes = (JSONAPIRelationshipParser, JSONAPIRelationshipParserForRegularJSON, )
+    parser_classes = (JSONAPIRelationshipParser, JSONAPIRelationshipParserForRegularJSON)
 
     view_category = 'users'
     view_name = 'user-institutions-relationship'
@@ -713,7 +716,7 @@ class UserSettings(JSONAPIBaseView, generics.RetrieveUpdateAPIView, UserMixin):
 
     required_read_scopes = [CoreScopes.USER_SETTINGS_READ]
     required_write_scopes = [CoreScopes.USER_SETTINGS_WRITE]
-    throttle_classes = (SendEmailDeactivationThrottle, )
+    throttle_classes = (SendEmailDeactivationThrottle,)
 
     view_category = 'users'
     view_name = 'user_settings'

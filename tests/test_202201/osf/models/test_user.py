@@ -2,9 +2,8 @@
 # Tests ported from tests/test_models.py and tests/test_user.py
 from __future__ import absolute_import
 
-import mock
+from unittest import mock
 import pytest
-from nose.tools import assert_equal
 from django.db import connection, transaction
 from django.test.utils import CaptureQueriesContext
 from osf.models import OSFUser
@@ -105,13 +104,13 @@ class TestPropertyIsFullAccountRequiredInfo(OsfTestCase):
 
     def test_is_full_account_required_info_miss_institution(self):
         user_auth = AuthUserFactory()
-        assert_equal(user_auth.is_full_account_required_info, True)
+        assert (user_auth.is_full_account_required_info) == (True)
 
     def test_is_full_account_required_info_miss_jobs(self):
         user_auth = AuthUserFactory()
         institution = InstitutionFactory()
         user_auth.affiliated_institutions.add(institution)
-        assert_equal(user_auth.is_full_account_required_info, False)
+        assert (user_auth.is_full_account_required_info) == (False)
 
     def test_is_full_account_required_info_has_jobs(self):
         name = 'name'
@@ -133,7 +132,7 @@ class TestPropertyIsFullAccountRequiredInfo(OsfTestCase):
         user = OSFUser.objects.filter(fullname=name).first()
         assert user
         assert user.jobs
-        assert_equal(user_auth.is_full_account_required_info, False)
+        assert (user_auth.is_full_account_required_info) == (False)
 
     @mock.patch('osf.models.user.OSFUser.ext', new_callable=mock.PropertyMock)
     def test_is_full_account_required_info_exception(self, mock_idp_attr):
@@ -160,4 +159,4 @@ class TestPropertyIsFullAccountRequiredInfo(OsfTestCase):
         }]
         user_auth.save()
         mock_idp_attr.side_effect = AttributeError('exception')
-        assert_equal(user_auth.is_full_account_required_info, True)
+        assert (user_auth.is_full_account_required_info) == (True)

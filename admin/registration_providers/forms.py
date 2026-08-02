@@ -1,7 +1,6 @@
-import bleach
-
 from django import forms
 
+from framework.utils import sanitize_html
 from osf.models import RegistrationProvider, Subject
 from admin.base.utils import (
     get_nodelicense_choices,
@@ -39,22 +38,22 @@ class RegistrationProviderForm(forms.ModelForm):
     def clean_description(self, *args, **kwargs):
         if not self.data.get('description'):
             return u''
-        return bleach.clean(
+        return sanitize_html(
             self.data.get('description'),
-            tags=['a', 'br', 'em', 'p', 'span', 'strong'],
+            tags={'a', 'br', 'em', 'p', 'span', 'strong'},
             attributes=['class', 'style', 'href', 'title', 'target'],
-            styles=['text-align', 'vertical-align'],
+            styles={'text-align', 'vertical-align'},
             strip=True
         )
 
     def clean_footer_links(self, *args, **kwargs):
         if not self.data.get('footer_links'):
             return u''
-        return bleach.clean(
+        return sanitize_html(
             self.data.get('footer_links'),
-            tags=['a', 'br', 'div', 'em', 'p', 'span', 'strong'],
+            tags={'a', 'br', 'div', 'em', 'p', 'span', 'strong'},
             attributes=['class', 'style', 'href', 'title', 'target'],
-            styles=['text-align', 'vertical-align'],
+            styles={'text-align', 'vertical-align'},
             strip=True
         )
 

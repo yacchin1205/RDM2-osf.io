@@ -1,6 +1,5 @@
 import pytest
 from django.test import RequestFactory
-from nose import tools as nt
 
 from addons.github.tests.factories import GitHubNodeSettingsFactory, GitHubAccountFactory
 from addons.s3.tests.factories import (S3NodeSettingsFactory, S3AccountFactory, )
@@ -67,9 +66,9 @@ class TestUserIdentificationListView(AdminTestCase):
         for i in range(len(results)):
             list_name.append(results[i]['fullname'])
 
-        nt.assert_equal(len(results), 2)
-        nt.assert_in(self.admin_user.fullname, list_name)
-        nt.assert_in(self.user.fullname, list_name)
+        assert (len(results)) == (2)
+        assert (self.admin_user.fullname) in (list_name)
+        assert (self.user.fullname) in (list_name)
 
     def test_get_userlist_user_is_admin(self):
         self.request.user = self.admin_user
@@ -77,32 +76,32 @@ class TestUserIdentificationListView(AdminTestCase):
         view = setup_view(view, self.request)
         results = view.get_user_list()
 
-        nt.assert_is_instance(results, list)
+        assert isinstance((results), (list))
 
     def test__permission_anonymous(self):
         self.request.user = self.anon
-        with nt.assert_raises(PermissionDenied):
+        with pytest.raises(PermissionDenied):
             views.UserIdentificationAdminListView.as_view()(self.request)
 
     def test__permission_normal_user(self):
         self.request.user = self.user
-        with nt.assert_raises(PermissionDenied):
+        with pytest.raises(PermissionDenied):
             views.UserIdentificationAdminListView.as_view()(self.request)
 
     def test__permission_superuser(self):
         self.request.user = self.superuser
-        with nt.assert_raises(PermissionDenied):
+        with pytest.raises(PermissionDenied):
             views.UserIdentificationAdminListView.as_view()(self.request)
 
     def test__permission_admin_with_institution(self):
         self.request.user = self.admin_user
         res = views.UserIdentificationAdminListView.as_view()(self.request)
-        nt.assert_equal(res.status_code, 200)
+        assert (res.status_code) == (200)
 
     def test__permission_admin_without_institution(self):
-        self.admin_user.affiliated_institutions = []
+        self.admin_user.affiliated_institutions.clear()
         self.request.user = self.admin_user
-        with nt.assert_raises(PermissionDenied):
+        with pytest.raises(PermissionDenied):
             views.UserIdentificationAdminListView.as_view()(self.request)
 
 class TestUserIdentificationDetailView(AdminTestCase):
@@ -146,37 +145,37 @@ class TestUserIdentificationDetailView(AdminTestCase):
         view = views.UserIdentificationDetailAdminView()
         view = setup_log_view(view, self.request, guid=self.admin_user._id)
         results = view.get_object()
-        nt.assert_is_instance(results, dict)
+        assert isinstance((results), (dict))
 
     def test__permission_anonymous(self):
         self.request.user = self.anon
-        with nt.assert_raises(PermissionDenied):
+        with pytest.raises(PermissionDenied):
             views.UserIdentificationDetailAdminView.as_view()(self.request, guid=self.user._id)
 
     def test__permission_normal_user(self):
         self.request.user = self.user
-        with nt.assert_raises(PermissionDenied):
+        with pytest.raises(PermissionDenied):
             views.UserIdentificationDetailAdminView.as_view()(self.request, guid=self.user._id)
 
     def test__permission_superuser(self):
         self.request.user = self.superuser
-        with nt.assert_raises(PermissionDenied):
+        with pytest.raises(PermissionDenied):
             views.UserIdentificationDetailAdminView.as_view()(self.request, guid=self.user._id)
 
     def test__permission_admin_with_institution(self):
         self.request.user = self.admin_user
         res = views.UserIdentificationDetailAdminView.as_view()(self.request, guid=self.admin_user._id)
-        nt.assert_equal(res.status_code, 200)
+        assert (res.status_code) == (200)
 
     def test__permission_admin_with_guid_not_same_institution(self):
         self.request.user = self.admin_user
-        with nt.assert_raises(PermissionDenied):
+        with pytest.raises(PermissionDenied):
             views.UserIdentificationDetailAdminView.as_view()(self.request, guid=self.user._id)
 
     def test__permission_admin_without_institution(self):
-        self.admin_user.affiliated_institutions = []
+        self.admin_user.affiliated_institutions.clear()
         self.request.user = self.admin_user
-        with nt.assert_raises(PermissionDenied):
+        with pytest.raises(PermissionDenied):
             views.UserIdentificationDetailAdminView.as_view()(self.request)
 
 class TestExportFileCSVAdminView(AdminTestCase):
@@ -222,27 +221,27 @@ class TestExportFileCSVAdminView(AdminTestCase):
 
     def test__permission_anonymous(self):
         self.request.user = self.anon
-        with nt.assert_raises(PermissionDenied):
+        with pytest.raises(PermissionDenied):
             views.ExportFileCSVAdminView.as_view()(self.request)
 
     def test__permission_normal_user(self):
         self.request.user = self.normal_user
-        with nt.assert_raises(PermissionDenied):
+        with pytest.raises(PermissionDenied):
             views.ExportFileCSVAdminView.as_view()(self.request)
 
     def test__permission_superuser(self):
         self.request.user = self.superuser
-        with nt.assert_raises(PermissionDenied):
+        with pytest.raises(PermissionDenied):
             views.ExportFileCSVAdminView.as_view()(self.request)
 
     def test__permission_admin_with_institution(self):
         self.admin_user.affiliated_institutions.add(InstitutionFactory())
         self.request.user = self.admin_user
         res = views.ExportFileCSVAdminView.as_view()(self.request)
-        nt.assert_equal(res.status_code, 200)
+        assert (res.status_code) == (200)
 
     def test__permission_admin_without_institution(self):
-        self.admin_user.affiliated_institutions = []
+        self.admin_user.affiliated_institutions.clear()
         self.request.user = self.admin_user
-        with nt.assert_raises(PermissionDenied):
+        with pytest.raises(PermissionDenied):
             views.ExportFileCSVAdminView.as_view()(self.request)

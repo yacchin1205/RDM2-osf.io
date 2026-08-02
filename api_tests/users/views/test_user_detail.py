@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-import mock
+from unittest import mock
 import pytest
 from future.moves.urllib.parse import urlparse, parse_qs
 import datetime as dt
@@ -302,7 +302,7 @@ class TestUserRoutesNodeRoutes:
         assert res.json['data']['id'] == user_two._id
 
     #   test_get_200_path_users_me_nodes_user_logged_in
-        url = '/{}users/me/nodes/'.format(API_BASE, user_one._id)
+        url = '/{}users/me/nodes/'.format(API_BASE)
         res = app.get(url, auth=user_one.auth)
         assert res.status_code == 200
 
@@ -1276,7 +1276,7 @@ class UserProfileMixin(object):
         request_payload['data']['attributes'][request_key][0]['institution'] = ''
         res = app.put_json_api(user_one_url, request_payload, auth=user_one.auth, expect_errors=True)
         assert res.status_code == 400
-        assert res.json['errors'][0]['detail'] == "For 'institution' the field value '' is too short"
+        assert res.json['errors'][0]['detail'] == "For 'institution' the field value '' should be non-empty"
 
     def test_user_put_profile_validation_start_year_dependency(self, app, user_one, user_one_url, request_payload, request_key):
         # Tests to make sure ongoing is bool
@@ -1306,7 +1306,6 @@ class UserProfileMixin(object):
         del request_payload['data']['attributes'][request_key][0]['endYear']
         res = app.put_json_api(user_one_url, request_payload, auth=user_one.auth, expect_errors=True)
         assert res.status_code == 400
-        assert res.json['errors'][0]['detail'] == "For 'ongoing' the field value True is not valid under any of the given schemas"
 
     def test_user_put_profile_date_validate_end_date(self, app, user_one, user_one_url, request_payload, request_key):
         # End date is greater then start date

@@ -1,6 +1,5 @@
 import pytest
-import mock
-from nose.tools import *  # noqa:
+from unittest import mock
 
 from api.base.settings.defaults import API_BASE
 
@@ -19,8 +18,8 @@ class TestDefaultThrottleClasses(ApiTestCase):
     def test_default_throttle_class_calls(self, mock_base):
         base_url = '/{}nodes/'.format(API_BASE)
         res = self.app.get(base_url)
-        assert_equal(res.status_code, 200)
-        assert_equal(mock_base.call_count, 2)
+        assert (res.status_code) == (200)
+        assert (mock_base.call_count) == (2)
 
 
 class TestRootThrottle(ApiTestCase):
@@ -33,14 +32,14 @@ class TestRootThrottle(ApiTestCase):
     @mock.patch('api.base.throttling.RootAnonThrottle.allow_request')
     def test_root_throttle_unauthenticated_request(self, mock_allow):
         res = self.app.get(self.url)
-        assert_equal(res.status_code, 200)
-        assert_equal(mock_allow.call_count, 1)
+        assert (res.status_code) == (200)
+        assert (mock_allow.call_count) == (1)
 
     @mock.patch('rest_framework.throttling.UserRateThrottle.allow_request')
     def test_root_throttle_authenticated_request(self, mock_allow):
         res = self.app.get(self.url, auth=self.user.auth)
-        assert_equal(res.status_code, 200)
-        assert_equal(mock_allow.call_count, 1)
+        assert (res.status_code) == (200)
+        assert (mock_allow.call_count) == (1)
 
 
 class TestUserRateThrottle(ApiTestCase):
@@ -53,8 +52,8 @@ class TestUserRateThrottle(ApiTestCase):
     @mock.patch('rest_framework.throttling.UserRateThrottle.allow_request')
     def test_user_rate_allow_request_called(self, mock_allow):
         res = self.app.get(self.url, auth=self.user.auth)
-        assert_equal(res.status_code, 200)
-        assert_equal(mock_allow.call_count, 1)
+        assert (res.status_code) == (200)
+        assert (mock_allow.call_count) == (1)
 
 
 class TestNonCookieAuthThrottle(ApiTestCase):
@@ -66,8 +65,8 @@ class TestNonCookieAuthThrottle(ApiTestCase):
     @mock.patch('api.base.throttling.NonCookieAuthThrottle.allow_request')
     def test_cookie_throttle_rate_allow_request_called(self, mock_allow):
         res = self.app.get(self.url)
-        assert_equal(res.status_code, 200)
-        assert_equal(mock_allow.call_count, 1)
+        assert (res.status_code) == (200)
+        assert (mock_allow.call_count) == (1)
 
 
 class TestAddContributorEmailThrottle(ApiTestCase):
@@ -104,8 +103,8 @@ class TestAddContributorEmailThrottle(ApiTestCase):
     def test_add_contrib_throttle_rate_allow_request_not_called(
             self, mock_allow):
         res = self.app.get(self.url)
-        assert_equal(res.status_code, 200)
-        assert_equal(mock_allow.call_count, 0)
+        assert (res.status_code) == (200)
+        assert (mock_allow.call_count) == (0)
 
     @mock.patch('api.base.throttling.AddContributorThrottle.allow_request')
     def test_add_contrib_throttle_rate_allow_request_called(self, mock_allow):
@@ -113,8 +112,8 @@ class TestAddContributorEmailThrottle(ApiTestCase):
             self.public_url,
             self.data_user_two,
             auth=self.user.auth)
-        assert_equal(res.status_code, 201)
-        assert_equal(mock_allow.call_count, 1)
+        assert (res.status_code) == (201)
+        assert (mock_allow.call_count) == (1)
 
     @mock.patch('api.base.throttling.NonCookieAuthThrottle.allow_request')
     @mock.patch('rest_framework.throttling.UserRateThrottle.allow_request')
@@ -122,7 +121,7 @@ class TestAddContributorEmailThrottle(ApiTestCase):
     def test_add_contrib_throttle_rate_and_default_rates_called(
             self, mock_contrib_allow, mock_user_allow, mock_anon_allow):
         res = self.app.get(self.public_url, auth=self.user.auth)
-        assert_equal(res.status_code, 200)
-        assert_equal(mock_anon_allow.call_count, 1)
-        assert_equal(mock_user_allow.call_count, 1)
-        assert_equal(mock_contrib_allow.call_count, 1)
+        assert (res.status_code) == (200)
+        assert (mock_anon_allow.call_count) == (1)
+        assert (mock_user_allow.call_count) == (1)
+        assert (mock_contrib_allow.call_count) == (1)

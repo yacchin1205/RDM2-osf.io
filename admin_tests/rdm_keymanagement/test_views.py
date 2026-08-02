@@ -1,4 +1,3 @@
-from nose import tools as nt
 
 from django.test import RequestFactory
 #from django.core.urlresolvers import reverse, reverse_lazy
@@ -36,16 +35,16 @@ class TestInstitutionList(AdminTestCase):
         self.request.user.is_superuser = True
         self.request.user.is_staff = True
         res = self.view.get(self.request, *args, **kwargs)
-        nt.assert_equal(res.status_code, 200)
-        nt.assert_is_instance(res.context_data['view'], views.InstitutionList)
+        assert (res.status_code) == (200)
+        assert isinstance((res.context_data['view']), (views.InstitutionList))
 
     def test_admin_get(self, *args, **kwargs):
         self.request.user.is_superuser = False
         self.request.user.is_staff = True
         self.user.affiliated_institutions.add(self.institutions[0])
         res = self.view.get(self.request, *args, **kwargs)
-        nt.assert_equal(res.status_code, 302)
-        nt.assert_in(self.redirect_url, str(res))
+        assert (res.status_code) == (302)
+        assert (self.redirect_url) in (str(res))
 
 
 class TestRemoveUserKeyList(AdminTestCase):
@@ -89,9 +88,9 @@ class TestRemoveUserKeyList(AdminTestCase):
     def test_get_context_data(self, **kwargs):
         self.view.object_list = self.view.get_queryset()
         res = self.view.get_context_data()
-        nt.assert_is_instance(res, dict)
-        nt.assert_equal(len(res['remove_key_users']), 2)
-        nt.assert_is_instance(res['view'], views.RemoveUserKeyList)
+        assert isinstance((res), (dict))
+        assert (len(res['remove_key_users'])) == (2)
+        assert isinstance((res['view']), (views.RemoveUserKeyList))
 
 
 class TestRemoveUserKey(AdminTestCase):
@@ -129,9 +128,9 @@ class TestRemoveUserKey(AdminTestCase):
 
     def test_get(self, *args, **kwargs):
         res = self.view.get(self.request, *args, **self.view.kwargs)
-        nt.assert_equal(res.status_code, 200)
+        assert (res.status_code) == (200)
 
         update_datas = RdmUserKey.objects.filter(guid=self.view.kwargs['user_id'])
         for update_data in update_datas:
-            nt.assert_equal(update_data.delete_flag, 1)
-        nt.assert_equal(update_datas.count(), 2)
+            assert (update_data.delete_flag) == (1)
+        assert (update_datas.count()) == (2)

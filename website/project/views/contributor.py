@@ -500,7 +500,7 @@ def send_claim_email(email, unclaimed_user, node, notify=True, throttle=24 * 360
             else:
                 logo = preprint_provider._id
         else:
-            mail_tpl = getattr(mails, 'INVITE_DEFAULT'.format(email_template.upper()))
+            mail_tpl = getattr(mails, 'INVITE_DEFAULT')
 
         to_addr = claimer_email
         unclaimed_record['claimer_email'] = claimer_email
@@ -587,13 +587,13 @@ def notify_added_contributor(node, contributor, auth=None, throttle=None, email_
             else:
                 logo = preprint_provider._id
         elif email_template == 'draft_registration':
-            email_template = getattr(mails, 'CONTRIBUTOR_ADDED_DRAFT_REGISTRATION'.format(email_template.upper()))
+            email_template = getattr(mails, 'CONTRIBUTOR_ADDED_DRAFT_REGISTRATION')
         elif email_template == 'access_request':
             mimetype = 'html'
-            email_template = getattr(mails, 'CONTRIBUTOR_ADDED_ACCESS_REQUEST'.format(email_template.upper()))
+            email_template = getattr(mails, 'CONTRIBUTOR_ADDED_ACCESS_REQUEST')
         elif node.has_linked_published_preprints:
             # Project holds supplemental materials for a published preprint
-            email_template = getattr(mails, 'CONTRIBUTOR_ADDED_PREPRINT_NODE_FROM_OSF'.format(email_template.upper()))
+            email_template = getattr(mails, 'CONTRIBUTOR_ADDED_PREPRINT_NODE_FROM_OSF')
             logo = settings.OSF_PREPRINTS_LOGO
         else:
             email_template = getattr(mails, 'CONTRIBUTOR_ADDED_DEFAULT')

@@ -4,8 +4,7 @@ from django.test import RequestFactory
 from django.utils import timezone
 from rest_framework import status as http_status
 import json
-import mock
-from nose import tools as nt
+from unittest import mock
 
 from addons.osfstorage.models import Region
 from admin.rdm_custom_storage_location import views
@@ -36,7 +35,6 @@ class TestConnection(AdminTestCase):
             json.dumps(params),
             content_type='application/json'
         )
-        request.is_ajax()
         request.user = self.user
         return views.TestConnectionView.as_view()(request, institution_id=self.institution_id)
 
@@ -45,8 +43,8 @@ class TestConnection(AdminTestCase):
             'no_pro': 'dropboxbusiness',
         })
 
-        nt.assert_equals(response.status_code, http_status.HTTP_400_BAD_REQUEST)
-        nt.assert_in('Provider is missing.', response.content.decode())
+        assert (response.status_code) == (http_status.HTTP_400_BAD_REQUEST)
+        assert ('Provider is missing.') in (response.content.decode())
 
     def test_no_token(self):
         response = self.view_post({
@@ -54,8 +52,8 @@ class TestConnection(AdminTestCase):
             'storage_name': 'storage_name',
         })
 
-        nt.assert_equals(response.status_code, http_status.HTTP_400_BAD_REQUEST)
-        nt.assert_in('No tokens.', response.content.decode())
+        assert (response.status_code) == (http_status.HTTP_400_BAD_REQUEST)
+        assert ('No tokens.') in (response.content.decode())
 
     @mock.patch('addons.dropboxbusiness.utils.TeamInfo')
     @mock.patch('addons.dropboxbusiness.utils.addon_option_to_token')
@@ -67,8 +65,8 @@ class TestConnection(AdminTestCase):
             'provider_short_name': 'dropboxbusiness',
         }
         request_post_response = self.view_post(params)
-        nt.assert_equals(request_post_response.status_code, http_status.HTTP_200_OK)
-        nt.assert_in('Credentials are valid', request_post_response.content.decode())
+        assert (request_post_response.status_code) == (http_status.HTTP_200_OK)
+        assert ('Credentials are valid') in (request_post_response.content.decode())
 
     @mock.patch('addons.dropboxbusiness.utils.TeamInfo')
     @mock.patch('addons.dropboxbusiness.utils.addon_option_to_token')
@@ -80,8 +78,8 @@ class TestConnection(AdminTestCase):
             'provider_short_name': 'dropboxbusiness',
         }
         request_post_response = self.view_post(params)
-        nt.assert_equals(request_post_response.status_code, http_status.HTTP_200_OK)
-        nt.assert_in('Credentials are valid', request_post_response.content.decode())
+        assert (request_post_response.status_code) == (http_status.HTTP_200_OK)
+        assert ('Credentials are valid') in (request_post_response.content.decode())
 
     @mock.patch('addons.dropboxbusiness.utils.TeamInfo')
     @mock.patch('addons.dropboxbusiness.utils.addon_option_to_token')
@@ -96,8 +94,8 @@ class TestConnection(AdminTestCase):
             'provider_short_name': 'dropboxbusiness',
         }
         request_post_response = self.view_post(params)
-        nt.assert_equals(request_post_response.status_code, http_status.HTTP_200_OK)
-        nt.assert_in('Credentials are valid', request_post_response.content.decode())
+        assert (request_post_response.status_code) == (http_status.HTTP_200_OK)
+        assert ('Credentials are valid') in (request_post_response.content.decode())
 
 
 class TestSaveCredentials(AdminTestCase):
@@ -129,7 +127,6 @@ class TestSaveCredentials(AdminTestCase):
             json.dumps(params),
             content_type='application/json'
         )
-        request.is_ajax()
         request.user = self.user
         return views.SaveCredentialsView.as_view()(request, institution_id=self.institution.id)
 
@@ -138,16 +135,16 @@ class TestSaveCredentials(AdminTestCase):
             'no_pro': 'dropboxbusiness',
         })
 
-        nt.assert_equals(response.status_code, http_status.HTTP_400_BAD_REQUEST)
-        nt.assert_in('Provider is missing.', response.content.decode())
+        assert (response.status_code) == (http_status.HTTP_400_BAD_REQUEST)
+        assert ('Provider is missing.') in (response.content.decode())
 
     def test_storage_name_missing(self):
         response = self.view_post({
             'provider_short_name': 'dropboxbusiness',
         })
 
-        nt.assert_equals(response.status_code, http_status.HTTP_400_BAD_REQUEST)
-        nt.assert_in('Storage name is missing.', response.content.decode())
+        assert (response.status_code) == (http_status.HTTP_400_BAD_REQUEST)
+        assert ('Storage name is missing.') in (response.content.decode())
 
     @mock.patch('addons.dropboxbusiness.utils.TeamInfo')
     @mock.patch('addons.dropboxbusiness.utils.addon_option_to_token')
@@ -173,24 +170,24 @@ class TestSaveCredentials(AdminTestCase):
             'provider_short_name': 'dropboxbusiness',
             'storage_name': 'storage_name',
         })
-        nt.assert_equals(response.status_code, http_status.HTTP_200_OK)
-        nt.assert_in('Dropbox Business was set successfully', response.content.decode())
+        assert (response.status_code) == (http_status.HTTP_200_OK)
+        assert ('Dropbox Business was set successfully') in (response.content.decode())
 
         external_account = ExternalAccount.objects.get(
             provider=self.seed_data['provider_name'], provider_id=self.seed_data['provider_id'])
-        nt.assert_equals(external_account.oauth_key, self.seed_data['oauth_key'])
-        nt.assert_equals(external_account.oauth_secret, self.seed_data['oauth_secret'])
+        assert (external_account.oauth_key) == (self.seed_data['oauth_key'])
+        assert (external_account.oauth_secret) == (self.seed_data['oauth_secret'])
 
         institution_storage = Region.objects.filter(_id=self.institution._id).first()
-        nt.assert_is_not_none(institution_storage)
-        nt.assert_equals(institution_storage.name, 'storage_name')
+        assert (institution_storage) is not None
+        assert (institution_storage.name) == ('storage_name')
 
         wb_credentials = institution_storage.waterbutler_credentials
-        nt.assert_equals(wb_credentials['storage'], {})
+        assert (wb_credentials['storage']) == ({})
 
         wb_settings = institution_storage.waterbutler_settings
-        nt.assert_equals(wb_settings['storage']['provider'], 'dropboxbusiness')
-        nt.assert_equals(wb_settings['disabled'], True)
+        assert (wb_settings['storage']['provider']) == ('dropboxbusiness')
+        assert (wb_settings['disabled']) == (True)
 
     @mock.patch('addons.dropboxbusiness.utils.TeamInfo')
     @mock.patch('addons.dropboxbusiness.utils.addon_option_to_token')
@@ -219,24 +216,24 @@ class TestSaveCredentials(AdminTestCase):
             'provider_short_name': 'dropboxbusiness',
             'storage_name': 'storage_name',
         })
-        nt.assert_equals(response.status_code, http_status.HTTP_200_OK)
-        nt.assert_in('Dropbox Business was set successfully', response.content.decode())
+        assert (response.status_code) == (http_status.HTTP_200_OK)
+        assert ('Dropbox Business was set successfully') in (response.content.decode())
 
         external_account = ExternalAccount.objects.get(
             provider=self.seed_data['provider_name'], provider_id=self.seed_data['provider_id'])
-        nt.assert_equals(external_account.oauth_key, self.seed_data['oauth_key'])
-        nt.assert_equals(external_account.oauth_secret, self.seed_data['oauth_secret'])
+        assert (external_account.oauth_key) == (self.seed_data['oauth_key'])
+        assert (external_account.oauth_secret) == (self.seed_data['oauth_secret'])
 
         institution_storage = Region.objects.filter(_id=self.institution._id).first()
-        nt.assert_is_not_none(institution_storage)
-        nt.assert_equals(institution_storage.name, 'storage_name')
+        assert (institution_storage) is not None
+        assert (institution_storage.name) == ('storage_name')
 
         wb_credentials = institution_storage.waterbutler_credentials
-        nt.assert_equals(wb_credentials['storage'], {})
+        assert (wb_credentials['storage']) == ({})
 
         wb_settings = institution_storage.waterbutler_settings
-        nt.assert_equals(wb_settings['storage']['provider'], 'dropboxbusiness')
-        nt.assert_equals(wb_settings['disabled'], True)
+        assert (wb_settings['storage']['provider']) == ('dropboxbusiness')
+        assert (wb_settings['disabled']) == (True)
 
     # Connection tests
     def test_no_token(self):
@@ -245,8 +242,8 @@ class TestSaveCredentials(AdminTestCase):
             'storage_name': 'storage_name',
         })
 
-        nt.assert_equals(response.status_code, http_status.HTTP_400_BAD_REQUEST)
-        nt.assert_in('No tokens.', response.content.decode())
+        assert (response.status_code) == (http_status.HTTP_400_BAD_REQUEST)
+        assert ('No tokens.') in (response.content.decode())
 
     @mock.patch('addons.dropboxbusiness.utils.TeamInfo')
     @mock.patch('addons.dropboxbusiness.utils.addon_option_to_token')
@@ -273,8 +270,8 @@ class TestSaveCredentials(AdminTestCase):
         })
 
         logging.info(f'response: {response.content}')
-        nt.assert_equals(response.status_code, http_status.HTTP_200_OK)
-        nt.assert_in('Dropbox Business was set successfully', response.content.decode())
+        assert (response.status_code) == (http_status.HTTP_200_OK)
+        assert ('Dropbox Business was set successfully') in (response.content.decode())
 
     def test_no_token_superuser(self):
         self.user.affiliated_institutions.clear()
@@ -285,8 +282,8 @@ class TestSaveCredentials(AdminTestCase):
             'storage_name': 'storage_name',
         })
 
-        nt.assert_equals(response.status_code, http_status.HTTP_400_BAD_REQUEST)
-        nt.assert_in('No tokens.', response.content.decode())
+        assert (response.status_code) == (http_status.HTTP_400_BAD_REQUEST)
+        assert ('No tokens.') in (response.content.decode())
 
     @mock.patch('addons.dropboxbusiness.utils.TeamInfo')
     @mock.patch('addons.dropboxbusiness.utils.addon_option_to_token')
@@ -315,5 +312,5 @@ class TestSaveCredentials(AdminTestCase):
             'storage_name': 'storage_name',
         })
 
-        nt.assert_equals(response.status_code, http_status.HTTP_200_OK)
-        nt.assert_in('Dropbox Business was set successfully', response.content.decode())
+        assert (response.status_code) == (http_status.HTTP_200_OK)
+        assert ('Dropbox Business was set successfully') in (response.content.decode())

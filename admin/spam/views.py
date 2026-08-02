@@ -47,7 +47,7 @@ class SpamList(PermissionRequiredMixin, ListView):
     def get_queryset(self):
         return Comment.objects.filter(
             spam_status=int(self.request.GET.get('status', '1'))
-        ).exclude(reports={}).exclude(reports=None)
+        ).exclude(reports={}).exclude(reports=None).order_by(self.ordering)
 
     def get_context_data(self, **kwargs):
         queryset = kwargs.pop('object_list', self.object_list)

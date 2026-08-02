@@ -1,8 +1,7 @@
 import datetime
 
-import mock
+from unittest import mock
 import pytest
-import pytz
 import responses
 
 from django.utils import timezone
@@ -25,7 +24,6 @@ from osf.utils.permissions import READ, WRITE, ADMIN, DEFAULT_CONTRIBUTOR_PERMIS
 # RCOS
 from osf.models.node import set_project_storage_type
 from osf.models.project_storage_type import ProjectStorageType
-from nose.tools import assert_not_in
 from addons.osfstorage.models import NodeSettings
 from api_tests.utils import disconnected_from_listeners
 
@@ -703,7 +701,7 @@ class TestProject:
                     for addon in node.addons
                     if addon.config.short_name == addon_config.short_name
                 ])
-        mock_now = datetime.datetime(2017, 3, 16, 11, 00, tzinfo=pytz.utc)
+        mock_now = datetime.datetime(2017, 3, 16, 11, 00, tzinfo=datetime.UTC)
         with mock.patch.object(timezone, 'now', return_value=mock_now):
             deleted_node = NodeFactory(is_deleted=True)
         assert deleted_node.is_deleted
@@ -802,7 +800,7 @@ class TestLogging:
         last_log = node.logs.latest()
         assert last_log.action == NodeLog.EMBARGO_INITIATED
         # date is tzaware
-        assert last_log.date.tzinfo == pytz.utc
+        assert last_log.date.tzinfo == datetime.UTC
 
         # updates node.modified
         assert_datetime_equal(node.modified, last_log.date)
@@ -1350,10 +1348,7 @@ class TestContributorMethods:
 
         assert isinstance(user, Contributor) is False
 
-        assert_not_in(
-            project._primary_key,
-            user.unclaimed_records.keys()
-        )
+        assert (project._primary_key) not in (user.unclaimed_records.keys())
 
     def test_cancel_invite_get_identifier_value(self, node, auth):
         # A user is added as a contributor
@@ -3097,7 +3092,7 @@ class TestPointerMethods:
         assert (
             node.logs.latest().action == NodeLog.POINTER_REMOVED
         )
-        assert(
+        assert (
             node.logs.latest().params == {
                 'parent_node': node.parent_id,
                 'node': node._primary_key,
@@ -3138,10 +3133,10 @@ class TestPointerMethods:
         assert forked.is_fork is True
         assert forked.forked_from == content
         assert forked.primary is True
-        assert(
+        assert (
             node.logs.latest().action == NodeLog.POINTER_FORKED
         )
-        assert(
+        assert (
             node.logs.latest().params == {
                 'parent_node': node.parent_id,
                 'node': node._primary_key,
@@ -3199,21 +3194,21 @@ class TestForkNode:
         assert fork.forked_date != original.created
 
         # Test that pointers were copied correctly
-        assert(
+        assert (
             list(original.nodes_pointer.all()) == list(fork.nodes_pointer.all())
         )
 
         # Test that subjects were copied correctly
-        assert(
+        assert (
             list(original.subjects.all()) == list(fork.subjects.all())
         )
 
         # Test that add-ons were copied correctly
-        assert(
+        assert (
             original.get_addon_names() ==
             fork.get_addon_names()
         )
-        assert(
+        assert (
             [addon.config.short_name for addon in original.get_addons()] ==
             [addon.config.short_name for addon in fork.get_addons()]
         )
@@ -3595,7 +3590,7 @@ class TestHasPermissionOnChildren:
         sub_component.save()
         NodeFactory(parent=node)  # another subcomponent
 
-        assert(
+        assert (
             node.has_permission_on_children(non_admin_user, permissions.READ)
         ) is True
 
@@ -3612,7 +3607,7 @@ class TestHasPermissionOnChildren:
         sub_component.save()
         NodeFactory(parent=node)
 
-        assert(
+        assert (
             node.has_permission_on_children(non_admin_user, permissions.READ)
         ) is False
 
@@ -3635,7 +3630,7 @@ class TestHasPermissionOnChildren:
         parent.save()
         node = NodeFactory(parent=parent, category='project')
 
-        assert(
+        assert (
             node.has_permission_on_children(non_admin_user, permissions.READ)
         ) is False
 
@@ -4328,7 +4323,7 @@ class TestNodeLog:
         assert bool(log.action)
 
     def test_tz_date(self, log):
-        assert log.date.tzinfo == pytz.UTC
+        assert log.date.tzinfo == datetime.UTC
 
     def test_original_node_and_current_node_for_registration_logs(self):
         user = UserFactory()

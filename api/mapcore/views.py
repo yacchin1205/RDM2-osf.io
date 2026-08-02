@@ -24,7 +24,7 @@ class MapCoreGroupList(JSONAPIBaseView, generics.ListAPIView):
     view_category = 'mapcore_groups'
     view_name = 'mapcore-group-list'
 
-    ordering = ('_id', )  # default ordering
+    ordering = ('_id',)  # default ordering
     pagination_class = MapCoreGroupPagination
 
     def get_queryset(self):

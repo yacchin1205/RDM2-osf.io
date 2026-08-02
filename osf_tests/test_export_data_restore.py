@@ -1,13 +1,12 @@
 import copy
 from datetime import datetime
 
-import mock
+from unittest import mock
 import pytest
 import requests
 from addons.osfstorage.tests.factories import FileVersionFactory
 from django.test import TestCase
-from mock import patch
-from nose import tools as nt
+from unittest.mock import patch
 from rest_framework import status
 
 from addons.osfstorage.models import Region
@@ -113,38 +112,38 @@ class TestExportDataRestore(TestCase):
         }
 
     def test_init(self):
-        nt.assert_is_not_none(self.data_restore)
-        nt.assert_equal(self.data_restore.status, ExportData.STATUS_COMPLETED)
+        assert (self.data_restore) is not None
+        assert (self.data_restore.status) == (ExportData.STATUS_COMPLETED)
 
     def test_repr(self):
         test_repr = f'"({self.data_restore.export}-{self.data_restore.destination})[{self.data_restore.status}]"'
-        nt.assert_equal(repr(self.data_restore), test_repr)
+        assert (repr(self.data_restore)) == (test_repr)
 
     def test_str(self):
         test_str = f'"({self.data_restore.export}-{self.data_restore.destination})[{self.data_restore.status}]"'
-        nt.assert_equal(str(self.data_restore), test_str)
+        assert (str(self.data_restore)) == (test_str)
 
     def test_extract_file_information_json_from_destination_storage__00_not_institution(self):
         export_data_restore = ExportDataRestoreBulkMountFactory.build()
         result = export_data_restore.extract_file_information_json_from_destination_storage()
-        nt.assert_is_none(result)
+        assert (result) is None
 
     def test_extract_file_information_json_from_destination_storage__01_normal(self):
         test_file_info_json = copy.deepcopy(self.file_info_json)
 
         result = self.data_restore.extract_file_information_json_from_destination_storage()
 
-        nt.assert_is_instance(result, tuple)
+        assert isinstance((result), (tuple))
         export_data_json, file_info_json = result
         file_info_first_file = file_info_json.get('files', [{}])[0]
         test_file_info_file = test_file_info_json.get('files', [{}])[0]
 
-        nt.assert_equal(export_data_json, self.export_data_json)
-        nt.assert_equal(file_info_json.get('institution'), test_file_info_json.get('institution'))
-        nt.assert_equal(file_info_first_file.get('tags'), test_file_info_file.get('tags'))
-        nt.assert_equal(file_info_first_file.get('version'), test_file_info_file.get('version'))
-        nt.assert_equal(file_info_first_file.get('location'), test_file_info_file.get('location'))
-        nt.assert_equal(file_info_first_file.get('timestamp'), test_file_info_file.get('timestamp'))
+        assert (export_data_json) == (self.export_data_json)
+        assert (file_info_json.get('institution')) == (test_file_info_json.get('institution'))
+        assert (file_info_first_file.get('tags')) == (test_file_info_file.get('tags'))
+        assert (file_info_first_file.get('version')) == (test_file_info_file.get('version'))
+        assert (file_info_first_file.get('location')) == (test_file_info_file.get('location'))
+        assert (file_info_first_file.get('timestamp')) == (test_file_info_file.get('timestamp'))
 
     def test_extract_file_information_json_from_destination_storage__02_with_tags(self):
         # Add tags to file info JSON and test DB
@@ -156,18 +155,18 @@ class TestExportDataRestore(TestCase):
 
         result = self.data_restore.extract_file_information_json_from_destination_storage()
 
-        nt.assert_is_instance(result, tuple)
+        assert isinstance((result), (tuple))
         export_data_json, file_info_json = result
 
         file_info_first_file = file_info_json.get('files', [{}])[0]
         test_file_info_file = test_file_info_json.get('files', [{}])[0]
 
-        nt.assert_equal(export_data_json, self.export_data_json)
-        nt.assert_equal(file_info_json.get('institution'), test_file_info_json.get('institution'))
-        nt.assert_equal(file_info_first_file.get('tags'), test_file_info_file.get('tags'))
-        nt.assert_equal(file_info_first_file.get('version'), test_file_info_file.get('version'))
-        nt.assert_equal(file_info_first_file.get('location'), test_file_info_file.get('location'))
-        nt.assert_equal(file_info_first_file.get('timestamp'), test_file_info_file.get('timestamp'))
+        assert (export_data_json) == (self.export_data_json)
+        assert (file_info_json.get('institution')) == (test_file_info_json.get('institution'))
+        assert (file_info_first_file.get('tags')) == (test_file_info_file.get('tags'))
+        assert (file_info_first_file.get('version')) == (test_file_info_file.get('version'))
+        assert (file_info_first_file.get('location')) == (test_file_info_file.get('location'))
+        assert (file_info_first_file.get('timestamp')) == (test_file_info_file.get('timestamp'))
 
     def test_extract_file_information_json_from_destination_storage__03_with_timestamp(self):
         # Add timestamp to file info JSON and test DB
@@ -190,18 +189,18 @@ class TestExportDataRestore(TestCase):
 
         result = self.data_restore.extract_file_information_json_from_destination_storage()
 
-        nt.assert_is_instance(result, tuple)
+        assert isinstance((result), (tuple))
         export_data_json, file_info_json = result
 
         file_info_first_file = file_info_json.get('files', [{}])[0]
         test_file_info_file = test_file_info_json.get('files', [{}])[0]
 
-        nt.assert_equal(export_data_json, self.export_data_json)
-        nt.assert_equal(file_info_json.get('institution'), test_file_info_json.get('institution'))
-        nt.assert_equal(file_info_first_file.get('tags'), test_file_info_file.get('tags'))
-        nt.assert_equal(file_info_first_file.get('version'), test_file_info_file.get('version'))
-        nt.assert_equal(file_info_first_file.get('location'), test_file_info_file.get('location'))
-        nt.assert_equal(file_info_first_file.get('timestamp'), test_file_info_file.get('timestamp'))
+        assert (export_data_json) == (self.export_data_json)
+        assert (file_info_json.get('institution')) == (test_file_info_json.get('institution'))
+        assert (file_info_first_file.get('tags')) == (test_file_info_file.get('tags'))
+        assert (file_info_first_file.get('version')) == (test_file_info_file.get('version'))
+        assert (file_info_first_file.get('location')) == (test_file_info_file.get('location'))
+        assert (file_info_first_file.get('timestamp')) == (test_file_info_file.get('timestamp'))
 
     def test_extract_file_information_json_from_sourFce_storage__04_abnormal_file_data(self):
         test_file_info_json = copy.deepcopy(self.file_info_json)
@@ -215,14 +214,14 @@ class TestExportDataRestore(TestCase):
 
         result = self.data_restore.extract_file_information_json_from_destination_storage()
 
-        nt.assert_is_instance(result, tuple)
+        assert isinstance((result), (tuple))
         export_data_json, file_info_json = result
 
         file_info_files = file_info_json.get('files',)
 
-        nt.assert_equal(export_data_json, test_export_data_json)
-        nt.assert_equal(file_info_json.get('institution'), test_file_info_json.get('institution'))
-        nt.assert_equal(file_info_files, [])
+        assert (export_data_json) == (test_export_data_json)
+        assert (file_info_json.get('institution')) == (test_file_info_json.get('institution'))
+        assert (file_info_files) == ([])
 
         self.file1.deleted = None
         self.file1.deleted_on = datetime.now()
@@ -231,14 +230,14 @@ class TestExportDataRestore(TestCase):
 
         result = self.data_restore.extract_file_information_json_from_destination_storage()
 
-        nt.assert_is_instance(result, tuple)
+        assert isinstance((result), (tuple))
         export_data_json, file_info_json = result
 
         file_info_files = file_info_json.get('files',)
 
-        nt.assert_equal(export_data_json, test_export_data_json)
-        nt.assert_equal(file_info_json.get('institution'), test_file_info_json.get('institution'))
-        nt.assert_equal(file_info_files, [])
+        assert (export_data_json) == (test_export_data_json)
+        assert (file_info_json.get('institution')) == (test_file_info_json.get('institution'))
+        assert (file_info_files) == ([])
 
         self.file1.deleted = None
         self.file1.deleted_on = None
@@ -247,14 +246,14 @@ class TestExportDataRestore(TestCase):
 
         result = self.data_restore.extract_file_information_json_from_destination_storage()
 
-        nt.assert_is_instance(result, tuple)
+        assert isinstance((result), (tuple))
         export_data_json, file_info_json = result
 
         file_info_files = file_info_json.get('files',)
 
-        nt.assert_equal(export_data_json, test_export_data_json)
-        nt.assert_equal(file_info_json.get('institution'), test_file_info_json.get('institution'))
-        nt.assert_equal(file_info_files, [])
+        assert (export_data_json) == (test_export_data_json)
+        assert (file_info_json.get('institution')) == (test_file_info_json.get('institution'))
+        assert (file_info_files) == ([])
 
         self.file1.deleted = None
         self.file1.deleted_on = None
@@ -262,25 +261,24 @@ class TestExportDataRestore(TestCase):
         self.file1.save()
 
     def test_process_start_timestamp(self):
-        nt.assert_equal(self.data_restore.process_start_timestamp, self.data_restore.process_start.strftime('%s'))
+        assert (self.data_restore.process_start_timestamp) == (self.data_restore.process_start.strftime('%s'))
 
     def test_process_start_display(self):
-        nt.assert_equal(self.data_restore.process_start_display,
-                        self.data_restore.process_start.strftime('%Y%m%dT%H%M%S'))
+        assert (self.data_restore.process_start_display) == (self.data_restore.process_start.strftime('%Y%m%dT%H%M%S'))
 
-    @patch(f'requests.put')
+    @patch('requests.put')
     def test_transfer_export_data_file_to_destination(self, mock_request):
         test_response = requests.Response()
         test_response.status_code = status.HTTP_200_OK
         mock_request.return_value = test_response
         response = self.data_restore.transfer_export_data_file_to_destination(None, 'test1', 'osfstorage', '/',
                                                                               'file1.txt', {})
-        nt.assert_equal(response, test_response)
+        assert (response) == (test_response)
 
     def test_update(self):
         current_datetime = datetime.now()
         self.data_restore.update(process_end=current_datetime)
-        nt.assert_equal(self.data_restore.process_end, current_datetime)
+        assert (self.data_restore.process_end) == (current_datetime)
 
 
 @pytest.mark.django_db
@@ -329,7 +327,7 @@ class TestExportDataRestoreInstitutionAddon(TestCase):
 
         with mock.patch('osf.models.export_data_restore.requests', mock_request):
             result = self.data_restore.extract_file_information_json_from_destination_storage()
-            nt.assert_is_not_none(result)
+            assert (result) is not None
 
     def test_extract_file_information_json_from_destination_institutional_onedrivebusiness(self):
         mock_request = mock.MagicMock()
@@ -342,7 +340,7 @@ class TestExportDataRestoreInstitutionAddon(TestCase):
 
         with mock.patch('osf.models.export_data_restore.requests', mock_request):
             result = self.data_restore.extract_file_information_json_from_destination_storage()
-            nt.assert_is_not_none(result)
+            assert (result) is not None
 
     def test_extract_file_information_json_from_destination_institutional_addon_storage_get_file_version_error(self):
         mock_request = mock.MagicMock()
@@ -352,4 +350,4 @@ class TestExportDataRestoreInstitutionAddon(TestCase):
 
         with mock.patch('osf.models.export_data_restore.requests', mock_request):
             result = self.data_restore.extract_file_information_json_from_destination_storage()
-            nt.assert_is_not_none(result)
+            assert (result) is not None

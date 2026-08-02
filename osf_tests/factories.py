@@ -2,10 +2,11 @@
 import time
 
 import datetime
-import mock
+from random import randint
+from unittest import mock
 from factory import SubFactory
 from factory.fuzzy import FuzzyDateTime, FuzzyAttribute, FuzzyChoice
-from mock import patch, Mock
+from unittest.mock import patch, Mock
 
 import factory
 import pytz
@@ -15,7 +16,7 @@ from django.apps import apps
 from django.utils import timezone
 from django.contrib.contenttypes.models import ContentType
 from django.db.utils import IntegrityError
-from faker import Factory
+from faker import Factory, Faker
 from waffle.models import Flag, Sample, Switch
 
 from website.notifications.constants import NOTIFICATION_TYPES
@@ -34,9 +35,10 @@ from addons.osfstorage.models import OsfStorageFile, Region
 
 settings = apps.get_app_config('addons_osfstorage')
 fake = Factory.create()
+faker = Faker()
 
 # If tests are run on really old processors without high precision this might fail. Unlikely to occur.
-fake_email = lambda: '{}+{}@{}'.format(FAKE_EMAIL_NAME, int(time.clock() * 1000000), FAKE_EMAIL_DOMAIN)
+fake_email = lambda: '{}+{}@{}'.format(FAKE_EMAIL_NAME, int(time.time() * 1000000), FAKE_EMAIL_DOMAIN)
 
 # Do this out of a cls context to avoid setting "t" as a local
 PROVIDER_ASSET_NAME_CHOICES = tuple([t[0] for t in PROVIDER_ASSET_NAME_CHOICES])
@@ -56,8 +58,7 @@ class UserFactory(DjangoModelFactory):
     fullname = factory.Sequence(lambda n: 'Freddie Mercury{0}'.format(n))
 
     username = factory.LazyFunction(fake_email)
-    password = factory.PostGenerationMethodCall('set_password',
-                                                'queenfan86')
+    password = factory.PostGenerationMethodCall('set_password', 'queenfan86', notify=False)
     is_registered = True
     date_confirmed = factory.Faker('date_time_this_decade', tzinfo=pytz.utc)
     merged_by = None
@@ -70,10 +71,8 @@ class UserFactory(DjangoModelFactory):
     def _build(cls, target_class, *args, **kwargs):
         emails = kwargs.pop('emails', [])
         instance = super(DjangoModelFactory, cls)._build(target_class, *args, **kwargs)
-        if emails:
-            # Save for M2M population
-            instance.set_unusable_password()
-            instance.save()
+        instance.set_unusable_password()
+        instance.save()
         for email in emails:
             instance.emails.create(address=email)
         return instance
@@ -82,10 +81,8 @@ class UserFactory(DjangoModelFactory):
     def _create(cls, target_class, *args, **kwargs):
         emails = kwargs.pop('emails', [])
         instance = super(DjangoModelFactory, cls)._create(target_class, *args, **kwargs)
-        if emails and not instance.pk:
-            # Save for M2M population
-            instance.set_unusable_password()
-            instance.save()
+        instance.set_unusable_password()
+        instance.save()
         for email in emails:
             instance.emails.create(address=email)
         return instance
@@ -1120,19 +1117,19 @@ class ChronosJournalFactory(DjangoModelFactory):
     class Meta:
         model = models.ChronosJournal
 
-    name = factory.Faker('text')
-    title = factory.Faker('text')
+    name = factory.Faker('company')
+    title = factory.Faker('sentence')
     journal_id = factory.Faker('ean')
 
     @classmethod
     def _create(cls, target_class, *args, **kwargs):
         kwargs['raw_response'] = kwargs.get('raw_response', {
-            'TITLE': kwargs.get('title', factory.Faker('text').generate([])),
-            'JOURNAL_ID': kwargs.get('title', factory.Faker('ean').generate([])),
-            'NAME': kwargs.get('name', factory.Faker('text').generate([])),
-            'JOURNAL_URL': factory.Faker('url').generate([]),
-            'PUBLISHER_ID': factory.Faker('ean').generate([]),
-            'PUBLISHER_NAME': factory.Faker('name').generate([])
+            'TITLE': kwargs.get('title', faker.sentence()),
+            'JOURNAL_ID': kwargs.get('title', faker.ean()),
+            'NAME': kwargs.get('name', faker.company()),
+            'JOURNAL_URL': faker.url(),
+            'PUBLISHER_ID': faker.ean(),
+            'PUBLISHER_NAME': faker.name()
             # Other stuff too probably
         })
         instance = super(ChronosJournalFactory, cls)._create(target_class, *args, **kwargs)
@@ -1154,9 +1151,9 @@ class ChronosSubmissionFactory(DjangoModelFactory):
     @classmethod
     def _create(cls, target_class, *args, **kwargs):
         kwargs['raw_response'] = kwargs.get('raw_response', {
-            'PUBLICATION_ID': kwargs.get('publication_id', factory.Faker('ean').generate([])),
-            'STATUS_CODE': kwargs.get('status', factory.Faker('random_int', min=1, max=5).generate([])),
-            'CHRONOS_SUBMISSION_URL': kwargs.get('submission_url', factory.Faker('url').generate([])),
+            'PUBLICATION_ID': kwargs.get('publication_id', faker.ean()),
+            'STATUS_CODE': kwargs.get('status', randint(1, 5)),
+            'CHRONOS_SUBMISSION_URL': kwargs.get('submission_url', faker.url()),
             # Other stuff too probably
         })
         instance = super(ChronosSubmissionFactory, cls)._create(target_class, *args, **kwargs)

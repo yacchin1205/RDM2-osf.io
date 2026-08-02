@@ -1,5 +1,4 @@
-import mock
-from nose.tools import *  # noqa
+from unittest import mock
 import pytest
 import unittest
 
@@ -32,4 +31,4 @@ class TestNodeSettings(unittest.TestCase):
     def test_set_office_server(self):
         self.node_settings.set_office_server('TEST_PARAM_1')
         self.node_settings.save()
-        assert_equal(self.node_settings.get_office_server(), 'TEST_PARAM_1')
+        assert (self.node_settings.get_office_server()) == ('TEST_PARAM_1')

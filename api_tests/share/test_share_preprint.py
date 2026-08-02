@@ -1,5 +1,5 @@
 import json
-import mock
+from unittest import mock
 import pytest
 import responses
 
@@ -136,6 +136,7 @@ class TestPreprintShare:
         preprint.remove_contributor(contributor=user2, auth=auth)
         assert mock_on_preprint_updated.call_count == 13
 
+    @pytest.mark.skip('Synchronous retries not supported if celery >=5.0')
     def test_call_async_update_on_500_failure(self, mock_share, preprint):
         mock_share.replace(responses.POST, f'{settings.SHARE_URL}api/v2/normalizeddata/', status=500)
 

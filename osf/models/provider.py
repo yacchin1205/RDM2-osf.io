@@ -176,7 +176,7 @@ class CollectionProvider(AbstractProvider):
     class Meta:
         permissions = (
             # custom permissions for use in the OSF Admin App
-            ('view_collectionprovider', 'Can view collection provider details'),
+            # 'view_collectionprovider' is a built-in Django permission.
         )
 
     @property
@@ -201,7 +201,7 @@ class RegistrationProvider(AbstractProvider):
     class Meta:
         permissions = (
             # custom permissions for use in the OSF Admin App
-            ('view_registrationprovider', 'Can view registration provider details'),
+            # 'view_registrationprovider' is a built-in Django permission.
         )
 
     @property
@@ -236,8 +236,8 @@ class PreprintProvider(AbstractProvider):
     REVIEWABLE_RELATION_NAME = 'preprints'
 
     additional_providers = fields.ArrayField(models.CharField(max_length=200), default=list, blank=True)
-    doi_prefix = models.CharField(blank=True, max_length=32)
-    in_sloan_study = models.NullBooleanField(default=True)
+    doi_prefix = models.CharField(blank=True, null=True, max_length=32)
+    in_sloan_study = models.BooleanField(null=True, blank=True, default=True)
 
     PREPRINT_WORD_CHOICES = (
         ('preprint', 'Preprint'),
@@ -252,7 +252,7 @@ class PreprintProvider(AbstractProvider):
     class Meta:
         permissions = (
             # custom permissions for use in the OSF Admin App
-            ('view_preprintprovider', 'Can view preprint provider details'),
+            # 'view_preprintprovider' is a built-in Django permission.
         )
 
     @property

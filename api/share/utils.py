@@ -49,7 +49,7 @@ def format_user(user):
             'given_name': user.given_name,
             'family_name': user.family_name,
             'additional_name': user.middle_names,
-        }
+        },
     )
 
     person.attrs['identifiers'] = [GraphNode('agentidentifier', agent=person, uri='mailto:{}'.format(uri)) for uri in user.emails.values_list('address', flat=True)]
@@ -159,7 +159,7 @@ def format_preprint(preprint, old_subjects=None):
             ),
             'date_updated': preprint.modified.isoformat(),
             'date_published': preprint.date_published.isoformat() if preprint.date_published else None,
-        }
+        },
     )
     to_visit = [
         preprint_graph,
@@ -244,7 +244,7 @@ def format_registration(registration, *args, **kwargs):
             'registration_type': registration.registered_schema.first().name if registration.registered_schema else None,
             'withdrawn': registration.is_retracted,
             'justification': registration.retraction.justification if registration.retraction else None,
-        }
+        },
     )
 
     to_visit = [
@@ -302,7 +302,7 @@ def send_desk_share_error(resource, resp, retries):
         resp=resp,
         retries=retries,
         can_change_preferences=False,
-        **kwargs
+        **kwargs,
     )
 
 

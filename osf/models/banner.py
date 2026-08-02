@@ -25,7 +25,7 @@ class ScheduledBanner(models.Model):
     class Meta:
         # Custom permissions for use in the OSF Admin App
         permissions = (
-            ('view_scheduledbanner', 'Can view scheduled banner details'),
+            # 'view_scheduledbanner' is a built-in Django permission.
         )
 
     name = models.CharField(unique=True, max_length=256)

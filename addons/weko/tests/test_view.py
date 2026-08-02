@@ -2,8 +2,7 @@
 from rest_framework import status as http_status
 
 import logging
-import mock
-from nose.tools import *  # noqa
+from unittest import mock
 
 from framework.auth import Auth
 from tests.base import OsfTestCase, get_default_metaschema
@@ -79,13 +78,13 @@ class TestWEKOViews(WEKOAddonTestCase, OAuthAddonConfigViewsTestCaseMixin, OsfTe
         url = self.project.api_url_for('weko_user_config_get')
         res = self.app.get(url, auth=self.user_has_repo.auth)
         logger.info(res.json)
-        assert_equal(res.status_code, http_status.HTTP_200_OK)
-        assert_in('result', res.json)
-        assert_in('userHasAuth', res.json['result'])
-        assert_false(res.json['result']['userHasAuth'])
-        assert_in('urls', res.json['result'])
-        assert_in('repositories', res.json['result'])
-        assert_equal(res.json['result']['repositories'], [
+        assert (res.status_code) == (http_status.HTTP_200_OK)
+        assert ('result') in (res.json)
+        assert ('userHasAuth') in (res.json['result'])
+        assert not (res.json['result']['userHasAuth'])
+        assert ('urls') in (res.json['result'])
+        assert ('repositories') in (res.json['result'])
+        assert (res.json['result']['repositories']) == ([
             {
                 'id': self.repository_external_account.provider_id,
                 'name': 'WEKO test account'
@@ -94,13 +93,13 @@ class TestWEKOViews(WEKOAddonTestCase, OAuthAddonConfigViewsTestCaseMixin, OsfTe
 
         res = self.app.get(url, auth=self.user_has_no_repo.auth)
         logger.info(res.json)
-        assert_equal(res.status_code, http_status.HTTP_200_OK)
-        assert_in('result', res.json)
-        assert_in('userHasAuth', res.json['result'])
-        assert_false(res.json['result']['userHasAuth'])
-        assert_in('urls', res.json['result'])
-        assert_in('repositories', res.json['result'])
-        assert_equal(res.json['result']['repositories'], [])
+        assert (res.status_code) == (http_status.HTTP_200_OK)
+        assert ('result') in (res.json)
+        assert ('userHasAuth') in (res.json['result'])
+        assert not (res.json['result']['userHasAuth'])
+        assert ('urls') in (res.json['result'])
+        assert ('repositories') in (res.json['result'])
+        assert (res.json['result']['repositories']) == ([])
 
     def test_weko_settings_rdm_addons_denied(self):
         rdm_addon_option = get_rdm_addon_option(self.institution.id, self.ADDON_SHORT_NAME)
@@ -110,10 +109,9 @@ class TestWEKOViews(WEKOAddonTestCase, OAuthAddonConfigViewsTestCaseMixin, OsfTe
             url = self.project.api_url_for('weko_oauth_connect', repoid='test')
             rv = self.app.get(
                 url,
-                auth=self.user.auth,
-                expect_errors=True
+                auth=self.user.auth
             )
-            assert_equal(rv.status_int, http_status.HTTP_403_FORBIDDEN)
+            assert (rv.status_code) == (http_status.HTTP_403_FORBIDDEN)
         finally:
             rdm_addon_option.is_allowed = True
             rdm_addon_option.save()
@@ -122,34 +120,32 @@ class TestWEKOViews(WEKOAddonTestCase, OAuthAddonConfigViewsTestCaseMixin, OsfTe
         user = AuthUserFactory()
         self.project.add_contributor(user, save=True)
         url = self.project.api_url_for('weko_set_config')
-        res = self.app.put_json(
-            url, {'index': 'hammertofall'}, auth=user.auth,
-            expect_errors=True
+        res = self.app.put(
+            url, json={'index': 'hammertofall'}, auth=user.auth
         )
-        assert_equal(res.status_code, http_status.HTTP_400_BAD_REQUEST)
+        assert (res.status_code) == (http_status.HTTP_400_BAD_REQUEST)
 
     def test_weko_set_index_no_auth(self):
         user = AuthUserFactory()
         user.add_addon('weko')
         self.project.add_contributor(user, save=True)
         url = self.project.api_url_for('weko_set_config')
-        res = self.app.put_json(
-            url, {'index': 'hammertofall'}, auth=user.auth,
-            expect_errors=True
+        res = self.app.put(
+            url, json={'index': 'hammertofall'}, auth=user.auth
         )
-        assert_equal(res.status_code, http_status.HTTP_403_FORBIDDEN)
+        assert (res.status_code) == (http_status.HTTP_403_FORBIDDEN)
 
     def test_weko_remove_node_settings_owner(self):
         url = self.node_settings.owner.api_url_for('weko_deauthorize_node')
         ret = self.app.delete(url, auth=self.user.auth)
         result = self.Serializer().serialize_settings(node_settings=self.node_settings, current_user=self.user)
-        assert_equal(result['nodeHasAuth'], False)
+        assert (result['nodeHasAuth']) == (False)
 
     def test_weko_remove_node_settings_unauthorized(self):
         url = self.node_settings.owner.api_url_for('weko_deauthorize_node')
-        ret = self.app.delete(url, auth=None, expect_errors=True)
+        ret = self.app.delete(url, auth=None)
 
-        assert_equal(ret.status_code, 401)
+        assert (ret.status_code) == (401)
 
     def test_weko_get_node_settings_owner(self):
         self.node_settings.set_auth(self.external_account, self.user)
@@ -159,22 +155,22 @@ class TestWEKOViews(WEKOAddonTestCase, OAuthAddonConfigViewsTestCaseMixin, OsfTe
         res = self.app.get(url, auth=self.user.auth)
 
         result = res.json['result']
-        assert_equal(result['nodeHasAuth'], True)
-        assert_equal(result['userIsOwner'], True)
-        assert_equal(result['savedIndex']['id'], self.node_settings.index_id)
+        assert (result['nodeHasAuth']) == (True)
+        assert (result['userIsOwner']) == (True)
+        assert (result['savedIndex']['id']) == (self.node_settings.index_id)
 
     def test_weko_get_node_settings_unauthorized(self):
         url = self.node_settings.owner.api_url_for('weko_get_config')
         unauthorized = AuthUserFactory()
-        ret = self.app.get(url, auth=unauthorized.auth, expect_errors=True)
+        ret = self.app.get(url, auth=unauthorized.auth)
 
-        assert_equal(ret.status_code, 403)
+        assert (ret.status_code) == (403)
 
     def test_get_config(self):
         url = self.project.api_url_for('{0}_get_config'.format(self.ADDON_SHORT_NAME))
         res = self.app.get(url, auth=self.user.auth)
-        assert_equal(res.status_code, http_status.HTTP_200_OK)
-        assert_in('result', res.json)
+        assert (res.status_code) == (http_status.HTTP_200_OK)
+        assert ('result') in (res.json)
         serialized = self.Serializer().serialize_settings(
             self.node_settings,
             self.user,
@@ -186,21 +182,21 @@ class TestWEKOViews(WEKOAddonTestCase, OAuthAddonConfigViewsTestCaseMixin, OsfTe
         result_except_repos = dict(
             [(key, value) for key, value in res.json['result'].items() if key != 'repositories']
         )
-        assert_equal(serialized_except_repos, result_except_repos)
-        assert_equal(len(res.json['result']['repositories']), 1)
-        assert_equal(res.json['result']['repositories'][0]['name'], 'WEKO test account')
+        assert (serialized_except_repos) == (result_except_repos)
+        assert (len(res.json['result']['repositories'])) == (1)
+        assert (res.json['result']['repositories'][0]['name']) == ('WEKO test account')
 
     def test_get_config_for_user_has_no_repo(self):
         url = self.project.api_url_for('{0}_get_config'.format(self.ADDON_SHORT_NAME))
         res = self.app.get(url, auth=self.user_has_no_repo.auth)
-        assert_equal(res.status_code, http_status.HTTP_200_OK)
-        assert_in('result', res.json)
+        assert (res.status_code) == (http_status.HTTP_200_OK)
+        assert ('result') in (res.json)
         serialized = self.Serializer().serialize_settings(
             self.node_settings,
             self.user_has_no_repo,
             self.client
         )
-        assert_equal(serialized, res.json['result'])
+        assert (serialized) == (res.json['result'])
 
     def test_set_config(self):
         pass

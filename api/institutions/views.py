@@ -79,7 +79,7 @@ class InstitutionList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin):
     view_category = 'institutions'
     view_name = 'institution-list'
 
-    ordering = ('name', )
+    ordering = ('name',)
 
     def get_default_queryset(self):
         return Institution.objects.filter(_id__isnull=False, is_deleted=False)
@@ -126,7 +126,7 @@ class InstitutionNodeList(JSONAPIBaseView, generics.ListAPIView, InstitutionMixi
     view_category = 'institutions'
     view_name = 'institution-nodes'
 
-    ordering = ('-modified', )
+    ordering = ('-modified',)
 
     # overrides NodesFilterMixin
     def get_default_queryset(self):
@@ -134,7 +134,7 @@ class InstitutionNodeList(JSONAPIBaseView, generics.ListAPIView, InstitutionMixi
         return (
             institution.nodes.filter(is_public=True, is_deleted=False, type='osf.node')
             .select_related('node_license')
-            .include('contributor__user__guids', 'root__guids', 'tags', limit_includes=10)
+            .prefetch_related('contributor_set__user__guids', 'root__guids', 'tags')
             .annotate(region=F('addons_osfstorage_node_settings__region___id'))
         )
 
@@ -193,7 +193,7 @@ class InstitutionAuth(JSONAPIBaseView, generics.CreateAPIView):
 
     required_read_scopes = [CoreScopes.NULL]
     required_write_scopes = [CoreScopes.NULL]
-    authentication_classes = (InstitutionAuthentication, )
+    authentication_classes = (InstitutionAuthentication,)
     view_category = 'institutions'
     view_name = 'institution-auth'
 
@@ -207,7 +207,7 @@ class InstitutionRegistrationList(InstitutionNodeList):
     serializer_class = RegistrationSerializer
     view_name = 'institution-registrations'
 
-    ordering = ('-modified', )
+    ordering = ('-modified',)
 
     def get_default_queryset(self):
         institution = self.get_institution()
@@ -262,7 +262,7 @@ class InstitutionRegistrationsRelationship(JSONAPIBaseView, generics.RetrieveDes
     required_read_scopes = [CoreScopes.NODE_REGISTRATIONS_READ, CoreScopes.INSTITUTION_READ]
     required_write_scopes = [CoreScopes.NODE_REGISTRATIONS_WRITE]
     serializer_class = InstitutionRegistrationsRelationshipSerializer
-    parser_classes = (JSONAPIRelationshipParser, JSONAPIRelationshipParserForRegularJSON, )
+    parser_classes = (JSONAPIRelationshipParser, JSONAPIRelationshipParserForRegularJSON)
 
     view_category = 'institutions'
     view_name = 'institution-relationships-registrations'
@@ -346,7 +346,7 @@ class InstitutionNodesRelationship(JSONAPIBaseView, generics.RetrieveDestroyAPIV
     required_read_scopes = [CoreScopes.NODE_BASE_READ, CoreScopes.INSTITUTION_READ]
     required_write_scopes = [CoreScopes.NODE_BASE_WRITE]
     serializer_class = InstitutionNodesRelationshipSerializer
-    parser_classes = (JSONAPIRelationshipParser, JSONAPIRelationshipParserForRegularJSON, )
+    parser_classes = (JSONAPIRelationshipParser, JSONAPIRelationshipParserForRegularJSON)
 
     view_category = 'institutions'
     view_name = 'institution-relationships-nodes'
@@ -473,9 +473,9 @@ class InstitutionDepartmentList(InstitutionImpactList):
     view_name = 'institution-department-metrics'
 
     serializer_class = InstitutionDepartmentMetricsSerializer
-    renderer_classes = tuple(api_settings.DEFAULT_RENDERER_CLASSES, ) + (InstitutionDepartmentMetricsCSVRenderer, )
+    renderer_classes = tuple(api_settings.DEFAULT_RENDERER_CLASSES) + (InstitutionDepartmentMetricsCSVRenderer,)
 
-    ordering = ('-number_of_users', 'name',)
+    ordering = ('-number_of_users', 'name')
 
     def _format_search(self, search, default_kwargs=None):
         results = search.execute()
@@ -497,7 +497,7 @@ class InstitutionUserMetricsList(InstitutionImpactList):
     view_name = 'institution-user-metrics'
 
     serializer_class = InstitutionUserMetricsSerializer
-    renderer_classes = tuple(api_settings.DEFAULT_RENDERER_CLASSES, ) + (InstitutionUserMetricsCSVRenderer, )
+    renderer_classes = tuple(api_settings.DEFAULT_RENDERER_CLASSES) + (InstitutionUserMetricsCSVRenderer,)
 
     ordering = ('user_name',)
 

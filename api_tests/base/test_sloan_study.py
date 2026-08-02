@@ -1,4 +1,4 @@
-import mock
+from unittest import mock
 import pytest
 from decimal import Decimal
 
@@ -150,12 +150,12 @@ class TestSloanStudyWaffling:
         assert f' dwf_{SLOAN_PREREG_DISPLAY}=False; Domain=localhost; Path=/; samesite=None; Secure' in cookies
 
     @pytest.mark.parametrize('reffer_url, expected_provider_id', [
-        (f'https://staging2.osf.io/', None),
-        (f'https://staging2.osf.io/ispp0/', 'test id'),
-        (f'https://burdixiv.burds/', 'burdixiv'),
-        (f'https://burdixiv.burds/guid0', 'burdixiv'),
-        (f'https://burdixiv.burds/guid0', 'burdixiv'),
-        (f'https://staging2.osf.io/', None),
+        ('https://staging2.osf.io/', None),
+        ('https://staging2.osf.io/ispp0/', 'test id'),
+        ('https://burdixiv.burds/', 'burdixiv'),
+        ('https://burdixiv.burds/guid0', 'burdixiv'),
+        ('https://burdixiv.burds/guid0', 'burdixiv'),
+        ('https://staging2.osf.io/', None),
         (f'{DOMAIN}preprints', 'osf'),
         (f'{DOMAIN}preprints/', 'osf'),
         (f'{DOMAIN}preprints/not/a/valid/path/', 'osf'),

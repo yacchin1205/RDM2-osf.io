@@ -3,7 +3,6 @@ from framework.auth import Auth
 from osf_tests.factories import ProjectFactory, InstitutionFactory, RegionFactory
 from admin_tests.rdm_addons.factories import RdmAddonOptionFactory
 
-from nose.tools import assert_equal
 from addons.s3compatinstitutions import settings
 from addons.osfstorage.tests import factories
 from addons.osfstorage.tests.utils import StorageTestCase
@@ -96,4 +95,4 @@ class TestNonTargetInstitutionalNodeSettings(StorageTestCase):
             'prefix': self.node_settings.root_prefix,
             'encrypt_uploads': settings.ENCRYPT_UPLOADS,
         }
-        assert_equal(wb_settings, expected)
+        assert (wb_settings) == (expected)

@@ -42,7 +42,7 @@ class GenericProviderList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin
     required_write_scopes = [CoreScopes.NULL]
 
     pagination_class = MaxSizePagination
-    ordering = ('name', )
+    ordering = ('name',)
 
     def get_default_queryset(self):
         return self.model_class.objects.all()
@@ -555,11 +555,13 @@ class PreprintProviderModeratorsList(ModeratorMixin, JSONAPIBaseView, generics.L
         provider = self.get_provider()
         admin_group = provider.get_group(ADMIN)
         mod_group = provider.get_group('moderator')
-        return (admin_group.user_set.all() | mod_group.user_set.all()).annotate(permission_group=Case(
-            When(groups=admin_group, then=Value(ADMIN)),
-            default=Value('moderator'),
-            output_field=CharField(),
-        )).order_by('fullname')
+        return (admin_group.user_set.all() | mod_group.user_set.all()).annotate(
+            permission_group=Case(
+                When(groups=admin_group, then=Value(ADMIN)),
+                default=Value('moderator'),
+                output_field=CharField(),
+            ),
+        ).order_by('fullname')
 
     def get_queryset(self):
         return self.get_queryset_from_request()

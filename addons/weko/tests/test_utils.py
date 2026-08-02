@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
+import pytest
 import json
 import logging
 
-from nose.tools import *  # noqa
 
 from tests.base import OsfTestCase
 
@@ -330,7 +330,7 @@ class TestWEKOUtils(OsfTestCase):
         "metadata.pubdate": "{{nowdate}}"
     }
 }'''
-        with assert_raises(ValueError):
+        with pytest.raises(ValueError):
             validate_mapping(json.loads(d.strip()))
 
         d = r'''
@@ -356,5 +356,5 @@ class TestWEKOUtils(OsfTestCase):
         "metadata.pubdate": "{{nowdate}}"
     }
 }'''
-        with assert_raises(ValueError):
+        with pytest.raises(ValueError):
             validate_mapping(json.loads(d.strip()))

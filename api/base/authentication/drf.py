@@ -1,7 +1,7 @@
 import itsdangerous
 
 from django.middleware.csrf import get_token
-from django.utils.translation import ugettext_lazy as _
+from django.utils.translation import gettext_lazy as _
 
 import waffle
 from rest_framework import authentication
@@ -141,7 +141,7 @@ class OSFSessionAuthentication(authentication.BaseAuthentication):
         Same implementation as django-rest-framework's SessionAuthentication.
         Enforce CSRF validation for session based authentication.
         """
-        reason = CSRFCheck().process_view(request, None, (), {})
+        reason = CSRFCheck(lambda _: _).process_view(request, None, (), {})
         if reason:
             # CSRF failed, bail with explicit error message
             raise exceptions.PermissionDenied('CSRF Failed: %s' % reason)

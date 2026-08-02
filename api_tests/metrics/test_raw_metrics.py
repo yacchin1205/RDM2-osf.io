@@ -1,10 +1,10 @@
 import pytest
-import time
 
 from website.app import setup_django
 setup_django()
 
 from waffle.testutils import override_switch
+from elasticsearch6_dsl.connections import connections as es6_connections
 
 from osf import features
 from osf_tests.factories import AuthUserFactory
@@ -21,6 +21,13 @@ class TestRawMetrics:
     def enable_elasticsearch_metrics(self):
         with override_switch(features.ENABLE_RAW_METRICS, active=True):
             yield
+
+    @pytest.fixture(autouse=True)
+    def teardown_customer_index(self):
+        es6_client = es6_connections.get_connection('osfmetrics_es6')
+        es6_client.indices.delete(index='customer', ignore_unavailable=True)
+        yield
+        es6_client.indices.delete(index='customer', ignore_unavailable=True)
 
     @pytest.fixture
     def user(self):
@@ -130,7 +137,9 @@ class TestRawMetrics:
         res = app.post_json_api(post_url, post_data, auth=user.auth)
         assert res.json == post_return
 
-        time.sleep(3)
+        es6_connections.get_connection('osfmetrics_es6').indices.refresh(
+            index='customer',
+        )
 
         get_url = '{}_search?q=*'.format(base_url)
         res = app.get(get_url, auth=user.auth)

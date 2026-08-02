@@ -332,9 +332,11 @@ class CollectedAbstractNodeRelationshipSerializer(object):
         # Convenience method to format instance based on view's get_object
         return {
             'data':
-            list(self._abstract_node_subclass.objects.filter(
-                guids__in=obj.guid_links.all(), is_deleted=False,
-            )),
+            list(
+                self._abstract_node_subclass.objects.filter(
+                    guids__in=obj.guid_links.all(), is_deleted=False,
+                ),
+            ),
             'self': obj,
         }
 

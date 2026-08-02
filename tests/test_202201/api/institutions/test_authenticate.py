@@ -1,5 +1,5 @@
 import json
-import mock
+from unittest import mock
 import jwe
 import jwt
 import pytest
@@ -65,7 +65,7 @@ def make_payload(
             },
             settings.JWT_SECRET,
             algorithm='HS256'
-        ),
+        ).encode(),
         settings.JWE_SECRET
     )
 

@@ -835,7 +835,7 @@ class IQBRIMSWorkflowUserSettings(object):
         if 'LABO_LIST' in current['settings']:
             try:
                 labos = json.loads(current['settings']['LABO_LIST'])
-                if type(labos) != list:
+                if not isinstance(labos, list):
                     return [{'id': 'error', 'text': u'Not list{}'.format(labos)}]
                 for labo in labos:
                     if 'id' not in labo:
@@ -936,8 +936,10 @@ class IQBRIMSFlowableClient(BaseClient):
                                   else False
         register_type = status['state']
         labo_name = status['labo_id']
-        labos = [l for l in self.user_settings.LABO_LIST
-                 if l['id'] == labo_name]
+        labos = [
+            labo for labo in self.user_settings.LABO_LIST
+            if labo['id'] == labo_name
+        ]
         labo_display_name = labos[0]['text'] if len(labos) > 0 \
                             else u'LaboID:{}'.format(labo_name)
         labo_display_name_en = (labos[0]['en'] if 'en' in labos[0] else labos[0]['text']) \

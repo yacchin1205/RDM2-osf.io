@@ -18,7 +18,7 @@ import jwt
 import waffle
 from django.db import transaction
 from django.contrib.contenttypes.models import ContentType
-from elasticsearch import exceptions as es_exceptions
+from elasticsearch6 import exceptions as es_exceptions
 
 from api.base.settings.defaults import SLOAN_ID_COOKIE_NAME
 
@@ -300,6 +300,8 @@ def get_auth(auth, **kwargs):
                 return json_renderer(err)
             if cas_resp.authenticated:
                 auth.user = OSFUser.load(cas_resp.user)
+            else:
+                raise HTTPError(http_status.HTTP_403_FORBIDDEN)
 
     # get data payload
     try:
@@ -307,7 +309,7 @@ def get_auth(auth, **kwargs):
             jwe.decrypt(request.args.get('payload', '').encode('utf-8'), WATERBUTLER_JWE_KEY),
             settings.WATERBUTLER_JWT_SECRET,
             options={'require_exp': True},
-            algorithm=settings.WATERBUTLER_JWT_ALGORITHM
+            algorithms=[settings.WATERBUTLER_JWT_ALGORITHM]
         )['data']
     except (jwt.InvalidTokenError, KeyError) as err:
         sentry.log_message(str(err))
@@ -360,11 +362,11 @@ def get_auth(auth, **kwargs):
         # check permission
         # only location_id value
         if not location_id:
-            logger.debug(f'Missing location_id')
+            logger.debug('Missing location_id')
             raise HTTPError(http_status.HTTP_400_BAD_REQUEST)
 
         if auth.user is None:
-            logger.debug(f'This user is not authenticated')
+            logger.debug('This user is not authenticated')
             raise HTTPError(http_status.HTTP_401_UNAUTHORIZED)
 
         if location_id and not auth.user.is_allowed_storage_location_id(location_id):
@@ -464,7 +466,7 @@ def get_auth(auth, **kwargs):
                     'data': payload_data
                 },
                 settings.WATERBUTLER_JWT_SECRET,
-                algorithm=settings.WATERBUTLER_JWT_ALGORITHM),
+                algorithm=settings.WATERBUTLER_JWT_ALGORITHM).encode(),
             WATERBUTLER_JWE_KEY
         ).decode()
     }
@@ -765,6 +767,8 @@ def addon_view_or_download_file_legacy(**kwargs):
 def addon_deleted_file(auth, target, error_type='BLAME_PROVIDER', **kwargs):
     """Shows a nice error message to users when they try to view a deleted file
     """
+    from addons.onlyoffice import settings as onlyoffice_settings
+
     # Allow file_node to be passed in so other views can delegate to this one
     file_node = kwargs.get('file_node') or TrashedFileNode.load(kwargs.get('trashed_id'))
 
@@ -835,6 +839,7 @@ def addon_deleted_file(auth, target, error_type='BLAME_PROVIDER', **kwargs):
             'private': getattr(target.get_addon(file_node.provider), 'is_private', False),
             'file_tags': list(file_node.tags.filter(system=False).values_list('name', flat=True)) if not file_node._state.adding else [],  # Only access ManyRelatedManager if saved
             'allow_comments': file_node.provider in settings.ADDONS_COMMENTABLE,
+            'wopi_onlyoffice': onlyoffice_settings.WOPI_CLIENT_ONLYOFFICE,
         })
 
         # timestampVerifyResult Update(file was gone)

@@ -2,8 +2,7 @@ from django.test import RequestFactory
 from django.utils import timezone
 from rest_framework import status as http_status
 import json
-import mock
-from nose import tools as nt
+from unittest import mock
 
 from addons.osfstorage.models import Region
 from admin.rdm_custom_storage_location import views
@@ -43,7 +42,6 @@ class TestFetchToken(AdminTestCase):
             json.dumps(params),
             content_type='application/json'
         )
-        request.is_ajax()
         request.user = self.user
         return views.FetchTemporaryTokenView.as_view()(request, institution_id=self.institution.id)
 
@@ -52,16 +50,16 @@ class TestFetchToken(AdminTestCase):
             'no_pro': 'onedrivebusiness',
         })
 
-        nt.assert_equals(response.status_code, http_status.HTTP_400_BAD_REQUEST)
-        nt.assert_in('Provider is missing.', response.content.decode())
+        assert (response.status_code) == (http_status.HTTP_400_BAD_REQUEST)
+        assert ('Provider is missing.') in (response.content.decode())
 
     def test_fail_Oauth_procedure_canceled(self):
         response = self.view_post({
             'provider_short_name': 'onedrivebusiness',
         })
 
-        nt.assert_equals(response.status_code, http_status.HTTP_400_BAD_REQUEST)
-        nt.assert_in('Oauth permission procedure was canceled', response.content.decode())
+        assert (response.status_code) == (http_status.HTTP_400_BAD_REQUEST)
+        assert ('Oauth permission procedure was canceled') in (response.content.decode())
 
     def test_success(self):
         temp_account = ExternalAccountTemporary.objects.create(
@@ -80,15 +78,15 @@ class TestFetchToken(AdminTestCase):
         response = self.view_post({
             'provider_short_name': 'onedrivebusiness',
         })
-        nt.assert_equals(response.status_code, http_status.HTTP_200_OK)
+        assert (response.status_code) == (http_status.HTTP_200_OK)
         data = json.loads(response.content.decode())
         response_temp_account = data['response_data']
-        nt.assert_equals(response_temp_account['display_name'], temp_account.display_name)
-        nt.assert_equals(response_temp_account['oauth_key'], temp_account.oauth_key)
-        nt.assert_equals(response_temp_account['provider'], temp_account.provider)
-        nt.assert_equals(response_temp_account['provider_id'], temp_account.provider_id)
-        nt.assert_equals(response_temp_account['provider_name'], temp_account.provider_name)
-        nt.assert_equals(response_temp_account['fullname'], self.user.fullname)
+        assert (response_temp_account['display_name']) == (temp_account.display_name)
+        assert (response_temp_account['oauth_key']) == (temp_account.oauth_key)
+        assert (response_temp_account['provider']) == (temp_account.provider)
+        assert (response_temp_account['provider_id']) == (temp_account.provider_id)
+        assert (response_temp_account['provider_name']) == (temp_account.provider_name)
+        assert (response_temp_account['fullname']) == (self.user.fullname)
 
 
 class TestSaveCredentials(AdminTestCase):
@@ -118,7 +116,6 @@ class TestSaveCredentials(AdminTestCase):
             json.dumps(params),
             content_type='application/json'
         )
-        request.is_ajax()
         request.user = self.user
         return views.SaveCredentialsView.as_view()(request, institution_id=self.institution.id)
 
@@ -127,8 +124,8 @@ class TestSaveCredentials(AdminTestCase):
             'no_pro': 'onedrivebusiness',
         })
 
-        nt.assert_equals(response.status_code, http_status.HTTP_400_BAD_REQUEST)
-        nt.assert_in('Provider is missing.', response.content.decode())
+        assert (response.status_code) == (http_status.HTTP_400_BAD_REQUEST)
+        assert ('Provider is missing.') in (response.content.decode())
 
     def test_onedrivebusiness_folder_missing(self):
         response = self.view_post({
@@ -136,8 +133,8 @@ class TestSaveCredentials(AdminTestCase):
             'storage_name': 'storage_name',
         })
 
-        nt.assert_equals(response.status_code, http_status.HTTP_400_BAD_REQUEST)
-        nt.assert_in('Folder ID is missing.', response.content.decode())
+        assert (response.status_code) == (http_status.HTTP_400_BAD_REQUEST)
+        assert ('Folder ID is missing.') in (response.content.decode())
 
     @mock.patch('admin.rdm_custom_storage_location.utils.validate_onedrivebusiness_connection')
     def test_success(self, mock_validateconnection):
@@ -161,26 +158,26 @@ class TestSaveCredentials(AdminTestCase):
             'storage_name': 'storage_name',
             'onedrivebusiness_folder': 'root',
         })
-        nt.assert_equals(response.status_code, http_status.HTTP_200_OK)
-        nt.assert_in('OAuth was set successfully', response.content.decode())
+        assert (response.status_code) == (http_status.HTTP_200_OK)
+        assert ('OAuth was set successfully') in (response.content.decode())
 
         external_account = ExternalAccount.objects.get(
             provider=self.seed_data['provider_name'], provider_id=self.seed_data['provider_id'])
-        nt.assert_equals(external_account.oauth_key, self.seed_data['oauth_key'])
-        nt.assert_equals(external_account.oauth_secret, self.seed_data['oauth_secret'])
+        assert (external_account.oauth_key) == (self.seed_data['oauth_key'])
+        assert (external_account.oauth_secret) == (self.seed_data['oauth_secret'])
 
-        nt.assert_false(ExternalAccountTemporary.objects.filter(_id=self.institution._id))
+        assert not (ExternalAccountTemporary.objects.filter(_id=self.institution._id))
 
         institution_storage = Region.objects.filter(_id=self.institution._id).first()
-        nt.assert_is_not_none(institution_storage)
-        nt.assert_equals(institution_storage.name, 'storage_name')
+        assert (institution_storage) is not None
+        assert (institution_storage.name) == ('storage_name')
 
         wb_credentials = institution_storage.waterbutler_credentials
-        nt.assert_equals(wb_credentials['storage'], {})
+        assert (wb_credentials['storage']) == ({})
 
         wb_settings = institution_storage.waterbutler_settings
-        nt.assert_equals(wb_settings['storage']['provider'], 'onedrivebusiness')
-        nt.assert_equals(wb_settings['disabled'], True)
+        assert (wb_settings['storage']['provider']) == ('onedrivebusiness')
+        assert (wb_settings['disabled']) == (True)
 
     @mock.patch('admin.rdm_custom_storage_location.utils.validate_onedrivebusiness_connection')
     def test_success_superuser(self, mock_validateconnection):
@@ -207,26 +204,26 @@ class TestSaveCredentials(AdminTestCase):
             'storage_name': 'storage_name',
             'onedrivebusiness_folder': 'root',
         })
-        nt.assert_equals(response.status_code, http_status.HTTP_200_OK)
-        nt.assert_in('OAuth was set successfully', response.content.decode())
+        assert (response.status_code) == (http_status.HTTP_200_OK)
+        assert ('OAuth was set successfully') in (response.content.decode())
 
         external_account = ExternalAccount.objects.get(
             provider=self.seed_data['provider_name'], provider_id=self.seed_data['provider_id'])
-        nt.assert_equals(external_account.oauth_key, self.seed_data['oauth_key'])
-        nt.assert_equals(external_account.oauth_secret, self.seed_data['oauth_secret'])
+        assert (external_account.oauth_key) == (self.seed_data['oauth_key'])
+        assert (external_account.oauth_secret) == (self.seed_data['oauth_secret'])
 
-        nt.assert_false(ExternalAccountTemporary.objects.filter(_id=self.institution._id))
+        assert not (ExternalAccountTemporary.objects.filter(_id=self.institution._id))
 
         institution_storage = Region.objects.filter(_id=self.institution._id).first()
-        nt.assert_is_not_none(institution_storage)
-        nt.assert_equals(institution_storage.name, 'storage_name')
+        assert (institution_storage) is not None
+        assert (institution_storage.name) == ('storage_name')
 
         wb_credentials = institution_storage.waterbutler_credentials
-        nt.assert_equals(wb_credentials['storage'], {})
+        assert (wb_credentials['storage']) == ({})
 
         wb_settings = institution_storage.waterbutler_settings
-        nt.assert_equals(wb_settings['storage']['provider'], 'onedrivebusiness')
-        nt.assert_equals(wb_settings['disabled'], True)
+        assert (wb_settings['storage']['provider']) == ('onedrivebusiness')
+        assert (wb_settings['disabled']) == (True)
 
     # Connection tests
     def test_folder_id_missing(self):
@@ -235,8 +232,8 @@ class TestSaveCredentials(AdminTestCase):
             'storage_name': 'storage_name',
         })
 
-        nt.assert_equals(response.status_code, http_status.HTTP_400_BAD_REQUEST)
-        nt.assert_in('Folder ID is missing.', response.content.decode())
+        assert (response.status_code) == (http_status.HTTP_400_BAD_REQUEST)
+        assert ('Folder ID is missing.') in (response.content.decode())
 
     def test_temporary_external_account_missing(self):
         response = self.view_post({
@@ -245,8 +242,8 @@ class TestSaveCredentials(AdminTestCase):
             'onedrivebusiness_folder': 'root'
         })
 
-        nt.assert_equals(response.status_code, http_status.HTTP_400_BAD_REQUEST)
-        nt.assert_in('Oauth data was not found. Please reload the page and try again.', response.content.decode())
+        assert (response.status_code) == (http_status.HTTP_400_BAD_REQUEST)
+        assert ('Oauth data was not found. Please reload the page and try again.') in (response.content.decode())
 
     @mock.patch('addons.onedrive.client.OneDriveClient.folders')
     def test_invalid_folder_id(self, mock_folders):
@@ -271,8 +268,8 @@ class TestSaveCredentials(AdminTestCase):
             'onedrivebusiness_folder': 'invalid_folder_id'
         })
 
-        nt.assert_equals(response.status_code, http_status.HTTP_400_BAD_REQUEST)
-        nt.assert_in('Invalid folder ID.', response.content.decode())
+        assert (response.status_code) == (http_status.HTTP_400_BAD_REQUEST)
+        assert ('Invalid folder ID.') in (response.content.decode())
 
     @mock.patch('addons.onedrive.client.OneDriveClient.folders')
     def test_connection_success(self, mock_folders):
@@ -295,8 +292,8 @@ class TestSaveCredentials(AdminTestCase):
             'onedrivebusiness_folder': 'root'
         })
 
-        nt.assert_equals(response.status_code, http_status.HTTP_200_OK)
-        nt.assert_in('OAuth was set successfully', response.content.decode())
+        assert (response.status_code) == (http_status.HTTP_200_OK)
+        assert ('OAuth was set successfully') in (response.content.decode())
 
     @mock.patch('addons.onedrive.client.OneDriveClient.folders')
     def test_connection_success_superuser(self, mock_folders):
@@ -322,8 +319,8 @@ class TestSaveCredentials(AdminTestCase):
             'onedrivebusiness_folder': 'root',
         })
 
-        nt.assert_equals(response.status_code, http_status.HTTP_200_OK)
-        nt.assert_in('OAuth was set successfully', response.content.decode())
+        assert (response.status_code) == (http_status.HTTP_200_OK)
+        assert ('OAuth was set successfully') in (response.content.decode())
 
 
 class TestRemoveTemporaryAuthData(AdminTestCase):
@@ -341,7 +338,6 @@ class TestRemoveTemporaryAuthData(AdminTestCase):
             json.dumps(params),
             content_type='application/json'
         )
-        request.is_ajax()
         request.user = self.user
         return views.RemoveTemporaryAuthData.as_view()(request, institution_id=self.institution.id)
 
@@ -349,7 +345,7 @@ class TestRemoveTemporaryAuthData(AdminTestCase):
         response = self.view_post_cancel({
             'provider_short_name': 'onedrivebusiness',
         })
-        nt.assert_equals(response.status_code, http_status.HTTP_200_OK)
+        assert (response.status_code) == (http_status.HTTP_200_OK)
 
     def test_cancel_superuser(self):
         self.user.affiliated_institutions.clear()
@@ -358,4 +354,4 @@ class TestRemoveTemporaryAuthData(AdminTestCase):
         response = self.view_post_cancel({
             'provider_short_name': 'onedrivebusiness',
         })
-        nt.assert_equals(response.status_code, http_status.HTTP_200_OK)
+        assert (response.status_code) == (http_status.HTTP_200_OK)
