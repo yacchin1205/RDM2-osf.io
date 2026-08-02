@@ -745,7 +745,7 @@ describe('osfHelpers', () => {
             describe('works for internal absolute URLs with different protocol', () => {
                 var customWindow = {
                     location:{
-                        hostname: 'osf.io',
+                        hostname: 'rdm.nii.ac.jp',
                         protocol: 'https:'
                     }
                 };

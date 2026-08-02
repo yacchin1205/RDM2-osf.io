@@ -8,7 +8,7 @@ var Raven = require('raven-js');
 var $osf = require('js/osfHelpers');
 var oop = require('js/oop');
 
-var s3compatb3Settings = require('json-loader!./settings.json');
+var s3compatb3Settings = require('./settings.json');
 
 var OauthAddonFolderPicker = require('js/oauthAddonNodeConfig')._OauthAddonNodeConfigViewModel;
 

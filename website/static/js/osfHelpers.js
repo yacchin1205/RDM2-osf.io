@@ -4,7 +4,7 @@ var $ = require('jquery');
 require('jquery-blockui');
 var Raven = require('raven-js');
 var moment = require('moment');
-var URI = require('URIjs');
+var URI = require('urijs');
 var Cookie  = require('js-cookie');
 var bootbox = require('bootbox');
 var lodashGet = require('lodash.get');

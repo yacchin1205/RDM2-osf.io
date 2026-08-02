@@ -21,7 +21,7 @@ var LICENSE_PROPERTIES = {
     'copyrightHolders': _('Copyright Holders')
 };
 
-var template = require('raw-loader!templates/license-picker.html');
+var template = require('templates/license-picker.html');
 
       template = template.replace( 'License:', _('License:'));
       template = template.replace( 'Choose a license:', _('Choose a license:'));

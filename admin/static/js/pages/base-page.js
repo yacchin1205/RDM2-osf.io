@@ -1,8 +1,8 @@
 'use strict';
 
-require('font-awesome-webpack');
-require('../../vendor/bower_components/bootstrap/dist/js/bootstrap.js');
-require('../../vendor/bower_components/admin-lte/dist/js/app.min.js');
+require('font-awesome/css/font-awesome.css');
+require('bootstrap');
+require('admin-lte/dist/js/app.min.js');
 
 var $ = require('jquery');
 

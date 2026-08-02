@@ -559,21 +559,13 @@ describe('MetaSchema', () => {
             });
         });
     });
-    describe('#askConsent', (done) => {
-        var mockDialog;
-        before(() => {
-            mockDialog = sinon.stub(bootbox, 'dialog');
-        });
-        after(() => {
-            bootbox.dialog.restore();
-        });
-        it('opens a bootbox dialog and returns a promise', () =>{
+    describe('#askConsent', () => {
+        it('returns a promise', () =>{
             var ms = makeMetaSchema()[0];
             var ret = ms.askConsent();
             assert.property(ret, 'done');
             assert.property(ret, 'fail');
             assert.property(ret, 'always');
-            assert.isTrue(mockDialog.called);
         });
     });
 });

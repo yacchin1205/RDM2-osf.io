@@ -1,7 +1,7 @@
 'use strict';
 
 var m = require('mithril');
-var URI = require('URIjs');
+var URI = require('urijs');
 var $ = require('jquery');
 var Raven = require('raven-js');
 

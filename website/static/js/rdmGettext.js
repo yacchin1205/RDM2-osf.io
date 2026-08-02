@@ -4,9 +4,12 @@ var Gettext = require('node-gettext');
 var $osf = require('js/osfHelpers');
 
 var acceptLanguages = ['en','ja'];
+var translations = {
+    en: require('js/translations/en.json'),
+    ja: require('js/translations/ja.json')
+};
 var defaultLanguage = 'en';
 var translationsBaseDir = 'translations';
-var osfLanguageProfileBaseName = 'osfLanguage';
 var getTextDomain = 'messages';
 var browserLanguage;
 
@@ -38,8 +41,7 @@ var rdmGettext = function() {
     var gt = new Gettext();
     var currentlanguage = getBrowserLang();
     for(var i = 0; i < acceptLanguages.length; i++) {
-        var translation = require('js/translations/' + acceptLanguages[i] + '.json');
-        gt.addTranslations(acceptLanguages[i], getTextDomain, translation);
+        gt.addTranslations(acceptLanguages[i], getTextDomain, translations[acceptLanguages[i]]);
     }
     gt.setLocale(currentlanguage);
     return gt;
@@ -47,9 +49,15 @@ var rdmGettext = function() {
 
 var OsfLanguage = function() {
     var defaultDomain = [].slice.call(arguments);
+    // Required lazily: osfLanguage reaches back into osfHelpers, which requires
+    // this module while initializing (circular)
+    var osfLanguages = {
+        en: require('js/translations/osfLanguage_en'),
+        ja: require('js/translations/osfLanguage_ja')
+    };
     this.languages = {};
     for(var i = 0; i < acceptLanguages.length; i++) {
-        var language = require('js/translations/' + osfLanguageProfileBaseName + '_' + acceptLanguages[i]);
+        var language = osfLanguages[acceptLanguages[i]];
         for(var j = 0; j < defaultDomain.length; j++) {
             language = language[defaultDomain[j]];
         }

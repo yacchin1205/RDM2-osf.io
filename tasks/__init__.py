@@ -480,8 +480,7 @@ def test_travis_website(ctx, numprocesses=None, coverage=False, testmon=False):
 
 @task
 def test_travis_api1_and_js(ctx, numprocesses=None, coverage=False, testmon=False):
-    # TODO: Uncomment when https://github.com/travis-ci/travis-ci/issues/8836 is resolved
-    # karma(ctx)
+    karma(ctx, travis=True)
     test_api1(ctx, numprocesses=numprocesses, coverage=coverage, testmon=testmon)
 
 
@@ -538,12 +537,32 @@ def copy_settings(ctx, addons=False):
         copy_addon_settings(ctx)
 
 
-@task(aliases=['bower'])
-def bower_install(ctx):
-    print('Installing bower-managed packages')
-    bower_bin = os.path.join(HERE, 'node_modules', '.bin', 'bower')
-    ctx.run('{} prune --allow-root'.format(bower_bin), echo=True)
-    ctx.run('{} install --allow-root'.format(bower_bin), echo=True)
+CITATION_STYLES_REPO = 'https://github.com/CenterForOpenScience/styles.git'
+CITATION_STYLES_COMMIT = '88e6ed31a91e9f5a480b486029cda97b535935d4'
+CITATION_LOCALES_REPO = 'https://github.com/CenterForOpenScience/locales.git'
+CITATION_LOCALES_COMMIT = 'd2b612f8a6f764cbd66e67238636fac3888a7736'
+
+
+@task
+def citation_data(ctx):
+    """Fetch the CSL citation styles and locales served from website/static."""
+    for repo, commit, dest in [
+        (CITATION_STYLES_REPO, CITATION_STYLES_COMMIT, 'website/static/vendor/citation-styles'),
+        (CITATION_LOCALES_REPO, CITATION_LOCALES_COMMIT, 'website/static/vendor/citation-locales'),
+    ]:
+        path = os.path.join(HERE, dest)
+        head = os.path.join(path, '.git-commit')
+        if os.path.exists(head):
+            with open(head) as fp:
+                if fp.read().strip() == commit:
+                    continue
+        ctx.run('rm -rf {}'.format(path), echo=True)
+        ctx.run('git init -q {}'.format(path), echo=True)
+        ctx.run('git -C {} fetch -q --depth 1 {} {}'.format(path, repo, commit), echo=True)
+        ctx.run('git -C {} checkout -q FETCH_HEAD'.format(path), echo=True)
+        ctx.run('rm -rf {}'.format(os.path.join(path, '.git')), echo=True)
+        with open(head, 'w') as fp:
+            fp.write(commit + '\n')
 
 
 @task
@@ -761,7 +780,7 @@ def assets(ctx, dev=False, watch=False, colors=False):
     if not dev:
         command += ' --production'
     ctx.run(command, echo=True)
-    bower_install(ctx)
+    citation_data(ctx)
     build_js_config_files(ctx)
     # Always set clean=False to prevent possible mistakes
     # on prod

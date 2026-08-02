@@ -1,5 +1,5 @@
-var xhook = require('../vendor/bower_components/xhook/dist/xhook.js').xhook;
-var URI = require('URIjs');
+var xhook = require('../vendor/xhook/dist/xhook.js').xhook;
+var URI = require('urijs');
 var jquery = require('jquery');
 
 var xdrExists = navigator.appVersion.indexOf('MSIE 9.') !== -1;

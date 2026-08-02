@@ -7,18 +7,12 @@ var MathJax = require('MathJax');
  * Render math with MathJax within a given element.
  * */
 function mathjaxify(selector) {
-    var $elem = $(selector);
-    function typesetStubbornMath() {
-        $elem.each(function() {
-            if ($(this).text() !== '') {
-                MathJax.Hub.Queue(['Typeset', MathJax.Hub, $(this).attr('id')]);
-            }
-        });
-    }
-    var preview = $elem[0];
+    var elements = $(selector).toArray();
     if (typeof(window.typeset) === 'undefined' || window.typeset === true) {
-        MathJax.Hub.Queue(['Typeset', MathJax.Hub, preview]);
-        typesetStubbornMath();
+        // MathJax 3: wait for startup before the first typeset
+        MathJax.startup.promise.then(function() {
+            return MathJax.typesetPromise(elements);
+        });
     }
 }
 

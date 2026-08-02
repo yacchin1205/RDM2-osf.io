@@ -3,6 +3,7 @@ var webpackCommon = require('./webpack.common.config.js');
 
 // A subset of the app webpack config
 var webpackTestConfig = {
+    mode: 'development',
     devtool: 'inline-source-map',
     plugins: [
         // Make sure that CommonJS is always used
@@ -17,27 +18,29 @@ var webpackTestConfig = {
             'window.$': 'jquery'
         }),
     ],
-    resolve: Object.assign({}, webpackCommon.resolve, {
-        descriptionFiles: ['package.json', 'bower.json'],
-    }),
+    resolve: webpackCommon.resolve,
     externals: {'jquery': 'jQuery', 'jquery-ui': 'jQuery.ui'},
     module: {
         rules: webpackCommon.module.rules.concat([
             // Assume test files are ES6
-            {test: /\.test\.js$/, loader: 'babel-loader'},
+            {
+                test: /\.test\.js$/,
+                loader: 'babel-loader',
+                options: {presets: [require.resolve('@babel/preset-env')]}
+            },
         ])
-    },
-    node: {
-       fs: 'empty'
     }
 };
 module.exports = {
     frameworks: ['mocha', 'sinon'],
     files: [
         // Mimics loading jquery and jquery-ui with script tags
-        'website/static/vendor/bower_components/jquery/dist/jquery.js',
-        'website/static/vendor/bower_components/jquery-ui/jquery-ui.js',
-        'website/static/vendor/bower_components/bootstrap/dist/js/bootstrap.js',
+        'node_modules/jquery/dist/jquery.js',
+        'node_modules/components-jqueryui/jquery-ui.js',
+        'node_modules/bootstrap/dist/js/bootstrap.js',
+        'node_modules/raven-js/dist/raven.js',
+        // Context vars normally injected by the mako templates
+        'website/static/js/tests/karma-context.js',
         // Only need to target one file, which will load all files in tests/ that
         // match *.test.js, including addons tests
         'website/static/js/tests/tests.webpack.js',

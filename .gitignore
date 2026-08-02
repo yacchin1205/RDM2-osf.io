@@ -74,8 +74,10 @@ coverage
 # Grunt intermediate storage (http://gruntjs.com/creating-plugins#storing-task-files)
 .grunt
 
-# Bower dependency directory (https://bower.io/)
-bower_components
+# npm-managed assets copied for static serving and fetched citation data
+website/static/vendor/npm/
+website/static/vendor/citation-styles/
+website/static/vendor/citation-locales/
 
 # node-waf configuration
 .lock-wscript
@@ -181,7 +183,6 @@ website/static/js/translations/*.json
 admin/static/public/
 # web_loader stat file
 admin/webpack-stats.json
-# bower
 admin/static/vendor/
 admin/db.sqlite3
 admin/db.sqlite3-journal

@@ -107,6 +107,7 @@ module.exports = function list(state, startLine, endLine, silent) {
             content,
             indent,
             oldTShift,
+            oldSCount,
             oldIndent,
             oldTight,
             oldParentType,
@@ -221,8 +222,11 @@ module.exports = function list(state, startLine, endLine, silent) {
         oldIndent = state.blkIndent;
         oldTight = state.tight;
         oldTShift = state.tShift[startLine];
+        oldSCount = state.sCount[startLine];
         oldParentType = state.parentType;
         state.tShift[startLine] = contentStart - state.bMarks[startLine];
+        // markdown-it >= 9 decides line consumption by sCount, not tShift
+        state.sCount[startLine] = indent;
         state.blkIndent = indent;
         state.tight = true;
         state.parentType = 'list';
@@ -240,6 +244,7 @@ module.exports = function list(state, startLine, endLine, silent) {
 
         state.blkIndent = oldIndent;
         state.tShift[startLine] = oldTShift;
+        state.sCount[startLine] = oldSCount;
         state.tight = oldTight;
         state.parentType = oldParentType;
 
@@ -261,7 +266,7 @@ module.exports = function list(state, startLine, endLine, silent) {
         }
 
         // Try to check if list is terminated or continued.
-        if (state.tShift[nextLine] < state.blkIndent) {
+        if (state.sCount[nextLine] < state.blkIndent) {
             break;
         }
 

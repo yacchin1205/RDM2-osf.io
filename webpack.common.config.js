@@ -81,7 +81,7 @@ var entry = {
         'treebeard',
         'lodash.get',
         'js-cookie',
-        'URIjs',
+        'urijs',
         // Common internal modules
         'js/fangorn',
         'js/citations',
@@ -89,6 +89,7 @@ var entry = {
         'js/osfToggleHeight',
         'mithril',
         // Main CSS files that get loaded above the fold
+        staticPath('vendor/treebeard/treebeard.css'),
         nodePath('select2/select2.css'),
         nodePath('bootstrap/dist/css/bootstrap.css'),
         '@centerforopenscience/osf-style',
@@ -147,6 +148,14 @@ function logEntriesToJS(logs) {
     return lines;
 }
 
+// Wire every page bundle to the shared vendor chunk; the templates load
+// vendor.js plus one page bundle per page (replaces CommonsChunkPlugin).
+Object.keys(entry).forEach(function(name) {
+    if (name !== 'vendor') {
+        entry[name] = {import: entry[name], dependOn: 'vendor'};
+    }
+});
+
 fs.writeFileSync(staticPath('js/_allLogTexts.json'), JSON.stringify(mainLogs));
 fs.writeFileSync(staticPath('js/_anonymousLogTexts.json'), JSON.stringify(anonymousLogs));
 // for i18n
@@ -176,11 +185,20 @@ rdmPoToJson();
 var resolve = {
     modules: [
         root,
-        './website/static/vendor/bower_components',
         'node_modules',
     ],
-    extensions: ['*', '.es6.js', '.js', '.min.js'],
-    // Need to alias libraries that aren't managed by bower or npm
+    extensions: ['.es6.js', '.js', '.min.js', '.json'],
+    // webpack 5 no longer ships Node core polyfills; these are the ones the
+    // bundled code actually reaches (crypto via addons/metadata/wbcache.js)
+    fallback: {
+        fs: false,
+        crypto: require.resolve('crypto-browserify'),
+        buffer: require.resolve('buffer/'),
+        stream: require.resolve('stream-browserify'),
+        vm: require.resolve('vm-browserify'),
+        path: require.resolve('path-browserify'),
+    },
+    // Need to alias libraries that aren't managed by npm
     alias: {
         'knockout-sortable': staticPath('vendor/knockout-sortable/knockout-sortable.js'),
         'bootstrap-editable': staticPath('vendor/bootstrap-editable-custom/js/bootstrap-editable.js'),
@@ -189,20 +207,27 @@ var resolve = {
         'bootstrap-datepicker-css': nodePath('bootstrap-datepicker/dist/css/bootstrap-datepicker3.css'),
         'select2-ja': nodePath('select2/select2_locale_ja.js'),
         'jquery-blockui': staticPath('vendor/jquery-blockui/jquery.blockui.js'),
+        // Vendored with a backported prototype-pollution guard (GHSA-c3px-v9c7-m734);
+        // upgrading to a fixed mithril requires rewriting fangorn/treebeard
+        'mithril': staticPath('vendor/mithril/mithril.js'),
+        'treebeard': staticPath('vendor/treebeard/treebeard.js'),
         'bootstrap': nodePath('bootstrap/dist/js/bootstrap.js'),
-        'Caret.js': staticPath('vendor/bower_components/Caret.js/dist/jquery.caret.min.js'),
-        'osf-panel': staticPath('vendor/bower_components/osf-panel/dist/jquery-osfPanel.min.js'),
-        'jquery-qrcode': staticPath('vendor/bower_components/jquery-qrcode/jquery.qrcode.min.js'),
-        'jquery-tagsinput': staticPath('vendor/bower_components/jquery.tagsinput/jquery.tagsinput.js'),
-        'clipboard': staticPath('vendor/bower_components/clipboard/dist/clipboard.js'),
-        'history': nodePath('historyjs/scripts/bundled/html4+html5/jquery.history.js'),
+        'bootstrap.growl': staticPath('vendor/bootstrap.growl/bootstrap-growl.min.js'),
+        'At.js': nodePath('at.js/dist/js/jquery.atwho.js'),
+        'Caret.js': staticPath('vendor/Caret.js/dist/jquery.caret.min.js'),
+        'osf-panel': staticPath('vendor/osf-panel/dist/jquery-osfPanel.min.js'),
+        'jquery-qrcode': staticPath('vendor/jquery-qrcode/jquery.qrcode.min.js'),
+        'jquery-tagsinput': staticPath('vendor/jquery.tagsinput/jquery.tagsinput.js'),
+        'clipboard': nodePath('clipboard/dist/clipboard.js'),
+        'history': staticPath('vendor/historyjs/jquery.history.js'),
+        'reconnectingWebsocket': nodePath('ReconnectingWebSocket/reconnecting-websocket.js'),
         // Needed for knockout-sortable
-        'jquery.ui.sortable': staticPath('vendor/bower_components/jquery-ui/ui/widgets/sortable.js'),
-        'truncate': staticPath('vendor/bower_components/truncate/jquery.truncate.js'),
+        'jquery.ui.sortable': nodePath('components-jqueryui/ui/widgets/sortable.js'),
+        'truncate': staticPath('vendor/truncate/jquery.truncate.js'),
         // Needed for ace code editor in wiki
-        'ace-noconflict': staticPath('vendor/bower_components/ace-builds/src-noconflict/ace.js'),
-        'ace-ext-language_tools': staticPath('vendor/bower_components/ace-builds/src-noconflict/ext-language_tools.js'),
-        'ace-mode-markdown': staticPath('vendor/bower_components/ace-builds/src-noconflict/mode-markdown.js'),
+        'ace-noconflict': nodePath('ace-builds/src-noconflict/ace.js'),
+        'ace-ext-language_tools': nodePath('ace-builds/src-noconflict/ext-language_tools.js'),
+        'ace-mode-markdown': nodePath('ace-builds/src-noconflict/mode-markdown.js'),
         'pagedown-ace-converter': addonsPath('wiki/static/pagedown-ace/Markdown.Converter.js'),
         'pagedown-ace-sanitizer': addonsPath('wiki/static/pagedown-ace/Markdown.Sanitizer.js'),
         'pagedown-ace-editor': addonsPath('wiki/static/pagedown-ace/Markdown.Editor.js'),
@@ -213,9 +238,6 @@ var resolve = {
         // Also alias some internal libraries for easy access
         'addons': path.resolve(__dirname, 'addons'),
         'tests': staticPath('js/tests'),
-        // GASP Items not defined as main in its package.json
-        'TweenLite' : nodePath('gsap/src/minified/TweenLite.min.js'),
-        'EasePack' : nodePath('gsap/src/minified/easing/EasePack.min.js'),
     }
 };
 
@@ -229,12 +251,15 @@ var externals = {
 };
 
 var plugins = [
-    // Bundle common code between modules
-    new webpack.optimize.CommonsChunkPlugin({ name: 'vendor', filename: 'vendor.js' }),
     // Make jQuery available in all modules without having to do require('jquery')
     new webpack.ProvidePlugin({
         $: 'jquery',
         jQuery: 'jquery'
+    }),
+    // webpack 5 no longer injects the Node globals that crypto-browserify needs
+    new webpack.ProvidePlugin({
+        Buffer: ['buffer', 'Buffer'],
+        process: 'process/browser'
     }),
     // Slight hack to make sure that CommonJS is always used
     new webpack.DefinePlugin({
@@ -245,7 +270,9 @@ var plugins = [
 
 var output = {
     path: path.resolve(__dirname, 'website', 'static', 'public', 'js'),
-    // publicPath: '/static/', // used to generate urls to e.g. images
+    // Fonts and images emitted here are served from this path, not relative to
+    // the page URL (wp5's 'auto' default resolves them against the page)
+    publicPath: '/static/public/js/',
     filename: '[name].js',
     sourcePrefix: ''
 };
@@ -259,20 +286,35 @@ module.exports = {
     output: output,
     module: {
         rules: [
-            {test: /\.es6\.js$/, exclude: [/node_modules/, /bower_components/, /vendor/], loader: 'babel-loader'},
-            {test: /\.css$/, use: [{loader: 'style-loader'}, {loader: 'css-loader'}]},
-            // url-loader uses DataUrls; files-loader emits files
-            {test: /\.png$/, loader: 'url-loader?limit=100000&mimetype=image/png'},
-            {test: /\.gif$/, loader: 'url-loader?limit=10000&mimetype=image/gif'},
-            {test: /\.jpg$/, loader: 'url-loader?limit=10000&mimetype=image/jpg'},
-            {test: /\.woff(2)?(\?v=[0-9]\.[0-9]\.[0-9])?$/, loader: 'url-loader?mimetype=application/font-woff'},
+            {
+                test: /\.es6\.js$/,
+                exclude: [/node_modules/, /vendor/],
+                loader: 'babel-loader',
+                options: {presets: [require.resolve('@babel/preset-env')]}
+            },
+            {
+                test: /\.css$/,
+                use: [
+                    {loader: 'style-loader'},
+                    {
+                        loader: 'css-loader',
+                        // Root-relative urls like /static/img/... are served by the
+                        // app at runtime and must not be resolved at build time
+                        options: {url: {filter: function(url) { return url[0] !== '/'; }}}
+                    }
+                ]
+            },
+            // url-loader uses DataUrls; file-loader emits files
+            {test: /\.png$/, loader: 'url-loader', options: {limit: 100000, mimetype: 'image/png'}},
+            {test: /\.gif$/, loader: 'url-loader', options: {limit: 10000, mimetype: 'image/gif'}},
+            {test: /\.jpg$/, loader: 'url-loader', options: {limit: 10000, mimetype: 'image/jpg'}},
+            {test: /\.woff(2)?(\?v=[0-9]\.[0-9]\.[0-9])?$/, loader: 'url-loader', options: {mimetype: 'application/font-woff'}},
+            // Raw text imported into JS (mako-like templates, CSL styles, locales)
+            {test: /\.(html|csl|xml)$/, type: 'asset/source'},
             {test: /\.svg/, loader: 'file-loader'},
             {test: /\.eot/, loader: 'file-loader'},
             {test: /\.ttf/, loader: 'file-loader'},
-            { parser: { amd: false }}
+            {test: /\.js$/, parser: {amd: false}}
         ]
-    },
-    node: {
-       fs: 'empty'
     }
 };

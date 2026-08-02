@@ -37,11 +37,11 @@ volumes:
     external: false
   osf_node_modules_vol:
     external: false
-  osf_bower_components_vol:
-    external: false
   osf_admin_node_modules_vol:
     external: false
-  osf_admin_bower_components_vol:
+  osf_vendor_vol:
+    external: false
+  osf_admin_vendor_vol:
     external: false
   cas_postgres_data_vol:
     external: false
@@ -412,8 +412,8 @@ services:
     volumes:
       - ./:/code:cached
       - osf_requirements_3_12_vol:/usr/local/lib/python3.12
-      - osf_bower_components_vol:/code/website/static/vendor/bower_components
       - osf_node_modules_vol:/code/node_modules
+      - osf_vendor_vol:/code/website/static/vendor
     stdin_open: true
 
   admin_assets:
@@ -427,9 +427,9 @@ services:
       - ./:/code:cached
       - osf_requirements_3_12_vol:/usr/local/lib/python3.12
       - osf_node_modules_vol:/code/node_modules  # needed due to admin references of ../webpack.<...>.js configurations.
-      - osf_bower_components_vol:/code/website/static/vendor/bower_components
-      - osf_admin_bower_components_vol:/code/admin/static/vendor/bower_components
       - osf_admin_node_modules_vol:/code/admin/node_modules
+      - osf_vendor_vol:/code/website/static/vendor
+      - osf_admin_vendor_vol:/code/admin/static/vendor
     stdin_open: true
 
   sharejs:
@@ -458,8 +458,7 @@ services:
 #    volumes:
 #      - ./:/code
 #      - osf_requirements_3_12_vol:/usr/local/lib/python3.12
-#      - osf_bower_components_vol:/code/website/static/vendor/bower_components
-#      - osf_node_modules_vol:/code/node_modules
+##      - osf_node_modules_vol:/code/node_modules
 
   worker:
     image: quay.io/centerforopenscience/osf:develop
@@ -478,8 +477,8 @@ services:
     volumes:
       - ./:/code:cached
       - osf_requirements_3_12_vol:/usr/local/lib/python3.12
-      - osf_bower_components_vol:/code/website/static/vendor/bower_components
       - osf_node_modules_vol:/code/node_modules
+      - osf_vendor_vol:/code/website/static/vendor
 #      - /host_server/user_key_info:/user_key_info
 #      - ./ssl/ca-chain.cert.pem:/etc/ssl/certs/ca-chain.cert.pem:ro
 #      - ./ssl/celery-client.cert.pem:/etc/ssl/certs/worker.pem:ro
@@ -510,10 +509,10 @@ services:
     volumes:
       - ./:/code:cached
       - osf_requirements_3_12_vol:/usr/local/lib/python3.12
-      - osf_bower_components_vol:/code/website/static/vendor/bower_components
       - osf_node_modules_vol:/code/node_modules
-      - osf_admin_bower_components_vol:/code/admin/static/vendor/bower_components
       - osf_admin_node_modules_vol:/code/admin/node_modules
+      - osf_vendor_vol:/code/website/static/vendor
+      - osf_admin_vendor_vol:/code/admin/static/vendor
 #      - /host_server/user_key_info:/user_key_info
 
   api:
@@ -533,8 +532,8 @@ services:
     volumes:
       - ./:/code:cached
       - osf_requirements_3_12_vol:/usr/local/lib/python3.12
-      - osf_bower_components_vol:/code/website/static/vendor/bower_components
       - osf_node_modules_vol:/code/node_modules
+      - osf_vendor_vol:/code/website/static/vendor
     stdin_open: true
 
   web:
@@ -555,8 +554,8 @@ services:
     volumes:
       - ./:/code:cached
       - osf_requirements_3_12_vol:/usr/local/lib/python3.12
-      - osf_bower_components_vol:/code/website/static/vendor/bower_components
       - osf_node_modules_vol:/code/node_modules
+      - osf_vendor_vol:/code/website/static/vendor
       - ember_osf_web_dist_vol:/ember_osf_web
       - preprints_dist_vol:/preprints
       - registries_dist_vol:/registries

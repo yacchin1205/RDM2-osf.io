@@ -18,21 +18,18 @@ var staticPath = function(dir) {
 // Adding bundle tracker to plugins
 var plugins = common.plugins.concat([
     // for using webpack with Django
-    new BundleTracker({filename: './webpack-stats.json'}),
-    new webpack.LoaderOptionsPlugin({
-        debug: true,
-        minimize: true
-    })
+    new BundleTracker({path: __dirname, filename: 'webpack-stats.json'})
 ]);
 
 common.output = {
     path: path.resolve(__dirname, 'static', 'public', 'js'),
-    // publicPath: '/static/', // used to generate urls to e.g. images
+    publicPath: '/static/public/js/',
     filename: '[name].js',
     sourcePrefix: ''
 };
 
 var config = Object.assign({}, common, {
+    mode: 'development',
     entry: {
         'admin-base-page': staticAdminPath('js/pages/base-page.js'),
         'admin-registration-edit-page': staticAdminPath('js/pages/admin-registration-edit-page.js'),
@@ -62,4 +59,9 @@ var config = Object.assign({}, common, {
     devtool: 'source-map',
 });
 config.resolve.modules.push(websiteRoot, adminRoot);
+// The admin bundle ships its own bootstrap/admin-lte versions, not the website ones
+config.resolve.alias = Object.assign({}, config.resolve.alias, {
+    'bootstrap': path.resolve(__dirname, 'node_modules', 'bootstrap', 'dist', 'js', 'bootstrap.js'),
+    'admin-lte': path.resolve(__dirname, 'node_modules', 'admin-lte'),
+});
 module.exports = config;

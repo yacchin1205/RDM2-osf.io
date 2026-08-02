@@ -1,6 +1,6 @@
 var $ = require('jquery');
 
-var licenses = require('json-loader!@centerforopenscience/list-of-licenses');
+var licenses = require('@centerforopenscience/list-of-licenses');
 delete licenses.AFL3;
 
 var _ = require('js/rdmGettext')._;

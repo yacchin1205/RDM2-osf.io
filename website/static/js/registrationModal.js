@@ -10,7 +10,7 @@ var language = require('js/osfLanguage').registrations;
 var Treebeard = require('treebeard');
 var projectSettingsTreebeardBase = require('js/projectSettingsTreebeardBase');
 
-var template = require('raw-loader!templates/registration-modal.html');
+var template = require('templates/registration-modal.html');
 $(document).ready(function() {
     $('body').append(template);
 });

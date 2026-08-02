@@ -1,5 +1,8 @@
 .git
 node_modules
+**/vendor/npm
+**/vendor/citation-styles
+**/vendor/citation-locales
 **/local.py
 *tests
 **/tests

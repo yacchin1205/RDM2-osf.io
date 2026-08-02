@@ -64,7 +64,7 @@ CitationWidget.prototype.init = function() {
     }).on('select2-selecting', function(event) {
         var custom = ctx.customCitations[event.val];
         var style = event.object.parent_style || event.val;
-        var styleUrl = custom ? '/static/' + custom + '.csl' : '/static/vendor/bower_components/styles/' + style + '.csl';
+        var styleUrl = custom ? '/static/' + custom + '.csl' : '/static/vendor/citation-styles/' + style + '.csl';
         var styleRequest = $.get(styleUrl);
         var citationRequest = $.get(ctx.node.urls.api + 'citation/');
         $.when(styleRequest, citationRequest).done(function(style, data) {

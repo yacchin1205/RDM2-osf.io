@@ -12,7 +12,7 @@ var makeClient = require('js/clipboard');
 var _ = require('js/rdmGettext')._;
 var sprintf = require('agh.sprintf').sprintf;
 
-var BASE_URL = '/static/vendor/bower_components/styles/';
+var BASE_URL = '/static/vendor/citation-styles/';
 var STYLES = {
     apa: 'apa.csl',
     mla: 'modern-language-association.csl',

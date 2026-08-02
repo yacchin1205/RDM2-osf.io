@@ -7,7 +7,7 @@
 
 var $ = require('jquery');
 var m = require('mithril');
-var URI = require('URIjs');
+var URI = require('urijs');
 var Raven = require('raven-js');
 var Treebeard = require('treebeard');
 var moment = require('moment');
@@ -18,7 +18,7 @@ var $osf = require('js/osfHelpers');
 var waterbutler = require('js/waterbutler');
 
 var iconmap = require('js/iconmap');
-var storageAddons = require('json-loader!storageAddons.json');
+var storageAddons = require('storageAddons.json');
 
 var gt = require('js/rdmGettext').rdmGettext();
 var gettext = require('js/rdmGettext')._;
@@ -1841,9 +1841,10 @@ function getPersistentLinkFor(item) {
             path = item.data.materialized;
         }
         redir.segment('files/dir').segment(item.data.provider).segment(path.substring(1));
-    } else {
-        redir.segment('files').segment(item.data.provider).segmentCoded(item.data.path.substring(1));
+        // urijs drops the trailing slash that marks a directory
+        return redir.toString().replace(/\/?$/, '/');
     }
+    redir.segment('files').segment(item.data.provider).segmentCoded(item.data.path.substring(1));
     return redir.toString();
 }
 
