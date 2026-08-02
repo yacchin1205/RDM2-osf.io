@@ -26,7 +26,7 @@ def _endpoint_url(host):
 
 
 def connect_s3compat(host=None, access_key=None, secret_key=None, node_settings=None):
-    """Build an S3 client for a legacy, Signature V2 compatible endpoint."""
+    """Build an S3 client using Signature V4."""
     if node_settings is not None and node_settings.external_account is not None:
         host = node_settings.external_account.provider_id.split('\t')[0]
         access_key = node_settings.external_account.oauth_key
@@ -38,7 +38,7 @@ def connect_s3compat(host=None, access_key=None, secret_key=None, node_settings=
         aws_secret_access_key=secret_key,
         endpoint_url=_endpoint_url(host),
         config=Config(
-            signature_version='s3',
+            signature_version='s3v4',
             s3={'addressing_style': 'path'},
         ),
     )

@@ -40,3 +40,11 @@ class S3CompatAddonTestCase(OAuthAddonTestCaseMixin, AddonTestCase):
                                             access_key='a',
                                             secret_key='s')
         assert (connection.meta.endpoint_url) == ('http://normalhost:8080')
+
+
+def test_signature_version():
+    connection = utils.connect_s3compat(host='securehost',
+                                        access_key='a',
+                                        secret_key='s')
+
+    assert connection.meta.config.signature_version == 's3v4'
