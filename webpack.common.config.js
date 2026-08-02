@@ -256,6 +256,11 @@ var plugins = [
         $: 'jquery',
         jQuery: 'jquery'
     }),
+    // webpack 5 no longer injects the Node globals that crypto-browserify needs
+    new webpack.ProvidePlugin({
+        Buffer: ['buffer', 'Buffer'],
+        process: 'process/browser'
+    }),
     // Slight hack to make sure that CommonJS is always used
     new webpack.DefinePlugin({
         'define.amd': false,
