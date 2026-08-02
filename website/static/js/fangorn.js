@@ -1841,9 +1841,10 @@ function getPersistentLinkFor(item) {
             path = item.data.materialized;
         }
         redir.segment('files/dir').segment(item.data.provider).segment(path.substring(1));
-    } else {
-        redir.segment('files').segment(item.data.provider).segmentCoded(item.data.path.substring(1));
+        // urijs drops the trailing slash that marks a directory
+        return redir.toString().replace(/\/?$/, '/');
     }
+    redir.segment('files').segment(item.data.provider).segmentCoded(item.data.path.substring(1));
     return redir.toString();
 }
 
