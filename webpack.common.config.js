@@ -265,8 +265,9 @@ var plugins = [
 
 var output = {
     path: path.resolve(__dirname, 'website', 'static', 'public', 'js'),
-    // Empty (not wp5's 'auto') so webpack-assets.json keeps plain filenames
-    publicPath: '',
+    // Fonts and images emitted here are served from this path, not relative to
+    // the page URL (wp5's 'auto' default resolves them against the page)
+    publicPath: '/static/public/js/',
     filename: '[name].js',
     sourcePrefix: ''
 };

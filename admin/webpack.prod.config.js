@@ -4,6 +4,8 @@ var assign = require('object-assign');
 var SaveAssetsJson = require('assets-webpack-plugin');
 var TerserPlugin = require('terser-webpack-plugin');
 
+var PUBLIC_PATH = '/static/public/js/';
+
 module.exports = assign(admin, {
     mode: 'production',
     devtool: false,
@@ -23,7 +25,7 @@ module.exports = assign(admin, {
             processOutput: function(assets) {
                 var flat = {};
                 Object.keys(assets).forEach(function(name) {
-                    flat[name] = assets[name].js;
+                    flat[name] = assets[name].js.replace(PUBLIC_PATH, '');
                 });
                 return JSON.stringify(flat);
             }
@@ -39,8 +41,7 @@ module.exports = assign(admin, {
         ]
     },
     output: Object.assign({}, admin.output, {
-        // Empty (not wp5's 'auto') so webpack-assets.json keeps plain filenames
-        publicPath: '',
+        publicPath: PUBLIC_PATH,
         // Append hash to filenames for cachebusting
         filename: '[name].[chunkhash].js',
     }),

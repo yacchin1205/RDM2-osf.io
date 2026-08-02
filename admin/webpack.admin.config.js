@@ -23,7 +23,7 @@ var plugins = common.plugins.concat([
 
 common.output = {
     path: path.resolve(__dirname, 'static', 'public', 'js'),
-    publicPath: '',
+    publicPath: '/static/public/js/',
     filename: '[name].js',
     sourcePrefix: ''
 };
