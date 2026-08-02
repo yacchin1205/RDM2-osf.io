@@ -1720,6 +1720,26 @@ class TestAddonFileViews(OsfTestCase):
         assert not (GithubFileNode.load(file_node._id))
         assert (TrashedFileNode.load(file_node._id))
 
+    def test_deleted_file_page_renders(self):
+        file_node = self.get_test_file()
+        with mock.patch(
+            'addons.github.models.NodeSettings.is_private',
+            new_callable=mock.PropertyMock,
+            return_value=False,
+        ):
+            with mock.patch.object(GithubFileNode, 'touch', return_value=None):
+                resp = self.app.get(
+                    self.project.web_url_for(
+                        'addon_view_or_download_file',
+                        path=file_node.path.strip('/'),
+                        provider='github',
+                    ),
+                    auth=self.user.auth,
+                )
+
+        assert resp.status_code == 410
+        assert 'File not found at GitHub.' in resp.text
+
     def test_delete_action_no_file_node(self):
         file_node = self.get_test_file()
         payload = {

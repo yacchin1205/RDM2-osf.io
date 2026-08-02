@@ -767,6 +767,8 @@ def addon_view_or_download_file_legacy(**kwargs):
 def addon_deleted_file(auth, target, error_type='BLAME_PROVIDER', **kwargs):
     """Shows a nice error message to users when they try to view a deleted file
     """
+    from addons.onlyoffice import settings as onlyoffice_settings
+
     # Allow file_node to be passed in so other views can delegate to this one
     file_node = kwargs.get('file_node') or TrashedFileNode.load(kwargs.get('trashed_id'))
 
@@ -837,6 +839,7 @@ def addon_deleted_file(auth, target, error_type='BLAME_PROVIDER', **kwargs):
             'private': getattr(target.get_addon(file_node.provider), 'is_private', False),
             'file_tags': list(file_node.tags.filter(system=False).values_list('name', flat=True)) if not file_node._state.adding else [],  # Only access ManyRelatedManager if saved
             'allow_comments': file_node.provider in settings.ADDONS_COMMENTABLE,
+            'wopi_onlyoffice': onlyoffice_settings.WOPI_CLIENT_ONLYOFFICE,
         })
 
         # timestampVerifyResult Update(file was gone)
