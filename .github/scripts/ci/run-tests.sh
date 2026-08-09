@@ -8,8 +8,13 @@ if [ "$#" -ne 1 ]; then
 fi
 
 TEST_BUILD="$1"
+ENABLE_COVERAGE="${ENABLE_COVERAGE:-false}"
 REPO_ROOT=$(git rev-parse --show-toplevel)
 cd "$REPO_ROOT"
+
+if [ "$ENABLE_COVERAGE" = "true" ]; then
+    rm -f ".coverage.${TEST_BUILD}"
+fi
 
 compose_files=(-f docker-compose.yml -f .github/docker-compose.ci.override.yml)
 compose() {
@@ -93,10 +98,16 @@ pip3 install uritemplate.py==0.3.0
 if [ "$TEST_BUILD" = "api1_and_js" ]; then
     invoke assets --dev
 fi
-invoke "test_travis_${TEST_BUILD}" -n 1
+coverage_args=()
+if [ "$ENABLE_COVERAGE" = "true" ]; then
+    export COVERAGE_FILE="/code/.coverage.${TEST_BUILD}"
+    coverage_args+=(--coverage)
+fi
+invoke "test_travis_${TEST_BUILD}" -n 1 "${coverage_args[@]}"
 BASH
 
 compose run --rm \
+    -e ENABLE_COVERAGE="$ENABLE_COVERAGE" \
     -e TEST_BUILD="$TEST_BUILD" \
     -e BOWER_ALLOW_ROOT=1 \
     -e NPM_CONFIG_FORCE=true \
