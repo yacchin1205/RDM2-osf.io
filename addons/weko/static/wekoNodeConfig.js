@@ -8,6 +8,7 @@ var bootbox = require('bootbox');
 var Raven = require('raven-js');
 
 var $osf = require('js/osfHelpers');
+require('js/rdmSelect2');
 
 var $modal = $('#wekoInputCredentials');
 
@@ -29,30 +30,37 @@ function _getIndexById(indices, id) {
     return null;
 }
 
-function _getIndexDisplayTitle(index, level) {
-    if (level === 0) {
-        return index.title;
-    }
-    var prefix = '';
-    for (var i = 0; i < level; i ++) {
-        prefix += ' ';
-    }
-    return prefix + '- ' + index.title;
-}
-
-function _flattenIndices(indices, level) {
+function _flattenIndices(indices, ancestorTitles) {
     const r = [];
     indices.forEach(function(data) {
-        const displayTitle = _getIndexDisplayTitle(data, level);
+        const titles = ancestorTitles.concat([data.title]);
         r.push(Object.assign({
-            displayTitle: displayTitle,
+            displayTitle: titles.join(' / '),
         }, data));
-        _flattenIndices(data.children, level + 1).forEach(function(child) {
+        _flattenIndices(data.children, titles).forEach(function(child) {
             r.push(child);
         });
     });
     return r;
 }
+
+ko.bindingHandlers.wekoIndexSelect2 = {
+    // select2 mirrors the <select>, so the element must be up to date first
+    after: ['options', 'value'],
+    init: function(element) {
+        $(element).select2({
+            width: '100%',
+            // The <select> keeps form-control because existing selectors rely on it;
+            // copied onto the select2 box it would draw a second border
+            adaptContainerCssClass: function() {
+                return null;
+            }
+        });
+    },
+    update: function(element, valueAccessor) {
+        $(element).select2('val', ko.unwrap(valueAccessor()));
+    }
+};
 
 
 function ViewModel(url) {
@@ -172,7 +180,7 @@ function ViewModel(url) {
     });
 
     self.flattenIndices = ko.pureComputed(function() {
-        return _flattenIndices(self.indices(), 0);
+        return _flattenIndices(self.indices(), []);
     });
 
     // Flashed messages
