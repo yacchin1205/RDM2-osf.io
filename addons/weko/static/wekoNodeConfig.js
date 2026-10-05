@@ -126,7 +126,7 @@ function ViewModel(url) {
         setInfoSuccess: ko.pureComputed(function() {
             var filesUrl = window.contextVars.node.urls.web + 'files/';
             return sprintf(_('Successfully linked index "%1$s". Go to the <a href="%2$s">Files page</a> to view your content.'),
-                $osf.htmlEscape(self.options.decodeFolder(self.folder().name)), filesUrl);
+                $osf.htmlEscape(self.savedIndexTitle()), filesUrl);
         }),
         setIndexError: ko.pureComputed(function() {
             return sprintf(_('Could not connect to this index. Please refresh the page or ' +
