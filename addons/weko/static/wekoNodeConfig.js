@@ -345,20 +345,6 @@ ViewModel.prototype.onImportError = function(xhr, status, error) {
     });
 };
 
-/**
- * Allows a user to create an access token from the nodeSettings page
- */
-ViewModel.prototype.connectAccount = function() {
-    var self = this;
-
-    window.oauthComplete = function(res) {
-        // Update view model based on response
-        self.changeMessage(self.messages.connectAccountSuccess(), 'text-success', 3000);
-        self.importAuth.call(self);
-    };
-    window.open(self.urls().auth);
-};
-
 ViewModel.prototype.connectExistingAccount = function(account_id) {
     var self = this;
 
