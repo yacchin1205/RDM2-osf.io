@@ -66,7 +66,7 @@
                                                    optionsValue: 'id',
                                                    optionsText: 'displayTitle',
                                                    value: selectedIndexId,
-                                                   wekoIndexSelect2: selectedIndexId">
+                                                   wekoIndexSelect2: {value: selectedIndexId, labels: indexLabels}">
                                 </select>
                             </div>
                         </div>

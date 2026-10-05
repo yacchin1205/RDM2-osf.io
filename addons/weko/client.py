@@ -71,16 +71,17 @@ class Client(object):
         results = resp.json().get('results', {})
         return results.get('subitem_mail_address', default_user)
 
-    def get_indices(self):
+    def get_indices(self, accept_language=None):
         """
         Get all indices from the WEKO.
         """
+        headers = None if accept_language is None else {'Accept-Language': accept_language}
         more_ids = []
         while True:
             path = 'api/tree?action=browsing'
             if more_ids:
                 path += '&more_ids=' + '/'.join(more_ids)
-            root = self._get(path)
+            root = self._get(path, headers=headers)
             truncated_ids = _get_truncated_index_ids(root)
             if not truncated_ids:
                 break
@@ -122,8 +123,11 @@ class Client(object):
             return self.host
         return self.host[:-6]
 
-    def _get(self, path):
-        resp = requests.get(self._base_host + path, **self._requests_args())
+    def _get(self, path, headers=None):
+        resp = requests.get(
+            self._base_host + path,
+            **self._requests_args(headers=headers)
+        )
         resp.raise_for_status()
         return resp.json()
 

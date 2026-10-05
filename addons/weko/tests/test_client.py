@@ -86,6 +86,17 @@ class TestWEKOClient(OsfTestCase):
             self.conn.get_indices()
 
     @mock.patch('requests.get', side_effect=mock_requests_get)
+    def test_weko_get_indices_asks_for_the_given_language(self, get_req_mock):
+        self.conn.get_indices(accept_language='ja')
+
+        get_req_mock.assert_called_once_with(
+            'https://test.sample.nii.ac.jp/api/tree?action=browsing',
+            auth=(None, None),
+            headers={'Accept-Language': 'ja'},
+            timeout=client.DEFAULT_TIMEOUT,
+        )
+
+    @mock.patch('requests.get', side_effect=mock_requests_get)
     def test_weko_get_index_by_id(self, get_req_mock):
         index = self.conn.get_index_by_id(100)
         assert_equal(index.title, 'Sample Index')

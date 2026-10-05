@@ -30,31 +30,30 @@ function _getIndexById(indices, id) {
     return null;
 }
 
-function _flattenIndices(indices, ancestorTitles) {
+function _flattenIndices(indices, ancestorTitles, ancestorLocalizedTitles) {
     const r = [];
     indices.forEach(function(data) {
         const titles = ancestorTitles.concat([data.title]);
+        const localizedTitles = ancestorLocalizedTitles.concat([data.localizedTitle]);
         r.push(Object.assign({
             displayTitle: titles.join(' / '),
+            label: localizedTitles.join(' / ') + ' (ID:' + data.id + ')',
         }, data));
-        _flattenIndices(data.children, titles).forEach(function(child) {
+        _flattenIndices(data.children, titles, localizedTitles).forEach(function(child) {
             r.push(child);
         });
     });
     return r;
 }
 
-function _withIndexId(title, id) {
-    return title + ' (ID:' + id + ')';
-}
-
 ko.bindingHandlers.wekoIndexSelect2 = {
     // select2 mirrors the <select>, so the element must be up to date first
     after: ['options', 'value'],
-    init: function(element) {
+    init: function(element, valueAccessor) {
         const defaults = $.fn.select2.defaults;
-        // The ID is shown and matched here; the option text stays the plain path
-        // because label-based selection of the <select> relies on it
+        const labels = valueAccessor().labels;
+        // The localized name and the ID are shown and matched here; the option text stays
+        // the plain path because label-based selection of the <select> relies on it
         $(element).select2({
             width: '100%',
             // The <select> keeps form-control because existing selectors rely on it;
@@ -63,19 +62,18 @@ ko.bindingHandlers.wekoIndexSelect2 = {
                 return null;
             },
             matcher: function(term, text, option) {
-                return defaults.matcher(term, _withIndexId(text, option.val()));
+                return defaults.matcher(term, labels()[option.val()]);
             },
             formatResult: function(result, container, query, escapeMarkup) {
-                return defaults.formatResult(
-                    {text: _withIndexId(result.text, result.id)}, container, query, escapeMarkup);
+                return defaults.formatResult({text: labels()[result.id]}, container, query, escapeMarkup);
             },
             formatSelection: function(data, container, escapeMarkup) {
-                return escapeMarkup(_withIndexId(data.text, data.id));
+                return escapeMarkup(labels()[data.id]);
             }
         });
     },
     update: function(element, valueAccessor) {
-        $(element).select2('val', ko.unwrap(valueAccessor()));
+        $(element).select2('val', ko.unwrap(valueAccessor().value));
     }
 };
 
@@ -197,7 +195,14 @@ function ViewModel(url) {
     });
 
     self.flattenIndices = ko.pureComputed(function() {
-        return _flattenIndices(self.indices(), []);
+        return _flattenIndices(self.indices(), [], []);
+    });
+    self.indexLabels = ko.pureComputed(function() {
+        const labels = {};
+        self.flattenIndices().forEach(function(index) {
+            labels[index.id] = index.label;
+        });
+        return labels;
     });
 
     // Flashed messages
