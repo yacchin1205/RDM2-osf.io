@@ -44,16 +44,33 @@ function _flattenIndices(indices, ancestorTitles) {
     return r;
 }
 
+function _withIndexId(title, id) {
+    return title + ' (ID:' + id + ')';
+}
+
 ko.bindingHandlers.wekoIndexSelect2 = {
     // select2 mirrors the <select>, so the element must be up to date first
     after: ['options', 'value'],
     init: function(element) {
+        const defaults = $.fn.select2.defaults;
+        // The ID is shown and matched here; the option text stays the plain path
+        // because label-based selection of the <select> relies on it
         $(element).select2({
             width: '100%',
             // The <select> keeps form-control because existing selectors rely on it;
             // copied onto the select2 box it would draw a second border
             adaptContainerCssClass: function() {
                 return null;
+            },
+            matcher: function(term, text, option) {
+                return defaults.matcher(term, _withIndexId(text, option.val()));
+            },
+            formatResult: function(result, container, query, escapeMarkup) {
+                return defaults.formatResult(
+                    {text: _withIndexId(result.text, result.id)}, container, query, escapeMarkup);
+            },
+            formatSelection: function(data, container, escapeMarkup) {
+                return escapeMarkup(_withIndexId(data.text, data.id));
             }
         });
     },
