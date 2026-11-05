@@ -3331,7 +3331,6 @@
           "qid": "internal:weko-item-id",
           "type": "string",
           "format": "text",
-          "pattern": "^[0-9]+$",
           "required": false
         }
       ]

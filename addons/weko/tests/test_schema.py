@@ -2943,3 +2943,17 @@ class TestWEKOSchema(OsfTestCase):
         # familyName/givenName should NOT exist (unsplit)
         assert 'jpcoar:familyName' not in dm
         assert 'jpcoar:givenName' not in dm
+
+
+def test_get_weko_item_id():
+    def project_metadata(value):
+        return [{'internal:weko-item-id': {'value': value}}]
+
+    assert_equal(schema.get_weko_item_id([{}]), None)
+    assert_equal(schema.get_weko_item_id(project_metadata('')), None)
+    assert_equal(schema.get_weko_item_id(project_metadata('123')), '123')
+    single = {'items': [{'recid': '123', 'url': 'https://weko.test/records/123', 'activity': 'A-20261104-00001', 'files': []}]}
+    assert_equal(schema.get_weko_item_id(project_metadata(json.dumps(single))), '123')
+    split = {'items': single['items'] + [{'recid': '124', 'url': 'https://weko.test/records/124', 'activity': None, 'files': []}]}
+    with assert_raises(ValueError):
+        schema.get_weko_item_id(project_metadata(json.dumps(split)))

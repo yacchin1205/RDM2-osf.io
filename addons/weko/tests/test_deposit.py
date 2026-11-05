@@ -92,6 +92,18 @@ class TestWEKOBagIt(OsfTestCase):
         mock_wb_client.get_file_by_materialized_path.return_value = mock_file
 
         mock_client = mock.MagicMock()
+        mock_client.deposit.return_value = {
+            '@id': 'https://weko.test/sword/deposit/1',
+            'links': [
+                {'@id': 'https://weko.test/records/1', 'rel': ['alternate'], 'contentType': 'text/html'},
+                {
+                    '@id': 'https://weko.test/record/1/files/files%2Fdummy',
+                    'rel': ['http://purl.org/net/sword/3.0/terms/fileSetFile'],
+                    'contentType': 'text/plain',
+                    'derivedFrom': 'https://weko.test/records/1',
+                },
+            ],
+        }
         mock_create_client.return_value = mock_client
 
         deposit._deposit_metadata(
@@ -157,3 +169,83 @@ class TestWEKOBagIt(OsfTestCase):
         assert_in('日本語説明', ro_crate_metadata_content)
 
         mock_create_log.assert_called_once()
+        assert_equal(mock_create_log.call_args[0][2]['item_html_url'], 'https://weko.test/records/1')
+
+
+SPLIT_WORKFLOW_RESPONSE = {
+    '@id': 'https://weko.test/sword/deposit/2000006',
+    'state': [{'@id': 'http://purl.org/net/sword/3.0/state/inWorkflow'}],
+    'links': [
+        {'@id': 'https://weko.test/workflow/activity/detail/A-20261104-00001', 'rel': ['alternate'], 'contentType': 'text/html'},
+        {'@id': 'https://weko.test/workflow/activity/detail/A-20261104-00002', 'rel': ['alternate'], 'contentType': 'text/html'},
+        {
+            '@id': 'https://weko.test/records/2000005', 'rel': ['alternate'], 'contentType': 'text/html',
+            'log': '[{"type": "isSupplementedBy", "url": "https://weko.test/records/2000006"}]',
+        },
+        {
+            '@id': 'https://weko.test/records/2000006', 'rel': ['alternate'], 'contentType': 'text/html',
+            'log': '[{"type": "isSupplementTo", "url": "https://weko.test/records/2000005"}]',
+        },
+        {
+            '@id': 'https://weko.example.org/record/2000005/files/files%2Fevidence%2F%E3%83%87%E3%83%BC%E3%82%BF.txt',
+            'rel': ['http://purl.org/net/sword/3.0/terms/fileSetFile'],
+            'contentType': 'text/plain',
+            'derivedFrom': 'https://weko.test/records/2000005',
+        },
+        {
+            '@id': 'https://weko.example.org/record/2000006/files/files%2Fpaper.pdf',
+            'rel': ['http://purl.org/net/sword/3.0/terms/fileSetFile'],
+            'contentType': 'application/pdf',
+            'derivedFrom': 'https://weko.test/records/2000006',
+        },
+    ],
+}
+
+
+def test_get_deposited_items_split_workflow():
+    assert_equal(deposit._get_deposited_items(SPLIT_WORKFLOW_RESPONSE), [
+        {
+            'recid': '2000005',
+            'url': 'https://weko.test/records/2000005',
+            'activity': 'A-20261104-00001',
+            'files': ['files/evidence/データ.txt'],
+        },
+        {
+            'recid': '2000006',
+            'url': 'https://weko.test/records/2000006',
+            'activity': 'A-20261104-00002',
+            'files': ['files/paper.pdf'],
+        },
+    ])
+
+
+def test_get_deposited_items_direct_without_activity():
+    response = {
+        '@id': 'https://weko.test/sword/deposit/1',
+        'links': [link for link in SPLIT_WORKFLOW_RESPONSE['links'] if '/workflow/' not in link['@id']],
+    }
+    assert_equal([item['activity'] for item in deposit._get_deposited_items(response)], [None, None])
+
+
+def test_get_deposited_items_rejects_unpaired_activities():
+    response = {
+        '@id': 'https://weko.test/sword/deposit/2000006',
+        'links': SPLIT_WORKFLOW_RESPONSE['links'][1:],
+    }
+    with assert_raises(ValueError):
+        deposit._get_deposited_items(response)
+
+
+def test_get_item_url_for_files():
+    items = deposit._get_deposited_items(SPLIT_WORKFLOW_RESPONSE)
+    assert_equal(
+        deposit._get_item_url_for_files(items, [('paper.pdf', 'application/pdf')]),
+        'https://weko.test/records/2000006',
+    )
+    assert_equal(
+        deposit._get_item_url_for_files(items, [('evidence/データ.txt', 'text/plain')]),
+        'https://weko.test/records/2000005',
+    )
+    with assert_raises(ValueError):
+        deposit._get_item_url_for_files(items, [('unknown.txt', 'text/plain')])
+

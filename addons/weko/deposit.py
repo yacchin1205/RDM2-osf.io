@@ -5,6 +5,7 @@ import os
 import re
 import shutil
 import tempfile
+from urllib.parse import unquote, urlparse
 from zipfile import ZipFile
 import bagit
 
@@ -24,6 +25,9 @@ logger = logging.getLogger('addons.weko.views')
 ROCRATE_DATASET_MIME_TYPE = 'application/rdm-dataset'
 ROCRATE_PROJECT_MIME_TYPE = 'application/rdm-project'
 ROCRATE_FILENAME_PATTERN = re.compile(r'\.rdm-project([^\.]+)\.zip$')
+WEKO_RECORD_PATH_PATTERN = re.compile(r'/records/(\d+)$')
+WEKO_ACTIVITY_PATH_PATTERN = re.compile(r'/workflow/activity/detail/([^/]+)$')
+WEKO_FILE_PATH_PATTERN = re.compile(r'/record/\d+/files/([^/]+)$')
 
 
 class ROCrateFactory(BaseROCrateFactory):
@@ -81,6 +85,41 @@ def _download(node, file, tmp_dir, total_size, relative_path=''):
             current_size += os.path.getsize(child_path)
             downloaded.append((child_path, child_type))
     return downloaded
+
+
+def _get_deposited_items(respbody):
+    record_urls = []
+    activity_ids = []
+    files = {}
+    for link in respbody['links']:
+        path = urlparse(link['@id']).path
+        if 'derivedFrom' in link:
+            filename = unquote(WEKO_FILE_PATH_PATTERN.search(path).group(1))
+            files.setdefault(link['derivedFrom'], []).append(filename)
+        elif WEKO_ACTIVITY_PATH_PATTERN.search(path):
+            activity_ids.append(WEKO_ACTIVITY_PATH_PATTERN.search(path).group(1))
+        elif WEKO_RECORD_PATH_PATTERN.search(path):
+            record_urls.append(link['@id'])
+    # WEKO does not tell which activity belongs to which record; both are listed in registration order
+    if activity_ids and len(activity_ids) != len(record_urls):
+        raise ValueError(f'Activities do not match records: {activity_ids}, {record_urls}')
+    return [
+        {
+            'recid': WEKO_RECORD_PATH_PATTERN.search(urlparse(url).path).group(1),
+            'url': url,
+            'activity': activity_ids[i] if activity_ids else None,
+            'files': files.get(url, []),
+        }
+        for i, url in enumerate(record_urls)
+    ]
+
+
+def _get_item_url_for_files(items, download_file_names):
+    filenames = {f'files/{name}' for name, _ in download_file_names}
+    urls = [item['url'] for item in items if filenames & set(item['files'])]
+    if len(urls) != 1:
+        raise ValueError(f'Files must belong to exactly one item: {filenames}, {urls}')
+    return urls[0]
 
 
 def _check_file_size(total_size):
@@ -339,8 +378,14 @@ def _deposit_metadata(
                 'progress': 100,
                 'paths': metadata_paths,
             })
-        links = [l for l in respbody['links'] if 'contentType' in l and '@id' in l and l['contentType'] == 'text/html']
-        for file in download_files:
+        items = _get_deposited_items(respbody)
+        result_recid = respbody['@id'].split('/')[-1]
+        result_url = next(item['url'] for item in items if item['recid'] == result_recid)
+        deposited_files = [
+            (file, _get_item_url_for_files(items, names))
+            for file, names in zip(download_files, download_file_names)
+        ] + [(file, result_url) for file in ad_metadata_download_files]
+        for file, item_url in deposited_files:
             if delete_after:
                 file.delete()
             weko_addon.create_waterbutler_deposit_log(
@@ -349,46 +394,24 @@ def _deposit_metadata(
                 {
                     'materialized': file.materialized,
                     'path': file.path,
-                    'item_html_url': links[0]['@id'] if len(links) > 0 else None,
-                },
-            )
-        for file in ad_metadata_download_files:
-            if delete_after:
-                file.delete()
-            weko_addon.create_waterbutler_deposit_log(
-                Auth(user),
-                'item_deposited',
-                {
-                    'materialized': file.materialized,
-                    'path': file.path,
-                    'item_html_url': links[0]['@id'] if len(links) > 0 else None,
+                    'item_html_url': item_url,
                 },
             )
 
-        is_ingested = any(
-            s['@id'].endswith('/ingested')
-            for s in respbody.get('state', [])
-            if '@id' in s
-        )
-        if is_ingested and len(project_metadatas) == 1:
+        if len(project_metadatas) == 1:
             project_metadata = DraftRegistration.objects.filter(_id=metadata_node_id).first()
-            weko_id = respbody['@id'].split('/')[-1]
-
-            if project_metadata and weko_id:
-                update_data = {
+            if project_metadata:
+                project_metadata.update_metadata({
                     'internal:weko-item-id': {
-                        'value': weko_id,
+                        'value': json.dumps({'items': items}),
                         'comments': [],
                         'extra': [],
                     },
-                }
-
-                project_metadata.update_metadata(update_data)
-
+                })
                 project_metadata.save()
 
         return {
-            'result': links[0]['@id'] if len(links) > 0 else None,
+            'result': result_url,
             'paths': metadata_paths,
             'response': respbody,
         }

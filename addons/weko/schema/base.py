@@ -20,9 +20,16 @@ def get_weko_item_id(project_metadatas: Any) -> Union[str, None]:
     if isinstance(project_metadata, str):
         project_metadata = json.loads(project_metadata)
     item_id = project_metadata.get('internal:weko-item-id')
-    if item_id and item_id.get('value'):
-        return item_id.get('value')
-    return None
+    if not item_id or not item_id.get('value'):
+        return None
+    value = item_id['value']
+    # Values saved before WEKO 2.1 support are a plain recid
+    if not value.startswith('{'):
+        return value
+    items = json.loads(value)['items']
+    if len(items) != 1:
+        raise ValueError(f'Updating multiple WEKO items is not supported: {[item["recid"] for item in items]}')
+    return items[0]['recid']
 
 
 def _get_metadata_value(file_metadata_data, item, lang, index):
