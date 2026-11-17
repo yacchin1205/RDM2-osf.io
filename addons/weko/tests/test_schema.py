@@ -914,7 +914,7 @@ class TestWEKOSchema(OsfTestCase):
           "@id": "_:Organization3"
         }
       ],
-      "jpcoar:contributorType": "ContactPerson",
+      "contributorType": "ContactPerson",
       "@id": "_:Organization1"
     },
     {
@@ -956,7 +956,7 @@ class TestWEKOSchema(OsfTestCase):
           "@id": "_:Organization7"
         }
       ],
-      "jpcoar:contributorType": "HostingInstitution",
+      "contributorType": "HostingInstitution",
       "jpcoar:nameIdentifier": [
         {
           "@id": "_:Organization8"
@@ -1119,7 +1119,7 @@ class TestWEKOSchema(OsfTestCase):
           "@id": "_:Person11"
         }
       ],
-      "jpcoar:contributorType": "DataManager",
+      "contributorType": "DataManager",
       "jpcoar:familyName": [
         {
           "@id": "_:Person12"
@@ -1320,19 +1320,19 @@ class TestWEKOSchema(OsfTestCase):
     },
     {
       "@type": "jpcoar:awardNumber",
-      "jpcoar:awardNumberType": "JGN",
+      "awardNumberType": "JGN",
       "value": "JP123456",
       "@id": "_:jpcoar_awardNumber1"
     },
     {
       "@type": "jpcoar:funderIdentifier",
-      "jpcoar:funderIdentifierType": "ROR",
+      "funderIdentifierType": "ROR",
       "value": "https://ror.org/00097mb19",
       "@id": "_:jpcoar_funderIdentifier1"
     },
     {
       "@type": "jpcoar:fundingStreamIdentifier",
-      "jpcoar:fundingStreamIdentifierType": "JGN_fundingStream",
+      "fundingStreamIdentifierType": "JGN_fundingStream",
       "value": "JPTEST",
       "@id": "_:jpcoar_fundingStreamIdentifier1"
     },
@@ -1633,11 +1633,11 @@ class TestWEKOSchema(OsfTestCase):
         # Find the relation with published article DOI (grdm-file:doi)
         doi_relation = next(
             (rel for rel in relation_entities
-             if rel.get('jpcoar:relationType') in ['isVersionOf', 'isIdenticalTo']),
+             if rel.get('relationType') in ['isVersionOf', 'isIdenticalTo']),
             None
         )
         assert_true(doi_relation is not None, 'DOI relation not found in jpcoar:relation')
-        assert_equal(doi_relation['jpcoar:relationType'], 'isVersionOf')  # AM version should use isVersionOf
+        assert_equal(doi_relation['relationType'], 'isVersionOf')  # AM version should use isVersionOf
 
         # Verify the related identifier contains the DOI
         related_id_entities = property_entities(doi_relation, 'jpcoar:relatedIdentifier')
@@ -1726,11 +1726,11 @@ class TestWEKOSchema(OsfTestCase):
         # Find the DOI relation
         doi_relation = next(
             (rel for rel in relation_entities
-             if rel.get('jpcoar:relationType') in ['isVersionOf', 'isIdenticalTo']),
+             if rel.get('relationType') in ['isVersionOf', 'isIdenticalTo']),
             None
         )
         assert_true(doi_relation is not None, 'DOI relation not found')
-        assert_equal(doi_relation['jpcoar:relationType'], 'isIdenticalTo')  # VoR version should use isIdenticalTo
+        assert_equal(doi_relation['relationType'], 'isIdenticalTo')  # VoR version should use isIdenticalTo
 
         # Verify the related identifier contains the VoR DOI
         related_id_entities = property_entities(doi_relation, 'jpcoar:relatedIdentifier')
@@ -1985,6 +1985,64 @@ class TestWEKOSchema(OsfTestCase):
             'open_no',
             'Dataset file should default to open_no when grdm-file:access-rights is not set'
         )
+
+    def test_embargoed_file_published_on_available_date(self):
+        buf = io.StringIO()
+        index = mock.MagicMock()
+        index.identifier = '1000'
+        index.title = 'Test Index'
+        node_id = 'testnode'
+        files = [[('data.csv', 'text/csv')]]
+
+        target_schema = RegistrationSchema.objects \
+            .filter(name='公的資金による研究データのメタデータ登録') \
+            .order_by('-schema_version') \
+            .first()
+
+        file_metadata = {
+            'items': [
+                {
+                    'schema': target_schema._id,
+                    'data': {
+                        'grdm-file:title-en': {'value': 'Test Dataset'},
+                        'grdm-file:file-type': {'value': 'dataset'},
+                        'grdm-file:data-type': {'value': 'experimental data'},
+                        'grdm-file:access-rights': {'value': 'embargoed access'},
+                        'grdm-file:available-date': {'value': '2030-01-01'},
+                        'grdm-file:creators': {
+                            'value': [
+                                {
+                                    'number': 'D001',
+                                    'name-ja': {'last': 'テスト', 'middle': '', 'first': '太郎'},
+                                    'name-en': {'last': 'Test', 'middle': '', 'first': 'Taro'},
+                                }
+                            ]
+                        },
+                    },
+                },
+            ],
+        }
+
+        schema.write_ro_crate_json(
+            self.user,
+            buf,
+            index,
+            files,
+            target_schema._id,
+            [file_metadata],
+            [],
+            node_id
+        )
+
+        actual_json = json.loads(buf.getvalue())
+        file_entities = [
+            entity for entity in actual_json['@graph']
+            if entity.get('@type') == 'File'
+        ]
+        assert_equal(len(file_entities), 1)
+        file_entity = file_entities[0]
+        assert_equal(file_entity.get('dcterms:accessRights'), 'open_date')
+        assert_equal(file_entity.get('datePublished'), '2030-01-01')
 
     def test_write_ro_crate_json_mebyo_full(self):
         """Full field coverage test for MEBYO schema RO-Crate generation.
@@ -2665,7 +2723,7 @@ class TestWEKOSchema(OsfTestCase):
 
             award_number = resolve_ref(fr['jpcoar:awardNumber'])
             assert_equal(award_number['@type'], 'jpcoar:awardNumber')
-            assert_equal(award_number['jpcoar:awardNumberType'], 'JGN')
+            assert_equal(award_number['awardNumberType'], 'JGN')
 
             funder_names = [resolve_ref(r) for r in fr['jpcoar:funderName']]
             assert_equal(len(funder_names), 2)
@@ -2874,7 +2932,7 @@ class TestWEKOSchema(OsfTestCase):
         dm = None
         for ref in contributor_refs:
             entity = entities[ref['@id']]
-            if entity.get('jpcoar:contributorType') == 'DataManager':
+            if entity.get('contributorType') == 'DataManager':
                 dm = entity
                 break
         assert dm is not None

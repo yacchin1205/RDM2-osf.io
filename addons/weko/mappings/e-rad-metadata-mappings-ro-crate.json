@@ -11,7 +11,7 @@
             "jpcoar:mimeType": "{{object_format}}",
             "jpcoar:format": "preview",
             "dcterms:accessRights": "{% if object_grdm_file_access_rights == 'open access' %}open_access{% elif object_grdm_file_access_rights == 'restricted access' %}open_login{% elif object_grdm_file_access_rights == 'embargoed access' %}open_date{% elif object_grdm_file_file_type == 'manuscript' %}open_access{% else %}open_no{% endif %}",
-            "datePublished": "{{nowdate}}",
+            "datePublished": "{% if object_grdm_file_access_rights == 'embargoed access' %}{{object_grdm_file_available_date}}{% else %}{{nowdate}}{% endif %}",
             "datacite:date[]": {
                 "@createIf": "{% if object_grdm_file_access_rights == 'embargoed access' %}{{object_grdm_file_available_date}}{% endif %}",
                 ".@type": "Date",
@@ -28,7 +28,7 @@
             "jpcoar:funderIdentifier": {
                 "@createIf": "{{ funder_value | to_funder_ror_id }}",
                 ".@type": "jpcoar:funderIdentifier",
-                "jpcoar:funderIdentifierType": "ROR",
+                "funderIdentifierType": "ROR",
                 "value": "{{ funder_value | to_funder_ror_id }}"
             },
             "jpcoar:funderName[FUNDER_NAME_JA]": {
@@ -47,7 +47,7 @@
                 "@createIf": "{{ funding_stream_code_value }}",
                 ".@type": "jpcoar:fundingStreamIdentifier",
                 "value": "{{funding_stream_code_value}}",
-                "jpcoar:fundingStreamIdentifierType": "JGN_fundingStream"
+                "fundingStreamIdentifierType": "JGN_fundingStream"
             },
             "jpcoar:fundingStream[FUNDING_STREAM_JA]": {
                 "@createIf": "{{ program_name_ja_value }}",
@@ -64,7 +64,7 @@
             "jpcoar:awardNumber": {
                 "@createIf": "{{ japan_grant_number_value }}",
                 ".@type": "jpcoar:awardNumber",
-                "jpcoar:awardNumberType": "JGN",
+                "awardNumberType": "JGN",
                 "value": "{{japan_grant_number_value}}"
             },
             "jpcoar:awardTitle[PROJECT_NAME_JA]": {
@@ -89,7 +89,7 @@
             "jpcoar:funderIdentifier": {
                 "@createIf": "{{ object_funder | to_funder_ror_id }}",
                 ".@type": "jpcoar:funderIdentifier",
-                "jpcoar:funderIdentifierType": "ROR",
+                "funderIdentifierType": "ROR",
                 "value": "{{ object_funder | to_funder_ror_id }}"
             },
             "jpcoar:funderName[FUNDER_NAME_JA]": {
@@ -108,7 +108,7 @@
                 "@createIf": "{{ object_funding_stream_code }}",
                 ".@type": "jpcoar:fundingStreamIdentifier",
                 "value": "{{object_funding_stream_code}}",
-                "jpcoar:fundingStreamIdentifierType": "JGN_fundingStream"
+                "fundingStreamIdentifierType": "JGN_fundingStream"
             },
             "jpcoar:fundingStream[FUNDING_STREAM_JA]": {
                 "@createIf": "{{ object_program_name_ja }}",
@@ -125,7 +125,7 @@
             "jpcoar:awardNumber": {
                 "@createIf": "{{ object_japan_grant_number }}",
                 ".@type": "jpcoar:awardNumber",
-                "jpcoar:awardNumberType": "JGN",
+                "awardNumberType": "JGN",
                 "value": "{{object_japan_grant_number}}"
             },
             "jpcoar:awardTitle[PROJECT_NAME_JA]": {
@@ -292,7 +292,7 @@
         "@createIf": "{% if grdm_file_file_type_value == \"manuscript\" %}{{value}}{% endif %}",
         "root.jpcoar:relation[]": {
             ".@type": "PropertyValue",
-            "jpcoar:relationType": "{% if grdm_file_version_value == 'VoR' %}isIdenticalTo{% else %}isVersionOf{% endif %}",
+            "relationType": "{% if grdm_file_version_value == 'VoR' %}isIdenticalTo{% else %}isVersionOf{% endif %}",
             "jpcoar:relatedIdentifier": {
                 ".@type": "PropertyValue",
                 "identifierType": "DOI",
@@ -448,7 +448,7 @@
         "@createIf": "{% if grdm_file_file_type_value != \"manuscript\" %}{{value}}{% endif %}",
         "root.jpcoar:relation[]": {
             ".@type": "PropertyValue",
-            "jpcoar:relationType": "isSupplementTo",
+            "relationType": "isSupplementTo",
             "jpcoar:relatedIdentifier": {
                 ".@type": "PropertyValue",
                 "identifierType": "DOI",
@@ -461,7 +461,7 @@
         "@createIf": "{% if grdm_file_file_type_value == \"manuscript\" %}{{value}}{% endif %}",
         "root.jpcoar:relation[]": {
             ".@type": "PropertyValue",
-            "jpcoar:relationType": "isSupplementedBy",
+            "relationType": "isSupplementedBy",
             "jpcoar:relatedIdentifier": {
                 ".@type": "PropertyValue",
                 "identifierType": "DOI",
@@ -539,7 +539,7 @@
             "additionalType": {
                 ".@id": "https://github.com/JPCOAR/schema/blob/master/2.0/#HostingInstitution"
             },
-            "jpcoar:contributorType": "HostingInstitution",
+            "contributorType": "HostingInstitution",
             "jpcoar:contributorName[HOSTING_INSTITUTION_JA]": {
                 "@createIf": "{{value}}",
                 ".@type": "Organization",
@@ -557,7 +557,7 @@
             "additionalType": {
                 ".@id": "https://github.com/JPCOAR/schema/blob/master/2.0/#HostingInstitution"
             },
-            "jpcoar:contributorType": "HostingInstitution",
+            "contributorType": "HostingInstitution",
             "jpcoar:contributorName[HOSTING_INSTITUTION_EN]": {
                 "@createIf": "{{value}}",
                 ".@type": "Organization",
@@ -575,7 +575,7 @@
             "additionalType": {
                 ".@id": "https://github.com/JPCOAR/schema/blob/master/2.0/#HostingInstitution"
             },
-            "jpcoar:contributorType": "HostingInstitution",
+            "contributorType": "HostingInstitution",
             "jpcoar:nameIdentifier[]": {
                 ".@type": "Organization",
                 "value": "{{value}}",
@@ -592,7 +592,7 @@
             "additionalType": {
                 ".@id": "https://github.com/JPCOAR/schema/blob/master/2.0/#DataManager"
             },
-            "jpcoar:contributorType": "DataManager",
+            "contributorType": "DataManager",
             "jpcoar:nameIdentifier[]": {
                 ".@type": "Person",
                 "value": "{{value}}",
@@ -608,7 +608,7 @@
             "additionalType": {
                 ".@id": "https://github.com/JPCOAR/schema/blob/master/2.0/#DataManager"
             },
-            "jpcoar:contributorType": "DataManager",
+            "contributorType": "DataManager",
             "jpcoar:contributorName[DATA_MANAGER_JA]": {
                 "@createIf": "{{object_last}}",
                 ".@type": "Person",
@@ -647,7 +647,7 @@
             "additionalType": {
                 ".@id": "https://github.com/JPCOAR/schema/blob/master/2.0/#DataManager"
             },
-            "jpcoar:contributorType": "DataManager",
+            "contributorType": "DataManager",
             "jpcoar:contributorName[DATA_MANAGER_EN]": {
                 "@createIf": "{{object_last}}",
                 ".@type": "Person",
@@ -686,7 +686,7 @@
             "additionalType": {
                 ".@id": "https://github.com/JPCOAR/schema/blob/master/2.0/#DataManager"
             },
-            "jpcoar:contributorType": "DataManager",
+            "contributorType": "DataManager",
             "jpcoar:contributorName[DATA_MANAGER_ORG_JA]": {
                 "@createIf": "{{value}}",
                 ".@type": "Organization",
@@ -704,7 +704,7 @@
             "additionalType": {
                 ".@id": "https://github.com/JPCOAR/schema/blob/master/2.0/#DataManager"
             },
-            "jpcoar:contributorType": "DataManager",
+            "contributorType": "DataManager",
             "jpcoar:contributorName[DATA_MANAGER_ORG_EN]": {
                 "@createIf": "{{value}}",
                 ".@type": "Organization",
@@ -722,7 +722,7 @@
             "additionalType": {
                 ".@id": "https://github.com/JPCOAR/schema/blob/master/2.0/#ContactPerson"
             },
-            "jpcoar:contributorType": "ContactPerson",
+            "contributorType": "ContactPerson",
             "jpcoar:contributorName[CONTACT_PERSON_JA]": {
                 "@createIf": "{{value}}",
                 ".@type": "Organization",
@@ -740,7 +740,7 @@
             "additionalType": {
                 ".@id": "https://github.com/JPCOAR/schema/blob/master/2.0/#ContactPerson"
             },
-            "jpcoar:contributorType": "ContactPerson",
+            "contributorType": "ContactPerson",
             "jpcoar:contributorName[CONTACT_PERSON_EN]": {
                 "@createIf": "{{value}}",
                 ".@type": "Organization",
